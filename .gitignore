@@ -250,3 +250,5 @@ paket-files/
 # JetBrains Rider
 .idea/
 *.sln.iml
+*.cache
+4.Samples/Vita.Samples.BookStore.UI/bin/System.Web.Http.dll

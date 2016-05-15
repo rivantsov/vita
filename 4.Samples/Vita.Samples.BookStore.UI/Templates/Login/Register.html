@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<div class="container-fluid">
+    <h2>Registration</h2>
+    <form name="inputForm" novalidate angular-validator angular-validator-submit="register()">
+        <div class="row top5">
+            <div class="col-md-10">
+                <label for="introText">User Name:</label>
+                <input type="text" class="form-control" name="userName" ng-disabled="status.isReadOnly" ng-model="itemForm.userName"  maxlength="255" ng-pattern="/^.{0,255}$/" invalid-message="'User Name is too long.'"/>
+            </div>
+        </div>
+        <div class="row top5">
+            <div class="col-md-10">
+                <label for="introText">Password:</label>
+                <input type="password" class="form-control" name="password" ng-disabled="status.isReadOnly" ng-model="itemForm.password"  maxlength="255" ng-pattern="/^.{0,255}$/" invalid-message="'Password is too long.'"/>
+            </div>
+        </div>
+ <!--              <div class="row top5">
+            <div class="col-md-5">
+                <label for="displayName">Display Name:</label>
+                <input type="text" class="form-control" name="displayName" ng-disabled="status.isReadOnly" ng-model="itemForm.displayName"  required required-message="'Display Name is required.'" maxlength="50" ng-pattern="/^.{0,50}$/" invalid-message="'Display Name is too long.'"/>
+            </div>
+        </div>
+        <div class="row top5">
+            <div class="col-md-2">
+                <label for="isActive">Is Active:</label>
+                <input type="checkbox" class="form-control" name="isActive" ng-disabled="status.isReadOnly" ng-model="itemForm.isActive"  />
+            </div>
+        </div>-->
+        <div class="row top15" ng-if="!status.isReadOnly">
+            <div class="col-md-12">
+                <button class="btn btn-default" type="submit" ng-disabled="!inputForm.$dirty">Submit</button>
+            </div>
+        </div>
+    </form>
+    <div class="row top15" ng-if="!status.isReadOnly">
+        <div class="col-md-12">
+            <button class="btn btn-default" ng-click="back()">Cancel</button>
+        </div>
+    </div>
+    <div class="row top15" ng-if="status.isReadOnly">
+        <div class="col-md-12">
+            <button class="btn btn-default" ui-sref="search">OK</button>
+        </div>
+    </div>
+    <div class="row top5" ng-if="status.isError">
+        <div class="col-md-12 text-danger">
+            {{status.errorMessage}}
+        </div>
+    </div>
+    <div class="row top5" ng-if="status.isSuccess">
+        <div class="col-md-12">
+            {{status.successMessage}}
+        </div>
+    </div>
+</div>

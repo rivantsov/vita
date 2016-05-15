@@ -1,0 +1,8 @@
+﻿
+Examples of use
+
+to generate update scripts: 
+vdbtool.exe dbupdate /cfg:..\..\ConfigSamples\dbupdate.mssql.books.cfg
+
+to generate entities from database (DB-first scenario):
+vdbtool.exe dbfirst /cfg:..\..\ConfigSamples\db1.mssql.books.cfg

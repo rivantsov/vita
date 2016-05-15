@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<div class="container-fluid">
+	<h2>Welcome to the VITA Bookstore Application!</h2>
+  <p>This sample Web application is contributed by Dave Clemmer (moplus).
+  It is a Single-Page Application (SPA) with the AngularJS-based client engine and VITA-based data controllers serving Json data.
+  Some implementation features to note: </p>
+  <ul>
+    <li><b>Slim API controller technology.</b> Typically to build the server-side API controllers you have to reference the Web API infrastructure. 
+    So usually controllers are defined in a separate assembly, other than core business logic assembly. This is not necessary with 'SlimApi'
+    approach introduced in VITA. In this bookstore app the controllers are defined directly in the main bookstore assembly, but without 
+    referencing Web API packages. </li>
+    <li>
+      <b>Search functionality</b> - play with the Books Search page, and then see how little code is required on the server to handle it
+       (method SearchBooks in CatalogController.cs).
+    </li>
+    <li><b>Authentication</b> - uses API controllers defined in a 'standard' Login module. This sample app shows only a small part 
+    of this complex piece of functionality. The server maintains the user session, with current User properties automatically set 
+    before a controller method is invoked.</li>
+    <li><b>Strict authorization rules</b> are enforced automatically. No only in UI - what user can see and do. Even if a hacker fabricates 
+    a request to API controller, it will be rejected if it violates authorization rules for a current user. </li>
+    <li>
+      <b>Input validation and handling user errors on the server</b> - for client/user errors the server returns 'BadRequest' status and
+      a list of errors. One place you can see it in action - in the Cart page try setting a Quantity for a book to some big number (>10)
+      and click Save - the page shows an error returned from the server. Look inside the controller (UpdateOrder method), see how easy it is
+      to encode validation checks.
+    </li>
+    <li><b>Logging</b> - after playing with the app, open SQL Management Studio and look at log entries in WebCallLog table in VitaBooksLogs
+    database - all calls to server are logged, including user, URL, controller/method, request and response content.
+    </li>
+    <li>Browse the server API controllers code in the <b>BooksModule/Api</b> folder of the <b>Vita.Samples.BookStore</b> project - 
+    see how it is done on the server side using all these technologies.</li>
+  </ul>
+  <p>Enjoy!</p>
+</div>

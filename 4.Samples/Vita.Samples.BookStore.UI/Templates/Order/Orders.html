@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<div class="container-fluid" data-ng-init="orders()">
+    <h2>My Orders</h2>
+  <table class="table-striped table-bordered top15">
+    <tr>
+      <th class="col-md-2">
+        Date
+      </th>
+      <th class="col-md-2">
+        Total
+      </th>
+      <th class="col-md-2">
+        Status
+      </th>
+    </tr>
+    <tr ng-repeat="item in itemForm.items">
+      <td class="col-md-2">
+        {{item.CreatedOn | date:'medium'}}
+      </td>
+      <td class="col-md-2">
+        {{item.Total | currency}}
+      </td>
+      <td class="col-md-2">
+        <a ui-sref="myorder({orderId: item.Id})">{{item.Status}}</a>
+      </td>
+    </tr>
+  </table>
+</div>

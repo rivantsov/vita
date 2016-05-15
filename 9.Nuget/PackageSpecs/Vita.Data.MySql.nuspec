@@ -1,0 +1,31 @@
+<?xml version="1.0"?>
+<package >
+  <metadata>
+    <id>Vita.Data.MySql</id>
+    <version>$version$</version>
+    <authors>Roman Ivantsov</authors>
+    <owners>Roman Ivantsov</owners>
+    <licenseUrl>http://vita.codeplex.com/license</licenseUrl>
+    <projectUrl>http://vita.codeplex.com</projectUrl>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <description>VITA ORM driver for MySql. </description>
+    <releaseNotes></releaseNotes>
+    <copyright>Copyright Roman Ivantsov 2015</copyright>
+    <tags>VITA ORM MySql</tags>
+    <dependencies>
+       <group>
+         <dependency id="Vita" version="$version$"/>
+       </group>	
+       <group>
+         <dependency id="MySql.Data" version="6.9.6"/>
+       </group>	
+    </dependencies>
+  </metadata>
+    <files>
+      <file src="..\..\2.Drivers\Vita.Data.MySql\README.txt" target="" />
+	  <file src="..\..\2.Drivers\Vita.Data.MySql\bin\Release\Vita.Data.MySql.dll" target="lib\net45" />
+	  <file src="..\..\2.Drivers\Vita.Data.MySql\bin\Release\Vita.Data.MySql.pdb" target="lib\net45" />
+	  <file src="..\..\2.Drivers\Vita.Data.MySql\bin\Release\Vita.Data.MySql.XML" target="lib\net45" />
+	  <file src="..\..\2.Drivers\Vita.Data.MySql\**\*.cs" target="src\2.Drivers\Vita.Data.MySql" />
+    </files>
+</package>

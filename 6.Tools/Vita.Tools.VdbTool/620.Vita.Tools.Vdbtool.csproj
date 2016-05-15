@@ -1,0 +1,88 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="12.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProjectGuid>{E5117FD3-A0FD-45E0-8A19-E5694B5F7497}</ProjectGuid>
+    <OutputType>Exe</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>Vita.Tools.VdbTool</RootNamespace>
+    <AssemblyName>vdbtool</AssemblyName>
+    <TargetFrameworkVersion>v4.6.1</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+    <TargetFrameworkProfile />
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="System" />
+    <Reference Include="System.Configuration" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Xml.Linq" />
+    <Reference Include="System.Data.DataSetExtensions" />
+    <Reference Include="Microsoft.CSharp" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="Program.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="app.config" />
+    <None Include="ConfigSamples\dbupdate.mssql.books.cfg" />
+    <None Include="ConfigSamples\db1.sqlite.books.cfg" />
+    <None Include="ConfigSamples\db1.pg.books.cfg" />
+    <None Include="ConfigSamples\db1.mysql.books.cfg" />
+    <None Include="ConfigSamples\db1._template_.cfg" />
+    <None Include="ConfigSamples\db1.mssql.advworks.cfg" />
+    <None Include="ConfigSamples\db1.mssql.nwind.cfg" />
+    <None Include="ConfigSamples\db1.mssql.books.cfg">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="ConfigSamples\VitaBooksSQLite.db" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\1.Framework\Vita.Core\100.Vita.csproj">
+      <Project>{beb21724-926e-4fd7-b05c-fcdab9a47159}</Project>
+      <Name>100.Vita</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\2.Drivers\Vita.Data.MySql\220.Vita.Data.MySql.csproj">
+      <Project>{d10d18e4-bcc2-4a68-bc39-9ce5bc843d03}</Project>
+      <Name>220.Vita.Data.MySql</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Vita.Tools.ToolLib\610.Vita.Tools.ToolLib.csproj">
+      <Project>{4b39a6ba-6ec6-4e62-ace2-9a5e3dc77889}</Project>
+      <Name>610.Vita.Tools.ToolLib</Name>
+    </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="AboutVdbTool.txt" />
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+       Other similar extension points exist, see Microsoft.Common.targets.
+  <Target Name="BeforeBuild">
+  </Target>
+  <Target Name="AfterBuild">
+  </Target>
+  -->
+</Project>

@@ -1,0 +1,1 @@
+<%@ Application Codebehind="Global.asax.cs" Inherits="Vita.Samples.BookStore.UI.MvcApplication" Language="C#" %>

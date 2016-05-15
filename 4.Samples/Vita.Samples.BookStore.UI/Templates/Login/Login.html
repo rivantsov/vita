@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<!--Copyright:
+Should a copyright go here?
+
+//------------------------------------------------------------------------------
+/// This file is for providing ui functionality for login.
+///
+/// This file is code generated and should not be modified by hand.
+/// If you need to customize outside of protected areas, add those changes
+/// in another partial class file.  As a last resort (if generated code needs
+/// to be different), change the Status value below to something other than
+/// Generated to prevent changes from being overwritten.
+///
+/// <CreatedByUserName>INCODE-1\Dave</CreatedByUserName>
+/// <CreatedDate>2/26/2015</CreatedDate>
+/// <Status>Generated</Status>
+//------------------------------------------------------------------------------
+-->
+<div class="container-fluid" >
+    <h2>Login</h2>
+    <form name="inputForm" novalidate angular-validator angular-validator-submit="login()">
+        <div class="row top5">
+            <div class="col-md-10">
+                <label for="introText">User Name:</label>
+                <input type="text" class="form-control" name="userName" ng-disabled="status.isReadOnly" ng-model="itemForm.userName"  maxlength="255" ng-pattern="/^.{0,255}$/" invalid-message="'User Name is too long.'"/>
+            </div>
+        </div>
+        <div class="row top5">
+            <div class="col-md-10">
+                <label for="introText">Password:</label>
+                <input type="password" class="form-control" name="password" ng-disabled="status.isReadOnly" ng-model="itemForm.password"  maxlength="255" ng-pattern="/^.{0,255}$/" invalid-message="'Password is too long.'"/>
+            </div>
+        </div>
+        <div class="row top15" ng-if="!status.isReadOnly">
+            <div class="col-md-12">
+                <button class="btn btn-default" type="submit" ng-disabled="!inputForm.$dirty">Submit</button>
+            </div>
+        </div>
+    </form>
+    <div class="row top15" ng-if="!status.isReadOnly">
+        <div class="col-md-12">
+            <button class="btn btn-default" ng-click="back()">Cancel</button>&nbsp;&nbsp;<button class="btn btn-default" ui-sref="registerUser">Register</button>
+        </div>
+    </div>
+    <div class="row top15" ng-if="status.isReadOnly">
+        <div class="col-md-12">
+          <button class="btn btn-default" ng-click="redirect()">OK</button>
+        </div>
+    </div>
+  <h3>Test Logins</h3>
+  <label>You can use the folllowing pre-existing usernames: Dora, Diego, Stan, Ferb, Duffy</label>
+  <br/>
+  <label>Password: TestPass34%</label>
+
+  <div class="row top5">
+    <div class="col-md-3">
+      <button class="btn btn-default" ng-click="testLogin()">Login</button>
+    </div>
+  </div>
+    <div class="row top5" ng-if="status.isError">
+        <div class="col-md-12 text-danger">
+            {{status.errorMessage}}
+        </div>
+    </div>
+    <div class="row top5" ng-if="status.isSuccess">
+        <div class="col-md-12">
+            {{status.successMessage}}
+        </div>
+    </div>
+</div>

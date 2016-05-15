@@ -1,0 +1,4 @@
+﻿OAuthClientData module provides data storage for applications that use OAuth 1.0 clients to authenticate with remote OAuth servers and access user's data on remote servers. Using OAuth protocol involves certain running workflows, and stores some information (per-user and per-server) on OAuth client side. This module provides the storage. This is storage only, the OAuth web client is in the plans. More documentation is coming. 
+
+See more here:
+http://oauth.net/core/1.0/

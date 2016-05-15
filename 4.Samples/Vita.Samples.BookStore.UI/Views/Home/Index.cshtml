@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html ng-app="DomainApp" ng-controller="LoginController">
+    <head>
+        <title>{{title}} Public Application</title>
+        <base href="/">
+        @Styles.Render("~/Content/css")
+    </head>
+    <body>
+        <div class="container">
+            <div class="navbar navbar-default navbar-fixed-top" role="navigation">
+                <div class="container-fluid">
+                    <div class="navbar-header">
+                        <a class="navbar-brand" ui-sref="home">VITA Sample Bookstore</a>
+                    </div>
+                    <div class="navbar-collapse collapse" collapse="navbarProperties.isCollapsed">
+                        <ul class="nav navbar-nav navbar-right">
+                            <li><a ui-sref="loginUser" ng-if="IsLoggedIn != true">Login</a></li>
+                            <li><a ui-sref="registerUser" ng-if="IsLoggedIn != true">Register</a></li>
+                            <li ng-if="IsLoggedIn == true" class="navbar-nav navMessage">{{LoginMessage}}</li>
+                            <li><a ui-sref="home" ng-click="logout()" ng-if="IsLoggedIn == true">Logout</a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="container-fluid mainContent">
+            <div class="row-fluid">
+                <div class="col-md-2 navbar-left">
+                    <!-- navigation area -->
+                    <ul class="nav">
+                      <li><a ui-sref="home">Home</a></li>
+                      <li class="indent"><a ui-sref="programming">Programming</a></li>
+                      <li class="indent"><a ui-sref="fiction">Fiction</a></li>
+                      <li class="indent"><a ui-sref="kids">Kids</a></li>
+                      <li class="indent"><a ui-sref="search">Search</a></li>
+                      <li ng-if="IsLoggedIn == true">&nbsp;&nbsp;&nbsp;&nbsp;My Account</li>
+                      <li class="indent" ng-if="IsLoggedIn == true"><a ui-sref="cart">Cart</a></li>
+                      <li class="indent" ng-if="IsLoggedIn == true"><a ui-sref="myorders">My Orders</a></li>
+                    </ul>
+               </div>
+                <div class="col-md-10">
+                    <div class="container-fluid">
+                        <!-- search area -->
+                        <div ui-view="searchView"></div>
+                    </div>
+                    <div class="container-fluid">
+                        <!-- detail area -->
+                        <div ui-view="detailView"></div>
+                    </div>
+                </div>
+            </div>
+            @Scripts.Render("~/bundles/DomainApp")
+        </div>
+    </body>
+</html>

@@ -1,0 +1,91 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="12.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProductVersion>8.0.30703</ProductVersion>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>{28FC25D4-B89D-4175-ADB0-E98ED89781A5}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>Vita.Samples.BookStore</RootNamespace>
+    <AssemblyName>Vita.Samples.BookStore</AssemblyName>
+    <FileAlignment>512</FileAlignment>
+    <TargetFrameworkVersion>v4.6.1</TargetFrameworkVersion>
+    <TargetFrameworkProfile />
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <Prefer32Bit>false</Prefer32Bit>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <Prefer32Bit>false</Prefer32Bit>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Rls12|AnyCPU'">
+    <OutputPath>bin\Rls12\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <Optimize>true</Optimize>
+    <DebugType>pdbonly</DebugType>
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <ErrorReport>prompt</ErrorReport>
+    <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
+    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
+    <Prefer32Bit>false</Prefer32Bit>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="System" />
+    <Reference Include="System.Core" />
+    <Reference Include="Microsoft.CSharp" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="BooksModule\Api\Models\SearchParams.cs" />
+    <Compile Include="BooksModule\Api\SignupController.cs" />
+    <Compile Include="BooksModule\Api\UserAccountController.cs" />
+    <Compile Include="BooksModule\BooksModule_EnableSnapshot.cs" />
+    <Compile Include="BooksModule\Enums.cs" />
+    <Compile Include="BooksEntityApp.cs" />
+    <Compile Include="BooksModule\BooksAuthorization.cs" />
+    <Compile Include="BooksModule\BookExtensions.cs" />
+    <Compile Include="BooksModule\BooksEntities.cs" />
+    <Compile Include="BooksModule\BooksEntityKeys.cs" />
+    <Compile Include="BooksModule\BooksModule.cs" />
+    <Compile Include="BooksModule\Api\CatalogController.cs" />
+    <Compile Include="BooksModule\Api\Models\ModelExtensions.cs" />
+    <Compile Include="BooksModule\Api\Models\Models.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="DiagnosticsController.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\1.Framework\Vita.Core\100.Vita.csproj">
+      <Project>{BEB21724-926E-4FD7-B05C-FCDAB9A47159}</Project>
+      <Name>100.Vita</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\3.Modules\Vita.Modules\300.Vita.Modules.csproj">
+      <Project>{5f2ad472-63c6-4aa7-955d-103a7fa69613}</Project>
+      <Name>300.Vita.Modules</Name>
+    </ProjectReference>
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+       Other similar extension points exist, see Microsoft.Common.targets.
+  <Target Name="BeforeBuild">
+  </Target>
+  <Target Name="AfterBuild">
+  </Target>
+  -->
+</Project>

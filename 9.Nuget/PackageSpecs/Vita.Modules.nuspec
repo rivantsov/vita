@@ -1,0 +1,27 @@
+<?xml version="1.0"?>
+<package >
+  <metadata>
+    <id>Vita.Modules</id>
+    <version>$version$</version>
+    <authors>Roman Ivantsov</authors>
+    <owners>Roman Ivantsov</owners>
+    <licenseUrl>http://vita.codeplex.com/license</licenseUrl>
+    <projectUrl>http://vita.codeplex.com</projectUrl>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <description>VITA ORM standard modules - Login, Logging, EncryptedData, Party, others.</description>
+    <releaseNotes></releaseNotes>
+    <copyright>Copyright Roman Ivantsov 2015</copyright>
+    <tags>VITA ORM LINQ</tags>
+    <dependencies>
+       <group>
+         <dependency id="Vita" version="$version$"/>
+       </group>	
+    </dependencies>
+  </metadata>
+  <files>
+	 <file src="..\..\3.Modules\Vita.Modules\bin\Release\Vita.Modules.dll" target="lib\net45" />
+	 <file src="..\..\3.Modules\Vita.Modules\bin\Release\Vita.Modules.pdb" target="lib\net45" />
+	 <file src="..\..\3.Modules\Vita.Modules\bin\Release\Vita.Modules.xml" target="lib\net45" />
+	 <file src="..\..\3.Modules\Vita.Modules\**\*.cs" target="src\3.Modules\Vita.Modules" />
+  </files>
+</package>

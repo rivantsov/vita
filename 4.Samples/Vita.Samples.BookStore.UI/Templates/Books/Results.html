@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<div class="container-fluid" data-ng-init="search()">
+  <div class="row top15 bookPaginator">
+    <div class="col-md-2">
+      Page&nbsp;{{searchQuery.page}}&nbsp;of&nbsp;{{searchResults.totalPages}}
+    </div>
+    <div class="col-md-1">
+      <button type="button" class="btn btn-sm" ng-class="{false: 'disabled'}[searchQuery.page > 1]" ng-click="first()">
+        <span class="glyphicon glyphicon-fast-backward" />
+      </button>
+    </div>
+    <div class="col-md-1">
+      <button type="button" class="btn btn-sm" ng-class="{false: 'disabled'}[searchQuery.page > 1]" ng-click="previous()">
+        <span class="glyphicon glyphicon-chevron-left" />
+      </button>
+    </div>
+    <div class="col-md-1">
+      <button type="button" class="btn btn-sm" ng-class="{false: 'disabled'}[searchQuery.page < searchResults.totalPages]" ng-click="next()">
+        <span class="glyphicon glyphicon-chevron-right" />
+      </button>
+    </div>
+    <div class="col-md-1">
+      <button type="button" class="btn btn-sm" ng-class="{false: 'disabled'}[searchQuery.page < searchResults.totalPages]" ng-click="last()">
+        <span class="glyphicon glyphicon-fast-forward" />
+      </button>
+    </div>
+    <div class="col-md-2">
+      <select ng-model="searchQuery.pageSize" ng-change="searchQuery.page = 1;refreshSearch()">
+        <option value="10">10</option>
+        <option value="25">25</option>
+        <option value="50">50</option>
+        <option value="100">100</option>
+        <option value="200">200</option>
+      </select>&nbsp;items&nbsp;per&nbsp;page
+    </div>
+    <div class="col-md-3">
+      order&nbsp;by&nbsp;<select ng-model="searchQuery.orderBy" ng-change="searchQuery.page = 1;refreshSearch()">
+        <option value="Title">Title</option>
+        <option value="Publisher.Name">Publisher</option>
+        <option value="PublishedOn">Published Date</option>
+        <option value="Price">Price</option>
+        <option value="Category">Category</option>
+      </select>&nbsp;descending<input type="checkbox" class="check-box" name="descending" ng-model="searchQuery.descending" ng-change="searchQuery.page = 1;refreshSearch()" />
+    </div>
+  </div>
+   <div class="row top15">
+        <ul class="col-md-11 list-unstyled">
+          <li class="bookItem" ng-repeat="item in searchResults.items">
+            <a class="bookItem" ui-sref="bookGet({ id: item.Id })">{{item.Title}}</a>
+            <p class="bookItem bookItemSmall">
+              <b>By:</b>
+              <span ng-repeat="author in item.Authors">{{$index > 0 ? ' and ' : ''}} {{author.FirstName}} {{author.LastName}}</span>
+              <span> <b>Publisher:</b> {{item.Publisher.Name}} ({{item.PublishedOn | date: 'MM/dd/yyyy'}})</span>
+              <span> <b>{{item.Price | currency}}</b> <a class="btn btn-sm" ui-sref="cart({ bookId: item.Id })">Add to Cart</a></span>
+            </p>
+            <hr class="bookItem" />
+          </li>
+        </ul>
+    </div>
+      <div class="row top15 bookPaginator">
+        <div class="col-md-2">
+          Page&nbsp;{{searchQuery.page}}&nbsp;of&nbsp;{{searchResults.totalPages}}
+        </div>
+        <div class="col-md-1">
+          <button type="button" class="btn btn-sm" ng-class="{false: 'disabled'}[searchQuery.page > 1]" ng-click="first()">
+            <span class="glyphicon glyphicon-fast-backward" />
+          </button>
+        </div>
+        <div class="col-md-1">
+          <button type="button" class="btn btn-sm" ng-class="{false: 'disabled'}[searchQuery.page > 1]" ng-click="previous()">
+            <span class="glyphicon glyphicon-chevron-left" />
+          </button>
+        </div>
+        <div class="col-md-1">
+          <button type="button" class="btn btn-sm" ng-class="{false: 'disabled'}[searchQuery.page < searchResults.totalPages]" ng-click="next()">
+            <span class="glyphicon glyphicon-chevron-right" />
+          </button>
+        </div>
+        <div class="col-md-1">
+          <button type="button" class="btn btn-sm" ng-class="{false: 'disabled'}[searchQuery.page < searchResults.totalPages]" ng-click="last()">
+            <span class="glyphicon glyphicon-fast-forward" />
+          </button>
+        </div>
+      </div>
+</div>

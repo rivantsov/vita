@@ -1,0 +1,33 @@
+<?xml version="1.0"?>
+<package >
+  <metadata>
+    <id>Vita.Web</id>
+    <version>$Version$</version>
+    <authors>Roman Ivantsov</authors>
+    <owners>Roman Ivantsov</owners>
+    <licenseUrl>http://vita.codeplex.com/license</licenseUrl>
+    <projectUrl>http://vita.codeplex.com</projectUrl>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <description>VITA Web Library - integration of VITA ORM functionality with Web Api stack. </description>
+    <releaseNotes></releaseNotes>
+    <copyright>Copyright Roman Ivantsov 2015</copyright>
+    <tags>VITA ORM WebApi</tags>
+    <dependencies>
+       <group  targetFramework="net45">
+         <dependency id="Microsoft.AspNet.WebApi.Client" version="5.2.2" />
+         <dependency id="Microsoft.AspNet.WebApi.Core" version="5.2.2"/>
+         <dependency id="Newtonsoft.Json" version="6.0.4"/>
+       </group>	
+       <group>
+         <dependency id="Vita" version="$version$"/>
+       </group>	
+    </dependencies>
+  </metadata>
+    <files>
+	 <file src="..\..\1.Framework\Vita.Web\bin\Release\Vita.Web.dll" target="lib\net45" />
+	 <file src="..\..\1.Framework\Vita.Web\bin\Release\Vita.Web.pdb" target="lib\net45" />
+	 <file src="..\..\1.Framework\Vita.Web\bin\Release\Vita.Web.xml" target="lib\net45" />
+	 <file src="..\..\1.Framework\Vita.Web\**\*.cs" target="src\1.Framework\Vita.Web" />
+  </files>
+
+</package>

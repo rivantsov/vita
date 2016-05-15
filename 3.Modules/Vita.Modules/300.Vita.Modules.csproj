@@ -1,0 +1,212 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="12.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProductVersion>8.0.30703</ProductVersion>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>{5F2AD472-63C6-4AA7-955D-103A7FA69613}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>Vita.Modules</RootNamespace>
+    <AssemblyName>Vita.Modules</AssemblyName>
+    <TargetFrameworkVersion>v4.6.1</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+    <TargetFrameworkProfile>
+    </TargetFrameworkProfile>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <Prefer32Bit>false</Prefer32Bit>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <NoWarn>1591</NoWarn>
+    <DocumentationFile>bin\Debug\Vita.Modules.XML</DocumentationFile>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <Prefer32Bit>false</Prefer32Bit>
+    <NoWarn>1591</NoWarn>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <DocumentationFile>bin\Release\Vita.Modules.XML</DocumentationFile>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="Microsoft.CSharp" />
+    <Reference Include="Newtonsoft.Json, Version=7.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
+      <HintPath>..\..\packages\Newtonsoft.Json.7.0.1\lib\net45\Newtonsoft.Json.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="System" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Net.Http" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="ApiClients\Recaptcha\IRecaptchaService.cs" />
+    <Compile Include="ApiClients\Recaptcha\Models.cs" />
+    <Compile Include="ApiClients\Recaptcha\RecaptchaApiController.cs" />
+    <Compile Include="ApiClients\Recaptcha\RecaptchaService.cs" />
+    <Compile Include="ApiClients\Recaptcha\RecaptchaSettings.cs" />
+    <Compile Include="ApiClients\Recaptcha\RecaptchaUtil.cs" />
+    <Compile Include="Logging\Api\EventsPostController.cs" />
+    <Compile Include="Logging\EventLog\EventLogEntities.cs" />
+    <Compile Include="Logging\EventLog\EventLogExtensions.cs" />
+    <Compile Include="Logging\EventLog\EventLogModule.cs" />
+    <Compile Include="Logging\EventLog\IEventLogService.cs" />
+    <Compile Include="Logging\NotificationLog\NotificationLogEntities.cs" />
+    <Compile Include="Logging\NotificationLog\NotificationLogEntry.cs" />
+    <Compile Include="Logging\NotificationLog\NotificationLogModule.cs" />
+    <Compile Include="Logging\NotificationLog\INotificationLogService.cs" />
+    <Compile Include="Logging\UserSession\XmlSerializationHelper.cs" />
+    <Compile Include="Login\LoginModule\LoginModule_Migrations.cs" />
+    <Compile Include="Login\LoginModule\LoginModule_Notifications.cs" />
+    <Compile Include="Notifications\INotificationService.cs" />
+    <Compile Include="Notifications\NotificationConstants.cs" />
+    <Compile Include="Notifications\NotificationListener.cs" />
+    <Compile Include="Notifications\NotificationMessage.cs" />
+    <Compile Include="Notifications\NotificationService.cs" />
+    <Compile Include="Notifications\NotificationExtensions.cs" />
+    <Compile Include="Email\EmailNotificationProvider.cs" />
+    <Compile Include="TextTemplates\TemplateModule_Migrations.cs" />
+    <Compile Include="WebClient\DefaultClientErrorHandler.cs" />
+    <Compile Include="WebClient\ApiExceptions.cs" />
+    <Compile Include="WebClient\Interfaces.cs" />
+    <Compile Include="WebClient\Json\JsonContentSerializer.cs" />
+    <Compile Include="WebClient\Json\NodeNameContractResolver.cs" />
+    <Compile Include="WebClient\Sync\WebClientSyncExtensions.cs" />
+    <Compile Include="WebClient\WebApiClient.cs" />
+    <Compile Include="WebClient\WebApiClientSettings.cs" />
+    <Compile Include="WebClient\WebApiClientUtil.cs" />
+    <Compile Include="Email\IEmailSmsServices.cs" />
+    <Compile Include="Email\SmtpService.cs" />
+    <Compile Include="EncryptedData\EncryptedDataEntities.cs" />
+    <Compile Include="EncryptedData\EncryptedDataExtensions.cs" />
+    <Compile Include="EncryptedData\EncryptedDataModule.cs" />
+    <Compile Include="EncryptedData\EncryptionChannel.cs" />
+    <Compile Include="EncryptedData\_IEncryptionService.cs" />
+    <Compile Include="Logging\Api\ClientErrorController.cs" />
+    <Compile Include="Logging\Authorization\LoggingAuthorizationRoles.cs" />
+    <Compile Include="Logging\Api\LoggingModelExtensions.cs" />
+    <Compile Include="Logging\Api\LoggingDataController.cs" />
+    <Compile Include="Logging\Api\LogSearchParams.cs" />
+    <Compile Include="Logging\Api\Models.cs" />
+    <Compile Include="Logging\ErrorLog\Entities.cs" />
+    <Compile Include="Logging\ILogEntityBase.cs" />
+    <Compile Include="Logging\IncidentLog\IIncidentLogService.cs" />
+    <Compile Include="Logging\IncidentLog\IncidentTrigger.cs" />
+    <Compile Include="Logging\LoggingEntityApp.cs" />
+    <Compile Include="Logging\LoginLog\ILoginLog.cs" />
+    <Compile Include="Logging\LoginLog\LoginLogEntities.cs" />
+    <Compile Include="Logging\LoginLog\LoginLogEntry.cs" />
+    <Compile Include="Logging\LoginLog\LoginLogModule.cs" />
+    <Compile Include="Logging\TransactionLog\TransactionLogModelExtender.cs" />
+    <Compile Include="Login\Api\LoginAdministrationController.cs" />
+    <Compile Include="Login\Authorization\LoginAuthorization.cs" />
+    <Compile Include="Login\GoogleAuthenticator\Base32Encoder.cs" />
+    <Compile Include="Login\GoogleAuthenticator\GoogleAuthenticatorUtil.cs" />
+    <Compile Include="Login\Api\LoginModelExtensions.cs" />
+    <Compile Include="Login\LoginFaultCodes.cs" />
+    <Compile Include="Login\LoginModule\LoginModule_Administration.cs" />
+    <Compile Include="Login\PasswordStrength\IPasswordStrengthChecker.cs" />
+    <Compile Include="Login\PasswordStrength\PasswordStrengthChecker.cs" />
+    <Compile Include="Login\PasswordStrength\PasswordCheckerSettings.cs" />
+    <Compile Include="Login\LoginModule\LoginModule_ImportQuestions.cs" />
+    <Compile Include="Login\LoginNotificationConstants.cs" />
+    <Compile Include="Login\ServiceInterfaces\ILoginAdministrationService.cs" />
+    <Compile Include="TextTemplates\ITemplateEngine.cs" />
+    <Compile Include="TextTemplates\ITemplateTransformService.cs" />
+    <Compile Include="TextTemplates\SimpleTemplateEngine.cs" />
+    <Compile Include="TextTemplates\TemplateEntities.cs" />
+    <Compile Include="TextTemplates\TemplateExtensions.cs" />
+    <Compile Include="TextTemplates\TemplateModule.cs" />
+    <Compile Include="TextTemplates\TemplateModuleSettings.cs" />
+    <Compile Include="Logging\TransactionLog\TransactionLogModule.cs" />
+    <Compile Include="Logging\TransactionLog\Entities.cs" />
+    <Compile Include="Logging\TransactionLog\TransactionLogSettings.cs" />
+    <None Include="AddressPhone\AddressPhoneEntities_New.cs" />
+    <Compile Include="Logging\DbUpgradeLog\DbUpgradeLogExtensions.cs" />
+    <Compile Include="Logging\DbUpgradeLog\DbUpgradeLogModule.cs" />
+    <Compile Include="Logging\DbUpgradeLog\DbUpgradeLogEntities.cs" />
+    <Compile Include="Logging\OperationLog\OperationLogModule.cs" />
+    <Compile Include="Logging\OperationLog\OperationLogEntities.cs" />
+    <Compile Include="Logging\WebCallLog\WebCallLogEntities.cs" />
+    <Compile Include="Logging\WebCallLog\WebCallLogModule.cs" />
+    <Compile Include="Login\Api\LoginSelfServiceController.cs" />
+    <Compile Include="Login\Api\PasswordResetController.cs" />
+    <Compile Include="Login\Api\LoginController.cs" />
+    <Compile Include="Login\Api\LoginModels.cs" />
+    <Compile Include="Login\LoginModule\LoginModule_Management.cs" />
+    <Compile Include="Login\LoginModule\LoginModule_ProcessService.cs" />
+    <Compile Include="Login\LoginModule\LoginModule_LoginService.cs" />
+    <Compile Include="Login\ServiceInterfaces\ILoginProcessService.cs" />
+    <Compile Include="Login\ServiceInterfaces\ILoginService.cs" />
+    <Compile Include="Login\LoginEnums.cs" />
+    <Compile Include="Login\LoginExtensions.cs" />
+    <Compile Include="Login\IncidentTriggers\LoginFailedTrigger.cs" />
+    <Compile Include="Login\LoginModule\LoginModuleSettings.cs" />
+    <Compile Include="Logging\IncidentLog\IncidentLogEntities.cs" />
+    <Compile Include="Logging\IncidentLog\IncidentLogModule.cs" />
+    <Compile Include="DbInfo\DbInfoEntities.cs" />
+    <Compile Include="DbInfo\DbInfoModule.cs" />
+    <Compile Include="Login\PasswordHashing\BCrypt.Net\BCrypt.cs" />
+    <Compile Include="Login\PasswordHashing\BCrypt.Net\SaltParseException.cs" />
+    <Compile Include="Login\PasswordHashing\Pbkdf2PasswordHasher.cs" />
+    <Compile Include="Login\PasswordHashing\BCryptPasswordHasher.cs" />
+    <Compile Include="Login\PasswordHashing\IPasswordHasher.cs" />
+    <Compile Include="OAuthClientData\OAuthClientDataEntities.cs" />
+    <Compile Include="OAuthClientData\OAuthClientDataExtensions.cs" />
+    <Compile Include="OAuthClientData\OAuthClientDataModule.cs" />
+    <Compile Include="Logging\UserSession\IUserSessionService.cs" />
+    <Compile Include="Logging\UserSession\UserSessionSettings.cs" />
+    <Compile Include="Logging\TransactionLog\Attributes.cs" />
+    <Compile Include="Logging\UserSession\UserSessionEntities.cs" />
+    <Compile Include="Logging\UserSession\UserSessionModule.cs" />
+    <Compile Include="AddressPhone\AddressPhoneExtensions.cs" />
+    <Compile Include="Logging\ErrorLog\ErrorLogModule.cs" />
+    <Compile Include="Login\ServiceInterfaces\ILoginManagementService.cs" />
+    <Compile Include="Login\LoginModule\LoginEntities.cs" />
+    <Compile Include="Party\PartyEntities.cs" />
+    <Compile Include="Party\PartyExtensions.cs" />
+    <Compile Include="Party\PartyModule.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Login\LoginModule\LoginModule.cs" />
+    <Compile Include="AddressPhone\AddressPhoneEntities.cs" />
+    <Compile Include="AddressPhone\AddressPhoneModule.cs" />
+    <None Include="packages.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="OAuthClientData\_about_oauth1data.txt" />
+    <None Include="EncryptedData\_about_encr_data.txt" />
+    <Content Include="Login\PasswordHashing\BCrypt.Net\LICENSE_bcrypt.txt" />
+    <Content Include="Logging\_about_logging.txt" />
+    <EmbeddedResource Include="Login\DefaultSecretQuestions.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\1.Framework\Vita.Core\100.Vita.csproj">
+      <Project>{beb21724-926e-4fd7-b05c-fcdab9a47159}</Project>
+      <Name>100.Vita</Name>
+    </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="TextTemplates\Api\" />
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+       Other similar extension points exist, see Microsoft.Common.targets.
+  <Target Name="BeforeBuild">
+  </Target>
+  <Target Name="AfterBuild">
+  </Target>
+  -->
+</Project>

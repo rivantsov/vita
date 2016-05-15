@@ -1,0 +1,31 @@
+<?xml version="1.0"?>
+<package >
+  <metadata>
+    <id>Vita.Data.SQLite</id>
+    <version>$version$</version>
+    <authors>Roman Ivantsov</authors>
+    <owners>Roman Ivantsov</owners>
+    <licenseUrl>http://vita.codeplex.com/license</licenseUrl>
+    <projectUrl>http://vita.codeplex.com</projectUrl>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <description>VITA ORM driver for SQLite. </description>
+    <releaseNotes></releaseNotes>
+    <copyright>Copyright Roman Ivantsov 2015</copyright>
+    <tags>VITA ORM SQLite</tags>
+    <dependencies>
+       <group>
+         <dependency id="Vita" version="$version$"/>
+       </group>	
+       <group>
+         <dependency id="System.Data.SQLite.Core" version="1.0.96.0" />
+       </group>	
+    </dependencies>
+  </metadata>
+    <files>
+      <file src="..\..\2.Drivers\Vita.Data.SQLite\README.txt" target="" />
+	  <file src="..\..\2.Drivers\Vita.Data.SQLite\bin\Release\Vita.Data.SQLite.dll" target="lib\net45" />
+	  <file src="..\..\2.Drivers\Vita.Data.SQLite\bin\Release\Vita.Data.SQLite.pdb" target="lib\net45" />
+	  <file src="..\..\2.Drivers\Vita.Data.SQLite\bin\Release\Vita.Data.SQLite.XML" target="lib\net45" />
+	  <file src="..\..\2.Drivers\Vita.Data.SQLite\**\*.cs" target="src\2.Drivers\Vita.Data.SQLite" />
+    </files>
+</package>

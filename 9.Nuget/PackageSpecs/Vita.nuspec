@@ -1,0 +1,24 @@
+<?xml version="1.0"?>
+<package >
+  <metadata>
+    <id>Vita</id>
+    <version>$version$</version>
+    <authors>Roman Ivantsov</authors>
+    <owners>Roman Ivantsov</owners>
+    <licenseUrl>http://vita.codeplex.com/license</licenseUrl>
+    <projectUrl>http://vita.codeplex.com</projectUrl>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <description>VITA ORM core library, MS SQL Server driver</description>
+    <releaseNotes></releaseNotes>
+    <copyright>Copyright Roman Ivantsov 2015</copyright>
+    <tags>VITA ORM LINQ MSSQL</tags>
+    <dependencies>
+    </dependencies>
+  </metadata>
+  <files>
+	 <file src="..\..\1.Framework\Vita.Core\bin\Release\Vita.dll" target="lib\net45" />
+	 <file src="..\..\1.Framework\Vita.Core\bin\Release\Vita.pdb" target="lib\net45" />
+	 <file src="..\..\1.Framework\Vita.Core\bin\Release\Vita.xml" target="lib\net45" />
+	 <file src="..\..\1.Framework\Vita.Core\**\*.cs" target="src\1.Framework\Vita.Core" />
+  </files>
+</package>

@@ -1,0 +1,3 @@
+This is a small ps utility to set AssemblyVersion in all AssemblyInfo.cs files in solution. 
+Run it from 'Nuget Package Manager Console' (it is powershell host):
+& 10.Scripts\SetVersion "1.5.6.1"

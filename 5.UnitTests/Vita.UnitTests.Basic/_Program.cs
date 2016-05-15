@@ -8,6 +8,7 @@ using Vita.Tools;
 using Vita.UnitTests.Common;
 
 namespace Vita.UnitTests.Basic {
+  // comment - just testing githug
   class Program {
 
     public static int Main(string[] args) {

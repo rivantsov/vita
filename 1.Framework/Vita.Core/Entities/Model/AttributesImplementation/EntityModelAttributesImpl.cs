@@ -606,9 +606,9 @@ namespace Vita.Entities {
 
   }//class
 
-  public partial class DynamicAttribute : EntityModelAttributeBase {
+  public partial class DiscardOnAbortAttribute : EntityModelAttributeBase {
     public override void Apply(AttributeContext context, Attribute attribute, EntityInfo entity) {
-      entity.Flags |= EntityFlags.Dynamic;
+      entity.Flags |= EntityFlags.DiscardOnAbourt;
     }
   }
 
@@ -722,6 +722,12 @@ namespace Vita.Entities {
   public partial class AsIsAttribute : EntityModelAttributeBase {
     public override void Apply(AttributeContext context, Attribute attribute, EntityMemberInfo member) {
       member.Flags |= EntityMemberFlags.AsIs;
+    }
+  }
+
+  public partial class BypassAuthorization : EntityModelAttributeBase {
+    public override void Apply(AttributeContext context, Attribute attribute, EntityInfo entity) {
+      entity.Flags |= EntityFlags.BypassAuthorization;
     }
   }
 

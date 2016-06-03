@@ -8,11 +8,6 @@ using Vita.Entities.Linq;
 
 namespace Vita.Entities {
 
-
-  // Work in progress!!! very early stage, do not use or look at it
-
-  internal class ViewMap : Dictionary<object, object> { }
-
   public static class ViewHelper {
     /// <summary>
     /// Returns an instance of <c>EntitySet&lt;TEntity&gt;</c> interface representing a table in the database 

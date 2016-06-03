@@ -4,11 +4,15 @@ using System.Diagnostics;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Vita.Common;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace Vita.UnitTests.Basic {
 
   [TestClass]
   public class MiscHelpersTests {
+
+
+
 
     [TestMethod]
     public void TestCompression() {

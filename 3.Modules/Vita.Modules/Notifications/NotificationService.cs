@@ -52,7 +52,7 @@ namespace Vita.Modules.Notifications {
     }  IList<INotificationProvider> _providers = new List<INotificationProvider>();
 
     public void Send(OperationContext context, NotificationMessage message) {
-      TaskHelper.RunSync(() => SendAsync(context, message));
+      AsyncHelper.RunSync(() => SendAsync(context, message));
     }
 
     public async Task SendAsync(OperationContext context, NotificationMessage message) {

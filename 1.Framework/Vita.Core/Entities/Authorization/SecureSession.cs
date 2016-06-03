@@ -232,7 +232,7 @@ namespace Vita.Entities.Authorization {
     // Private utilities ========================================================================
 
     private bool CheckEntityAccess(EntityInfo entity, AccessType accessType, out UserEntityTypePermission permissions) {
-      if(Context.User.Kind == UserKind.System) {
+      if(Context.User.Kind == UserKind.System || entity.Flags.IsSet(EntityFlags.BypassAuthorization)) {
         permissions = UserEntityTypePermission.Empty;
         return true; 
       }
@@ -247,7 +247,7 @@ namespace Vita.Entities.Authorization {
     private bool CheckRecordAccess(EntityRecord record, AccessType accessType) {
       if (this.ReadUnrestricted)
         return true; 
-      if(Context.User.Kind == UserKind.System) {
+      if(Context.User.Kind == UserKind.System || record.EntityInfo.Flags.IsSet(EntityFlags.BypassAuthorization)) {
         record.UserPermissions = UserRecordPermission.AllowAll;
         return true;
       }

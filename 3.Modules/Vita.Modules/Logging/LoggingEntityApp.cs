@@ -15,8 +15,7 @@ namespace Vita.Modules.Logging {
   //An attempt to provide a pre-build app for logging that can run side-by-side with main app, and use different logging database
   public class LoggingEntityApp : EntityApp {
     public const string CurrentVersion = "1.1.0.0";
-
-    public readonly IErrorLogService ErrorLog;
+    //ErrorLog is available as property in base EntityApp class
     public readonly IOperationLogService OperationLog;
     public readonly IIncidentLogService IncidentLog;
     public readonly ITransactionLogService TransactionLog;
@@ -33,7 +32,7 @@ namespace Vita.Modules.Logging {
 
     public LoggingEntityApp(string schema = "log", UserSessionSettings sessionSettings = null) : base("LoggingApp", CurrentVersion) {
       var area = base.AddArea(schema);
-      ErrorLog = new ErrorLogModule(area);
+      var errorLog = new ErrorLogModule(area);
       OperationLog = new OperationLogModule(area);
       IncidentLog = new IncidentLogModule(area);
       TransactionLog = _transactionLogModule = new TransactionLogModule(area);

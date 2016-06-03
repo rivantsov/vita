@@ -61,7 +61,7 @@
     <Compile Include="Common\ObjectCache.cs" />
     <Compile Include="Common\RandomHelper.cs" />
     <Compile Include="Common\StringHelper.cs" />
-    <Compile Include="Common\TaskHelper.cs" />
+    <Compile Include="Common\AsyncHelper.cs" />
     <Compile Include="Data\DataAccessService\DataSourceEvents.cs" />
     <Compile Include="Data\Database\DbBatchCommandSetBuilder.cs" />
     <Compile Include="Data\Driver\SqlSourceHasher.cs" />

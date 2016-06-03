@@ -59,6 +59,9 @@
     <Compile Include="ApiClients\Recaptcha\RecaptchaService.cs" />
     <Compile Include="ApiClients\Recaptcha\RecaptchaSettings.cs" />
     <Compile Include="ApiClients\Recaptcha\RecaptchaUtil.cs" />
+    <Compile Include="DataHistory\DataHistoryExtensions.cs" />
+    <Compile Include="DataHistory\DataHistoryModule.cs" />
+    <Compile Include="DataHistory\IDataHistoryService.cs" />
     <Compile Include="Logging\Api\EventsPostController.cs" />
     <Compile Include="Logging\EventLog\EventLogEntities.cs" />
     <Compile Include="Logging\EventLog\EventLogExtensions.cs" />
@@ -78,12 +81,23 @@
     <Compile Include="Notifications\NotificationService.cs" />
     <Compile Include="Notifications\NotificationExtensions.cs" />
     <Compile Include="Email\EmailNotificationProvider.cs" />
+    <None Include="OAuthClient\Api\Models.cs" />
+    <None Include="OAuthClient\Api\OAuthClientController.cs" />
+    <None Include="OAuthClient\Api\OAuthRedirectController.cs" />
+    <None Include="OAuthClient\IOAuthClientService.cs" />
+    <None Include="OAuthClient\Internal\OAuthDefinitions.cs" />
+    <None Include="OAuthClient\Internal\JwtDecoder.cs" />
+    <None Include="OAuthClient\JsonDeserializer.cs" />
+    <None Include="OAuthClient\OAuthClientModule_Service.cs" />
     <Compile Include="TextTemplates\TemplateModule_Migrations.cs" />
+    <None Include="OAuthClient\OAuthClientSettings.cs" />
+    <Compile Include="DataHistory\DataHistoryEntities.cs" />
     <Compile Include="WebClient\DefaultClientErrorHandler.cs" />
     <Compile Include="WebClient\ApiExceptions.cs" />
     <Compile Include="WebClient\Interfaces.cs" />
     <Compile Include="WebClient\Json\JsonContentSerializer.cs" />
     <Compile Include="WebClient\Json\NodeNameContractResolver.cs" />
+    <None Include="OAuthClient\Internal\JsonWebTokenHandler.cs" />
     <Compile Include="WebClient\Sync\WebClientSyncExtensions.cs" />
     <Compile Include="WebClient\WebApiClient.cs" />
     <Compile Include="WebClient\WebApiClientSettings.cs" />
@@ -164,9 +178,9 @@
     <Compile Include="Login\PasswordHashing\Pbkdf2PasswordHasher.cs" />
     <Compile Include="Login\PasswordHashing\BCryptPasswordHasher.cs" />
     <Compile Include="Login\PasswordHashing\IPasswordHasher.cs" />
-    <Compile Include="OAuthClientData\OAuthClientDataEntities.cs" />
-    <Compile Include="OAuthClientData\OAuthClientDataExtensions.cs" />
-    <Compile Include="OAuthClientData\OAuthClientDataModule.cs" />
+    <None Include="OAuthClient\OAuthClientEntities.cs" />
+    <None Include="OAuthClient\OAuthClientExtensions.cs" />
+    <None Include="OAuthClient\OAuthClientModule.cs" />
     <Compile Include="Logging\UserSession\IUserSessionService.cs" />
     <Compile Include="Logging\UserSession\UserSessionSettings.cs" />
     <Compile Include="Logging\TransactionLog\Attributes.cs" />
@@ -186,7 +200,7 @@
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="OAuthClientData\_about_oauth1data.txt" />
+    <None Include="OAuthClient\_about_oauthclient.txt" />
     <None Include="EncryptedData\_about_encr_data.txt" />
     <Content Include="Login\PasswordHashing\BCrypt.Net\LICENSE_bcrypt.txt" />
     <Content Include="Logging\_about_logging.txt" />

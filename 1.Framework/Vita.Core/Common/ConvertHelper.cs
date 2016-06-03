@@ -15,6 +15,17 @@ namespace Vita.Common {
       return (T)ChangeType(value, type); 
     }
 
+    public static string ValueToString(object value) {
+      if(value == null)
+        return string.Empty;
+      var type = value.GetType();
+      if(type == typeof(string))
+        return (string)value;
+      if(type == typeof(DateTime))
+        return ((DateTime)value).ToString("o");
+      return value.ToString(); 
+    }
+
     public static object ChangeType(object value, Type type) {
       if(value == null)
         return null;

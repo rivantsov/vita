@@ -3,18 +3,14 @@ using System.Linq;
 using System.Threading;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System.IO;
+using System.Diagnostics;
 
 using Vita.Entities;
-using Vita.Entities.Services;
-using Vita.Data;
 using Vita.Data.Driver;
 using Vita.Modules.Login;
 
-using Vita.Common;
 using Vita.Samples.BookStore;
-using Vita.Samples.BookStore.Api;
 using Vita.UnitTests.Common;
-using System.Diagnostics;
 using Vita.Modules.Login.GoogleAuthenticator;
 using System.Collections.Generic;
 
@@ -373,6 +369,7 @@ namespace Vita.UnitTests.Extended {
       var upgradeInfo = upgradeMgr.BuildUpgradeInfo(); //.AddDbModelChanges(currentDbModel, modelInDb, DbUpgradeOptions.Default, app.ActivationLog);
       Assert.AreEqual(0, upgradeInfo.TableChanges.Count + upgradeInfo.NonTableChanges.Count, "Expected no changes");
     }
+
 
   }//class
 }

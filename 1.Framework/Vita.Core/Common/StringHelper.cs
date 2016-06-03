@@ -89,6 +89,17 @@ namespace Vita.Common {
       return values.Select(v => EscapeForUri(v)).ToArray();
     } 
 
+    public static IDictionary<string, string> GetParameters(this Uri uri) {
+      var dict = new Dictionary<string, string>();
+      var kvArr = uri.Query.Split('&');
+      foreach(var kv in kvArr) {
+        var nv = kv.Split('=');
+        var name = Uri.UnescapeDataString(nv[0]);
+        var value = Uri.UnescapeDataString(nv[1]);
+        dict[name] = value;
+      }
+      return dict; 
+    }
 
   }//class
 } //ns

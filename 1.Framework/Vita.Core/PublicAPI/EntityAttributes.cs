@@ -502,13 +502,13 @@ namespace Vita.Entities {
   }
 
   /// <summary>
-  /// Identifies an entity as dynamic - instances are created on the fly and should be discarded from session after transaction commits or aborts.
+  /// Specifies that instances are created on the fly and should be discarded from session after transaction commits or aborts.
   /// </summary>
   /// <remarks>Example: transaction log records. The records are generated on-the-fly when updates are submitted and should be discarded if transaction aborts. 
   /// If transaction is aborted and application submits the update again, a new record(s) will be generated. 
   /// </remarks>
   [AttributeUsage(AttributeTargets.Interface)]
-  public partial class DynamicAttribute {
+  public partial class DiscardOnAbortAttribute {
   }
 
   /// <summary>Provides a default display format or method for an entity. </summary>
@@ -549,6 +549,7 @@ namespace Vita.Entities {
   public partial class AsIsAttribute {
   }
 
+  /// <summary>Grants access to referenced entity or some of its properties if the user has access to the entity that holds the reference.</summary>
   [AttributeUsage(AttributeTargets.Property)]
   public partial class GrantAccess {
     public string Properties;
@@ -557,6 +558,11 @@ namespace Vita.Entities {
       Properties = properties;
       AccessType = accessType; 
     }
+  }
+
+  /// <summary>Instructs the system to bypass authorization checks on an entity.</summary>
+  [AttributeUsage(AttributeTargets.Interface)]
+  public partial class BypassAuthorization {
   }
 
   /* Not implemented yet - encountered problems in db model update; 

@@ -52,7 +52,8 @@ namespace Vita.Modules.WebClient.Json {
       //Get stream
       var stream = await content.ReadAsStreamAsync();
       Encoding effectiveEncoding = SelectCharacterEncoding(headers);
-      using (JsonTextReader jsonTextReader = new JsonTextReader(new StreamReader(stream, effectiveEncoding)) { CloseInput = false, MaxDepth = _maxDepth }) {
+      using (JsonTextReader jsonTextReader = new JsonTextReader(new StreamReader(stream, effectiveEncoding)) 
+           { CloseInput = false, MaxDepth = _maxDepth }) {
         return _serializer.Deserialize(jsonTextReader, type);
       }
     }

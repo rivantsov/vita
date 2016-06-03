@@ -113,6 +113,7 @@ namespace Vita.Entities {
 
     /// <summary>Gets the instance of the application time service. </summary>
     public ITimeService TimeService { get; protected set; }
+    public virtual IErrorLogService ErrorLog { get { return GetService<IErrorLogService>(); } }
 
     /// <summary>Gets the instance of the application authorization service. </summary>
     public readonly IAuthorizationService AuthorizationService;

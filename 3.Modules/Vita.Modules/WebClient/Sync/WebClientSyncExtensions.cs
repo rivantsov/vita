@@ -11,27 +11,27 @@ namespace Vita.Modules.WebClient.Sync {
   public static class WebClientSyncExtensions {
 
     public static TResult ExecuteGet<TResult>(this WebApiClient client, string url, params object[] args) {
-      return TaskHelper.RunSync(() => client.GetAsync<TResult>(url, args));
+      return AsyncHelper.RunSync(() => client.GetAsync<TResult>(url, args));
     }//method
 
     public static TResult ExecutePost<TContent, TResult>(this WebApiClient client, TContent content, string url, params object[] args) {
-      return TaskHelper.RunSync(() => client.PostAsync<TContent, TResult>(content, url, args));
+      return AsyncHelper.RunSync(() => client.PostAsync<TContent, TResult>(content, url, args));
     }
 
     public static TResult ExecutePut<TContent, TResult>(this WebApiClient client, TContent content, string url, params object[] args) {
-      return TaskHelper.RunSync(() => client.PutAsync<TContent, TResult>(content, url, args));
+      return AsyncHelper.RunSync(() => client.PutAsync<TContent, TResult>(content, url, args));
     }
 
     public static HttpStatusCode ExecuteDelete(this WebApiClient client, string url, params object[] args) {
-      return TaskHelper.RunSync(() => client.DeleteAsync(url, args));
+      return AsyncHelper.RunSync(() => client.DeleteAsync(url, args));
     }
 
     public static byte[] ExecuteGetBinary(this WebApiClient client, string mediaType, string url, params object[] args) {
-      return TaskHelper.RunSync(() => client.GetBinaryAsync(mediaType, url, args));
+      return AsyncHelper.RunSync(() => client.GetBinaryAsync(mediaType, url, args));
     }
 
     public static string ExecuteGetString(this WebApiClient client, string mediaType, string url, params object[] args) {
-      return TaskHelper.RunSync(() => client.GetStringAsync(mediaType, url, args));
+      return AsyncHelper.RunSync(() => client.GetStringAsync(mediaType, url, args));
     }
 
   }//class

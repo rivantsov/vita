@@ -38,7 +38,7 @@ namespace Vita.UnitTests.Web {
       var session = Context.OpenSystemSession();
       var bk = session.GetEntity<IBook>(id);
       if(bk == null) {
-        Context.WebContext.CustomResponseStatus = HttpStatusCode.NotFound;
+        Context.WebContext.OutgoingResponseStatus = HttpStatusCode.NotFound;
         return null;
       }
       return bk.ToModel(details: true);
@@ -144,7 +144,13 @@ namespace Vita.UnitTests.Web {
       return await Task.FromResult(dt.ToString("u"));
     }
 
+    //Testing fix - calling method with redirect was failing in attempt to deserialize response
+    [ApiGet, ApiRoute("redirect")]
+    public void RedirectToSearch() {
+      var webCtx = Context.WebContext;
+      webCtx.OutgoingResponseStatus = System.Net.HttpStatusCode.Redirect;
+      webCtx.OutgoingHeaders.Add("Location", "http://www.google.com");
+    }
 
-  }
-
+  }//class
 }

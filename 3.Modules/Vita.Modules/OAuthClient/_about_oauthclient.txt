@@ -1,0 +1,21 @@
+﻿OAuthClient module provides implementation of OAuth 2.0 protocol.
+
+OAuth authorization is used for granting permission to access user's information on remote server. 
+Example: an app Friender.com wants to access user's connections on LinkedIn. Friender is OAuth client; LinkedIn is OAuth server/provider. Friender needs user's consent to access user data (connections) on LinkedIn. Consent/permission is granted by user on LinkedIn Authorization page shown as popup from within Friender; if user approves the action, the permission is transferred back from LinkedIn to Friender. 
+
+OAuth workflow
+Preparation step: OAuth client developer (Friender) registers Friender app in LinkedIn, gets client_id and client_secret
+Starting condition: User is logged in to Friender web site. He wants to import his connections in LinkedIn.
+
+OAuth steps
+1.  User is directed to remote OAuth server's authorization page (OAuth provider), usually shown in a popup browser window. User has to login to the OAuth server if he's not logged in. Once user is logged in, he is presented with page saying that the external app (OAuth client, Friender) wants to get access to user's data on the server (LinkedIn). User clicks Allow button giving his persmission.
+2. The response to Allow button is an HTTP Redirect (302 or 301) that sends the popup window to Redirect page (on Friender). Redirect (back) URL is provided as a parameter to Authorization page (step 1); it must match one of the URLs registed with OAuth provider/server (on LinkedIn, as one of Friender redirect URLs). One of extra parameters is 'code' - a token used in step 3. 
+3. As a result of recidect, the browser hits the OAuthClient's web server with redirect link; this links contains the 'authorization code' - temp credential. The auth code should be used to retrieve the AccessToken from AuthServer. OAuth client app (web server) hits the Get-AccessToken URL (predefined) providing the code as a parameter.
+4. The OAuth provider returns a JSon response with access token, with expiration time (in seconds), usually around 10 minutes, plus Refresh token.  
+5. The OAuth client app uses the access token to access user's information on OAuth server; access token is put into Authorization header of every request. (Friender calls LinkedIn API and retrieves connections)
+6. When Access token expires, the server can renew it by using the Refresh token. 
+
+Open ID Connect is an extension of OAuth. It allows authentication of users using external site. Ex: 'Login with Google' option on Login page of some custom site. 
+The main difference is step 4: the Json response contains also id_token - JSonWebToken-encoded (JWT) structure, containing Subject - an id of user, along with other information. 
+
+Facebook implements its own technology Facebook Connect, similar to OAuth2 but not quite the same

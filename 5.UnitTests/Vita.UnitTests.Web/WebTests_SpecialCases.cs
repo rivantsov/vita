@@ -15,8 +15,9 @@ namespace Vita.UnitTests.Web {
 
   public partial class WebTests  {
 
+    // Tests special methods in controller
     [TestMethod]
-    public void TestSpecialControllers() {
+    public void TestSpecialMethods() {
       var client = SetupHelper.Client;
       Logout(); // just in case there's still session there from other tests
 
@@ -52,6 +53,10 @@ namespace Vita.UnitTests.Web {
       //    it is done on purpose by controller, instead of simply returning null
       var apiExc = TestUtil.ExpectFailWith<ApiException>(() => client.ExecuteGet<Book>("api/special/books/{0}", Guid.NewGuid()));
       Assert.AreEqual(HttpStatusCode.NotFound, apiExc.Status, "Expected NotFound status");
+
+      //Test redirect; when we create WebApiClient in SetupHelper, we set: Client.InnerHandler.AllowRedirect = false; so it will bring error on redirect 
+      apiExc = TestUtil.ExpectFailWith<ApiException>(() => client.ExecuteGet<HttpStatusCode>("api/special/redirect"));
+      Assert.AreEqual(HttpStatusCode.Redirect, apiExc.Status, "Expected redirect status");
 
     }
 

@@ -460,7 +460,7 @@ namespace Vita.Entities.Runtime {
       for (int i = this.RecordsChanged.Count - 1; i >= 0; i--) {
         var rec = RecordsChanged[i];
         rec.EntityInfo.SaveEvents.OnSaveChangesAborted(rec);
-        if (rec.EntityInfo.Flags.IsSet(EntityFlags.Dynamic)) {
+        if (rec.EntityInfo.Flags.IsSet(EntityFlags.DiscardOnAbourt)) {
           // Dynamic records are created on the fly when app submits changes (ex: trans logs). If trans aborted, they must be discarded
           RecordsChanged.RemoveAt(i);
           RecordsLoaded.TryRemove(rec.PrimaryKey); 

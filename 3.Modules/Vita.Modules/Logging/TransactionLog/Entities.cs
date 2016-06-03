@@ -7,7 +7,7 @@ using Vita.Entities;
 
 namespace Vita.Modules.Logging {
 
-  [Entity, Dynamic, DoNotTrack, ClusteredIndex("CreatedOn,Id")]
+  [Entity, DiscardOnAbort, DoNotTrack, ClusteredIndex("CreatedOn,Id")]
   public interface ITransactionLog : ILogEntityBase {
 
     int Duration { get; set; }

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
@@ -23,7 +24,10 @@ namespace Vita.Modules.WebClient {
 
     public virtual async Task<Exception> HandleErrorAsync(HttpResponseMessage response) {
       try {
-        return await ReadError(response); 
+        if(response.Content != null && response.Content.Headers.ContentLength > 0)
+          return await ReadError(response);
+        else
+          return new ApiException("Web API call failed, no details returned. HTTP Status: " + response.StatusCode, response.StatusCode);
       } catch (Exception exc) {
         Type errorType = response.StatusCode == System.Net.HttpStatusCode.BadRequest ? BadRequestContentType : ServerErrorContentType;
         var explain = StringHelper.SafeFormat("Failed to read error response returned from the service. \r\n" +
@@ -38,7 +42,7 @@ namespace Vita.Modules.WebClient {
     private async Task<Exception> ReadError(HttpResponseMessage response) {
       Type errorType;
       switch (response.StatusCode) {
-        case System.Net.HttpStatusCode.BadRequest:
+        case HttpStatusCode.BadRequest:
           errorType = BadRequestContentType;
           var errors = await Serializer.DeserializeAsync(BadRequestContentType, response.Content);
           if (BadRequestContentType == typeof(List<ClientFault>)) {
@@ -49,9 +53,7 @@ namespace Vita.Modules.WebClient {
         default:
           errorType = ServerErrorContentType;
           if (ServerErrorContentType == typeof(string)) {
-            var readStringTask = response.Content.ReadAsStringAsync();
-            readStringTask.Wait();
-            var content = readStringTask.Result;
+            var content = await response.Content.ReadAsStringAsync();
             string message, details; //if multiline, split
             SplitErrorMessage(content, out message, out details);
             return new ApiException(message, response.StatusCode, details);

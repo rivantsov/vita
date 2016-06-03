@@ -10,12 +10,14 @@ using Vita.Entities.Authorization;
 using Vita.Entities.Runtime;
 using Vita.Entities.Services;
 using Vita.Entities.Web;
+using Vita.Modules.DataHistory;
 using Vita.Modules.DbInfo;
 using Vita.Modules.EncryptedData;
 using Vita.Modules.Logging;
 using Vita.Modules.Logging.Api;
 using Vita.Modules.Login;
 using Vita.Modules.Login.Api;
+//using Vita.Modules.OAuthClient;
 using Vita.Modules.TextTemplates;
 using Vita.Samples.BookStore.Api;
 
@@ -46,7 +48,7 @@ namespace Vita.Samples.BookStore {
 
       //main module
       MainModule = new BooksModule(booksArea);
-      //Other modules
+      //Standard modules
       var dbInfoModule = new DbInfoModule(infoArea);
       var cryptModule = new EncryptedDataModule(loginArea); //EncryptedData is used by login module
       var templateModule = new TemplateModule(booksArea);
@@ -56,14 +58,19 @@ namespace Vita.Samples.BookStore {
       loginStt.DefaultEmailFrom = "team@bookstore.com";
 
       var loginModule = new LoginModule(loginArea, loginStt);
+      //var oauthModule = new OAuthClientModule(loginArea);
+      //data history - let's track history for book review
+      var histModule = new DataHistoryModule(booksArea);
+      histModule.TrackHistoryFor(typeof(IBookReview));
+
       //Notification service
       var notificationService = new Vita.Modules.Notifications.NotificationService(this);
       // Authorization object - uses LoginModule's authorization objects
-      Authorization = new BooksAuthorization(this, loginModule); 
+      Authorization = new BooksAuthorization(this, loginModule);
       //api config - register controllers defined in Vita.Modules assembly; books controllers are registered by BooksModule
-      base.ApiConfiguration.RegisterControllerTypes( 
+      base.ApiConfiguration.RegisterControllerTypes(
         typeof(LoginController), typeof(PasswordResetController), typeof(LoginSelfServiceController), typeof(LoginAdministrationController),
-        typeof(ClientErrorController),  typeof(LoggingDataController), typeof(EventsPostController),
+        typeof(ClientErrorController), typeof(LoggingDataController), typeof(EventsPostController),
         typeof(DiagnosticsController)
         );
 

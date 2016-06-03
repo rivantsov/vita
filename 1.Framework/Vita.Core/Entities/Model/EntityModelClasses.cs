@@ -39,10 +39,13 @@ namespace Vita.Entities.Model {
     //
 
     // Marks entities that are created on the fly when update is performed (ex: log records), and should be eliminated after transaction aborts or commits  
-    Dynamic = 1 << 2,
+    DiscardOnAbourt = 1 << 2,
 
     // Entities are cached
     Cached = 1 << 3,
+
+    // Do not do authorization checks
+    BypassAuthorization = 1 << 4,
 
     // =================== Flags computed at runtime (setup time) ========================
     //Self-referencing entities are not handled by SCC algorithm, so we track them with this flag

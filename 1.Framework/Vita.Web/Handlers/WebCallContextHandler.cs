@@ -81,8 +81,8 @@ namespace Vita.Web {
         var response = callInfo.Response;
 
         // Set explicit HTTP status code if requested
-        if (webContext.CustomResponseStatus != null)
-          response.StatusCode = webContext.CustomResponseStatus.Value;
+        if (webContext.OutgoingResponseStatus != null)
+          response.StatusCode = webContext.OutgoingResponseStatus.Value;
         //call token handlers
         foreach (var handler in Settings.TokenHandlers)
           if (handler.Direction.IsSet(WebTokenDirection.Output))

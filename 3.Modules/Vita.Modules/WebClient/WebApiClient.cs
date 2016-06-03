@@ -40,7 +40,7 @@ namespace Vita.Modules.WebClient {
       Util.Check(settings.Serializer != null, "Settings.Serializer property may not be null.");
       Settings = settings; 
       InnerHandler = new HttpClientHandler();
-      //Process options
+      // Process options
       if(Settings.Options.IsSet(ClientOptions.EnableCookies)) {
         InnerHandler.UseCookies = true;
         InnerHandler.CookieContainer = new CookieContainer();
@@ -52,7 +52,7 @@ namespace Vita.Modules.WebClient {
     }
 
     private HttpClient CreateClient(params string[] mediaTypes) {
-      var client = new HttpClient(InnerHandler);
+      var client = new HttpClient(InnerHandler); 
       client.MaxResponseContentBufferSize = int.MaxValue;
       //Setup content-type header
       client.DefaultRequestHeaders.Clear();
@@ -93,15 +93,8 @@ namespace Vita.Modules.WebClient {
       var response = await Client.GetAsync(finalUrl);
       var exc = await CheckResponse(response);
       if (exc != null)
-        return await Task.FromException<TResult>(exc); 
-      if (typeof(TResult) == typeof(HttpResponseMessage))
-        return (TResult)(object)response;
-      if (typeof(System.IO.Stream).IsAssignableFrom(typeof(TResult))) {
-        var stream = await response.Content.ReadAsStreamAsync();
-        return (TResult)(object) stream; 
-      }
-      var result = await Settings.Serializer.DeserializeAsync(typeof(TResult), response.Content);
-      return (TResult)result;
+        return await Task.FromException<TResult>(exc);
+      return await GetResponseContentAsync<TResult>(response);
     }//method
 
     public async Task<TResult> PostAsync<TContent, TResult>(TContent content, string url, params object[] args) {
@@ -158,14 +151,23 @@ namespace Vita.Modules.WebClient {
       var exc = await CheckResponse(response);
       if (exc != null)
         return await Task.FromException<TResult>(exc);
-      if (typeof(TResult) == typeof(HttpResponseMessage))
-        return (TResult)(object) response; 
+      return await GetResponseContentAsync<TResult>(response); 
+    }
+
+    private async Task<TResult> GetResponseContentAsync<TResult>(HttpResponseMessage response) {
+      if(typeof(TResult) == typeof(HttpResponseMessage))
+        return (TResult)(object)response;
       if(typeof(TResult) == typeof(HttpStatusCode))
         return (TResult)(object)response.StatusCode;
-      //Otherwise read result
+      if(typeof(System.IO.Stream).IsAssignableFrom(typeof(TResult))) {
+        var stream = await response.Content.ReadAsStreamAsync();
+        return (TResult)(object)stream;
+      }
       var result = await Settings.Serializer.DeserializeAsync(typeof(TResult), response.Content);
       return (TResult)result;
     }
+
+
 
     private async Task<Exception> CheckResponse(HttpResponseMessage response) {
       var spy = Settings.ResponseSpy;
@@ -200,7 +202,7 @@ namespace Vita.Modules.WebClient {
     // BadRequestException separately. Without this registration all exceptions in async method are 
     // rethrown wrapped in AggregateException on the calling 'sync' thread.
     static WebApiClient() {
-      TaskHelper.AddNoWrapExceptions(typeof(ApiException));
+      AsyncHelper.AddNoWrapExceptions(typeof(ApiException));
     }
     #endregion
   }//class

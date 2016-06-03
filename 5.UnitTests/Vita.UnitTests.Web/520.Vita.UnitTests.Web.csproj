@@ -57,11 +57,13 @@
       <HintPath>..\..\packages\Microsoft.AspNet.WebApi.SelfHost.5.2.3\lib\net45\System.Web.Http.SelfHost.dll</HintPath>
       <Private>True</Private>
     </Reference>
+    <Reference Include="System.Windows.Forms" />
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="TestControllers\ClassicWebApiController.cs" />
     <Compile Include="TestControllers\SingletonController.cs" />
+    <None Include="WebTests_OAuth.cs" />
     <Compile Include="WebTests_UserActions.cs" />
     <Compile Include="WebTests_Catalog.cs" />
     <Compile Include="WebTests_LogViewer.cs" />

@@ -79,6 +79,7 @@ namespace Vita.UnitTests.Web {
       var serviceUrl = ConfigurationManager.AppSettings["ServiceUrl"];
       StartService(serviceUrl);
       Client = new WebApiClient(serviceUrl);
+      Client.InnerHandler.AllowAutoRedirect = false; //we need it for Redirect test
     }
 
     public static void StartService(string baseAddress) {
@@ -95,6 +96,9 @@ namespace Vita.UnitTests.Web {
         WebHandlerOptions.ReturnBadRequestOnAuthenticationRequired | WebHandlerOptions.ReturnExceptionDetails);
       config.MaxReceivedMessageSize = int.MaxValue;
       config.MaxBufferSize = int.MaxValue;
+      //setup redirect URL for OAuth
+      // var oauthStt = BooksApp.GetConfig<Modules.OAuthClient.OAuthClientSettings>();
+      // oauthStt.RedirectUrlBase = baseAddress.Replace("localhost", "127.0.0.1"); //replace localhost with local IP address
       Server = new HttpSelfHostServer(config); 
       Task.Run(() => Server.OpenAsync());
       Debug.WriteLine("The service is running on URL: " + baseAddress);

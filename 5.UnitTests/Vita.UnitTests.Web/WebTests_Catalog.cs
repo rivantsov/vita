@@ -1,20 +1,9 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using System.Net;
-using System.Net.Http;
-using System.Diagnostics;
 
-using Vita.Common;
 using Vita.Entities;
-using Vita.Modules.Logging;
-using Vita.Web;
-using Vita.Samples.BookStore;
 using Vita.Samples.BookStore.Api;
-using Vita.UnitTests.Common;
 using Vita.Modules.WebClient.Sync;
 
 namespace Vita.UnitTests.Web {

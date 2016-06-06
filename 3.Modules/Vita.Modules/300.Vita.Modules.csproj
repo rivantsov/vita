@@ -59,6 +59,7 @@
     <Compile Include="ApiClients\Recaptcha\RecaptchaService.cs" />
     <Compile Include="ApiClients\Recaptcha\RecaptchaSettings.cs" />
     <Compile Include="ApiClients\Recaptcha\RecaptchaUtil.cs" />
+    <Compile Include="DataHistory\KeepHistoryAttributes.cs" />
     <Compile Include="DataHistory\DataHistoryExtensions.cs" />
     <Compile Include="DataHistory\DataHistoryModule.cs" />
     <Compile Include="DataHistory\IDataHistoryService.cs" />
@@ -202,6 +203,7 @@
   <ItemGroup>
     <None Include="OAuthClient\_about_oauthclient.txt" />
     <None Include="EncryptedData\_about_encr_data.txt" />
+    <Content Include="DataHistory\about_data_history.txt" />
     <Content Include="Login\PasswordHashing\BCrypt.Net\LICENSE_bcrypt.txt" />
     <Content Include="Logging\_about_logging.txt" />
     <EmbeddedResource Include="Login\DefaultSecretQuestions.txt" />

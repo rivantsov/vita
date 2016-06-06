@@ -40,6 +40,10 @@ namespace Vita.Modules.Party {
     string Name { get; set; }
     [HashFor("Name"), Index]
     int NameHash { get; set; }
+    [OneToOne, Nullable]
+    IPerson Person { get; }
+    [OneToOne, Nullable]
+    IOrganization Organization { get; }
   }
 
   [Entity]

@@ -38,7 +38,7 @@ namespace Vita.Modules.DataHistory {
     public ICollection<Type> GetTrackedEntities() {
       return _trackedEntities.ToList();
     }
-    public void TrackHistoryFor(params Type[] entityTypes) {
+    public void RegisterToKeepHistoryData(params Type[] entityTypes) {
       Util.Check(this.App.Status == EntityAppStatus.Initializing,
         "DataHistoryModule: entities may not be registered for history tracking after application was initialized.");
       _trackedEntities.UnionWith(entityTypes);

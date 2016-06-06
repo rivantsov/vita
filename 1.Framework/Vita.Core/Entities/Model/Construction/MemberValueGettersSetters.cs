@@ -145,7 +145,7 @@ namespace Vita.Entities.Model.Construction {
       } 
       // rec != null
       if (rec.ByRefUserPermissions == null)
-        rec.ByRefUserPermissions = member.ReferenceInfo.ByRefPermissions;
+        rec.ByRefUserPermissions = member.ByRefPermissions;
       record.ValuesTransient[member.ValueIndex] = rec;
       return rec.EntityInstance;
     }
@@ -164,7 +164,7 @@ namespace Vita.Entities.Model.Construction {
         Util.Check(newRec != null, "Invalid entity ref value - not an entity: {0}", value);
         record.ValuesTransient[member.ValueIndex] = newRec;
         if(newRec.ByRefUserPermissions == null)
-          newRec.ByRefUserPermissions = member.ReferenceInfo.ByRefPermissions;
+          newRec.ByRefUserPermissions = member.ByRefPermissions;
       }
       CopyPrimaryKeyToForeign(record, member, newRec);
       if (record.Status == EntityStatus.Loaded)

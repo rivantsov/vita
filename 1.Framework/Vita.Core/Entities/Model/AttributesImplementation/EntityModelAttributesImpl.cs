@@ -725,13 +725,13 @@ namespace Vita.Entities {
     }
   }
 
-  public partial class BypassAuthorization : EntityModelAttributeBase {
+  public partial class BypassAuthorizationAttribute : EntityModelAttributeBase {
     public override void Apply(AttributeContext context, Attribute attribute, EntityInfo entity) {
       entity.Flags |= EntityFlags.BypassAuthorization;
     }
   }
 
-  public partial class GrantAccess : EntityModelAttributeBase {
+  public partial class GrantAccessAttribute : EntityModelAttributeBase {
     EntityMemberInfo _member;
     public override void Apply(AttributeContext context, Attribute attribute, EntityMemberInfo member) {
       if(member.Kind != MemberKind.EntityRef) {
@@ -750,7 +750,7 @@ namespace Vita.Entities {
         return; 
       if(e.Step == EntityAppInitStep.EntityModelConstructed) {
         var targetEnt = _member.ReferenceInfo.ToKey.Entity;
-        _member.ReferenceInfo.ByRefPermissions = UserRecordPermission.Create(targetEnt, this.Properties, this.AccessType);
+        _member.ByRefPermissions = UserRecordPermission.Create(targetEnt, this.Properties, this.AccessType);
       }
     }
 

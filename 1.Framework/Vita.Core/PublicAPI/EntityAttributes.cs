@@ -88,6 +88,24 @@ namespace Vita.Entities {
     }
   }
 
+  /// <summary>
+  /// Identifies an entity-type property as derived from one-to-one relation. The relation itself is 
+  /// defined by a reference property on child entity that is also a primary key.  
+  /// </summary>
+  /// <remarks>
+  /// <para>Put this attribute on parent's property referencing a child entity 
+  /// that has a primary key based on back reference to this parent. </para>
+  /// <para>Example: entities: IParty, IPerson, IOrg are in one-to-one relationship. 
+  /// Proprty IPerson.Party is a primary key for IPerson, same for IOrg.Party. 
+  /// IParty has 2 properties marked with [OneToOne] attribute: IParty.Person, IParty.Org.
+  /// These properties do not have supporting columns in IParty, their values 
+  /// are derived from back references: IPerson.Party, IPerson.Org.</para>
+  /// </remarks>
+  [AttributeUsage(AttributeTargets.Property)]
+  public partial class OneToOneAttribute {
+  }
+
+
   /// <summary>Identifies the many-to-one relationship and provides additonal information about it. Optional. </summary>
   /// <remarks>
   /// Placed on entity-list property (of parent entity) in one-to-many relationship. 
@@ -551,10 +569,10 @@ namespace Vita.Entities {
 
   /// <summary>Grants access to referenced entity or some of its properties if the user has access to the entity that holds the reference.</summary>
   [AttributeUsage(AttributeTargets.Property)]
-  public partial class GrantAccess {
+  public partial class GrantAccessAttribute {
     public string Properties;
     public AccessType AccessType;
-    public GrantAccess(string properties = null, AccessType accessType = AccessType.Read) {
+    public GrantAccessAttribute(string properties = null, AccessType accessType = AccessType.Read) {
       Properties = properties;
       AccessType = accessType; 
     }
@@ -562,7 +580,7 @@ namespace Vita.Entities {
 
   /// <summary>Instructs the system to bypass authorization checks on an entity.</summary>
   [AttributeUsage(AttributeTargets.Interface)]
-  public partial class BypassAuthorization {
+  public partial class BypassAuthorizationAttribute {
   }
 
   /* Not implemented yet - encountered problems in db model update; 

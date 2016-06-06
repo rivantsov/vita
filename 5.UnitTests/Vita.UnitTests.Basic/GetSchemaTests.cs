@@ -10,12 +10,16 @@ using Vita.Data;
 using Vita.Data.Driver;
 
 namespace Vita.UnitTests.Basic {
+  // Not real tests
   [TestClass]
   public class GetSchemaTests {
     string _fileName;
 
+    // We do not assert anything, just making sure schema load methods run without errors
     [TestMethod]
     public void TestGetSchema() {
+      if(SetupHelper.Driver == null)
+        SetupHelper.SetupForTestExplorerMode(); 
       _fileName = "_schemas_" + SetupHelper.ServerType + ".log";
       System.IO.File.Delete(_fileName);
       WriteLine("--------------------------------------------------------------------------------------------------");

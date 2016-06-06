@@ -67,9 +67,9 @@ namespace Vita.UnitTests.Extended {
         var reviewHist = histService.GetEntityHistory(session, typeof(IBookReview), ferbReview.Id);
         Assert.AreEqual(5, reviewHist.Count, "Expected 5 history entries"); // create, 3 updates, delete
         // history is by datetime-descending, so #0 is DELETE
-        Assert.AreEqual(HistoryAction.Deleted, reviewHist[0].HistoryEntry.Action, "Expected delete action.");
-        Assert.AreEqual(HistoryAction.Updated, reviewHist[1].HistoryEntry.Action, "Expected update action.");
-        Assert.AreEqual(HistoryAction.Created, reviewHist[4].HistoryEntry.Action, "Expected Create action.");
+        Assert.AreEqual(HistoryAction.Deleted, reviewHist[0].Action, "Expected delete action.");
+        Assert.AreEqual(HistoryAction.Updated, reviewHist[1].Action, "Expected update action.");
+        Assert.AreEqual(HistoryAction.Created, reviewHist[4].Action, "Expected Create action.");
         //Let's check review text
         Assert.AreEqual(r0, reviewHist[4].Values["Review"], "Review does not match.");
         Assert.AreEqual(r1, reviewHist[3].Values["Review"], "Review does not match.");

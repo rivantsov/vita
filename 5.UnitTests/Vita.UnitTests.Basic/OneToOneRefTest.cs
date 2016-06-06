@@ -15,6 +15,10 @@ namespace Vita.UnitTests.Basic.OneToOne {
     Guid Id { get; set; }
     [Size(Sizes.Name)]
     string Name { get; set; }
+    [OneToOne]
+    IDocDetails Details { get; }
+    [OneToOne]
+    IDocDetails2 Details2 { get; } //we never create IDocDetails, to test null ref here
   }
 
   [Entity]
@@ -24,6 +28,15 @@ namespace Vita.UnitTests.Basic.OneToOne {
     [Size(Sizes.Description)]
     string Details { get; set; }
   }
+
+  [Entity]
+  public interface IDocDetails2 {
+    [PrimaryKey]
+    IDocHeader Header { get; set; } //one-to-one relation
+    [Size(Sizes.Description)]
+    string Details2 { get; set; }
+  }
+
 
   [Entity]
   public interface IDocComments {
@@ -41,7 +54,7 @@ namespace Vita.UnitTests.Basic.OneToOne {
     public OneToOneEntityApp() {
       var area = AddArea("one");
       var mainModule = new EntityModule(area, "MainModule");
-      mainModule.RegisterEntities(typeof(IDocHeader), typeof(IDocDetails), typeof(IDocComments));
+      mainModule.RegisterEntities(typeof(IDocHeader), typeof(IDocDetails), typeof(IDocDetails2), typeof(IDocComments));
     }
   }//class
 
@@ -69,7 +82,7 @@ namespace Vita.UnitTests.Basic.OneToOne {
       var header = session.NewEntity<IDocHeader>();
       header.Name = "Doc1";
       var det = session.NewEntity<IDocDetails>();
-      det.Details = "Some extended details";
+      det.Details = "Some details";
       det.Header = header;
       var cm = session.NewEntity<IDocComments>();
       cm.Details = det;
@@ -84,7 +97,27 @@ namespace Vita.UnitTests.Basic.OneToOne {
       var canDel = session.CanDeleteEntity(det, out bt);
       Assert.IsFalse(canDel, "Expected CanDelete = false.");
 
+      // test [OneToOne] entity
+      // IDocHeader.Details is 'back-ref' property, marked with OneToOne attribute
+      // IDocHeader.Details2 is similar, but we did not create IDocDetails2 record, so it should be null
+      var docId = header.Id; 
+      session = _app.OpenSession();
+      var doc = session.GetEntity<IDocHeader>(docId);
+      var det1 = doc.Details;
+      Assert.IsNotNull(det1, "Expected Details");
+      var det2 = doc.Details2;
+      Assert.IsNull(det2, "Expected Details2 = null");
+      //do it again, to check it is correctly cached in record (so it does not blow up)
+      det1 = doc.Details;
+      det2 = doc.Details2;
+      // test using [OneToOne] references in Linq
+      session = _app.OpenSession();
+      var q2 = session.EntitySet<IDocHeader>().Where(h => h.Details.Details == "Some details");
+      var docs = q2.ToList();
+      Assert.AreEqual(1, docs.Count, "Expected Doc header");
+
+
     }//method
-  
+
   }//class
 }

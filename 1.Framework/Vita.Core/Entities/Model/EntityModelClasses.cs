@@ -252,6 +252,8 @@ namespace Vita.Entities.Model {
     IsSystem = 1 << 18,
     //System should not try to create/update the column definition
     AsIs = 1 << 19,
+
+    FromOneToOneRef = 1 << 20,
   }
   
   public enum MemberKind {
@@ -321,6 +323,8 @@ namespace Vita.Entities.Model {
     public EntityMemberInfo ForeignKeyOwner; //Entity ref member that owns this fk member
     //For member Kind = EntityList
     public ChildEntityListInfo ChildListInfo;
+    //Permission granted by reference
+    public Vita.Entities.Authorization.Runtime.UserRecordPermission ByRefPermissions;
 
     // initial, default value
     public object DefaultValue;
@@ -342,11 +346,6 @@ namespace Vita.Entities.Model {
       DataType = dataType;
       if (DataType.IsNullableValueType())
         Flags |= EntityMemberFlags.Nullable;
-      switch (Kind) {
-        case MemberKind.EntityRef: 
-          Entity.RefMembers.Add(this); 
-          break;
-      }
       //Set to nullable if it is Nullable generic
       if (DataType == typeof(decimal) || DataType == typeof(decimal?)) {
         this.Precision = 18; //defaults
@@ -467,8 +466,6 @@ namespace Vita.Entities.Model {
     public string ForeignKeyColumns;
     public EntityMemberInfo TargetListMember; // Entity list member on target entity based on the reference; might be null
     public LinqCommandInfo CountCommand; //counts child records for a given parent - used by CanDelete() method
-    //Permission granted by reference
-    public Vita.Entities.Authorization.Runtime.UserRecordPermission ByRefPermissions;
 
     public EntityReferenceInfo(EntityMemberInfo fromMember, EntityKeyInfo fromKey, EntityKeyInfo toKey) {
       FromMember = fromMember;

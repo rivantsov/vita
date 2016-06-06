@@ -6,6 +6,7 @@ using Vita.Common;
 
 using Vita.Entities.Model;
 using Vita.Entities.Model.Construction;
+using Vita.Entities.Runtime;
 
 namespace Vita.Entities {
   // Special framework attributes, known to core framework and applied using specific internal logic
@@ -198,6 +199,59 @@ namespace Vita.Entities {
       member.ReferenceInfo.ForeignKeyColumns = this.KeyColumns;
     }
   }//class
+
+  public partial class OneToOneAttribute : EntityRefAttribute {
+    EntityMemberInfo _member;
+    EntityInfo _targetEntity; 
+    public override void Apply(AttributeContext context, Attribute attribute, EntityMemberInfo member) {
+      // It is initially assigned EntityRef
+      if(!context.Model.IsEntity(member.DataType)) {
+        context.Log.Error("FromBackRef attribute may be used only on properties that are references to other entities. Property: {0}.{1}",
+            member.Entity.Name, member.MemberName);
+        return;
+      }
+      _member = member;
+      _member.Kind = MemberKind.Transient;
+      _member.Flags |= EntityMemberFlags.FromOneToOneRef;
+      _targetEntity = context.Model.GetEntityInfo(member.DataType);
+      Util.Check(_targetEntity != null, "Target entity not found: {0}", member.DataType);
+      //check that PK of target entity points back to 'this' entity
+      var targetPkMembers = _targetEntity.PrimaryKey.KeyMembers;
+      Util.Check(targetPkMembers.Count == 1 && targetPkMembers[0].Member.DataType == _member.Entity.EntityType,
+        "BackRef property {0}.{1}: target entity must have Primary key pointing back to entity {0}.",
+        _member.Entity.Name, _member.MemberName);
+      member.GetValueRef = GetValue;
+      member.SetValueRef = SetValue; 
+    }//method
+
+    object GetValue(EntityRecord record, EntityMemberInfo member) {
+      var v = record.GetValueDirect(member);
+      if(v != null) {
+        if(v == DBNull.Value)
+          return null;
+        var rec = (EntityRecord)v;
+        return rec.EntityInstance;
+      }
+      //retrieve entity 
+      var targetPk = EntityKey.CreateSafe(_targetEntity.PrimaryKey, record.PrimaryKey.Values);
+      var targetRec = record.Session.GetRecord(targetPk);
+      if (targetRec == null) {
+        record.SetValueDirect(member, DBNull.Value);
+        return null; 
+      }
+      record.SetValueDirect(member, targetRec);
+      if(targetRec.ByRefUserPermissions == null)
+        targetRec.ByRefUserPermissions = member.ByRefPermissions;
+      return targetRec.EntityInstance;
+
+
+    }
+
+    void SetValue(EntityRecord record, EntityMemberInfo member, object value) {
+      Util.Throw("Back-ref properties are readonly, cannot set value. Property: {0}.{1}", 
+        member.Entity.Name, member.MemberName);
+    }
+  }//attribute
 
   public partial class OldNamesAttribute : SpecialModelAttribute {
     public override void Apply(AttributeContext context, Attribute attribute, EntityInfo entity) {

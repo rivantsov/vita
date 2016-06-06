@@ -664,6 +664,7 @@ namespace Vita.Entities.Model.Construction {
         }//foreach member
         if (!hasUpdatableMembers)
           ent.Flags |= EntityFlags.NoUpdate;
+        ent.RefMembers = ent.Members.Where(m => m.Kind == MemberKind.EntityRef).ToList(); 
       }//foreach ent
     }
 

@@ -59,9 +59,8 @@ namespace Vita.Samples.BookStore {
 
       var loginModule = new LoginModule(loginArea, loginStt);
       //var oauthModule = new OAuthClientModule(loginArea);
-      //data history - let's track history for book review
+      //data history - we track history for book review, it is marked with WithHistory attribute
       var histModule = new DataHistoryModule(booksArea);
-      histModule.TrackHistoryFor(typeof(IBookReview));
 
       //Notification service
       var notificationService = new Vita.Modules.Notifications.NotificationService(this);

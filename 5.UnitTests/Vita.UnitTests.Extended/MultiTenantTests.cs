@@ -26,7 +26,7 @@ namespace Vita.UnitTests.Extended {
      3. Run the test in test explorer
    Multi-tenant test connects the BookStore app to the second database, under data source name 'Books2'. Now you can use Vita sessions to connect to both database, 
    but you need to provide DataSourceName in the operation context (session.Context). If you do not set it explicitly, it is under 'Default' name, and will be connected
-   to original VitaBooks database. The test creates 2 objects in nVitaBooks2 database (a publisher and a book), verifies that they are there; then if verifies that 
+   to original VitaBooks database. The test creates 2 objects in VitaBooks2 database (a publisher and a book), verifies that they are there; then if verifies that 
    they are not in the original VitaBooks database.     
    */ 
 #if TEST_MULTI_TENANT

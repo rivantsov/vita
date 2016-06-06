@@ -61,7 +61,8 @@
   <ItemGroup>
     <Compile Include="DataHistoryTests.cs" />
     <Compile Include="LinqIncludeTests.cs" />
-    <Compile Include="LockTests.cs" />
+    <Compile Include="MiscTests2.cs" />
+    <Compile Include="LockSampleCode_Disabled.cs" />
     <Compile Include="HashCryptTests.cs" />
     <Compile Include="LinqSearchTests.cs" />
     <Compile Include="MultiTenantTests.cs" />

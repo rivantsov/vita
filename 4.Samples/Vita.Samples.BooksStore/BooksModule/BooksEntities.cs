@@ -174,7 +174,8 @@ namespace Vita.Samples.BookStore {
     Decimal Price { get; set; } //captures price at the time the order was created
   }
 
-  [Entity, OrderBy("CreatedOn"), ClusteredIndex("Book,CreatedOn,Id")]
+  //We track history for book review
+  [Entity, OrderBy("CreatedOn"), ClusteredIndex("Book,CreatedOn,Id"), Modules.DataHistory.KeepHistory]
   public interface IBookReview {
     [PrimaryKey, Auto]
     Guid Id { get; set; }
@@ -189,7 +190,7 @@ namespace Vita.Samples.BookStore {
     // But when reading reviews, he must be able to see the display name of review author. 
     // So we grant permission to read DisplayName through reference - meaning that if User record
     // was retrieved thru review.User property, DisplayName is available to read.
-    [NoUpdate, GrantAccess("DisplayName")] 
+    [NoUpdate, GrantAccessAttribute("DisplayName")] 
     IUser User { get; set; }
 
     //1 .. 5

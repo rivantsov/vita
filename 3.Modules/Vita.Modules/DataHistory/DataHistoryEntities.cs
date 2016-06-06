@@ -14,7 +14,7 @@ namespace Vita.Modules.DataHistory {
     Deleted,
   }
 
-  [Entity, BypassAuthorization, OrderBy("CreatedOn:DESC")]
+  [Entity, BypassAuthorizationAttribute, OrderBy("CreatedOn:DESC")]
   [Display("{EntityName}/{EntityPrimaryKey}")]
   public interface IDataHistory {
     [PrimaryKey, Auto]

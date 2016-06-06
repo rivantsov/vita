@@ -56,7 +56,9 @@ namespace Vita.Modules.DataHistory {
         var value = ConvertHelper.ChangeType(elem.InnerText, member.DataType);
         dict[name] = value;
       }
-      return new DataHistoryEntry() { HistoryEntry = history, Values = dict };
+      return new DataHistoryEntry() { EntryId = history.Id, EntityType = entity.EntityType, PrimaryKeyValue = history.EntityPrimaryKey,
+                      Action = history.Action, CreatedOn = history.CreatedOn, CreatedByUserId = history.CreatedByUserId, TransactionId = history.TransactionId,
+                      Values = dict };
     }
 
     public static IDataHistory CreateHistoryEntry(this EntityRecord forRecord) {

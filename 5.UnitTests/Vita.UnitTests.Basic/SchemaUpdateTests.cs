@@ -189,7 +189,6 @@ namespace Vita.UnitTests.Basic.SchemaUpdates {
         // write to debug stream - it will appear in test report
         Debug.WriteLine(ex.ToString());
         throw;
-        
       }
     }
 

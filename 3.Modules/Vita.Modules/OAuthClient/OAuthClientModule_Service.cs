@@ -10,107 +10,157 @@ using Vita.Entities.Web;
 using Vita.Modules.OAuthClient.Internal;
 using Vita.Modules.WebClient;
 using Vita.Modules.EncryptedData;
+using System.Net.Http;
+using System.Net.Http.Headers;
 
 namespace Vita.Modules.OAuthClient {
 
   public partial class OAuthClientModule : IOAuthClientService {
 
-    public IOAuthRemoteServerAccount GetOAuthAccount(OperationContext context, OAuthServerType serverType, string serverName, Guid? ownerId = default(Guid?)) {
-      
+    // Standard response to get-access-token endpoint
+    public class AccessTokenResponse {
+      [Node("access_token")]
+      public string AccessToken;
+      [Node("expires_in")]
+      public long ExpiresIn;
+      [Node("token_type")]
+      public string TokenType;
+      [Node("refresh_token")]
+      public string RefreshToken;
+      [Node("id_token")]
+      public string IdToken; //Open ID connect only
     }
 
-    public IOAuthClientFlow BeginOAuthFlow(OperationContext context, IOAuthRemoteServerAccount account) {
+    /// <summary>The query (parameters) portion of authorization URL - a page on OAuth server 
+    /// that user is shown to approve the access by the client app. </summary>
+    public const string AuthorizationUrlQuery = "?response_type=code&client_id={0}&redirect_uri={1}&scope={2}&state={3}";
+    /// <summary>The query (parameters) portion; sent either as part of URL or as form-url-encoded body.</summary>
+    public const string AccessTokenUrlQueryTemplate =
+      "code={0}&client_id={1}&client_secret={2}&redirect_uri={3}&grant_type=authorization_code&access_type=offline";
+    public const string OpenIdClaimsParameter = "claims={0}";
+
+    #region IAuthClientService
+    public event AsyncEvent<RedirectEventArgs> Redirected;
+
+    public IOAuthRemoteServer GetOAuthServer(IEntitySession session, string serverName) {
+      return session.EntitySet<IOAuthRemoteServer>().Where(s => s.Name == serverName).FirstOrDefault();
+    }
+  
+    public IOAuthRemoteServerAccount GetOAuthAccount(IOAuthRemoteServer server, string accountName, Guid? ownerId = default(Guid?)) {
+      var session = EntityHelper.GetSession(server); 
+      var accountQuery = session.EntitySet<IOAuthRemoteServerAccount>().Where(a => a.Server == server && a.Name == accountName);
+      if(ownerId != null)
+        accountQuery = accountQuery.Where(a => a.OwnerId == ownerId.Value);
+      var act = accountQuery.FirstOrDefault();
+      return act;       
+    }
+
+    public IOAuthClientFlow BeginOAuthFlow(IOAuthRemoteServerAccount account, string scopes = null) {
       var flow = account.NewOAuthFlow();
+      var redirectUrl = this.Settings.RedirectUrl;
+      if(account.Server.Options.IsSet(OAuthServerOptions.TokenReplaceLocalIpWithLocalHost))
+        redirectUrl = redirectUrl.Replace("127.0.0.1", "localhost"); //Facebook special case
+      var clientId = account.ClientIdentifier;
+      flow.Scopes = scopes ?? account.Server.Scopes; //all scopes
+      flow.RedirectUrl = redirectUrl;
+      flow.AuthorizationUrl = account.Server.AuthorizationUrl + StringHelper.FormatUri(AuthorizationUrlQuery, clientId, redirectUrl, flow.Scopes, flow.Id.ToString());
       return flow; 
     }
 
-    public IOAuthClientFlow GetOAuthFlow(OperationContext context, Guid flowId) {
+    public async Task OnRedirected(OperationContext context, string state, string authCode, string error) {
       var session = context.OpenSystemSession();
-      var flow = session.GetEntity<IOAuthClientFlow>(flowId); 
-      return flow;
-    }
-
-    public IOAuthClientFlow OnRedirected(IOAuthClientFlow flow, string authCode, string error) {
-      var session = EntityHelper.GetSession(flow);
-      // State contains FlowId
-      context.ThrowIf(!Guid.TryParse(redirectParams.State, out flowId), ClientFaultCodes.InvalidValue,
-        "state", "'state' parameter value expected to contain ID of OAuth flow. State: {0}.", redirectParams.State);
-
-      context.ThrowIfNull(flow, ClientFaultCodes.ObjectNotFound, "state", "OAuth process does not exist, ID: {0}.", flowId);
-      flow.AuthorizationCode = redirectParams.Code;
-      return flow; 
-    }
-
-    public async Task<IOAuthRemoteServerAccessToken> RetrieveAccessToken(IOAuthClientFlow flow) {
-      var webClient = new WebApiClient(flow.Account.Server.TokenRequestUrl, ClientOptions.Default);
-      var tokenResp = await webClient.GetAsync<AccessTokenResponse>(OAuthTemplates.GetAccessTokenUrlQuery,
-        flow.AuthorizationCode, flow.Account.ClientIdentifier, flow.Account.ClientSecret,
-        flow.RedirectUrl);
-      var expires = this.App.TimeService.UtcNow.AddSeconds(tokenResp.ExpiresIn);
-      // Create AccessToken entity
-      var accessToken = flow.Account.NewOAuthAccessToken(flow.UserId, tokenResp.AccessToken, tokenResp.RefreshToken,
-         expires, Settings.EncryptionChannel); 
-      // Unpack OpenId id_token - it is JWT token
-      if (!string.IsNullOrWhiteSpace(tokenResp.IdToken)) {
-        var idTkn = JwtDecoder.Decode(tokenResp.IdToken, Settings.JsonDeserializer);
-        accessToken.NewOpenIdToken(idTkn);
-      }
-      var session = EntityHelper.GetSession(flow);
+      Guid reqId;
+      Util.Check(Guid.TryParse(state, out reqId), "Invalid state parameter ({0}), expected GUID.", state);
+      var flow = session.GetEntity<IOAuthClientFlow>(reqId);
+      Util.Check(flow != null, "OAuth Redirect: invalid state parameter, OAuth request not found.", state);
+      flow.AuthorizationCode = authCode;
+      flow.Error = error;
+      flow.Status = string.IsNullOrWhiteSpace(error) ? OAuthClientProcessStatus.Authorized : OAuthClientProcessStatus.Error;
       session.SaveChanges(); 
+      if(Redirected != null) {
+        var args = new RedirectEventArgs(flow.Id);
+        await Redirected.RaiseAsync(this, args);
+      }
+    }
+
+    public async Task<IOAuthAccessToken> RetrieveAccessToken(IOAuthClientFlow flow) {
+      string err = null;
+      switch(flow.Status) {
+        case OAuthClientProcessStatus.Started: err = "Access not authorized yet.";  break;
+        case OAuthClientProcessStatus.TokenRetrieved: err = "Authorization code already used to retrieve token."; break;
+        case OAuthClientProcessStatus.Error: err = "Authorization failed or denied - " + flow.Error;  break;           
+      }
+      Util.Check(err == null, "Cannot retrieve token: {0}.", err);
+      Util.CheckNotEmpty(flow.AuthorizationCode, "Authorization code not retrieved, cannot retrieve access token.");
+
+      var apiClient = new WebApiClient(flow.Account.Server.TokenRequestUrl, ClientOptions.Default, badRequestContentType: typeof(string));
+      var clientSecret = flow.Account.ClientSecret.DecryptString(this.Settings.EncryptionChannel);
+      var server = flow.Account.Server;
+      var serverOptions = server.Options;
+      // Some servers require specific authorization header
+      if(serverOptions.IsSet(OAuthServerOptions.TokenUseAuthHeaderBasic64)) {
+        var clientInfo = flow.Account.ClientIdentifier + ":" + clientSecret;
+        var encClientInfo = StringHelper.Base64Encode(clientInfo);
+        apiClient.AddAuthorizationHeader(encClientInfo, "Basic");
+      }
+      var query = StringHelper.FormatUri(AccessTokenUrlQueryTemplate, flow.AuthorizationCode, flow.Account.ClientIdentifier, clientSecret, flow.RedirectUrl);
+      //Make a call; standard is POST, but some servers use GET (LinkedIn)
+      AccessTokenResponse tokenResp;
+      if(serverOptions.IsSet(OAuthServerOptions.TokenUseGet)) {
+        //GET, no body
+        tokenResp = await apiClient.GetAsync<AccessTokenResponse>("?" + query);
+      } else {
+        //POST
+        if (serverOptions.IsSet(OAuthServerOptions.TokenUseFormUrlEncodedBody)) {
+          //Form-encoded body
+          var formContent = CreateFormUrlEncodedContent(query);
+          tokenResp = await apiClient.PostAsync<HttpContent, AccessTokenResponse>(formContent, string.Empty);
+        } else 
+          tokenResp = await apiClient.PostAsync<object, AccessTokenResponse>(null, "?" + query);
+      }
+      flow.Status = OAuthClientProcessStatus.TokenRetrieved;
+      //LinkedIn returns milliseconds here - it's a bug, reported. So here is workaround
+      var expIn = tokenResp.ExpiresIn;
+      if(expIn > 1e+9) //if more than one billion, it is milliseconds
+        expIn = expIn / 1000;  
+      var expires = this.App.TimeService.UtcNow.AddSeconds(expIn);
+      // Create AccessToken entity
+      var accessToken = flow.Account.NewOAuthAccessToken(flow.UserId, tokenResp.AccessToken,
+          tokenResp.RefreshToken, tokenResp.IdToken, flow.Scopes, App.TimeService.UtcNow, expires, Settings.EncryptionChannel); 
+      // Unpack OpenId id_token - it is JWT token
+      if (serverOptions.IsSet(OAuthServerOptions.OpenIdConnect) && !string.IsNullOrWhiteSpace(tokenResp.IdToken)) {
+        var payload = OpenIdConnectUtil.GetJwtPayload(tokenResp.IdToken);
+        var idTkn = Settings.JsonDeserializer.Deserialize<OpenIdToken>(payload);
+        accessToken.NewOpenIdToken(idTkn, payload);
+      }
       return accessToken;
     }
 
-    public Task<IOAuthRemoteServerAccessToken> RefreshAccessToken(IOAuthRemoteServerAccessToken accessToken) {
+    private static string FormatGetTokenQuery(string template, string authCode, string clientId, string clientSecret, string redirectUri) {
+      var result = template
+        .Replace("{code}", Uri.EscapeDataString(authCode))
+        .Replace("{client_id}", Uri.EscapeDataString(clientId))
+        .Replace("{client_secret}", Uri.EscapeDataString(clientSecret))
+        .Replace("{redirect_uri}", Uri.EscapeDataString(redirectUri));
+      return result; 
+    }
+    private static HttpContent CreateFormUrlEncodedContent(string content) {
+      var bytes = Encoding.ASCII.GetBytes(content);
+      var stream = new System.IO.MemoryStream(bytes); 
+      HttpContent cnt = new StreamContent(stream);
+      cnt.Headers.ContentType = new MediaTypeHeaderValue("application/x-www-form-urlencoded");
+      return cnt; 
+    }
+
+    public Task<IOAuthAccessToken> RefreshAccessToken(IOAuthAccessToken accessToken) {
       throw new NotImplementedException();
     }
 
-    public void PrepareWebClient(IOAuthRemoteServerAccessToken token, WebApiClient client) {
+    public void SetupWebClient(WebApiClient client, IOAuthAccessToken token) {
       var tokenValue = token.AuthorizationToken.DecryptString(Settings.EncryptionChannel);
       client.AddAuthorizationHeader(tokenValue, scheme: token.TokenType.ToString());
     }
-
-
-    // =========================================================== OLD =====================================
-    public OAuthServerInfo GetOAuthServerInfo(OperationContext context, string serverName) {
-      var session = context.OpenSystemSession();
-      var info = session.EntitySet<IOAuthRemoteServer>().Where(s => s.Name == serverName).FirstOrDefault();
-      return info.ToServerInfo(); 
-    }
-
-    public async Task<OAuthRedirectResult> HandleRedirect(OperationContext context, OAuthRedirectParams parameters) {
-      var session = context.OpenSystemSession();
-      Guid flowId;
-      if(!Guid.TryParse(parameters.State, out flowId)) 
-        return await RedirectError("Invalid State value: '{0}', expected Guid (flow ID).", parameters.State);
-      var flow = session.GetEntity<IOAuthClientFlow>(flowId);
-      if(flow == null)
-        return await RedirectError("OAuth Flow not found, ID: {0}", flowId);
-      if (!string.IsNullOrEmpty(parameters.Error)) {
-        flow.Error = parameters.Error;
-        flow.Status = OAuthClientFlowStatus.Error;
-        session.SaveChanges();
-        return await RedirectError("OAuth server returned error: {0}", parameters.Error);
-      }
-      //Update the flow
-      flow.AuthorizationCode = parameters.Code; 
-      var args = new OAuthRedirectEventArgs(context, parameters, flow);
-      await this.Settings.OnRedirected(this, args);
-      //If the token had been retrieved, return it
-      if(args.Token != null) {
-        session.SaveChanges();
-        var result = new OAuthRedirectResult() { AccessToken = args.Token };
-        return await Task.FromResult(result);
-      }
-      //Retreive access token
-      var token = await RetrieveAccessToken(context, flow);
-      return new OAuthRedirectResult() { AccessToken = token };
-    }
-
-    // Utilities 
-    private static Task<OAuthRedirectResult> RedirectError(string message, params object[] args) {
-      var result = new OAuthRedirectResult() { Error = StringHelper.SafeFormat(message, args) };
-      return Task.FromResult(result);
-    }
+    #endregion 
 
   } //class
 }

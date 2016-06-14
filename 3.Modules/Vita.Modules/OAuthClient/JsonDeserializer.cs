@@ -13,11 +13,16 @@ namespace Vita.Modules.OAuthClient {
     T Deserialize<T>(string json);
   }
 
-  public class JsonDeserializerAdapter : IJsonDeserializer {
-    JsonSerializer _serializer = new Newtonsoft.Json.JsonSerializer();
+  public class JsonDeserializer : IJsonDeserializer {
+    JsonSerializer _serializer;
 
-    public JsonDeserializerAdapter(JsonSerializer serializer = null) {
-      _serializer = serializer ?? new JsonSerializer(); 
+    public JsonDeserializer(JsonSerializer serializer = null) {
+      _serializer = serializer;
+      if(_serializer == null) {
+        _serializer = new Newtonsoft.Json.JsonSerializer();
+        // to support Node() attr
+        _serializer.ContractResolver = new WebClient.Json.NodeNameContractResolver(WebClient.ClientOptions.Default);
+      }
     }
 
     public T Deserialize<T>(string json) {

@@ -86,7 +86,6 @@ namespace Vita.UnitTests.Web {
       var config = new HttpSelfHostConfiguration(baseAddress);
       //Enable set-time-offset function in diagnostics controller - this should be done in testing environment only
       DiagnosticsController.EnableTimeOffset = true; 
-      // We set WebLogLevel initially to Basic
       //Add extra controllers we use in tests
       BooksApp.ApiConfiguration.RegisterControllerType(typeof(SpecialMethodsController));
       BooksApp.ApiConfiguration.RegisterController(new SingletonController("Some config info"));
@@ -96,9 +95,6 @@ namespace Vita.UnitTests.Web {
         WebHandlerOptions.ReturnBadRequestOnAuthenticationRequired | WebHandlerOptions.ReturnExceptionDetails);
       config.MaxReceivedMessageSize = int.MaxValue;
       config.MaxBufferSize = int.MaxValue;
-      //setup redirect URL for OAuth
-      // var oauthStt = BooksApp.GetConfig<Modules.OAuthClient.OAuthClientSettings>();
-      // oauthStt.RedirectUrlBase = baseAddress.Replace("localhost", "127.0.0.1"); //replace localhost with local IP address
       Server = new HttpSelfHostServer(config); 
       Task.Run(() => Server.OpenAsync());
       Debug.WriteLine("The service is running on URL: " + baseAddress);

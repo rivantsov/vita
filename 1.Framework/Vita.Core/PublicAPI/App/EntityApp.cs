@@ -396,6 +396,12 @@ namespace Vita.Entities {
         if(iServiceInit != null)
           iServiceInit.Init(this);
       }
+
+      // check error log service, register trace log if no real service installed
+      var errLog = GetService<IErrorLogService>(); 
+      if (errLog == null)
+        RegisterService<IErrorLogService>(new TraceErrorLogService()); 
+
       //complete initialization
       this.AppEvents.OnInitializing(EntityAppInitStep.Initialized);
       foreach(var module in this.Modules)

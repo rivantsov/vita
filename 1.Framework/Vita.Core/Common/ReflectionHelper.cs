@@ -122,6 +122,8 @@ namespace Vita.Common {
     }
 
     public static bool IsInt(this Type type) {
+      if(type.IsEnum)
+        return false; 
       var typeCode = Type.GetTypeCode(type);
       switch (typeCode) {
         case TypeCode.Byte:

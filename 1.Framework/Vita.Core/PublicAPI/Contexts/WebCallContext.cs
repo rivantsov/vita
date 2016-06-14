@@ -72,6 +72,7 @@ namespace Vita.Entities.Web {
     // Use it to specify response status other than OK(200) in controller. 
     // For example, a typical status for POST would be 201 (Created) - meaning we created new record(s)
     public HttpStatusCode? OutgoingResponseStatus;
+    public HttpContent OutgoingResponseContent; 
     public IList<Cookie> OutgoingCookies = new List<Cookie>();
     public IDictionary<string, string> OutgoingHeaders = new Dictionary<string, string>();
 

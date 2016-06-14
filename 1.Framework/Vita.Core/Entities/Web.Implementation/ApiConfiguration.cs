@@ -61,9 +61,12 @@ namespace Vita.Entities.Web.Implementation {
 
     public void RegisterController(object instance, string routePrefix = null) {
       Util.Check(instance != null, "Controller instance may not be null.");
-      // Check for wrong method - if user tries to provide object type, not instance
-      Util.Check(instance.GetType() != typeof(Type), "Instance parameter may not be Type - use RegisterControllerType(s) methods.");
       var controllerType = instance.GetType(); 
+      //Check if it is a mistake - user is registering controller type; if yes, redirect to other method
+      if(typeof(Type).IsAssignableFrom(controllerType)) {
+        RegisterControllerType((Type)instance, routePrefix);
+        return; 
+      }
       var info = new ApiControllerInfo(instance, controllerType, routePrefix);
       ControllerInfos.Add(info);
     }

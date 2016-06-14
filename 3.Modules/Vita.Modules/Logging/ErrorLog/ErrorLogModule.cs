@@ -31,6 +31,7 @@ namespace Vita.Modules.Logging {
 
     public Guid LogError(Exception exception, OperationContext context = null) {
       if(!this.App.IsConnected()) {
+        OnErrorLogged(context, exception);
         Util.WriteToTrace(exception, context.GetLogContents(), copyToEventLog: true);
         return Guid.Empty;
       }
@@ -53,6 +54,7 @@ namespace Vita.Modules.Logging {
             errInfo.WebCallId = context.WebContext.Id; 
         }
         session.SaveChanges();
+        OnErrorLogged(context, exception);
         return errInfo.Id;
       } catch (Exception logEx) {
         Util.WriteToTrace(logEx, "Fatal failure in database error log. See next error log entry for original error.");
@@ -62,6 +64,7 @@ namespace Vita.Modules.Logging {
     }
     public Guid LogError(string message, string details, OperationContext context = null) {
       if(!this.App.IsConnected()) {
+        OnErrorLogged(context, new Exception(message + Environment.NewLine + details));
         Util.WriteToTrace(message, details, context.GetLogContents(), copyToEventLog: true);
         return Guid.Empty; 
       }
@@ -85,6 +88,7 @@ namespace Vita.Modules.Logging {
             errInfo.WebCallId = context.WebContext.Id;
         }
         session.SaveChanges();
+        OnErrorLogged(context, new Exception(message + Environment.NewLine + details));
         return errInfo.Id;
       } catch (Exception logEx) {
         Util.WriteToTrace(logEx, "Fatal failure in database error log. See next error log entry for original error.");
@@ -123,12 +127,21 @@ namespace Vita.Modules.Logging {
           errInfo.WebCallId = context.WebContext.Id;
         errInfo.IsClientError = true; 
         session.SaveChanges();
+        OnErrorLogged(context, new Exception("ClientError: " + message + Environment.NewLine + details));
         return errInfo.Id;
       } catch(Exception logEx) {
         Util.WriteToTrace(logEx, "Fatal failure in database error log. See next error log entry for original error.");
         Util.WriteToTrace(message, details, null, copyToEventLog: true);
         return Guid.NewGuid();
       }
+    }
+
+    public event EventHandler<ErrorLogEventArgs> ErrorLogged;
+
+    private void OnErrorLogged(OperationContext context, Exception ex) {
+      var evt = ErrorLogged;
+      if(evt != null)
+        evt(this, new ErrorLogEventArgs(context, ex));
     }
     #endregion
 

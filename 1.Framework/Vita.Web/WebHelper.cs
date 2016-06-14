@@ -170,6 +170,8 @@ namespace Vita.Web {
     public static void SetHeaders(this HttpResponseMessage response, WebCallContext webContext) {
       foreach(var kv in webContext.OutgoingHeaders) {
         if (kv.Key.StartsWith("Content-", StringComparison.InvariantCultureIgnoreCase)) {
+          if(response.Content == null)
+            continue; 
           var headers = response.Content.Headers;
           if (headers.Contains(kv.Key)) headers.Remove(kv.Key);
           headers.Add(kv.Key, kv.Value); 

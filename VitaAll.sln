@@ -52,6 +52,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "420.Vita.Samples.BookStore.
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "430.Vita.Samples.BookStore.UI", "4.Samples\Vita.Samples.BookStore.UI\430.Vita.Samples.BookStore.UI.csproj", "{227632A2-5844-4B6A-8997-FBF2B75095C5}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "440.Vita.Samples.OAuthDemoApp", "4.Samples\Vita.Samples.OAuthDemoApp\440.Vita.Samples.OAuthDemoApp.csproj", "{21799765-38CC-4A06-AC03-3DB2EDE7FF1D}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -122,6 +124,10 @@ Global
 		{227632A2-5844-4B6A-8997-FBF2B75095C5}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{227632A2-5844-4B6A-8997-FBF2B75095C5}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{227632A2-5844-4B6A-8997-FBF2B75095C5}.Release|Any CPU.Build.0 = Release|Any CPU
+		{21799765-38CC-4A06-AC03-3DB2EDE7FF1D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{21799765-38CC-4A06-AC03-3DB2EDE7FF1D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{21799765-38CC-4A06-AC03-3DB2EDE7FF1D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{21799765-38CC-4A06-AC03-3DB2EDE7FF1D}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -143,5 +149,6 @@ Global
 		{E5117FD3-A0FD-45E0-8A19-E5694B5F7497} = {CF302C80-509C-4F4D-A8AC-8A814A5B8E00}
 		{22888309-D8F2-49BA-9BE6-3C464200496B} = {4662F816-C6F3-480C-AF97-B74ED603387A}
 		{227632A2-5844-4B6A-8997-FBF2B75095C5} = {4662F816-C6F3-480C-AF97-B74ED603387A}
+		{21799765-38CC-4A06-AC03-3DB2EDE7FF1D} = {4662F816-C6F3-480C-AF97-B74ED603387A}
 	EndGlobalSection
 EndGlobal

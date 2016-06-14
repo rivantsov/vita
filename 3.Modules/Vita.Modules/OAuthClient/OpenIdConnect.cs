@@ -3,23 +3,10 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-
+using Vita.Common;
 using Vita.Entities.Web;
 
-namespace Vita.Modules.OAuthClient.Internal {
-
-  public class AccessTokenResponse {
-    [Node("access_token")]
-    public string AccessToken;
-    [Node("expires_in")]
-    public int ExpiresIn;
-    [Node("token_type")]
-    public string TokenType;
-    [Node("refresh_token")]
-    public string RefreshToken;
-    [Node("id_token")]
-    public string IdToken; //Open ID connect only
-  }
+namespace Vita.Modules.OAuthClient {
 
   public class OpenIdToken {
     [Node("sub")]
@@ -31,22 +18,14 @@ namespace Vita.Modules.OAuthClient.Internal {
     [Node("nonce")]
     public string Nonce;
     [Node("auth_time")]
-    public string AuthTime;
+    public long AuthTime;
     //  authentication context reference
     [Node("acr")]
     public string ContextRef;
     [Node("iat")]
-    public string IssuedAt;
+    public long IssuedAt;
     [Node("exp")]
-    public string ExpiresAt;
-  }
-
-
-  // Params passed with Redirect in URL; should be properties, not fields!  
-  public class OAuthRedirectParams {
-    public string Error { get; set; }  // not empty if error
-    public string Code { get; set; }  //access code
-    public string State { get; set; } //passed from AuthURL, flowId
+    public long ExpiresAt;
   }
 
   public enum OpenIdScopes {
@@ -82,17 +61,43 @@ namespace Vita.Modules.OAuthClient.Internal {
     }
   }
 
-  public static class OAuthTemplates {
+  public static class OpenIdConnectUtil {
+    // does not verify JWT; we should use it only over https, so verification is not needed
+    public static string GetJwtPayload(string jwt) {
+      var parts = jwt.Split('.');
+      if(parts.Length != 3) {
+        throw new ArgumentException("Token must consist from 3 delimited by dot parts");
+      }
+      var payloadJson = Encoding.UTF8.GetString(Base64UrlDecode(parts[1]));
+      return payloadJson;
+    }
 
-    /// <summary>The query (parameters) portion of authorization URL - a page on OAuth server 
-    /// that user is shown to approve the access by the client app. </summary>
-    public const string AuthorizationUrlQuery = "?response_type=code&client_id={0}&redirect_uri={1}&scope={2}&state={3}";
+    // from JWT spec
+    public static byte[] Base64UrlDecode(string input) {
+      var output = input;
+      output = output.Replace('-', '+'); // 62nd char of encoding
+      output = output.Replace('_', '/'); // 63rd char of encoding
+      switch(output.Length % 4) // Pad with trailing '='s
+      {
+        case 0:
+          break; // No pad chars in this case
+        case 2:
+          output += "==";
+          break; // Two pad chars
+        case 3:
+          output += "=";
+          break;  // One pad char
+        default:
+          throw new Exception("Illegal base64url string!");
+      }
+      var converted = Convert.FromBase64String(output); // Standard base64 decoder
+      return converted;
+    }
 
-    public const string OpenIdClaimsParameter = "claims={0}";
-
-    /// <summary>The query (parameters) portion of get-access-token URL.</summary>
-    public const string GetAccessTokenUrlQuery = 
-      "?code={0}&client_id={1}&client_secret={2}&redirect_uri={3}&grant_type=authorization_code";
+    public static DateTime FromUnixTime(long unixTime) {
+      var epoch = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+      return epoch.AddSeconds(unixTime);
+    }
 
   }
 

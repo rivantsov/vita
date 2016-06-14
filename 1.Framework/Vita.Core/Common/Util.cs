@@ -139,10 +139,12 @@ namespace Vita.Common {
       Trace.WriteLine(errText);
       //Write to Windows event log
       if(copyToEventLog) {
-        var srcName = "VITA_ERROR_LOG";
-        if(!EventLog.SourceExists(srcName))
-          EventLog.CreateEventSource(srcName, srcName);
-        EventLog.WriteEntry(srcName, errText);
+        try { //under IIS creating event source might fail
+          var srcName = "VITA_ERROR_LOG";
+          if(!EventLog.SourceExists(srcName))
+            EventLog.CreateEventSource(srcName, srcName);
+          EventLog.WriteEntry(srcName, errText);
+        } catch { }
       }
     }
 

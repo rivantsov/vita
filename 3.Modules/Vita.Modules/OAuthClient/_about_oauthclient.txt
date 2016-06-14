@@ -4,7 +4,7 @@ OAuth authorization is used for granting permission to access user's information
 Example: an app Friender.com wants to access user's connections on LinkedIn. Friender is OAuth client; LinkedIn is OAuth server/provider. Friender needs user's consent to access user data (connections) on LinkedIn. Consent/permission is granted by user on LinkedIn Authorization page shown as popup from within Friender; if user approves the action, the permission is transferred back from LinkedIn to Friender. 
 
 OAuth workflow
-Preparation step: OAuth client developer (Friender) registers Friender app in LinkedIn, gets client_id and client_secret
+Preparation step: a developer for Friender (OAuth client)  registers Friender app in LinkedIn, gets client_id and client_secret
 Starting condition: User is logged in to Friender web site. He wants to import his connections in LinkedIn.
 
 OAuth steps

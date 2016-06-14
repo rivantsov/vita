@@ -40,6 +40,7 @@ namespace Vita.Modules.WebClient {
       Util.Check(settings.Serializer != null, "Settings.Serializer property may not be null.");
       Settings = settings; 
       InnerHandler = new HttpClientHandler();
+      InnerHandler.AllowAutoRedirect = settings.Options.IsSet(ClientOptions.AllowAutoRedirect); 
       // Process options
       if(Settings.Options.IsSet(ClientOptions.EnableCookies)) {
         InnerHandler.UseCookies = true;
@@ -98,11 +99,11 @@ namespace Vita.Modules.WebClient {
     }//method
 
     public async Task<TResult> PostAsync<TContent, TResult>(TContent content, string url, params object[] args) {
-      return await PostPutAsync<TContent, TResult>(true, content, url, args);
+      return await PostPutAsync<TResult>(true, content, url, args);
     }
 
     public async Task<TResult> PutAsync<TContent, TResult>(TContent content, string url, params object[] args) {
-      return await PostPutAsync<TContent, TResult>(false, content, url, args);
+      return await PostPutAsync<TResult>(false, content, url, args);
     }
 
     public async Task<HttpStatusCode> DeleteAsync(string url, params object[] args) {
@@ -140,9 +141,9 @@ namespace Vita.Modules.WebClient {
 
 
     #region private methods
-    private async Task<TResult> PostPutAsync<TContent, TResult>(bool post, TContent data, string url, params object[] args) {
+    private async Task<TResult> PostPutAsync<TResult>(bool post, object data, string url, params object[] args) {
       url = FormatUrl(url, args);
-      var content = Settings.Serializer.Serialize(data);
+      HttpContent content = data is HttpContent ? (HttpContent)data : Settings.Serializer.Serialize(data);
       HttpResponseMessage response;
       if(post)
         response = await Client.PostAsync(url, content);
@@ -159,6 +160,8 @@ namespace Vita.Modules.WebClient {
         return (TResult)(object)response;
       if(typeof(TResult) == typeof(HttpStatusCode))
         return (TResult)(object)response.StatusCode;
+      if(typeof(TResult) == typeof(HttpContent))
+        return (TResult)(object)response.Content;
       if(typeof(System.IO.Stream).IsAssignableFrom(typeof(TResult))) {
         var stream = await response.Content.ReadAsStreamAsync();
         return (TResult)(object)stream;
@@ -181,10 +184,13 @@ namespace Vita.Modules.WebClient {
 
     private string FormatUrl(string template, params object[] args) {
       string fullTemplate;
+      if(string.IsNullOrWhiteSpace(template))
+        return Settings.ServiceUrl; 
       if (template.StartsWith("http://") || template.StartsWith("https://")) //Check if template is abs URL
         fullTemplate = template;
       else {
-        var delim = template.StartsWith("/") ? string.Empty : "/";
+        var needDelim = !(template.StartsWith("/") || template.StartsWith("?"));
+        var delim = needDelim ? "/" : string.Empty;
         fullTemplate = Settings.ServiceUrl + delim + template;
       }
       return fullTemplate.FormatUri(args);

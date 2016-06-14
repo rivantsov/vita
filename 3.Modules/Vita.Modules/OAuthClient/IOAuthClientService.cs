@@ -4,23 +4,29 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
+using Vita.Common; 
 using Vita.Entities;
 using Vita.Modules.OAuthClient.Internal;
 using Vita.Modules.WebClient;
 
 namespace Vita.Modules.OAuthClient {
 
+  public class RedirectEventArgs : EventArgs {
+    public Guid FlowId;
+    public RedirectEventArgs(Guid requestId) {
+      FlowId = requestId;
+    }
+  }
 
   public interface IOAuthClientService {
-    IOAuthRemoteServerAccount GetOAuthAccount(OperationContext context, 
-         OAuthServerType serverType, string serverName, Guid? ownerId = null);
-    IOAuthClientFlow BeginOAuthFlow(OperationContext context, IOAuthRemoteServerAccount account);
-    IOAuthClientFlow OnRedirected(OperationContext context, OAuthRedirectParams redirectParams);
-    Task<IOAuthRemoteServerAccessToken> RetrieveAccessToken(OperationContext context, IOAuthClientFlow flow);
-    Task<IOAuthRemoteServerAccessToken> RefreshAccessToken(IOAuthRemoteServerAccessToken accessToken);
-    OpenIdToken UnpackJwtToken(string jwtToken); 
-    void PrepareWebClient(IOAuthRemoteServerAccessToken token, WebApiClient client);
-
+    IOAuthRemoteServer GetOAuthServer(IEntitySession session, string serverName);
+    IOAuthRemoteServerAccount GetOAuthAccount(IOAuthRemoteServer server, string accountName, Guid? ownerId = null);
+    IOAuthClientFlow BeginOAuthFlow(IOAuthRemoteServerAccount account, string scopes = null);
+    Task OnRedirected(OperationContext context, string state, string authCode, string error);
+    Task<IOAuthAccessToken> RetrieveAccessToken(IOAuthClientFlow flow);
+    Task<IOAuthAccessToken> RefreshAccessToken(IOAuthAccessToken accessToken);
+    void SetupWebClient(WebApiClient client, IOAuthAccessToken token);
+    event AsyncEvent<RedirectEventArgs> Redirected;
 
   }
 }

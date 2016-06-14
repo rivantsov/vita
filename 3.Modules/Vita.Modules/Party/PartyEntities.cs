@@ -27,7 +27,7 @@ namespace Vita.Modules.Party {
     Government = 2, 
     Educational = 3, 
     Association = 4, //association, political party
-    Department = 5, 
+    Department = 5, // part of parent entity
     Other = 100,
   }
 

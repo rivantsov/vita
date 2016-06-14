@@ -40,10 +40,10 @@ namespace Vita.Modules.WebClient {
     #endregion
 
     private async Task<Exception> ReadError(HttpResponseMessage response) {
-      Type errorType;
       switch (response.StatusCode) {
         case HttpStatusCode.BadRequest:
-          errorType = BadRequestContentType;
+          if(BadRequestContentType == typeof(string))
+            return await ReadErrorString(response);
           var errors = await Serializer.DeserializeAsync(BadRequestContentType, response.Content);
           if (BadRequestContentType == typeof(List<ClientFault>)) {
             var faults = (List<ClientFault>)errors;
@@ -51,17 +51,20 @@ namespace Vita.Modules.WebClient {
           } else
             return new BadRequestException(errors);
         default:
-          errorType = ServerErrorContentType;
-          if (ServerErrorContentType == typeof(string)) {
-            var content = await response.Content.ReadAsStringAsync();
-            string message, details; //if multiline, split
-            SplitErrorMessage(content, out message, out details);
-            return new ApiException(message, response.StatusCode, details);
-          } else {
-            var err = await Serializer.DeserializeAsync(ServerErrorContentType, response.Content);
-            return new ApiException("Server error: " + err.ToString(), response.StatusCode, err);
-          }
+          if(ServerErrorContentType == typeof(string))
+            return await ReadErrorString(response);
+          //deserialize
+          var err = await Serializer.DeserializeAsync(ServerErrorContentType, response.Content);
+          return new ApiException("Server error: " + err.ToString(), response.StatusCode, err);
       }//switch 
+    }
+
+    private async Task<ApiException> ReadErrorString(HttpResponseMessage response) {
+      var content = await response.Content.ReadAsStringAsync();
+      string message, details; //if multiline, split
+      SplitErrorMessage(content, out message, out details);
+      return new ApiException(message, response.StatusCode, details);
+
     }
 
     private void SplitErrorMessage(string message, out string firstLine, out string others) {

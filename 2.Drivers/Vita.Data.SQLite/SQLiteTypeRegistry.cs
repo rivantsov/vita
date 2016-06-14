@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Data; 
+using System.Data;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -8,7 +8,8 @@ using System.Threading.Tasks;
 using Vita.Common;
 using Vita.Entities.Model;
 using Vita.Data.Driver;
-using Vita.Data.Model; 
+using Vita.Data.Model;
+using System.Globalization;
 
 namespace Vita.Data.SQLite {
 
@@ -45,14 +46,15 @@ namespace Vita.Data.SQLite {
       return "x'" + HexUtil.ByteArrayToHex(bytes) + "'";
     }
 
+    //const string _dateTimeFormat = "yyyy:MM:ddThh:mm:ss.fff";
+
     protected object StringToDateTime(object x) {
       if(x == null || x == DBNull.Value)
         return DBNull.Value; 
       var str = x as string;
       if(string.IsNullOrWhiteSpace(str))
         return DBNull.Value;
-      DateTime result;
-      DateTime.TryParse(str, out result);
+      DateTime result = DateTime.Parse(str, CultureInfo.InvariantCulture); //, DateTimeStyles.AssumeUniversal | DateTimeStyles.AdjustToUniversal);
       return result;
     }
 
@@ -61,7 +63,7 @@ namespace Vita.Data.SQLite {
       if(x == null || x == DBNull.Value)
         return DBNull.Value; 
       var dt = (DateTime)x;
-      var result = dt.ToString("o"); //("yyyy-MM-DD HH-mm-ss.SSS");
+      var result = dt.ToString("o"); //("yyyy-MM-DDTHH-mm-ss.SSSSSSZ");
       return result;
     }
 

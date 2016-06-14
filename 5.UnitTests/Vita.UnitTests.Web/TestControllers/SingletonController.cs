@@ -9,6 +9,7 @@ using Vita.Entities;
 using Vita.Entities.Web;
 
 namespace Vita.UnitTests.Web {
+
   [ApiRoutePrefix("singleton")]
   public class SingletonController {
     string _someConfig; 

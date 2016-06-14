@@ -14,6 +14,7 @@ namespace Vita.Modules.WebClient {
     None = 0,
     AllowSelfIssuedCertificate = 1,
     EnableCookies = 1 << 1,
+    AllowAutoRedirect = 1 << 2,
     CamelCaseNames = 1 << 4,
     Default = AllowSelfIssuedCertificate | EnableCookies,
   }

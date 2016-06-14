@@ -10,6 +10,7 @@ using Vita.Samples.BookStore;
 using Vita.Data.Driver;
 using Vita.UnitTests.Common;
 using System.IO;
+using Vita.Common;
 
 namespace Vita.UnitTests.Extended {
 
@@ -21,6 +22,18 @@ namespace Vita.UnitTests.Extended {
       var app = SetupHelper.BooksApp;
       var session = app.OpenSession();
       session.EnableCache(false);
+
+      //Bug ConvertHelper.ChangeType fails to convert string->enum, null-> double?
+      var bkEd = BookEdition.Paperback | BookEdition.EBook;
+      var strBkEd = bkEd.ToString();
+      var bkEd2 = (BookEdition) ConvertHelper.ChangeType(strBkEd, typeof(BookEdition));
+      Assert.AreEqual(bkEd, bkEd2, "Enum ChangeType failed.");
+      // null -> float?
+      var nullFl = ConvertHelper.ChangeType(string.Empty, typeof(float?));
+      var oneFl = (float?) ConvertHelper.ChangeType("1.0", typeof(float?));
+      Assert.IsNull(nullFl, "Expected null for float? type.");
+      Assert.IsTrue(Math.Abs(oneFl.Value - 1.0) < 0.001, "Expected 1.0 as float value");
+
 
       //Bug: selecting from nullable property resulted in conversion error
       var editorIds = session.EntitySet<IBook>().Select(b => b.Editor.Id).ToList();

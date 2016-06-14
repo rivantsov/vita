@@ -260,7 +260,7 @@ namespace Vita.Entities.Model.Construction {
           MemberKind kind;
           if (TryGetMemberKind(entInfo, prop, out kind)) {
             member = new EntityMemberInfo(entInfo, kind, prop); //member is added to members automatically
-          }
+          } //else - we skip property, the TryGetMemberKind should have logged the message
         }
       }//foreach entType
     }
@@ -275,7 +275,11 @@ namespace Vita.Entities.Model.Construction {
         return true; 
       if (_model.IsEntity(dataType)) {
         kind = MemberKind.EntityRef;
-        return true;
+        var target = _model.GetEntityInfo(dataType);
+        if (target != null)
+          return true;
+        LogError("Invalid entity reference, type {2} is not registered as an entity. Entity member: {0}.{1}", entity.Name, property.Name, dataType);
+        return false;         
       }
       if (genType == typeof(IList<>)) {
         kind = MemberKind.EntityList;

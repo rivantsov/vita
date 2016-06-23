@@ -6,7 +6,6 @@ using System.Threading.Tasks;
 using Vita.Common;
 using Vita.Entities;
 using Vita.Modules.EncryptedData;
-using Vita.Modules.OAuthClient.Internal;
 using Vita.Modules.WebClient;
 
 namespace Vita.Modules.OAuthClient {
@@ -28,12 +27,12 @@ namespace Vita.Modules.OAuthClient {
       return srv;
     }
 
-    public static IOAuthRemoteServerAccount NewOAuthAccount(this IOAuthRemoteServer server, string name, Guid? ownerId,
-                   string clientIdentifier, string clientSecret, string encryptionChannelName = null) {
+    public static IOAuthRemoteServerAccount NewOAuthAccount(this IOAuthRemoteServer server, string clientIdentifier, string clientSecret,
+                       string accountName = null, Guid? ownerId = null, string encryptionChannelName = null) {
       var session = EntityHelper.GetSession(server);
       var acct = session.NewEntity<IOAuthRemoteServerAccount>();
       acct.Server = server;
-      acct.Name = name;
+      acct.Name = accountName ?? OAuthClientModule.DefaultAccountName;
       acct.ClientIdentifier = clientIdentifier;
       acct.ClientSecret = session.NewOrUpdate(acct.ClientSecret, clientSecret, encryptionChannelName);
       return acct; 
@@ -43,20 +42,20 @@ namespace Vita.Modules.OAuthClient {
       var session = EntityHelper.GetSession(account);
       var flow = session.NewEntity<IOAuthClientFlow>();
       flow.Account = account;
-      flow.Status = OAuthClientProcessStatus.Started;
+      flow.Status = OAuthFlowStatus.Started;
       return flow; 
     }
 
     public static IOAuthAccessToken NewOAuthAccessToken(this IOAuthRemoteServerAccount account, Guid? userId, 
-                                                       string accessToken, string refreshToken, string openIdToken,
-                                                       string scopes,
-                                                       DateTime retrievedOn, DateTime expiresOn, 
-                                                       string encryptionChannelName = null) {
+                     string accessToken, OAuthTokenType tokenType, string refreshToken, string openIdToken,
+                     string scopes, DateTime retrievedOn, DateTime expiresOn, 
+                     string encryptionChannelName = null) {
       var session = EntityHelper.GetSession(account);
       var ent = session.NewEntity<IOAuthAccessToken>();
       ent.Account = account;
       ent.UserId = userId;
-      ent.AuthorizationToken = session.NewOrUpdate(ent.AuthorizationToken, accessToken, encryptionChannelName);
+      ent.Token = session.NewOrUpdate(ent.Token, accessToken, encryptionChannelName);
+      ent.TokenType = tokenType; 
       if (!string.IsNullOrWhiteSpace(refreshToken))
         ent.RefreshToken = session.NewOrUpdate(ent.RefreshToken, refreshToken, encryptionChannelName);
       //if (!string.IsNullOrWhiteSpace(openIdToken))

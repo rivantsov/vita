@@ -6,7 +6,6 @@ using System.Threading.Tasks;
 
 using Vita.Common; 
 using Vita.Entities;
-using Vita.Modules.OAuthClient.Internal;
 using Vita.Modules.WebClient;
 
 namespace Vita.Modules.OAuthClient {
@@ -20,11 +19,12 @@ namespace Vita.Modules.OAuthClient {
 
   public interface IOAuthClientService {
     IOAuthRemoteServer GetOAuthServer(IEntitySession session, string serverName);
-    IOAuthRemoteServerAccount GetOAuthAccount(IOAuthRemoteServer server, string accountName, Guid? ownerId = null);
-    IOAuthClientFlow BeginOAuthFlow(IOAuthRemoteServerAccount account, string scopes = null);
+    IOAuthRemoteServerAccount GetOAuthAccount(IOAuthRemoteServer server, string accountName = null, Guid? ownerId = null);
+    IOAuthClientFlow BeginOAuthFlow(IOAuthRemoteServerAccount account, Guid? userId = null, string scopes = null);
     Task OnRedirected(OperationContext context, string state, string authCode, string error);
     Task<IOAuthAccessToken> RetrieveAccessToken(IOAuthClientFlow flow);
     Task<IOAuthAccessToken> RefreshAccessToken(IOAuthAccessToken accessToken);
+    IOAuthAccessToken GetUserOAuthToken(IEntitySession session, string serverName, string accountName = null); 
     void SetupWebClient(WebApiClient client, IOAuthAccessToken token);
     event AsyncEvent<RedirectEventArgs> Redirected;
 

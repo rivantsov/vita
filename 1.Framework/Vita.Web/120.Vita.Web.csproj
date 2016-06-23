@@ -73,7 +73,7 @@
     <Compile Include="Handlers\WebTokenHandlers\WebSessionTokenHandler.cs" />
     <Compile Include="Handlers\WebTokenHandlers\WebTokenHandler.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="SlimApi\DateTimeHandling.cs" />
+    <Compile Include="SlimApi\UrlDateTimeHandler.cs" />
     <Compile Include="SlimApi\OperationContextBinderAttribute.cs" />
     <Compile Include="SlimApi\SlimApiActionDescriptor.cs" />
     <Compile Include="SlimApi\SlimApiActionExecutor.cs" />

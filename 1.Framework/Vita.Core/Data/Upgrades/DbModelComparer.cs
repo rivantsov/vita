@@ -221,7 +221,7 @@ namespace Vita.Data.Upgrades {
       var newFrom = newRefConstraint.FromKey;
       var newTo = newRefConstraint.ToKey;
       foreach (var oldRc in oldTable.RefConstraints)
-        if (oldRc.FromKey.Peer == newFrom && oldRc.ToKey.Peer == newTo)
+        if (oldRc.FromKey.Peer == newFrom && oldRc.ToKey.Peer == newTo && oldRc.CascadeDelete == newRefConstraint.CascadeDelete)
           return oldRc;
       return null;
     } 
@@ -269,9 +269,17 @@ namespace Vita.Data.Upgrades {
           if (!IsActive(oldT.Schema)) continue;
           if (oldT.Peer == null && !_dropUnknown)
             continue; //ignore table 
-          foreach (var refC in oldT.RefConstraints)
-            if (refC.Peer == null || RefConstraintChanged(refC))
+          foreach (var refC in oldT.RefConstraints) {
+            // Ref constraints were initially matched with peers. But now we might have detected changes in underlying keys; 
+            // in this case the ref constraint should be set for recreation - by clearing Peers
+            if(refC.Peer != null && RefConstraintKeysChanged(refC)) {
+              refC.Peer.Peer = null;
+              refC.Peer = null; 
+            }
+            // Now check Peer; if null - drop it, and in the next loop the CREATE script will be added
+            if(refC.Peer == null)
               _upgradeInfo.AddChange(refC, refC.Peer);
+          }//foreach refC in oldT
         }
         foreach (var newT in _newModel.Tables) {
           if(!IsActive(newT.Schema)) continue;
@@ -423,7 +431,7 @@ namespace Vita.Data.Upgrades {
 
 
     #region Helpers, utility methods
-    private bool RefConstraintChanged(DbRefConstraintInfo constraint) {
+    private bool RefConstraintKeysChanged(DbRefConstraintInfo constraint) {
       return _changedKeys.Contains(constraint.FromKey) || _changedKeys.Contains(constraint.ToKey);
     }
 

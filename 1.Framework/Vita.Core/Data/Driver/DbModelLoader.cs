@@ -271,6 +271,7 @@ namespace Vita.Data.Driver {
         var fkTableName = row.GetAsString("C_TABLE");
         var fkName = row.GetAsString("CONSTRAINT_NAME");
         var fromKey = FindKey(fkSchema, fkTableName, fkName);
+        Util.Check(fromKey != null, "Key {0} for table {1} not found.", fkName, fkTableName);
 
         var toTableName = row.GetAsString("U_TABLE");
         var toTable = Model.GetTable(toSchema, toTableName);

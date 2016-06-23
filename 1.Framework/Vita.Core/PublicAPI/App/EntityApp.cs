@@ -486,6 +486,19 @@ namespace Vita.Entities {
     public bool IsConnected() {
       return Status == EntityAppStatus.Connected || Status == EntityAppStatus.Shutdown; 
     }
+
+    private bool _webInitialized;
+    public virtual void WebInitilialize(WebCallContext webContext) {
+      if(_webInitialized) return; 
+      lock(this) {
+        if(_webInitialized) return; 
+        try {
+          foreach(var m in Modules)
+            m.WebInitialize(webContext);
+        } finally { _webInitialized = true; }
+      }//lock
+
+    }
   }//class
 
 }//ns

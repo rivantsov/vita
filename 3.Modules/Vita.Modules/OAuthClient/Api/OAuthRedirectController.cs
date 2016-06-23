@@ -7,7 +7,6 @@ using System.Threading.Tasks;
 using Vita.Common;
 using Vita.Entities;
 using Vita.Entities.Web;
-using Vita.Modules.OAuthClient.Internal;
 
 namespace Vita.Modules.OAuthClient.Api {
   /// <summary>Serves as a direct target for OAuth redirect action.</summary>

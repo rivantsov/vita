@@ -74,15 +74,17 @@ namespace Vita.Modules.OAuthClient {
     string Name { get; set; }
     [Unlimited]
     string ClientIdentifier { get; set; } //client ID is not a secret
+    [GrantAccess]
     IEncryptedData ClientSecret { get; set; }
   }
 
-  public enum OAuthClientProcessStatus {
+  public enum OAuthFlowStatus {
     Started,
     Authorized,
     TokenRetrieved,
     Error
   }
+
   public enum OAuthTokenType {
     Bearer,
     Basic,
@@ -98,7 +100,7 @@ namespace Vita.Modules.OAuthClient {
     IOAuthRemoteServerAccount Account { get; set; }
     [Unlimited, Nullable]
     string Scopes { get; set; }
-    OAuthClientProcessStatus Status { get; set; }
+    OAuthFlowStatus Status { get; set; }
 
     [Unlimited]
     string AuthorizationUrl { get; set; }
@@ -122,7 +124,8 @@ namespace Vita.Modules.OAuthClient {
     Guid Id { get; }
     IOAuthRemoteServerAccount Account { get; set; }
     Guid? UserId { get; set; }
-    IEncryptedData AuthorizationToken { get; set; }
+    [GrantAccess]
+    IEncryptedData Token { get; set; }
     OAuthTokenType TokenType { get; set; }
     [Unlimited, Nullable]
     string Scopes { get; set; }
@@ -130,9 +133,9 @@ namespace Vita.Modules.OAuthClient {
     DateTime RetrievedOn { get; set; }
     [Utc]
     DateTime ExpiresOn { get; set; }
-    [Nullable]
+    [Nullable, GrantAccess]
     IEncryptedData RefreshToken { get; set; }
-    [Nullable]
+    [Nullable, GrantAccess]
     IOAuthOpenIdToken OpenIdToken { get; set; }
   }
 
@@ -157,6 +160,5 @@ namespace Vita.Modules.OAuthClient {
 
     [Unlimited]
     string FullJson { get; set; }
-
   }
 }//ns

@@ -8,7 +8,6 @@ using System.Threading.Tasks;
 using Vita.Common;
 using Vita.Entities;
 using Vita.Entities.Web;
-using Vita.Modules.OAuthClient.Internal;
 
 namespace Vita.Modules.OAuthClient {
 
@@ -19,7 +18,7 @@ namespace Vita.Modules.OAuthClient {
     public string RedirectResponseRedirectsTo;
     public string RedirectResponseText; 
 
-    public OAuthClientSettings(string redirectUrl, IJsonDeserializer deserializer = null, string encryptionChannel = null, 
+    public OAuthClientSettings(string redirectUrl = null, IJsonDeserializer deserializer = null, string encryptionChannel = null, 
          string redirectResponseRedirectTo = null, string redirectResponseText = null) {
       RedirectUrl = redirectUrl; //it might be set later
       JsonDeserializer = deserializer ?? new JsonDeserializer();

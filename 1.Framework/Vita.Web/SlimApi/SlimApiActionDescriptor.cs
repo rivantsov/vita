@@ -32,7 +32,7 @@ namespace Vita.Web.SlimApi {
     private bool _loggedInOnly;
     private bool _secured;
     IAuthorizationService _authService;
-    IDateTimeUtcConverter _dateTimeConverter; 
+    UrlDateTimeHandler _urlDateTimeHandler; 
 
     public SlimApiActionDescriptor(HttpControllerDescriptor controllerDescriptor, MethodInfo method, ApiControllerInfo controllerInfo, ApiConfiguration apiConfig)
                                : base(controllerDescriptor, method) {
@@ -40,7 +40,7 @@ namespace Vita.Web.SlimApi {
       _apiConfig = apiConfig;
       _method = method; 
       _parameterInfos = method.GetParameters();
-      _dateTimeConverter = GetDateTimeUtcConverter(); 
+      SetupUrlDateTimeHandler(); 
       //Figure out HTTP methods
       base.SupportedHttpMethods.Clear(); //POST is added by default, get rid of it 
       var methodAttrs = method.GetAttributes<ApiMethodAttribute>(orSubClass: true);
@@ -68,24 +68,18 @@ namespace Vita.Web.SlimApi {
         _loggedInOnly = true; 
     }
 
-    private IDateTimeUtcConverter GetDateTimeUtcConverter() {
-      // first check for complex object with [FromUrl] attribute
-      var fromUrlParam = _parameterInfos.FirstOrDefault(p => p.CustomAttributes.Any(a => a.AttributeType == typeof(FromUrlAttribute)));
-      if (fromUrlParam != null) {
-        var conv = new FromUrlObjectDateTimeValueConverter(fromUrlParam.ParameterType);
-        if (conv.HasDateTimeProperties)
-          return conv;
-        else
-          return null; 
-      }
+    private void SetupUrlDateTimeHandler() {
       // Check for datetime parameters
-      var hasDT = _parameterInfos.Any(p => p.ParameterType == typeof(DateTime) || p.ParameterType == typeof(DateTime?));
-      if (hasDT)
-        return new SimpleDateTimeValueConverter();
-      else
-        return null; 
+      var needHandler = _parameterInfos.Any(p => p.ParameterType == typeof(DateTime) || p.ParameterType == typeof(DateTime?));
+      // also check for complex object with [FromUrl] attribute
+      var fromUrlParam = _parameterInfos.FirstOrDefault(p => p.CustomAttributes.Any(a => a.AttributeType == typeof(FromUrlAttribute)));
+      if(fromUrlParam != null) {
+        var dateTimeProps = UrlDateTimeHandler.GetDateTimeProperties(fromUrlParam.ParameterType);
+        needHandler |= dateTimeProps.Count > 0;
+      }
+      if(needHandler)
+        _urlDateTimeHandler = new UrlDateTimeHandler(fromUrlParam);
     }
-
 
     public override Task<object> ExecuteAsync(HttpControllerContext controllerContext, IDictionary<string, object> arguments, System.Threading.CancellationToken cancellationToken) {
       if(cancellationToken.IsCancellationRequested) {
@@ -184,8 +178,8 @@ namespace Vita.Web.SlimApi {
             "Invalid value ({0}) for parameter '{1}', method {2}.{3}, expected {4}.",
                value, name, MethodInfo.DeclaringType, MethodInfo.Name, parameterInfo.ParameterType);
         // fixing the problem with Web API date time handling in URL
-        if (_dateTimeConverter != null)
-          value = _dateTimeConverter.Convert(value); 
+        if (_urlDateTimeHandler != null)
+          value = _urlDateTimeHandler.Convert(value); 
       }
       return value;
     }

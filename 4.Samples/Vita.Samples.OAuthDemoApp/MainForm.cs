@@ -55,13 +55,13 @@ namespace Vita.Samples.OAuthDemoApp {
       var flow = _session.GetEntity<IOAuthClientFlow>(args.FlowId);
       EntityHelper.RefreshEntity(flow); //make sure it is refreshed from DB
       switch(flow.Status) {
-        case OAuthClientProcessStatus.Authorized:
+        case OAuthFlowStatus.Authorized:
           _aouthFlowId = args.FlowId; 
           lblStatus.Visible = true;
           lblStatus.Text = "Success, recieved redired with authorization code. Requesting access token....";
           btnGetToken.Enabled = true;
           break;
-        case OAuthClientProcessStatus.Error:
+        case OAuthFlowStatus.Error:
           lblStatus.Visible = true;
           lblStatus.Text = "Error: " + flow.Error;
           break;
@@ -121,7 +121,7 @@ namespace Vita.Samples.OAuthDemoApp {
       var server = GetCurrentServer();
       var acct = _service.GetOAuthAccount(server, server.Name); 
       if (acct == null) {
-        acct = server.NewOAuthAccount(server.Name, null, clientId, secret); 
+        acct = server.NewOAuthAccount(server.Name, clientId, secret); 
       } else {
         acct.ClientIdentifier = clientId;
         _session.NewOrUpdate(acct.ClientSecret, secret);  
@@ -135,7 +135,7 @@ namespace Vita.Samples.OAuthDemoApp {
     private void btnStart_Click(object sender, EventArgs e) {
       var server = GetCurrentServer();
       var act = Program.App.OAuthService.GetOAuthAccount(server, server.Name);
-      var flow = _service.BeginOAuthFlow(act, server.Scopes);
+      var flow = _service.BeginOAuthFlow(act, null, server.Scopes);
       _session.SaveChanges();
       System.Diagnostics.Process.Start(flow.AuthorizationUrl);
 
@@ -149,7 +149,7 @@ namespace Vita.Samples.OAuthDemoApp {
       var token = await _service.RetrieveAccessToken(flow);
       _session.SaveChanges();
       _tokenId = token.Id; 
-      var strToken = token.AuthorizationToken.DecryptString(); 
+      var strToken = token.Token.DecryptString(); 
       lblStatus.Text = "Token retrieved: " + strToken;
       btnTestCall.Enabled = true; 
     }

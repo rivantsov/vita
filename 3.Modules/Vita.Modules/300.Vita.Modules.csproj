@@ -85,7 +85,6 @@
     <Compile Include="OAuthClient\Api\OAuthRedirectController.cs" />
     <Compile Include="OAuthClient\IOAuthClientService.cs" />
     <Compile Include="OAuthClient\OpenIdConnect.cs" />
-    <Compile Include="OAuthClient\Protocol\OAuth20.cs" />
     <Compile Include="OAuthClient\JsonDeserializer.cs" />
     <Compile Include="OAuthClient\OAuthClientModule_Service.cs" />
     <Compile Include="OAuthClient\OAuthServers.cs" />

@@ -56,7 +56,7 @@ namespace Vita.Modules.Logging {
         session.EnableLog(false);
         int index = 0;
         foreach(var batch in _pendingBatches) {
-          var iBatch = session.NewDbModelChangeBatch(batch.OldDbVersion.ToString(), App.Version.ToString(), batch.StartedOn, batch.CompletedOn,
+          var iBatch = session.NewDbModelChangeBatch(batch.OldDbVersion.ToString(), batch.Version.ToString(), batch.StartedOn, batch.CompletedOn,
                                                      batch.Method, batch.MachineName, batch.UserName, batch.Exception);
           foreach(var scr in batch.Scripts) {
             iBatch.NewDbModelChangeScript(scr, index++);

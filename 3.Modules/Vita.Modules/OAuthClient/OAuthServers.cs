@@ -7,12 +7,10 @@ using System.Threading.Tasks;
 using Vita.Entities; 
 
 namespace Vita.Modules.OAuthClient {
+
   public static class OAuthServers {
 
     public static void CreateUpdatePopularServers(IEntitySession session) {
-      try {
-        _allServers = session.EntitySet<IOAuthRemoteServer>().ToList();
-
         // Google 
         CreateOrUpdateServer(session, "Google",
           OAuthServerOptions.TokenUseFormUrlEncodedBody | OAuthServerOptions.OpenIdConnect,
@@ -35,7 +33,6 @@ namespace Vita.Modules.OAuthClient {
           "public_profile email",
           "https://developers.facebook.com/docs/facebook-login/manually-build-a-login-flow",
           "https://graph.facebook.com/v2.5/me");
-
 
         // LinkedIn. Specifics: 
         //   1. LinkedIn uses Get for access token endpoint (OAuth2 spec requires POST)
@@ -91,17 +88,12 @@ namespace Vita.Modules.OAuthClient {
 
         session.SaveChanges();
 
-      } finally {
-        _allServers = null;
-      }
     }
 
-    private static IList<IOAuthRemoteServer> _allServers; 
     public static IOAuthRemoteServer CreateOrUpdateServer(IEntitySession session,  string name, OAuthServerOptions options, 
                     string siteUrl, string authorizationUrl, string tokenRequestUrl, string tokenRefreshUrl, string scopes,
                     string documentationUrl, string basicProfileUrl) {
-      IOAuthRemoteServer server = _allServers == null ?
-        session.EntitySet<IOAuthRemoteServer>().Where(s => s.SiteUrl == siteUrl).FirstOrDefault() : _allServers.Where(s => s.SiteUrl == siteUrl).FirstOrDefault();
+      IOAuthRemoteServer server = session.EntitySet<IOAuthRemoteServer>().Where(s => s.Name == name).FirstOrDefault();
       if(server == null)
         server = session.NewEntity<IOAuthRemoteServer>();
       server.Name = name;

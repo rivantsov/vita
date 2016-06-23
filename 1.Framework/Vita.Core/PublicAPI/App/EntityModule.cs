@@ -162,6 +162,8 @@ namespace Vita.Entities {
 
     }
 
+    public virtual void WebInitialize(Web.WebCallContext webContext) { }
+
     public override string ToString() {
       return this.Name;
     }

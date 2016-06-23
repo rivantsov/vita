@@ -24,7 +24,7 @@ using Vita.Samples.BookStore.Api;
 namespace Vita.Samples.BookStore {
 
   public class BooksEntityApp : EntityApp {
-    public const string CurrentVersion = "1.1.0.0";
+    public const string CurrentVersion = "1.2.1.0";
 
     public BooksModule MainModule;
     // To use a separate database for logs, change log connection string in app.config file to point to a separate database.

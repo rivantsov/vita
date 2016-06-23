@@ -54,7 +54,7 @@ namespace Vita.Modules.OAuthClient {
       var ent = session.NewEntity<IOAuthAccessToken>();
       ent.Account = account;
       ent.UserId = userId;
-      ent.Token = session.NewOrUpdate(ent.Token, accessToken, encryptionChannelName);
+      ent.AccessToken = session.NewOrUpdate(ent.AccessToken, accessToken, encryptionChannelName);
       ent.TokenType = tokenType; 
       if (!string.IsNullOrWhiteSpace(refreshToken))
         ent.RefreshToken = session.NewOrUpdate(ent.RefreshToken, refreshToken, encryptionChannelName);

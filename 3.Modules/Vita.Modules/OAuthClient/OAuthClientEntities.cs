@@ -125,7 +125,7 @@ namespace Vita.Modules.OAuthClient {
     IOAuthRemoteServerAccount Account { get; set; }
     Guid? UserId { get; set; }
     [GrantAccess]
-    IEncryptedData Token { get; set; }
+    IEncryptedData AccessToken { get; set; }
     OAuthTokenType TokenType { get; set; }
     [Unlimited, Nullable]
     string Scopes { get; set; }

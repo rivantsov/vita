@@ -149,7 +149,7 @@ namespace Vita.Samples.OAuthDemoApp {
       var token = await _service.RetrieveAccessToken(flow);
       _session.SaveChanges();
       _tokenId = token.Id; 
-      var strToken = token.Token.DecryptString(); 
+      var strToken = token.AccessToken.DecryptString(); 
       lblStatus.Text = "Token retrieved: " + strToken;
       btnTestCall.Enabled = true; 
     }

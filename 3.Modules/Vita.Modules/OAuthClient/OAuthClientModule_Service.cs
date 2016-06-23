@@ -170,7 +170,7 @@ namespace Vita.Modules.OAuthClient {
     }
 
     public void SetupWebClient(WebApiClient client, IOAuthAccessToken token) {
-      var tokenValue = token.Token.DecryptString(Settings.EncryptionChannel);
+      var tokenValue = token.AccessToken.DecryptString(Settings.EncryptionChannel);
       client.AddAuthorizationHeader(tokenValue, scheme: token.TokenType.ToString());
     }
     #endregion 

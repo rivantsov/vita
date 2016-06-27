@@ -19,14 +19,14 @@ namespace Vita.Modules.OAuthClient {
 
   public interface IOAuthClientService {
     IOAuthRemoteServer GetOAuthServer(IEntitySession session, string serverName);
-    IOAuthRemoteServerAccount GetOAuthAccount(IOAuthRemoteServer server, string accountName = null, Guid? ownerId = null);
+    IOAuthRemoteServerAccount GetOAuthAccount(IOAuthRemoteServer server, string accountName = null);
     IOAuthClientFlow BeginOAuthFlow(IOAuthRemoteServerAccount account, Guid? userId = null, string scopes = null);
     Task OnRedirected(OperationContext context, string state, string authCode, string error);
+    event AsyncEvent<RedirectEventArgs> Redirected;
     Task<IOAuthAccessToken> RetrieveAccessToken(IOAuthClientFlow flow);
-    Task<IOAuthAccessToken> RefreshAccessToken(IOAuthAccessToken accessToken);
+    Task<bool> RefreshAccessToken(IOAuthAccessToken accessToken);
     IOAuthAccessToken GetUserOAuthToken(IEntitySession session, string serverName, string accountName = null); 
     void SetupWebClient(WebApiClient client, IOAuthAccessToken token);
-    event AsyncEvent<RedirectEventArgs> Redirected;
 
   }
 }

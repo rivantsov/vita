@@ -13,14 +13,18 @@ namespace Vita.Modules.OAuthClient {
 
   public class OAuthClientSettings {
     public string RedirectUrl;
+    public string DefaultAccountName; 
     public string EncryptionChannel;
     public IJsonDeserializer JsonDeserializer; // for Jwt token in OpenId connect
     public string RedirectResponseRedirectsTo;
     public string RedirectResponseText; 
 
-    public OAuthClientSettings(string redirectUrl = null, IJsonDeserializer deserializer = null, string encryptionChannel = null, 
+    public OAuthClientSettings(string redirectUrl = null,
+         string defaultAccountName = "TestAccount", IJsonDeserializer deserializer = null, 
+         string encryptionChannel = null, 
          string redirectResponseRedirectTo = null, string redirectResponseText = null) {
       RedirectUrl = redirectUrl; //it might be set later
+      DefaultAccountName = defaultAccountName;
       JsonDeserializer = deserializer ?? new JsonDeserializer();
       EncryptionChannel = encryptionChannel;
       RedirectResponseRedirectsTo = redirectResponseRedirectTo;

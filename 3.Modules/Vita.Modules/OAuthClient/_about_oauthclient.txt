@@ -19,3 +19,5 @@ Open ID Connect is an extension of OAuth. It allows authentication of users usin
 The main difference is step 4: the Json response contains also id_token - JSonWebToken-encoded (JWT) structure, containing Subject - an id of user, along with other information. 
 
 Facebook implements its own technology Facebook Connect, similar to OAuth2 but not quite the same
+
+About Redirect URLs when registering the apps.

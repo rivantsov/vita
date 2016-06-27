@@ -35,9 +35,14 @@ namespace Vita.Modules.OAuthClient {
     public const string AuthorizationUrlQuery = "?response_type=code&client_id={0}&redirect_uri={1}&scope={2}&state={3}";
     /// <summary>The query (parameters) portion; sent either as part of URL or as form-url-encoded body.</summary>
     public const string AccessTokenUrlQueryTemplate =
-      "code={0}&client_id={1}&client_secret={2}&redirect_uri={3}&grant_type=authorization_code&access_type=offline";
+      "code={0}&redirect_uri={1}&grant_type=authorization_code&access_type=offline";
+    public const string AccessTokenUrlQueryTemplateWithClientInfo =
+      "code={0}&redirect_uri={1}&grant_type=authorization_code&access_type=offline&client_id={2}&client_secret={3}";
+    public const string RefreshTokenUrlQueryTemplate =
+      "refresh_token={0}&grant_type=refresh_token";
+    public const string RefreshTokenUrlQueryTemplateWithClientInfo =
+      "refresh_token={0}&grant_type=refresh_token&client_id={1}&client_secret={2}";
     public const string OpenIdClaimsParameter = "claims={0}";
-    public const string DefaultAccountName = "Default";
 
     #region IAuthClientService
     public event AsyncEvent<RedirectEventArgs> Redirected;
@@ -46,12 +51,10 @@ namespace Vita.Modules.OAuthClient {
       return session.EntitySet<IOAuthRemoteServer>().Where(s => s.Name == serverName).FirstOrDefault();
     }
 
-    public IOAuthRemoteServerAccount GetOAuthAccount(IOAuthRemoteServer server, string accountName = null, Guid? ownerId = default(Guid?)) {
-      accountName = accountName ?? DefaultAccountName; 
+    public IOAuthRemoteServerAccount GetOAuthAccount(IOAuthRemoteServer server, string accountName = null) {
+      accountName = accountName ?? Settings.DefaultAccountName; 
       var session = EntityHelper.GetSession(server);
       var accountQuery = session.EntitySet<IOAuthRemoteServerAccount>().Where(a => a.Server == server && a.Name == accountName);
-      if(ownerId != null)
-        accountQuery = accountQuery.Where(a => a.OwnerId == ownerId.Value);
       var act = accountQuery.FirstOrDefault();
       return act;
     }
@@ -99,26 +102,26 @@ namespace Vita.Modules.OAuthClient {
       var clientSecret = flow.Account.ClientSecret.DecryptString(this.Settings.EncryptionChannel);
       var server = flow.Account.Server;
       var serverOptions = server.Options;
-      // Some servers require specific authorization header
-      if(serverOptions.IsSet(OAuthServerOptions.TokenUseAuthHeaderBasic64)) {
+      // Some servers expect clientId/secret in auth header
+      string query;
+      if(serverOptions.IsSet(OAuthServerOptions.RequestTokenClientInfoInAuthHeader)) {
         var clientInfo = flow.Account.ClientIdentifier + ":" + clientSecret;
         var encClientInfo = StringHelper.Base64Encode(clientInfo);
         apiClient.AddAuthorizationHeader(encClientInfo, "Basic");
+        query = StringHelper.FormatUri(AccessTokenUrlQueryTemplate, flow.AuthorizationCode, flow.RedirectUrl);
+      } else {
+        //others - clientId/secret in URL
+        query = StringHelper.FormatUri(AccessTokenUrlQueryTemplateWithClientInfo, flow.AuthorizationCode, 
+            flow.RedirectUrl, flow.Account.ClientIdentifier, clientSecret);
       }
-      var query = StringHelper.FormatUri(AccessTokenUrlQueryTemplate, flow.AuthorizationCode, flow.Account.ClientIdentifier, clientSecret, flow.RedirectUrl);
       //Make a call; standard is POST, but some servers use GET (LinkedIn)
       AccessTokenResponse tokenResp;
       if(serverOptions.IsSet(OAuthServerOptions.TokenUseGet)) {
         //GET, no body
         tokenResp = await apiClient.GetAsync<AccessTokenResponse>("?" + query);
       } else {
-        //POST
-        if(serverOptions.IsSet(OAuthServerOptions.TokenUseFormUrlEncodedBody)) {
-          //Form-encoded body
           var formContent = CreateFormUrlEncodedContent(query);
           tokenResp = await apiClient.PostAsync<HttpContent, AccessTokenResponse>(formContent, string.Empty);
-        } else
-          tokenResp = await apiClient.PostAsync<object, AccessTokenResponse>(null, "?" + query);
       }
       flow.Status = OAuthFlowStatus.TokenRetrieved;
       //LinkedIn returns milliseconds here - it's a bug, reported. So here is workaround
@@ -126,7 +129,8 @@ namespace Vita.Modules.OAuthClient {
       if(expIn > 1e+9) //if more than one billion, it is milliseconds
         expIn = expIn / 1000;
       var expires = this.App.TimeService.UtcNow.AddSeconds(expIn);
-      var tokenType = tokenResp.TokenType == "Bearer" ? OAuthTokenType.Bearer : OAuthTokenType.Basic;
+      OAuthTokenType tokenType;
+      var ok = Enum.TryParse<OAuthTokenType>(tokenResp.TokenType, true, out tokenType); //should be Bearer
       // Create AccessToken entity
       var accessToken = flow.Account.NewOAuthAccessToken(flow.UserId, tokenResp.AccessToken, tokenType,
           tokenResp.RefreshToken, tokenResp.IdToken, flow.Scopes, App.TimeService.UtcNow, expires, Settings.EncryptionChannel);
@@ -139,14 +143,6 @@ namespace Vita.Modules.OAuthClient {
       return accessToken;
     }
 
-    private static string FormatGetTokenQuery(string template, string authCode, string clientId, string clientSecret, string redirectUri) {
-      var result = template
-        .Replace("{code}", Uri.EscapeDataString(authCode))
-        .Replace("{client_id}", Uri.EscapeDataString(clientId))
-        .Replace("{client_secret}", Uri.EscapeDataString(clientSecret))
-        .Replace("{redirect_uri}", Uri.EscapeDataString(redirectUri));
-      return result;
-    }
     private static HttpContent CreateFormUrlEncodedContent(string content) {
       var bytes = Encoding.ASCII.GetBytes(content);
       var stream = new System.IO.MemoryStream(bytes);
@@ -155,12 +151,49 @@ namespace Vita.Modules.OAuthClient {
       return cnt;
     }
 
-    public Task<IOAuthAccessToken> RefreshAccessToken(IOAuthAccessToken accessToken) {
-      throw new NotImplementedException();
+    public async Task<bool> RefreshAccessToken(IOAuthAccessToken token) {
+      Util.Check(token.RefreshToken != null, "RefreshToken value is empty, cannot refresh access token.");
+      var acct = token.Account;
+      var apiClient = new WebApiClient(acct.Server.TokenRefreshUrl, ClientOptions.Default, badRequestContentType: typeof(string));
+      var clientSecret = acct.ClientSecret.DecryptString(this.Settings.EncryptionChannel);
+      var server = acct.Server;
+      var serverOptions = server.Options;
+      var strRtoken = token.RefreshToken.DecryptString(Settings.EncryptionChannel);
+      // Some servers expect clientId/secret in auth header
+      string query;
+      if(serverOptions.IsSet(OAuthServerOptions.RequestTokenClientInfoInAuthHeader)) {
+        var clientInfo = acct.ClientIdentifier + ":" + clientSecret;
+        var encClientInfo = StringHelper.Base64Encode(clientInfo);
+        apiClient.AddAuthorizationHeader(encClientInfo, "Basic");
+        query = StringHelper.FormatUri(RefreshTokenUrlQueryTemplate, strRtoken);
+      } else {
+        //others - clientId/secret in URL
+        query = StringHelper.FormatUri(RefreshTokenUrlQueryTemplateWithClientInfo, strRtoken, acct.ClientIdentifier, clientSecret);
+      }
+      //Make a call; standard is POST, but some servers use GET (LinkedIn)
+      AccessTokenResponse tokenResp;
+      if(serverOptions.IsSet(OAuthServerOptions.TokenUseGet)) {
+        //GET, no body
+        tokenResp = await apiClient.GetAsync<AccessTokenResponse>("?" + query);
+      } else {
+        var formContent = CreateFormUrlEncodedContent(query);
+        tokenResp = await apiClient.PostAsync<HttpContent, AccessTokenResponse>(formContent, string.Empty);
+      }
+      // Update token info
+      var session = EntityHelper.GetSession(token); 
+      token.AccessToken = session.NewOrUpdate(token.AccessToken, tokenResp.AccessToken, Settings.EncryptionChannel);
+      // A new refresh token might be returned (should in fact)
+      if (!string.IsNullOrEmpty(tokenResp.RefreshToken))
+        token.RefreshToken = session.NewOrUpdate(token.RefreshToken, tokenResp.RefreshToken, Settings.EncryptionChannel);
+      var utcNow = this.App.TimeService.UtcNow;
+      token.ExpiresOn = utcNow.AddSeconds(tokenResp.ExpiresIn);
+      token.RefreshedOn = utcNow; 
+      session.SaveChanges(); 
+      return await Task.FromResult(true); 
     }
 
     public IOAuthAccessToken GetUserOAuthToken(IEntitySession session, string serverName, string accountName = null) {
-      accountName = accountName ?? DefaultAccountName; 
+      accountName = accountName ?? Settings.DefaultAccountName; 
       var context = session.Context;
       var utcNow = context.App.TimeService.UtcNow;
       var userId = context.User.UserId;

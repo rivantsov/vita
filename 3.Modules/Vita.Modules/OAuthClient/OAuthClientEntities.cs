@@ -19,9 +19,7 @@ namespace Vita.Modules.OAuthClient {
     TokenUseGet = 1 << 8, 
     /// <summary>Access token endpoint expects Authorization header with Basic scheme and Base64-encoded 
     /// string [client_id:clientsecret]. </summary>
-    TokenUseAuthHeaderBasic64 = 1 << 9, 
-    /// <summary>Access token endpoint expects parameters in form-encoded body.</summary>
-    TokenUseFormUrlEncodedBody = 1 << 10,
+    RequestTokenClientInfoInAuthHeader = 1 << 9, 
 
     /// <summary>
     /// Replace IP address 127.0.0.1 with localhost. Useful in some cases for testing (Facebook).
@@ -69,7 +67,6 @@ namespace Vita.Modules.OAuthClient {
     [Auto(AutoType.CreatedOn), Utc]
     DateTime CreatedOn { get; }
     IOAuthRemoteServer Server { get; set; }
-    Guid? OwnerId { get; set; } //for multi-tenant apps
     [Size(50)]
     string Name { get; set; }
     [Unlimited]
@@ -135,6 +132,8 @@ namespace Vita.Modules.OAuthClient {
     DateTime ExpiresOn { get; set; }
     [Nullable, GrantAccess]
     IEncryptedData RefreshToken { get; set; }
+    [Utc]
+    DateTime? RefreshedOn { get; set; }
     [Nullable, GrantAccess]
     IOAuthOpenIdToken OpenIdToken { get; set; }
   }

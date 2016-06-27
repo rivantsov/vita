@@ -27,12 +27,13 @@ namespace Vita.Modules.OAuthClient {
       return srv;
     }
 
-    public static IOAuthRemoteServerAccount NewOAuthAccount(this IOAuthRemoteServer server, string clientIdentifier, string clientSecret,
-                       string accountName = null, Guid? ownerId = null, string encryptionChannelName = null) {
+    public static IOAuthRemoteServerAccount NewOAuthAccount(this IOAuthRemoteServer server, 
+                       string clientIdentifier, string clientSecret,
+                       string accountName, Guid? ownerId = null, string encryptionChannelName = null) {
       var session = EntityHelper.GetSession(server);
       var acct = session.NewEntity<IOAuthRemoteServerAccount>();
       acct.Server = server;
-      acct.Name = accountName ?? OAuthClientModule.DefaultAccountName;
+      acct.Name = accountName;
       acct.ClientIdentifier = clientIdentifier;
       acct.ClientSecret = session.NewOrUpdate(acct.ClientSecret, clientSecret, encryptionChannelName);
       return acct; 
@@ -55,7 +56,7 @@ namespace Vita.Modules.OAuthClient {
       ent.Account = account;
       ent.UserId = userId;
       ent.AccessToken = session.NewOrUpdate(ent.AccessToken, accessToken, encryptionChannelName);
-      ent.TokenType = tokenType; 
+      ent.TokenType = tokenType;
       if (!string.IsNullOrWhiteSpace(refreshToken))
         ent.RefreshToken = session.NewOrUpdate(ent.RefreshToken, refreshToken, encryptionChannelName);
       //if (!string.IsNullOrWhiteSpace(openIdToken))

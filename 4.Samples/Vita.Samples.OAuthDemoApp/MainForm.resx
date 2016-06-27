@@ -117,9 +117,4 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
-  <data name="label6.Text" xml:space="preserve">
-    <value>Note: this app does not come with registered accounts for remote OAuth servers. You have to do it yourself - create accounts (register your 'app') on target OAuth2 servers, and then copy your client Id and secret into this form.  
-The form will save the information in the database. See instructions in _aboutOAuthDemoApp.txt file. 
-</value>
-  </data>
 </root>

@@ -13,11 +13,11 @@ using Vita.Data.Model;
 using Vita.Data.Linq;
 using Vita.Data.Linq.Translation.SqlGen;
 using Vita.Data.Linq.Translation.Expressions;
+using Binary = Vita.Common.Binary;
+using Vita.Entities.Linq;
+
 
 namespace Vita.Data.Driver {
-    using Binary = Vita.Common.Binary;
-  using Vita.Entities.Linq;
-
   //RI: this class comes from DbLinq code, should be refactored in the future. 
 
     public class LinqSqlProvider {

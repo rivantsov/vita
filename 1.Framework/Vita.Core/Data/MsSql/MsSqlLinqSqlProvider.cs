@@ -62,10 +62,21 @@ namespace Vita.Data.MsSql {
     public override string GetParameter(ExternalValueExpression parameter) {
       var baseValue = base.GetParameter(parameter);
       //Handling list-type parameters
-      if (parameter.IsList) 
-        return string.Format(@"(SELECT ""Value"" FROM {0})", baseValue);
-      else 
+      if(!parameter.IsList)
         return baseValue;
+      // We use Sql_variant column in table UDT that holds list. It was found that it causes index scan instead of seek
+      // So we add CAST here
+      var elType = parameter.ListElementType;
+      var template = @"(SELECT ""Value"" FROM {0})";
+      if (elType == typeof(string))
+        template = @"(SELECT CAST(""Value"" AS NVarchar) FROM {0})";
+      else if (elType == typeof(Guid))
+        template = @"(SELECT CAST(""Value"" AS uniqueidentifier) FROM {0})";
+      else if (elType == typeof(long) || elType == typeof(ulong))
+        template = @"(SELECT CAST(""Value"" AS bigint) FROM {0})";
+      else if (elType.IsInt() || elType.IsEnum)
+        template = @"(SELECT CAST(""Value"" AS int) FROM {0})";
+      return string.Format(template, baseValue);
     }
 
     // MS SQL has restrictions on DB Views, so that you have to use COUNT_BIG instead of COUNT,

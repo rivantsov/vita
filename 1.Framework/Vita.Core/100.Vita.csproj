@@ -242,7 +242,6 @@
     <Compile Include="PublicAPI\StaticHelpers\EntityQueryExtensions.cs" />
     <Compile Include="Entities\Services\IDataAccessService.cs" />
     <Compile Include="Entities\Services\Implementations\_IEntityService.cs" />
-    <Compile Include="Entities\Runtime\EntitySessionSettings.cs" />
     <Compile Include="Entities\Services\IErrorLogService.cs" />
     <Compile Include="Entities\Services\ITimeService.cs" />
     <Compile Include="Entities\Model\Construction\EntityClassesAssembly.cs" />

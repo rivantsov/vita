@@ -15,17 +15,22 @@ using Vita.Data.Model;
 
 namespace Vita.Data {
   public partial class Database {
-    // Checks if batch is needed (record count > 1); and driver supports batch mode, 
-    // and if there are any out params for CRUD stored procs (identity, timestamp) then driver supports out param for batch mode
+    // Checks if batch is needed (record count > 1); and driver supports batch mode, and if batch is not disabled; 
+    // If there are any out params for CRUD stored procs (identity, timestamp) then driver should out param for batch mode
     // MS SQL supports batch with output params; SQL CE does not support batch at all - one statement at a time.
     // MySql and Postgres support batch, but there are some troubles in using output parameters inside the batch,  
-    // so for these drivers batch OutParamsInBatchMode is not set, so we use batch mode if there are none. 
+    // so for these drivers batch OutParamsInBatchMode is not set, so we do not use batch mode if there are any. 
     private bool ShouldUseBatchMode(UpdateSet updateSet) {
       var totalCount = updateSet.AllRecords.Count + updateSet.Session.ScheduledCommands.Count; 
       if (totalCount > 1 && Settings.ModelConfig.Options.IsSet(DbOptions.UseBatchMode)) {
-        //Probably we should use batch mode; check if there any out params
-        if (!updateSet.UsesOutParams || _driver.Supports(DbFeatures.OutParamsInBatchedUpdates))
-          return true; 
+        //Probably we should use batch mode; check if it is disabled or stored procs are disabled
+        if(updateSet.Session.Options.IsSet(EntitySessionOptions.DisableBatch | EntitySessionOptions.DisableStoredProcs))
+          return false;
+        // check if there any out params
+        if(updateSet.UsesOutParams && !_driver.Supports(DbFeatures.OutParamsInBatchedUpdates))
+          return false; 
+        //otherwise return true
+        return true; 
       }
       return false;
     }
@@ -52,7 +57,7 @@ namespace Vita.Data {
       }
     }
     private void ExecuteBatchSingleCommand(UpdateSet updateSet) {
-      var conn = GetConnection(updateSet.Session);
+      var conn = updateSet.Connection;
       try {
         var batchCmd = updateSet.BatchCommands[0];
         var dbCmd = batchCmd.DbCommand;
@@ -73,7 +78,7 @@ namespace Vita.Data {
       //Note: for multiple commands, we cannot include trans statements into batch commands, like add 'Begin Trans' to the first command 
       //  and 'Commit' to the last command - this will fail. We start/commit trans using separate calls
       // Also, we have to manage connection explicitly, to start/commit transaction
-      var conn = GetConnection(updateSet.Session);
+      var conn = updateSet.Connection;
       try {
         var inNewTrans = conn.DbTransaction == null; 
         if (inNewTrans)

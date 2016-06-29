@@ -47,9 +47,6 @@ namespace Vita.Data.MySql {
     public override IDbConnection CreateConnection(string connectionString) {
       return new MySqlConnection(connectionString);
     }
-    public override IDbCommand CreateDbCommand() {
-      return new MySqlCommand();
-    }
 
     public override DbSqlBuilder CreateDbSqlBuilder(DbModel dbModel) {
       return new MySqlDbSqlBuilder(dbModel); 
@@ -127,17 +124,8 @@ namespace Vita.Data.MySql {
     }
 
     public override IDbDataParameter AddParameter(IDbCommand command, DbParamInfo prmInfo) {
-      var typeInfo = prmInfo.TypeInfo; 
-      var prm = new MySqlParameter(prmInfo.Name, (MySqlDbType)typeInfo.VendorDbType.VendorDbType);
-      prm.Direction = prmInfo.Direction;
-      if (prmInfo.SourceColumn != null)
-        prm.SourceColumn = prmInfo.SourceColumn.ColumnName;
-      prm.Direction = prmInfo.Direction;
-      if (typeInfo.Precision > 0) prm.Precision = typeInfo.Precision;
-      if (typeInfo.Scale > 0) prm.Scale = typeInfo.Scale;
-      if (typeInfo.Size > 0) prm.Size = (int)typeInfo.Size;
-      prm.Value = prmInfo.DefaultValue;
-      command.Parameters.Add(prm);
+      var prm = (MySqlParameter)base.AddParameter(command, prmInfo);
+      prm.MySqlDbType = (MySqlDbType)prmInfo.TypeInfo.VendorDbType.VendorDbType;
       return prm;
     }
 

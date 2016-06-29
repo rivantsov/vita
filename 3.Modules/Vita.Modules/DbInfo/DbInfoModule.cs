@@ -70,20 +70,23 @@ namespace Vita.Modules.DbInfo {
     } //method
 
 
-    public void UpdateDbInfo(Database db, Exception exception = null) {
+    public bool UpdateDbInfo(Database db, Exception exception = null) {
       //Check that db has module's tables; if not, this module is not included in the solution
       var tbl = db.DbModel.GetTable(typeof(IDbInfo));
       if (tbl == null)
-        return; 
+        return false; 
       try {
         var app = db.DbModel.EntityApp;
         var session = App.OpenSystemSession();
+        // Disable stored procs and disable batch mode
+        session.DisableStoredProcs();
+        session.DisableBatchMode();
         var ent = session.GetEntities<IDbInfo>(take: 1).FirstOrDefault(e => e.AppName == app.AppName);
         if(ent == null) {
           ent = session.NewEntity<IDbInfo>();
           ent.Version = app.Version.ToString();
+          ent.AppName = app.AppName;
         }
-        ent.AppName = app.AppName;
         if(exception == null) {
           ent.Version = app.Version.ToString();
           ent.LastModelUpdateFailed = false;
@@ -97,9 +100,10 @@ namespace Vita.Modules.DbInfo {
         // we use db.SaveChanges directly, to make sure we go thru proper database
         var entSession = (Vita.Entities.Runtime.EntitySession)session;
         db.SaveChanges(entSession);
+        return true; 
       } catch (Exception ex) {
         App.ActivationLog.Error(ex.ToLogString());
-        throw; 
+        return false; 
       }
     }
 

@@ -179,7 +179,7 @@ namespace Vita.Data {
         FinalizeCurrentCommand();
       }
       //create new command
-      _currentCommand = new BatchDbCommand() { DbCommand = _driver.CreateDbCommand() };
+      _currentCommand = new BatchDbCommand() { DbCommand = this._updateSet.Connection.DbConnection.CreateCommand()};
       _sqlBuilder = new StringBuilder(8192);
     }
 

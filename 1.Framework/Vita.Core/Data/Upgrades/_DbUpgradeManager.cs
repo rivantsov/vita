@@ -171,14 +171,13 @@ namespace Vita.Data.Upgrades {
     }//method
 
 
-    public void SaveDbInfo(Exception exception = null) {
+    public bool SaveDbInfo(Exception exception = null) {
       //Save if DbInfo service is available
       var infoService = _database.Settings.DbInfoProvider ?? _app.GetService<IDbInfoService>();
-      if (infoService == null)
-        return;
-      infoService.UpdateDbInfo(_database, exception);
+      if(infoService == null)
+        return false;
+      return infoService.UpdateDbInfo(_database, exception); //it never throws 
     }
-
 
     private void OnHigherVersionDetected() {
       var args = new DataSourceEventArgs(_dataSource, DataSourceEventType.HigherVersionDetected);

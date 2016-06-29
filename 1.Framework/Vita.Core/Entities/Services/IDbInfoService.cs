@@ -10,7 +10,7 @@ namespace Vita.Entities.Services {
 
   public interface IDbInfoService {
     DbVersionInfo LoadDbInfo(DbSettings settings, string appName, Vita.Data.Driver.DbModelLoader loader);
-    void UpdateDbInfo(Database database, Exception exception = null);
+    bool UpdateDbInfo(Database database, Exception exception = null);
   }
 
 }

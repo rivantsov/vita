@@ -35,9 +35,6 @@ namespace Vita.Data.SqlCe {
     public override IDbConnection CreateConnection(string connectionString) {
       return new SqlCeConnection(connectionString);
     }
-    public override IDbCommand CreateDbCommand() {
-      return new SqlCeCommand();
-    }
 
     public override DbSqlBuilder CreateDbSqlBuilder(DbModel dbModel) {
       return new SqlCeDbSqlBuilder(dbModel);
@@ -83,33 +80,9 @@ namespace Vita.Data.SqlCe {
       }
     }
 
-    // We need to change SqlDbType for ntext parameters - otherwise it will fail
-    public override IDbCommand CreateDbCommand(DbCommandInfo commandInfo) {
-      var command = base.CreateDbCommand(commandInfo);
-      if (commandInfo.IsTemplatedSql)
-        return command; 
-      for(int i=0; i< commandInfo.Parameters.Count; i++){
-        var prmInfo = commandInfo.Parameters[i];
-        if (prmInfo.TypeInfo.SqlTypeSpec == "ntext") {
-          var prm = (SqlCeParameter) command.Parameters[i];
-          prm.SqlDbType = SqlDbType.NText;
-        }
-      }
-      return command; 
-    }
-
     public override IDbDataParameter AddParameter(IDbCommand command, DbParamInfo prmInfo) {
-      var typeInfo = prmInfo.TypeInfo;
-      var prm = new SqlCeParameter(prmInfo.Name, (SqlDbType)typeInfo.VendorDbType.VendorDbType); 
-      prm.Direction = prmInfo.Direction;
-      if (prmInfo.SourceColumn != null)
-        prm.SourceColumn = prmInfo.SourceColumn.ColumnName;
-      prm.Direction = prmInfo.Direction;
-      if (typeInfo.Precision > 0) prm.Precision = typeInfo.Precision;
-      if (typeInfo.Scale > 0) prm.Scale = typeInfo.Scale;
-      if (typeInfo.Size > 0) prm.Size = (int) typeInfo.Size;
-      prm.Value = prmInfo.DefaultValue;
-      command.Parameters.Add(prm);
+      var prm = (SqlCeParameter)base.AddParameter(command, prmInfo);
+      prm.SqlDbType = (SqlDbType) prmInfo.TypeInfo.VendorDbType.VendorDbType;
       return prm;
     }
 

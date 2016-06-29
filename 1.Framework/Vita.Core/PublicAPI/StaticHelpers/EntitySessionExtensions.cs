@@ -63,6 +63,19 @@ namespace Vita.Entities {
       return new EntitySession(anonContext);
     }
 
+    /// <summary>Disables use of stored procedures and forces all database commands to be executed using parameterized SQL. </summary>
+    /// <param name="session">Entity session.</param>
+    public static void DisableStoredProcs(this IEntitySession session) {
+      var entSession = (EntitySession)session;
+      entSession.Options |= EntitySessionOptions.DisableStoredProcs;
+    }
+    /// <summary>Disables use of batch mode for updates </summary>
+    /// <param name="session">Entity session.</param>
+    public static void DisableBatchMode(this IEntitySession session) {
+      var entSession = (EntitySession)session;
+      entSession.Options |= EntitySessionOptions.DisableBatch;
+    }
+
     /// <summary>Checks if an entity is registered with entity model. 
     /// For use in customizable models when several versions might exist for different environments, 
     /// and some entities are excluded in some models.</summary>
@@ -241,10 +254,8 @@ namespace Vita.Entities {
       return (T) ConvertHelper.ChangeType(v, typeof(T));
     }
 
-    /*
-    public static void Include<TEntity>(this IEntitySession session, Expression<Func<TEntity, object>> includePred) {
-      var ctx = session.Context.User.
+    public static bool IsSet(this EntitySessionOptions options, EntitySessionOptions option) {
+      return (options & option) != 0;
     }
-    */
   }//class
 }

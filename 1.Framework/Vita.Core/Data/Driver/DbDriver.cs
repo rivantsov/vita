@@ -111,23 +111,6 @@ namespace Vita.Data.Driver {
     public virtual void CommandExecuted(DataConnection connection, IDbCommand command, DbExecutionType executionType) {
     }
 
-    public virtual IDbCommand CreateDbCommand(DbCommandInfo commandInfo) {
-      var command = CreateDbCommand();
-      command.CommandType = commandInfo.CommandType;
-      command.CommandText = (commandInfo.CommandType == CommandType.StoredProcedure) ?
-        commandInfo.FullCommandName : commandInfo.Sql;
-      //Create parameters collection
-      if (commandInfo.IsTemplatedSql) {
-        
-      } else {
-        for (int index = 0; index < commandInfo.Parameters.Count; index++)
-          AddParameter(command, commandInfo.Parameters[index]);
-      }
-      return command;
-    }//method
-
-    public abstract IDbCommand CreateDbCommand();
-
     public virtual IDbDataParameter AddParameter(IDbCommand command, DbParamInfo prmInfo) {
       var prm = command.CreateParameter();
       var typeInfo = prmInfo.TypeInfo;

@@ -149,6 +149,60 @@ namespace Vita.Data {
       }      
     }
 
+    #region DbCommand setup
+    private IDbCommand CreateDbCommand(DbCommandInfo commandInfo, DataConnection connection) {
+      var cmd = connection.DbConnection.CreateCommand();
+      cmd.Transaction = connection.DbTransaction;
+      connection.Session.SetLastCommand(cmd);
+      bool isSp = commandInfo.CommandType == CommandType.StoredProcedure && !connection.Session.Options.IsSet(EntitySessionOptions.DisableStoredProcs);
+      if(isSp) {
+        cmd.CommandType = CommandType.StoredProcedure;
+        cmd.CommandText = commandInfo.FullCommandName;
+      } else {
+        cmd.CommandType = CommandType.Text;
+        cmd.CommandText = commandInfo.Sql;
+      }
+      //Create parameters collection
+      if(commandInfo.IsTemplatedSql) {
+
+      } else {
+        for(int index = 0; index < commandInfo.Parameters.Count; index++)
+          _driver.AddParameter(cmd, commandInfo.Parameters[index]);
+      }
+      return cmd;
+    }//method
+
+    // Sets parameter values.
+    private void SetCommandParameterValues(DbCommandInfo commandInfo, IDbCommand command, object[] args) {
+      for(int i = 0; i < commandInfo.Parameters.Count; i++) {
+        var prmInfo = commandInfo.Parameters[i];
+        if(prmInfo.ArgIndex >= 0) {
+          var prm = (IDbDataParameter)command.Parameters[i];
+          var v = args[prmInfo.ArgIndex];
+          var conv = prmInfo.TypeInfo.PropertyToColumnConverter;
+          if(v != null && conv != null)
+            v = conv(v);
+          prm.Value = v;
+        }
+      } //for i
+    }
+
+    private void FormatTemplatedSql(DbCommandInfo commandInfo, IDbCommand command, object[] args) {
+      if(args == null || args.Length == 0)
+        return;
+      var values = new string[args.Length];
+      for(int i = 0; i < commandInfo.Parameters.Count; i++) {
+        var prmInfo = commandInfo.Parameters[i];
+        if(prmInfo.ArgIndex >= 0) {
+          var v = args[prmInfo.ArgIndex];
+          var strV = prmInfo.ToLiteralConverter(v);
+          values[i] = strV;
+        }
+        command.CommandText = string.Format(commandInfo.Sql, values);
+      } //for i
+    }
+    #endregion
+
     #region Logging
 
     private void LogCommand(EntitySession session, IDbCommand command, long executionTime, int rowCount = -1) {

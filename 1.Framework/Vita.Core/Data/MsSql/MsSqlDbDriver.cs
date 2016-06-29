@@ -70,10 +70,6 @@ namespace Vita.Data.MsSql {
       return new SqlConnection(connectionString);
     }
 
-    public override IDbCommand CreateDbCommand() {
-      return new SqlCommand();
-    }
-
     public override DbSqlBuilder CreateDbSqlBuilder(DbModel dbModel) {
       return new MsSqlDbSqlBuilder(dbModel, this.ServerVersion); 
     }
@@ -145,8 +141,9 @@ namespace Vita.Data.MsSql {
     }
 
     public override IDbDataParameter AddParameter(IDbCommand command, DbParamInfo prmInfo)  {
-      var typeInfo = prmInfo.TypeInfo;
-      SqlParameter prm = new SqlParameter(prmInfo.Name, (SqlDbType)typeInfo.VendorDbType.VendorDbType);
+      var prm = (SqlParameter)base.AddParameter(command, prmInfo);
+      prm.SqlDbType = (SqlDbType)prmInfo.TypeInfo.VendorDbType.VendorDbType;
+      //Set User type name
       switch(prm.SqlDbType) {
         case SqlDbType.Udt:
           prm.UdtTypeName = prmInfo.TypeInfo.SqlTypeSpec;
@@ -155,15 +152,6 @@ namespace Vita.Data.MsSql {
           prm.TypeName = prmInfo.TypeInfo.SqlTypeSpec;
           break; 
       }
-      prm.Direction = prmInfo.Direction;
-      if (prmInfo.SourceColumn != null)
-        prm.SourceColumn = prmInfo.SourceColumn.ColumnName;
-      prm.Direction = prmInfo.Direction;
-      if (typeInfo.Precision > 0) prm.Precision = typeInfo.Precision;
-      if (typeInfo.Scale > 0) prm.Scale = typeInfo.Scale;
-      if (typeInfo.Size != 0) prm.Size = (int) typeInfo.Size;
-      prm.Value = prmInfo.DefaultValue;
-      command.Parameters.Add(prm);
       return prm;
     }
 

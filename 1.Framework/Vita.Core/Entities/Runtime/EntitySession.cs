@@ -16,16 +16,28 @@ using Vita.Entities.Locking;
 
 namespace Vita.Entities.Runtime {
 
+  [Flags]
+  public enum EntitySessionOptions {
+    None = 0,
+    ReadOnly = 1,
+    Concurrent = 1 << 1, //allowed only for readonly sessions
+    DisableStoredProcs = 1 << 2,
+    DisableBatch = 1 << 3,
+    Default = None,
+  }
+
+
 
   /// <summary> Represents a live connection to the database with tracking of loaded and changed/added/deleted entities. </summary>
   /// <remarks>This class provides methods for data access: reading, updating, deleting entitites. </remarks>
   public partial class EntitySession : IEntitySession  {
     public readonly OperationContext Context;
     public readonly IDataAccessService DataAccess;
+    public readonly MemoryLog LocalLog;
+    public EntitySessionOptions Options;
+
     public readonly bool IsReadOnly;
     public readonly bool IsSecureSession;
-    public readonly EntitySessionSettings Settings;
-    public readonly MemoryLog LocalLog;
     public bool LogDisabled; //true for background save service - which mostly saves logs
     public bool CacheDisabled; //disable cache temporarily
 
@@ -63,17 +75,17 @@ namespace Vita.Entities.Runtime {
     IOperationLogService _operationLog; 
 
     #region constructor
-    public EntitySession(OperationContext context, EntitySessionSettings settings = null) {
+    public EntitySession(OperationContext context, EntitySessionOptions options = EntitySessionOptions.Default) {
       Context = context;
+      this.Options = options;
       IsSecureSession = this is Vita.Entities.Authorization.SecureSession;
       _appEvents = Context.App.AppEvents;
       DataAccess = Context.App.DataAccess;
       Util.Check(DataAccess != null, "EntityApp not initialized/activated, cannot open session.");
-      this.Settings = settings ?? EntitySessionSettings.Default;
       this.LocalLog = Context.LocalLog;
       // Multithreaded sessions must be readonly
-      var isConcurrent = Settings.Options.IsSet(EntitySessionOptions.ConcurrentReadonly);
-      IsReadOnly = Settings.Options.IsSet(EntitySessionOptions.ReadOnly) || isConcurrent;
+      var isConcurrent = Options.IsSet(EntitySessionOptions.Concurrent);
+      IsReadOnly = Options.IsSet(EntitySessionOptions.ReadOnly) || isConcurrent;
       _timeService = Context.App.GetService<ITimeService>();
       _operationLog = Context.App.GetService<IOperationLogService>();
       RecordsLoaded = new EntityRecordWeakRefTable(isConcurrent);

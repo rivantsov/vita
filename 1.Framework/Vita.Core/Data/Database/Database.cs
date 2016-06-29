@@ -114,7 +114,8 @@ namespace Vita.Data {
         var canDeferIntegrCheck = _driver.Supports(DbFeatures.DeferredConstraintCheck);
         var needSequencing = useRefIntegrity && !canDeferIntegrCheck;
         var records = session.RecordsChanged.Where(rec => ShouldUpdate(rec)).ToList();
-        var updateSet = new UpdateSet(session, _timeService.UtcNow, records, needSequencing);
+        var conn = GetConnection(session);
+        var updateSet = new UpdateSet(conn, _timeService.UtcNow, records, needSequencing);
         var batchMode = ShouldUseBatchMode(updateSet);
         if (batchMode)
           SaveChangesInBatchMode(updateSet);
@@ -122,18 +123,18 @@ namespace Vita.Data {
           SaveChangesNoBatch(session, updateSet);
       }
       //commit if we have session connection with transaction and CommitOnSave
-      var conn = session.CurrentConnection;
-      if (conn != null) {
-        if (conn.DbTransaction != null && conn.Flags.IsSet(ConnectionFlags.CommitOnSave))
-          conn.Commit();
-        if (conn.Lifetime != ConnectionLifetime.Explicit)
-          ReleaseConnection(conn); 
+      var sConn = session.CurrentConnection;
+      if (sConn != null) {
+        if (sConn.DbTransaction != null && sConn.Flags.IsSet(ConnectionFlags.CommitOnSave))
+          sConn.Commit();
+        if (sConn.Lifetime != ConnectionLifetime.Explicit)
+          ReleaseConnection(sConn); 
       }
       session.ScheduledCommands.Clear(); 
     }
 
     private void SaveChangesNoBatch(EntitySession session, UpdateSet updateSet) {
-      var conn = GetConnection(session);
+      var conn = updateSet.Connection;
       var withTrans = conn.DbTransaction == null && updateSet.UseTransaction; 
       try {
         var start = CurrentTickCount;
@@ -209,44 +210,6 @@ namespace Vita.Data {
         ex.AddValue("record", record);
         throw;
       }
-    }
-
-    private IDbCommand CreateDbCommand(DbCommandInfo commandInfo, DataConnection connection) {
-      var cmd = _driver.CreateDbCommand(commandInfo);
-      cmd.Connection = connection.DbConnection;
-      cmd.Transaction = connection.DbTransaction;
-      connection.Session.SetLastCommand(cmd);
-      return cmd;
-    }
-
-    // Sets parameter values.
-    private void SetCommandParameterValues(DbCommandInfo commandInfo, IDbCommand command, object[] args) {
-      for (int i = 0; i < commandInfo.Parameters.Count; i++) {
-        var prmInfo = commandInfo.Parameters[i];
-        if (prmInfo.ArgIndex >= 0) {
-          var prm = (IDbDataParameter)command.Parameters[i];
-          var v = args[prmInfo.ArgIndex];
-          var conv = prmInfo.TypeInfo.PropertyToColumnConverter;
-          if(v != null && conv != null)
-            v = conv(v);
-          prm.Value = v;
-        }
-      } //for i
-    }
-
-    private void FormatTemplatedSql(DbCommandInfo commandInfo, IDbCommand command, object[] args) {
-      if (args == null || args.Length == 0)
-        return; 
-      var values = new string[args.Length];
-      for (int i = 0; i < commandInfo.Parameters.Count; i++) {
-        var prmInfo = commandInfo.Parameters[i];
-        if (prmInfo.ArgIndex >= 0) {
-          var v = args[prmInfo.ArgIndex];
-          var strV = prmInfo.ToLiteralConverter(v);
-          values[i] = strV;
-        }
-        command.CommandText = string.Format(commandInfo.Sql, values);
-      } //for i
     }
 
 

@@ -109,9 +109,9 @@ namespace Vita.Modules.OAuthClient {
 
     [Unlimited, Nullable]
     string AuthorizationCode { get; set; }
-    [Size(50), Nullable]
+    [Size(100), Nullable]
     string Error { get; set; }
-    [Nullable]
+    [Nullable, GrantAccess]
     IOAuthAccessToken Token { get; set; }
   }
 

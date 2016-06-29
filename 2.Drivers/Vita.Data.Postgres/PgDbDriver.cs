@@ -48,10 +48,6 @@ namespace Vita.Data.Postgres {
       return conn; 
     }
 
-    public override IDbCommand CreateDbCommand() {
-      return new NpgsqlCommand();
-    }
-
     public override DbSqlBuilder CreateDbSqlBuilder(DbModel dbModel) {
       return new PgDbSqlBuilder(dbModel);
     }

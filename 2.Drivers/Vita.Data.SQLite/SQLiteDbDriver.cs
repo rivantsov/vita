@@ -32,9 +32,6 @@ namespace Vita.Data.SQLite {
     public override IDbConnection CreateConnection(string connectionString) {
       return new SQLiteConnection(connectionString); 
     }
-    public override IDbCommand CreateDbCommand() {
-      return new SQLiteCommand(); 
-    }
 
     public override LinqSqlProvider CreateLinqSqlProvider(Model.DbModel dbModel) {
       return new SQLiteLinqSqlProvider(dbModel); 

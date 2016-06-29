@@ -18,8 +18,6 @@ namespace Vita.Modules.OAuthClient {
         "https://login.live.com/oauth20_authorize.srf",
         "https://login.live.com/oauth20_token.srf",
         "https://login.live.com/oauth20_token.srf",  // refresh URL, same as access token URL
-                                                     // see full list in api docs: https://msdn.microsoft.com/en-us/library/hh243646.aspx
-                                                     // offline_access is to request refresh token
         "wl.basic wl.emails wl.photos wl.offline_access wl.signin",
         "https://msdn.microsoft.com/en-us/library/hh243647.aspx",
         "https://apis.live.net/v5.0/me");
@@ -37,6 +35,8 @@ namespace Vita.Modules.OAuthClient {
           "https://www.googleapis.com/plus/v1/people/me");
 
       // Facebook 
+      // TODO: Investigage; looks like FB supports id_token (like in OpenIdConnect), but requires some twists 
+      // investigate why currently does not return id_token
       CreateOrUpdateServer(session, "Facebook",
         OAuthServerOptions.TokenUseGet | OAuthServerOptions.OpenIdConnect | OAuthServerOptions.TokenReplaceLocalIpWithLocalHost,
         "http://www.facebook.com",

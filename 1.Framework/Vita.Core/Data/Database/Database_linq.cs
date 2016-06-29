@@ -53,18 +53,18 @@ namespace Vita.Data {
       return conn; 
     }
 
-    private object ExecuteLinqNonQuery(LinqCommand command, EntitySession session, DataConnection connection) {
-      var translCmd = GetTranslateLinqCommand(command); 
-      var dbCommand = CreateDbCommand(translCmd, command);
+    private object ExecuteLinqNonQuery(LinqCommand linqCommand, EntitySession session, DataConnection connection) {
+      var translCmd = GetTranslateLinqCommand(linqCommand); 
+      var dbCommand = CreateLinqDbCommand(connection, linqCommand, translCmd);
       var result = ExecuteDbCommand(dbCommand, connection, DbExecutionType.NonQuery);
       return result;
     }
 
-    public object ExecuteLinqSelect(LinqCommand command, EntitySession session, DataConnection conn) {
-      var translCmd = GetTranslateLinqCommand(command); 
+    public object ExecuteLinqSelect(LinqCommand linqCommand, EntitySession session, DataConnection conn) {
+      var translCmd = GetTranslateLinqCommand(linqCommand); 
       //Locks require ongoing transaction
       object result;
-      var dbCommand = CreateDbCommand(translCmd, command);
+      var dbCommand = CreateLinqDbCommand(conn, linqCommand, translCmd);
       IList resultList = translCmd.ResultListCreator();
       ExecuteDbCommand(dbCommand, conn, DbExecutionType.Reader, reader => {
         while(reader.Read()) {
@@ -101,12 +101,12 @@ namespace Vita.Data {
       return translCmd;
     }
 
-    private IDbCommand CreateDbCommand(TranslatedLinqCommand translatedCommand, LinqCommand command) {
-      var cmd = DbModel.Driver.CreateDbCommand();
+    private IDbCommand CreateLinqDbCommand(DataConnection connection, LinqCommand linqCommand, TranslatedLinqCommand translatedCommand) {
+      var cmd = connection.DbConnection.CreateCommand(); 
       cmd.CommandType = CommandType.Text;
       cmd.CommandText = translatedCommand.Sql;
       foreach (var qParam in translatedCommand.Parameters) {
-        var value = qParam.ReadValue(command.ParameterValues) ?? DBNull.Value;
+        var value = qParam.ReadValue(linqCommand.ParameterValues) ?? DBNull.Value;
         var dbParam = cmd.CreateParameter(); //DbModel.Driver.AddParameter(cmd,  // 
         dbParam.ParameterName = qParam.Name;
         //Value and parameter may need some tweaking, depending on server type

@@ -32,6 +32,7 @@ namespace Vita.Data {
 
   public class UpdateSet { 
     public readonly Guid Id; //unique batch Id
+    public readonly DataConnection Connection; 
     public readonly EntitySession Session;
     public bool UseTransaction;
     public readonly DateTime UpdateTime;
@@ -45,12 +46,13 @@ namespace Vita.Data {
     public bool UsesOutParams;
     public List<BatchDbCommand> BatchCommands; //batch mode only
 
-    public UpdateSet(EntitySession session,  DateTime updateTime, IList<EntityRecord> records, bool sequence) {
-      Session = session;
+    public UpdateSet(DataConnection connection, DateTime updateTime, IList<EntityRecord> records, bool sequence) {
+      Connection = connection;
+      Session = connection.Session;
       UpdateTime = updateTime;
       Id = Guid.NewGuid();
       //Start explicit transaction only if we have more than one command to execute.
-      UseTransaction = (records.Count + session.ScheduledCommands.Count) > 1;
+      UseTransaction = (records.Count + Session.ScheduledCommands.Count) > 1;
       AllRecords.AddRange(records);
       if (sequence)
         SequenceRecords(); //fills entity info set

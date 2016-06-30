@@ -37,6 +37,7 @@ namespace Vita.Modules.Logging {
       }
       try {
         var session = this.App.OpenSystemSession();
+        session.DisableStoredProcs(); //as a precaution, taking simpler path, in case something wrong with stored procs 
         var errInfo = session.NewEntity<IErrorLog>();
         errInfo.CreatedOn = App.TimeService.UtcNow;
         errInfo.LocalTime = App.TimeService.Now;
@@ -70,6 +71,7 @@ namespace Vita.Modules.Logging {
       }
       try {
         var session = this.App.OpenSystemSession();
+        session.DisableStoredProcs(); //as a precaution, taking simpler path, in case something wrong with stored procs 
         var errInfo = session.NewEntity<IErrorLog>();
         errInfo.ExceptionType = "Unknown";
         //Some messages might be really long; check length to fit into the field; full message will still go into details column

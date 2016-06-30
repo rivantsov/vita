@@ -11,7 +11,7 @@ Start Visual Studio 2013 as Administrator and open the VitaAll.sln solution file
 Build the solution. The download includes external libraries used by projects (data providers for different servers), 
 so the solution should build without errors. 
 
-z8Running the Test projects*
+*Running the Test projects*
 Note that Vita.UnitTests.Common project is a utility library used in other test projects, not unit test container by itself. 
 Unit test projects can be run in 2 modes:
   1. As traditional unit tests through Test Explorer window in VS. In this mode the tests run for MS SQL Server 2008. 
@@ -61,10 +61,14 @@ In VS Solution Explorer there is a number of folders in the main solution:
   2. Drivers - contains database drivers (providers) for different database servers. The following servers are supported: 
      MS SQL 2008/2012; MS SQL Compact Edition (SQL CE); MySql; Postgres; SQLite. Driver for MS SQL Server is included into core VITA assembly. 
   3. Modules - contains Vita.Modules project. This project is a container for a number of standard modules that are provided out of the box. 
-       Contains useful functionality that can be easily imported into your solution.
+       Contains useful functionality that can be easily imported into your application.
   4. Samples - contains a sample application: 
-      - Vita.Samples.BookStore - sample application implementing online Book store; 
-      Both projects are used in unit tests. 
+      - Vita.Samples.BookStore - an online Book store, a class library containing data and business logic. 
+         This assembly and app is used in Extended unit tests project.
+      - Vita.Samples.BookStore.SampleData - sample data generator for the bookstore
+      - Vita.Samples.BookStore.UI - a Web app based on AngularJs frontend, with api controllers serving data only as Json. 
+        The initial set of books in catalog is imported from GoogleBooks API. 
+      - Vita.Samples.OAuthDemoAp - a desktop application demoing OAuth 2.0 implementation for several popular sites supporting the protocol
   5. UnitTest - a set of unit-test projects. 
     - Vita.UnitTests.Common - a utility library, not unit test container. 
     - Vita.UnitTests.Basic - a set of unit tests for basic VITA functionality. 

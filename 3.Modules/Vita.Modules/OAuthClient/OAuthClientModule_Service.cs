@@ -47,48 +47,25 @@ namespace Vita.Modules.OAuthClient {
     #region IAuthClientService
     public event AsyncEvent<RedirectEventArgs> Redirected;
 
-    public IOAuthRemoteServer GetOAuthServer(IEntitySession session, string serverName) {
-      return session.EntitySet<IOAuthRemoteServer>().Where(s => s.Name == serverName).FirstOrDefault();
-    }
-
-    public IOAuthRemoteServerAccount GetOAuthAccount(IOAuthRemoteServer server, string accountName = null) {
-      accountName = accountName ?? Settings.DefaultAccountName; 
-      var session = EntityHelper.GetSession(server);
-      var accountQuery = session.EntitySet<IOAuthRemoteServerAccount>().Where(a => a.Server == server && a.Name == accountName);
-      var act = accountQuery.FirstOrDefault();
-      return act;
-    }
-
-    public IOAuthClientFlow BeginOAuthFlow(IOAuthRemoteServerAccount account, Guid? userId = null, string scopes = null) {
-      var flow = account.NewOAuthFlow();
-      var redirectUrl = this.Settings.RedirectUrl;
-      if(account.Server.Options.IsSet(OAuthServerOptions.TokenReplaceLocalIpWithLocalHost))
-        redirectUrl = redirectUrl.Replace("127.0.0.1", "localhost"); //Facebook special case
-      flow.UserId = userId;
-      flow.Scopes = scopes ?? account.Server.Scopes; //all scopes
-      flow.RedirectUrl = redirectUrl;
-      var clientId = account.ClientIdentifier;
-      flow.AuthorizationUrl = account.Server.AuthorizationUrl + StringHelper.FormatUri(AuthorizationUrlQuery, clientId, redirectUrl, flow.Scopes, flow.Id.ToString());
-      return flow;
-    }
-
     public async Task OnRedirected(OperationContext context, string state, string authCode, string error) {
       var session = context.OpenSystemSession();
       Guid reqId;
       Util.Check(Guid.TryParse(state, out reqId), "Invalid state parameter ({0}), expected GUID.", state);
       var flow = session.GetEntity<IOAuthClientFlow>(reqId);
-      Util.Check(flow != null, "OAuth Redirect: invalid state parameter, OAuth request not found.", state);
+      Util.Check(flow != null, "OAuth Redirect: invalid state parameter, OAuth flow not found.", state);
+      CheckFlowExpired(flow); 
       flow.AuthorizationCode = authCode;
       flow.Error = error;
       flow.Status = string.IsNullOrWhiteSpace(error) ? OAuthFlowStatus.Authorized : OAuthFlowStatus.Error;
       session.SaveChanges();
       if(Redirected != null) {
-        var args = new RedirectEventArgs(flow.Id);
+        var args = new RedirectEventArgs(context, flow.Id);
         await Redirected.RaiseAsync(this, args);
       }
     }
 
     public async Task<IOAuthAccessToken> RetrieveAccessToken(IOAuthClientFlow flow) {
+      CheckFlowExpired(flow);
       string err = null;
       switch(flow.Status) {
         case OAuthFlowStatus.Started: err = "Access not authorized yet."; break;
@@ -206,7 +183,59 @@ namespace Vita.Modules.OAuthClient {
       var tokenValue = token.AccessToken.DecryptString(Settings.EncryptionChannel);
       client.AddAuthorizationHeader(tokenValue, scheme: token.TokenType.ToString());
     }
-    #endregion 
 
+    public async Task<TProfile> GetBasicProfile<TProfile>(IOAuthAccessToken token) {
+      Util.Check(token != null, "AccessToken may not be null.");
+      var server = token.Account.Server;
+      string profileUrl = server.BasicProfileUrl;
+      Util.CheckNotEmpty(profileUrl, "Basic profile URL for OAuth server {0} is empty, cannot retrieve profile.", server.Name);
+      var profileUri = new Uri(profileUrl);
+      var webClient = new WebApiClient(profileUrl, ClientOptions.Default, typeof(string));
+      SetupWebClient(webClient, token);
+      var profile = await webClient.GetAsync<TProfile>(string.Empty);
+      return profile;
+    }
+
+    public async Task<string> GetBasicProfile(IOAuthAccessToken token) {
+      Util.Check(token != null, "AccessToken may not be null.");
+      var server = token.Account.Server; 
+      string profileUrl = server.BasicProfileUrl;
+      Util.CheckNotEmpty(profileUrl, "Basic profile URL for OAuth server {0} is empty, cannot retrieve profile.", server.Name);
+      var profileUri = new Uri(profileUrl);
+      var webClient = new WebApiClient(profileUrl, ClientOptions.Default, typeof(string));
+      SetupWebClient(webClient, token);
+      var respStream = await webClient.GetAsync<System.IO.Stream>(string.Empty);
+      var reader = new System.IO.StreamReader(respStream);
+      var profile = reader.ReadToEnd();
+      return profile;
+    }
+
+    // A primitive way of finding user id inside json, by finding property by name (specified in IOAuthRemoteServer) and extracting its value,
+    // without converting Json into strongly typed object
+    public string ExtractUserId(IOAuthRemoteServer server, string profileJson) {
+      if(string.IsNullOrWhiteSpace(server.ProfileUserIdTag))
+        return null;
+      var qtag = '"' + server.ProfileUserIdTag + '"';
+      var tagPos = profileJson.IndexOf(qtag);
+      if(tagPos < 0)
+        return null;
+      var start = tagPos + qtag.Length + 1;
+      var qLeft = profileJson.IndexOf('"', start);
+      var qRight = profileJson.IndexOf('"', qLeft + 1);
+      var userId = profileJson.Substring(qLeft + 1, qRight - qLeft - 1);
+      return userId; 
+    }
+    #endregion
+
+    private void CheckFlowExpired(IOAuthClientFlow flow) {
+      var session = EntityHelper.GetSession(flow);
+      var expires = flow.CreatedOn.AddMinutes(Settings.FlowExpirationMinutes);
+      var now = App.TimeService.UtcNow;
+      if (expires < now) {
+        flow.Status = OAuthFlowStatus.Expired;
+        session.SaveChanges(); 
+        session.Context.ThrowIf(true, ClientFaultCodes.InvalidAction, "OAuthFlow", "OAuth 2.0 process expired.");
+      }
+    }
   } //class
 }

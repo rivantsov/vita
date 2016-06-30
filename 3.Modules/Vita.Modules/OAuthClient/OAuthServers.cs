@@ -20,7 +20,8 @@ namespace Vita.Modules.OAuthClient {
         "https://login.live.com/oauth20_token.srf",  // refresh URL, same as access token URL
         "wl.basic wl.emails wl.photos wl.offline_access wl.signin",
         "https://msdn.microsoft.com/en-us/library/hh243647.aspx",
-        "https://apis.live.net/v5.0/me");
+        "https://apis.live.net/v5.0/me", 
+        "id");
 
       // Google 
       // Specifics: Refresh token is returned only in the first request for access token
@@ -32,7 +33,8 @@ namespace Vita.Modules.OAuthClient {
           "https://www.googleapis.com/oauth2/v4/token",
           "profile email",
           "https://developers.google.com/identity/protocols/OAuth2WebServer",
-          "https://www.googleapis.com/plus/v1/people/me");
+          "https://www.googleapis.com/plus/v1/people/me", 
+          "id");
 
       // Facebook 
       // TODO: Investigage; looks like FB supports id_token (like in OpenIdConnect), but requires some twists 
@@ -45,7 +47,8 @@ namespace Vita.Modules.OAuthClient {
         null,
         "public_profile email",
         "https://developers.facebook.com/docs/facebook-login/manually-build-a-login-flow",
-        "https://graph.facebook.com/v2.5/me");
+        "https://graph.facebook.com/v2.5/me", 
+        "id");
 
       // LinkedIn. Specifics: 
       //   1. LinkedIn uses Get for access token endpoint (OAuth2 spec requires POST)
@@ -57,7 +60,8 @@ namespace Vita.Modules.OAuthClient {
         null,  
         "r_basicprofile r_emailaddress rw_company_admin w_share",
         "https://developer.linkedin.com/docs/oauth2",
-        "https://api.linkedin.com/v1/people/~?format=json");
+        "https://api.linkedin.com/v1/people/~?format=json", 
+        "id");
 
       // Fitbit. 
       //  1. Access token endpoint requries authorization header which is Base64 encoded 'clientid:clientsecret'
@@ -69,7 +73,8 @@ namespace Vita.Modules.OAuthClient {
           "https://api.fitbit.com/oauth2/token",  // refresh token
           "activity heartrate location nutrition profile settings sleep social weight",
           "https://dev.fitbit.com/docs/oauth2/",
-          "https://api.fitbit.com/1/user/-/profile.json");
+          "https://api.fitbit.com/1/user/-/profile.json", 
+          "encodedId");
         
         // Jawbone
         CreateOrUpdateServer(session, "Jawbone",
@@ -82,7 +87,8 @@ namespace Vita.Modules.OAuthClient {
             "sleep_read sleep_write meal_read meal_write weight_read weight_write " +
             "generic_event_read generic_event_write heartrate_read",
           "https://jawbone.com/up/developer/authentication",
-          "https://jawbone.com/nudge/api/v.1.1/users/@me");
+          "https://jawbone.com/nudge/api/v.1.1/users/@me", 
+          "user_xid");
 
       // Yahoo. Specifics: it is impossible to test - it does not allow localhost as redirect URL.
       // There are fancy hacks/workarounds (creating localtest.me in hosts file) - but that's too much.
@@ -107,20 +113,21 @@ namespace Vita.Modules.OAuthClient {
 
     public static IOAuthRemoteServer CreateOrUpdateServer(IEntitySession session,  string name, OAuthServerOptions options, 
                     string siteUrl, string authorizationUrl, string tokenRequestUrl, string tokenRefreshUrl, string scopes,
-                    string documentationUrl, string basicProfileUrl) {
-      IOAuthRemoteServer server = session.EntitySet<IOAuthRemoteServer>().Where(s => s.Name == name).FirstOrDefault();
-      if(server == null)
-        server = session.NewEntity<IOAuthRemoteServer>();
-      server.Name = name;
-      server.Options = options;
-      server.SiteUrl = siteUrl;
-      server.AuthorizationUrl = authorizationUrl;
-      server.TokenRequestUrl = tokenRequestUrl;
-      server.TokenRefreshUrl = tokenRefreshUrl;
-      server.Scopes = scopes;
-      server.DocumentationUrl = documentationUrl;
-      server.BasicProfileUrl = basicProfileUrl;
-      return server; 
+                    string documentationUrl, string basicProfileUrl, string profileUserIdTag) {
+      IOAuthRemoteServer srv = session.EntitySet<IOAuthRemoteServer>().Where(s => s.Name == name).FirstOrDefault();
+      if(srv == null)
+        srv = session.NewEntity<IOAuthRemoteServer>();
+      srv.Name = name;
+      srv.Options = options;
+      srv.SiteUrl = siteUrl;
+      srv.AuthorizationUrl = authorizationUrl;
+      srv.TokenRequestUrl = tokenRequestUrl;
+      srv.TokenRefreshUrl = tokenRefreshUrl;
+      srv.Scopes = scopes;
+      srv.DocumentationUrl = documentationUrl;
+      srv.BasicProfileUrl = basicProfileUrl;
+      srv.ProfileUserIdTag = profileUserIdTag;
+      return srv; 
     } 
 
   }

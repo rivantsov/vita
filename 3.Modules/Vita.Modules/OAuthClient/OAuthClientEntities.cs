@@ -57,7 +57,8 @@ namespace Vita.Modules.OAuthClient {
     string DocumentationUrl { get; set; }
     [Size(100), Nullable]
     string BasicProfileUrl { get; set; }
-
+    [Size(100), Nullable]
+    string ProfileUserIdTag { get; set; }
   }
 
   [Entity]
@@ -79,7 +80,8 @@ namespace Vita.Modules.OAuthClient {
     Started,
     Authorized,
     TokenRetrieved,
-    Error
+    Error,
+    Expired,
   }
 
   public enum OAuthTokenType {
@@ -160,4 +162,19 @@ namespace Vita.Modules.OAuthClient {
     [Unlimited]
     string FullJson { get; set; }
   }
+
+  [Entity, Unique("ExternalUserId,Server")]
+  public interface IOAuthExternalUser {
+    [PrimaryKey, Auto]
+    Guid Id { get; }
+    [Utc, Auto(AutoType.CreatedOn)]
+    DateTime CreatedOn { get; set; }
+    IOAuthRemoteServer Server { get; set; }
+
+    [Index]
+    Guid UserId { get; set; }
+    [Size(100)]
+    string ExternalUserId {get;set;}
+  }
+
 }//ns

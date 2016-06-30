@@ -11,22 +11,25 @@ using Vita.Modules.WebClient;
 namespace Vita.Modules.OAuthClient {
 
   public class RedirectEventArgs : EventArgs {
-    public Guid FlowId;
-    public RedirectEventArgs(Guid requestId) {
+    public readonly OperationContext Context; 
+    public readonly Guid FlowId;
+    public RedirectEventArgs(OperationContext context, Guid requestId) {
+      Context = context; 
       FlowId = requestId;
     }
   }
 
   public interface IOAuthClientService {
-    IOAuthRemoteServer GetOAuthServer(IEntitySession session, string serverName);
-    IOAuthRemoteServerAccount GetOAuthAccount(IOAuthRemoteServer server, string accountName = null);
-    IOAuthClientFlow BeginOAuthFlow(IOAuthRemoteServerAccount account, Guid? userId = null, string scopes = null);
     Task OnRedirected(OperationContext context, string state, string authCode, string error);
     event AsyncEvent<RedirectEventArgs> Redirected;
+
     Task<IOAuthAccessToken> RetrieveAccessToken(IOAuthClientFlow flow);
     Task<bool> RefreshAccessToken(IOAuthAccessToken accessToken);
+
+    Task<TProfile> GetBasicProfile<TProfile>(IOAuthAccessToken token);
     IOAuthAccessToken GetUserOAuthToken(IEntitySession session, string serverName, string accountName = null); 
     void SetupWebClient(WebApiClient client, IOAuthAccessToken token);
-
+    Task<string> GetBasicProfile(IOAuthAccessToken token);
+    string ExtractUserId(IOAuthRemoteServer server, string profileJson); 
   }
 }

@@ -1,21 +1,41 @@
-﻿Some special considerations for registering apps (clients) on particular servers. 
+﻿Application registration
+In order to use an OAuth-enabled client (your app, or this Demo app), you must register it with the target OAuth server and receive the credentials - client id and secret. 
+OAuthDemoApp comes with predefined information for a number of popular sites that support OAuth 2.0 (Google, Facebook, etc).
+This information includes site name, OAuth end point URLs, link to documentation, etc. 
+OAuthDemoApp does NOT come with credentials for these sites - you have to do it yourself. After registering the app on target site, 
+copy the client id and secret and paste it into the corresponding boxes in the demo app form and click Save. The information will be saved in the database for future reuse. 
+You might need to signup for developer account on the target site before you can register the app. 
 
-When registering an app, you must provide (register) RedirectURLs that are allowed to be used.
+Redirect URL
+During the application registration on target site, you must also register so called Redirect URL - the URL that is used as 'return point' for authorization code. 
 For most servers and this Demo app you should register the following redirect URL: 
 http://127.0.0.1:8081/api/oauth_redirect
-However, servers have specific (and annoying) restrictions which require workarounds. 
-
-Facebook 
-Fb does not allow registered redirect URLs for testing, neither localhost or ip address (127.0.0.1). The workaround it to register 'http://localhost:8081' as site URL for your app. With a special flag (in Vita's oauth server record) the standard redirect URL with IP is twisted for FB: '127.0.0.1' is replaced with 'localhost'.
+However, servers have specific (and annoying) restrictions which require workarounds. Below are specifics for each server. 
 
 Windows Live 
-1. Redirect URI should include full path: http://localhost:8081/api/oauth_redirect; does not allow IP address, so use localhost 
-2. The docs and site use different terminology: client_id -> appId, client_secret -> password  (Oauth->WinLive)
-3. Doc API examples suggest putting access token into URL parameter, but it actually works standard way (in Authorization header)
-4. Registering apps portal: https://apps.dev.microsoft.com/#/appList
-    (hard to find the link on dev site, really)
+ * Registering apps portal: https://apps.dev.microsoft.com/#/appList  (hard to find the link on dev site, really)
+ * Redirect URI should include full path: http://localhost:8081/api/oauth_redirect; does not allow IP address, so use localhost 
+ * The docs and site use different terminology: client_id -> appId, client_secret -> password  (Oauth->WinLive)
+ * Doc API examples suggest putting access token into URL parameter, but it actually works standard way (in Authorization header)
+
+Google
+  * Registering the app and getting credentials: https://console.developers.google.com/apis/credentials
+  * On the app details page, add an Authorized Redirect URL (standard)
+      
+Facebook 
+  * Registering the app: https://developers.facebook.com/apps/
+  * Fb does not allow registered redirect URLs for testing, neither localhost or ip address (127.0.0.1). The workaround it to register 'http://localhost:8081' as a site URL for your app. 
+    
+LinkedIN
+  * Register the app: https://www.linkedin.com/developer/apps
+  
+Fitbit
+  * Register the app: https://dev.fitbit.com/apps
+
+Jawbone
+  * Registering the app. Goto https://jawbone.com/up/developer/account  and then click 'Create App' button in the middle of the screen
 
 About Yahoo
 Supports OAuth2 but does not allow IP address or localhost as redirect URLs, so it is impossible to test locally. 
 There is a workaround (define localtest.me -> 127.0.0.1 in hosts file), but that's too much, so Yahoo is not shown in this app.
-And it's definition is commented out in code that creates server records. Uncomment and use it if you really need it.   
+Yahoo server information is commented out in code that creates server records. Uncomment and use it if you really need it.   

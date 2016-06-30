@@ -14,7 +14,7 @@ namespace Vita.Modules.OAuthClient {
     public static IOAuthRemoteServer NewOAuthRemoteServer(this IEntitySession session, string name, 
                                         OAuthServerOptions options, string siteUrl,                                               
                                         string authorizationUrl, string tokenRequestUrl, string tokenRefreshUrl, 
-                                        string documentationUrl, string basicProfileUrl) {
+                                        string documentationUrl, string basicProfileUrl, string profileUserIdTag) {
       var srv = session.NewEntity<IOAuthRemoteServer>();
       srv.Name = name;
       srv.Options = options;
@@ -23,7 +23,8 @@ namespace Vita.Modules.OAuthClient {
       srv.TokenRequestUrl = tokenRequestUrl;
       srv.TokenRefreshUrl = tokenRefreshUrl;
       srv.DocumentationUrl = documentationUrl;
-      srv.BasicProfileUrl = basicProfileUrl; 
+      srv.BasicProfileUrl = basicProfileUrl;
+      srv.ProfileUserIdTag = profileUserIdTag; 
       return srv;
     }
 
@@ -80,6 +81,62 @@ namespace Vita.Modules.OAuthClient {
         tknEnt.AuthTime = OpenIdConnectUtil.FromUnixTime(idToken.AuthTime);
       tknEnt.FullJson = json; 
       return tknEnt; 
+    }
+
+    public static IOAuthExternalUser NewExternalUser(this IOAuthRemoteServer server, Guid userId, string externalUserId) {
+      var session = EntityHelper.GetSession(server);
+      var user = session.NewEntity<IOAuthExternalUser>();
+      user.Server = server;
+      user.UserId = userId;
+      user.ExternalUserId = externalUserId;
+      return user; 
+    }
+
+    public static IOAuthRemoteServer GetOAuthServer(this IEntitySession session, string serverName) {
+      return session.EntitySet<IOAuthRemoteServer>().Where(s => s.Name == serverName).FirstOrDefault();
+    }
+
+    public static string[] GetScopes(this IOAuthRemoteServer server) {
+      return server.Scopes.Split(new char[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+    }
+
+    public static IOAuthRemoteServerAccount GetOAuthAccount(this IOAuthRemoteServer server, string accountName = null) {
+      var session = EntityHelper.GetSession(server);
+      if(accountName == null) {
+        var stt = session.GetOAuthSettings(); 
+        accountName = stt.DefaultAccountName;
+      }
+      var accountQuery = session.EntitySet<IOAuthRemoteServerAccount>().Where(a => a.Server == server && a.Name == accountName);
+      var act = accountQuery.FirstOrDefault();
+      return act;
+    }
+
+    public static IOAuthClientFlow BeginOAuthFlow(this IOAuthRemoteServerAccount account, Guid? userId = null, string scopes = null) {
+      var session = EntityHelper.GetSession(account);
+      var stt = session.GetOAuthSettings(); 
+      var flow = account.NewOAuthFlow();
+      var redirectUrl = stt.RedirectUrl;
+      if(account.Server.Options.IsSet(OAuthServerOptions.TokenReplaceLocalIpWithLocalHost))
+        redirectUrl = redirectUrl.Replace("127.0.0.1", "localhost"); //Facebook special case
+      flow.UserId = userId;
+      flow.Scopes = scopes ?? account.Server.Scopes; //all scopes
+      flow.RedirectUrl = redirectUrl;
+      var clientId = account.ClientIdentifier;
+      flow.AuthorizationUrl = account.Server.AuthorizationUrl + 
+            StringHelper.FormatUri(OAuthClientModule.AuthorizationUrlQuery, clientId, redirectUrl, flow.Scopes, flow.Id.ToString());
+      return flow;
+    }
+
+    private static OAuthClientSettings GetOAuthSettings(this IEntitySession session) {
+      var stt = session.Context.App.GetConfig<OAuthClientSettings>();
+      Util.Check(stt != null, "OAuthClientSettings object is not registered in the entity app. Most likely OAuthClientModule is not part of the app.");
+      return stt; 
+    }
+
+    public static IOAuthExternalUser FindUser(this IOAuthRemoteServer server, string externalUserId) {
+      var session = EntityHelper.GetSession(server);
+      var user = session.EntitySet<IOAuthExternalUser>().Where(u => u.Server == server && u.ExternalUserId == externalUserId).FirstOrDefault();
+      return user; 
     }
 
     public static bool IsSet(this OAuthServerOptions options, OAuthServerOptions option) {

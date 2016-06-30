@@ -17,7 +17,8 @@ namespace Vita.Modules.OAuthClient {
     public string EncryptionChannel;
     public IJsonDeserializer JsonDeserializer; // for Jwt token in OpenId connect
     public string RedirectResponseRedirectsTo;
-    public string RedirectResponseText; 
+    public string RedirectResponseText;
+    public int FlowExpirationMinutes = 10; 
 
     public OAuthClientSettings(string redirectUrl = null,
          string defaultAccountName = "TestAccount", IJsonDeserializer deserializer = null, 

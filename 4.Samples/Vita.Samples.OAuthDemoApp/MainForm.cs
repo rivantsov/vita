@@ -18,6 +18,7 @@ using Vita.Modules.EncryptedData;
 using Vita.Modules.WebClient;
 using Vita.Modules.WebClient.Sync;
 using Vita.Web;
+using Vita.Entities.Web;
 
 namespace Vita.Samples.OAuthDemoApp {
 
@@ -38,6 +39,10 @@ namespace Vita.Samples.OAuthDemoApp {
           cboServers.SelectedIndex = 0;
       }
     } //method
+    private void MainForm_FormClosing(object sender, FormClosingEventArgs e) {
+      if(_redirectServer != null)
+        AsyncHelper.RunSync(() => _redirectServer.CloseAsync());
+    }
 
     private void cboServers_SelectedIndexChanged(object sender, EventArgs e) {
       if (!txtClientId.ReadOnly)
@@ -48,7 +53,7 @@ namespace Vita.Samples.OAuthDemoApp {
       var server = GetCurrentServer(session); 
       if (server != null) {
         linkDocs.Text = server.DocumentationUrl;
-        var act = _service.GetOAuthAccount(server);
+        var act = server.GetOAuthAccount();
         if (act == null) {
           BeginEditClientInfo();
         } else {
@@ -99,7 +104,7 @@ namespace Vita.Samples.OAuthDemoApp {
       return _app.OpenSession();
     }
     private IOAuthRemoteServer GetCurrentServer(IEntitySession session) {
-      return _service.GetOAuthServer(session, (string)cboServers.SelectedItem);
+      return session.GetOAuthServer((string)cboServers.SelectedItem);
     }
 
     #region Run OAuth process 
@@ -114,8 +119,8 @@ namespace Vita.Samples.OAuthDemoApp {
       var session = OpenSession();
       var server = GetCurrentServer(session);
       Log("=== Starting OAuth2 flow, server: {0}", server.Name);
-      var act = _service.GetOAuthAccount(server);
-      var flow = _service.BeginOAuthFlow(act, null, server.Scopes);
+      var act = server.GetOAuthAccount();
+      var flow = act.BeginOAuthFlow(null, server.Scopes);
       session.SaveChanges();
       _processStatus = ProcessStatus.WaitingRedirect;
       // Open browser page and direct it to authorization URL for the server
@@ -137,7 +142,7 @@ namespace Vita.Samples.OAuthDemoApp {
         return;
       }
       Log("=== Redirected; server returned authorization code: {0}", flow.AuthorizationCode);
-      // Retrieve access token
+
       Log("=== Retrieving access token using authorization code...");
       var token = await _service.RetrieveAccessToken(flow);
       session.SaveChanges();
@@ -147,12 +152,34 @@ namespace Vita.Samples.OAuthDemoApp {
         Log("=== {0} supports OpenId Connect, so it also returned id_token. Inside id_token:", server.Name);
         Log("  Subject = {0}, expires(local) = {1}", token.OpenIdToken.Subject, token.OpenIdToken.ExpiresAt.ToLocalTime());
       }
-      Log("=== Making a test call to server: GET {0}", server.BasicProfileUrl);
-      var testResp = MakeTestApiCall(token);
+
+      Log("=== Retreiving basic profile: GET {0}", server.BasicProfileUrl);
+      var profileJson = await _service.GetBasicProfile(token); 
       Log("=== Server response: ");
-      Log(testResp);
-      // We might not have refresh token - Google returns it only for the first access token request
-      if (!string.IsNullOrEmpty(server.TokenRefreshUrl) && token.RefreshToken != null) {
+      Log(profileJson);
+
+      Log("=== Extracting remote User Id from response");
+      var userId = _service.ExtractUserId(server, profileJson);
+      Log("      User id = {0}", userId);
+
+      // Try to find user in external users table; if not found - register new one; 
+      var user = server.FindUser(userId);
+      if (user == null) {
+        user = server.NewExternalUser(Guid.NewGuid(), userId);
+        session.SaveChanges(); 
+        Log("      Added user to OAuthExternalUser table");
+      } else {
+        Log("      User is already registered in OAuthExternalUser table.");
+      }
+      // For FB we test retreiving profile as object
+      if (server.Name == "Facebook") {
+        Log("=== Retreiving profile as object (FB only)");
+        var profile = await _service.GetBasicProfile<FacebookProfile>(token);
+        Log("       Success, Id = {0}, Name={1} ", profile.Id, profile.Name);
+      }
+      
+      // Refresh token. We might not have it - Google returns it only for the first access token request
+      if(!string.IsNullOrEmpty(server.TokenRefreshUrl) && token.RefreshToken != null) {
         Log("=== Server supports refreshing tokens; refreshing token...");
         var success = await _service.RefreshAccessToken(token);
         Util.Check(success, "Failed to refresh token");
@@ -161,19 +188,13 @@ namespace Vita.Samples.OAuthDemoApp {
       }
     }
 
-    // Makes a test call to get-profile endpoint and returns json string
-    private string MakeTestApiCall(IOAuthAccessToken token) {
-      string testUrl = token.Account.Server.BasicProfileUrl;
-      var testUri = new Uri(testUrl);
-      var webClient = new WebApiClient(testUri.Scheme + "://" + testUri.Authority,
-        ClientOptions.Default, typeof(string));
-      _service.SetupWebClient(webClient, token);
-      var respStream = webClient.ExecuteGet<System.IO.Stream>(testUri.AbsolutePath + testUri.Query);
-      var reader = new StreamReader(respStream);
-      var respText = reader.ReadToEnd();
-      return respText;
-    }//method
-
+    // For FB we test retreiving profile as object
+    class FacebookProfile {
+      [Node("id")]
+      public string Id;
+      [Node("name")]
+      public string Name;
+    }
 
     // receives the signal from Redirect API controller that redirect was fired
     private Task OAuthClientService_Redirected(object source, RedirectEventArgs args) {
@@ -200,7 +221,7 @@ namespace Vita.Samples.OAuthDemoApp {
       }
       var session = OpenSession();
       var server = GetCurrentServer(session);
-      var acct = _service.GetOAuthAccount(server);
+      var acct = server.GetOAuthAccount();
       if(acct == null) {
         acct = server.NewOAuthAccount(clientId, secret, "TestAccount");
       } else {

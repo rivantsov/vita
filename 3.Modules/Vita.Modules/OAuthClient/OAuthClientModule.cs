@@ -19,7 +19,7 @@ namespace Vita.Modules.OAuthClient {
       Settings = settings ?? new OAuthClientSettings(); 
       this.App.RegisterConfig(this.Settings); 
       RegisterEntities(typeof(IOAuthRemoteServer), typeof(IOAuthRemoteServerAccount), typeof(IOAuthAccessToken), 
-          typeof(IOAuthClientFlow), typeof(IOAuthOpenIdToken));
+          typeof(IOAuthClientFlow), typeof(IOAuthOpenIdToken), typeof(IOAuthExternalUser));
       App.RegisterService<IOAuthClientService>(this);
       Requires<EncryptedData.EncryptedDataModule>();
     }

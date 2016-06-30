@@ -244,6 +244,7 @@
       this.Controls.Add(this.pnlTop);
       this.Name = "MainForm";
       this.Text = "OAuth Demo App";
+      this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.MainForm_FormClosing);
       this.pnlTop.ResumeLayout(false);
       this.pnlTop.PerformLayout();
       this.groupBox1.ResumeLayout(false);

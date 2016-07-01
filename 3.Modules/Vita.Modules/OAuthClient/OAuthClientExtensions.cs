@@ -97,16 +97,23 @@ namespace Vita.Modules.OAuthClient {
     }
 
     public static string[] GetScopes(this IOAuthRemoteServer server) {
+      if(string.IsNullOrWhiteSpace(server.Scopes))
+        return new string[] { }; 
       return server.Scopes.Split(new char[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
     }
 
-    public static IOAuthRemoteServerAccount GetOAuthAccount(this IOAuthRemoteServer server, string accountName = null) {
-      var session = EntityHelper.GetSession(server);
+    public static string[] GetScopes(this IOAuthAccessToken token) {
+      if(string.IsNullOrWhiteSpace(token.Scopes))
+        return new string[] { };
+      return token.Scopes.Split(new char[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+    }
+
+    public static IOAuthRemoteServerAccount GetOAuthAccount(this IEntitySession session, string serverName, string accountName = null) {
       if(accountName == null) {
         var stt = session.GetOAuthSettings(); 
         accountName = stt.DefaultAccountName;
       }
-      var accountQuery = session.EntitySet<IOAuthRemoteServerAccount>().Where(a => a.Server == server && a.Name == accountName);
+      var accountQuery = session.EntitySet<IOAuthRemoteServerAccount>().Where(a => a.Server.Name == serverName && a.Name == accountName);
       var act = accountQuery.FirstOrDefault();
       return act;
     }
@@ -137,6 +144,43 @@ namespace Vita.Modules.OAuthClient {
       var session = EntityHelper.GetSession(server);
       var user = session.EntitySet<IOAuthExternalUser>().Where(u => u.Server == server && u.ExternalUserId == externalUserId).FirstOrDefault();
       return user; 
+    }
+
+    // A primitive way of finding user id inside json, by finding property by name (specified in IOAuthRemoteServer) and extracting its value,
+    // without converting Json into strongly typed object
+    public static string ExtractUserId(this IOAuthRemoteServer server, string profileJson) {
+      if(string.IsNullOrWhiteSpace(server.ProfileUserIdTag))
+        return null;
+      var qtag = '"' + server.ProfileUserIdTag + '"';
+      var tagPos = profileJson.IndexOf(qtag);
+      if(tagPos < 0)
+        return null;
+      var start = tagPos + qtag.Length + 1;
+      var qLeft = profileJson.IndexOf('"', start);
+      var qRight = profileJson.IndexOf('"', qLeft + 1);
+      var userId = profileJson.Substring(qLeft + 1, qRight - qLeft - 1);
+      return userId;
+    }
+
+
+    public static IOAuthAccessToken GetCurrentUserOAuthToken(this IEntitySession session, string serverName, string accountName = null) {
+      if (accountName == null) {
+        var stt = session.GetOAuthSettings();
+        accountName = stt.DefaultAccountName;
+      }
+      var context = session.Context;
+      var utcNow = context.App.TimeService.UtcNow;
+      var userId = context.User.UserId;
+      var accessToken = session.EntitySet<IOAuthAccessToken>().Where(t => t.Account.Server.Name == serverName && t.UserId == userId && t.ExpiresOn > utcNow)
+                    .OrderByDescending(t => t.RetrievedOn).FirstOrDefault();
+      return accessToken;
+    }
+
+    public static void SetupForOAuth(this WebApiClient client, IOAuthAccessToken token) {
+      var session = EntityHelper.GetSession(token);
+      var stt = session.GetOAuthSettings();
+      var tokenValue = token.AccessToken.DecryptString(stt.EncryptionChannel);
+      client.AddAuthorizationHeader(tokenValue, scheme: token.TokenType.ToString());
     }
 
     public static bool IsSet(this OAuthServerOptions options, OAuthServerOptions option) {

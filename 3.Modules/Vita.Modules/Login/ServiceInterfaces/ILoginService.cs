@@ -38,12 +38,13 @@ namespace Vita.Modules.Login {
     void Logout(OperationContext context);
 
     //Low-level methods
-    ILogin FindLogin(OperationContext context, string userName, string password, Guid? tenantId);
+    ILogin FindLogin(IEntitySession session, string userName, string password, Guid? tenantId);
     //Device token identifies trusted device
     LoginAttemptStatus CheckCanLogin(ILogin login, string deviceToken = null);
     PostLoginActions GetPostLoginActions(ILogin login);
 
-
+    // used by OAuth
+    LoginResult LoginUser(OperationContext context, Guid userId);
   }
 
 

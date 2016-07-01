@@ -82,6 +82,9 @@
     <Compile Include="Notifications\NotificationService.cs" />
     <Compile Include="Notifications\NotificationExtensions.cs" />
     <Compile Include="Email\EmailNotificationProvider.cs" />
+    <Compile Include="OAuthClient\Api\OAuthLoginController.cs" />
+    <Compile Include="OAuthClient\Api\OAuthController.cs" />
+    <Compile Include="OAuthClient\Api\_OAuthModels.cs" />
     <Compile Include="OAuthClient\Api\OAuthRedirectController.cs" />
     <Compile Include="OAuthClient\IOAuthClientService.cs" />
     <Compile Include="OAuthClient\OpenIdConnect.cs" />

@@ -1,13 +1,13 @@
 ﻿Application registration
 In order to use an OAuth-enabled client (your app, or this Demo app), you must register it with the target OAuth server and receive the credentials - client id and secret. 
-OAuthDemoApp comes with predefined information for a number of popular sites that support OAuth 2.0 (Google, Facebook, etc).
-This information includes site name, OAuth end point URLs, link to documentation, etc. 
-OAuthDemoApp does NOT come with credentials for these sites - you have to do it yourself. After registering the app on target site, 
-copy the client id and secret and paste it into the corresponding boxes in the demo app form and click Save. The information will be saved in the database for future reuse. 
-You might need to signup for developer account on the target site before you can register the app. 
+OAuthDemoApp comes with predefined information for a number of popular sites that support OAuth 2.0 (Google, Facebook, etc). This information includes site name, OAuth end point URLs, link to documentation, etc. 
+
+   OAuthDemoApp does NOT come with app registration credentials for these sites - you have to do it yourself. 
+   
+After registering the app on target site, copy the client id and secret and paste it into the corresponding boxes in the demo app form and click Save. The information will be saved in the database for future reuse. You might need to signup for developer account on the target site before you can register the app. 
 
 Redirect URL
-During the application registration on target site, you must also register so called Redirect URL - the URL that is used as 'return point' for authorization code. 
+During the application registration on the target site, you must also register so called Redirect URL - the URL that is used as 'return point' for authorization code. 
 For most servers and this Demo app you should register the following redirect URL: 
 http://127.0.0.1:8081/api/oauth_redirect
 However, servers have specific (and annoying) restrictions which require workarounds. Below are specifics for each server. 

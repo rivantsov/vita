@@ -64,7 +64,10 @@ namespace Vita.Modules.OAuthClient {
       }
     }
 
-    public async Task<IOAuthAccessToken> RetrieveAccessToken(IOAuthClientFlow flow) {
+    public async Task<Guid> RetrieveAccessToken(OperationContext context, Guid flowId) {
+      var session = context.OpenSystemSession();
+      var flow = session.GetEntity<IOAuthClientFlow>(flowId);
+      Util.Check(flow != null, "OAuth client flow not found, ID: {0}", flowId);
       CheckFlowExpired(flow);
       string err = null;
       switch(flow.Status) {
@@ -117,7 +120,8 @@ namespace Vita.Modules.OAuthClient {
         var idTkn = Settings.JsonDeserializer.Deserialize<OpenIdToken>(payload);
         accessToken.NewOpenIdToken(idTkn, payload);
       }
-      return accessToken;
+      session.SaveChanges(); 
+      return accessToken.Id;
     }
 
     private static HttpContent CreateFormUrlEncodedContent(string content) {
@@ -128,7 +132,10 @@ namespace Vita.Modules.OAuthClient {
       return cnt;
     }
 
-    public async Task<bool> RefreshAccessToken(IOAuthAccessToken token) {
+    public async Task<bool> RefreshAccessToken(OperationContext context, Guid tokenId) {
+      var session = context.OpenSystemSession();
+      var token = session.GetEntity<IOAuthAccessToken>(tokenId);
+      Util.Check(token != null, "Token not found, ID: {0}.", tokenId); 
       Util.Check(token.RefreshToken != null, "RefreshToken value is empty, cannot refresh access token.");
       var acct = token.Account;
       var apiClient = new WebApiClient(acct.Server.TokenRefreshUrl, ClientOptions.Default, badRequestContentType: typeof(string));
@@ -157,7 +164,6 @@ namespace Vita.Modules.OAuthClient {
         tokenResp = await apiClient.PostAsync<HttpContent, AccessTokenResponse>(formContent, string.Empty);
       }
       // Update token info
-      var session = EntityHelper.GetSession(token); 
       token.AccessToken = session.NewOrUpdate(token.AccessToken, tokenResp.AccessToken, Settings.EncryptionChannel);
       // A new refresh token might be returned (should in fact)
       if (!string.IsNullOrEmpty(tokenResp.RefreshToken))
@@ -169,62 +175,36 @@ namespace Vita.Modules.OAuthClient {
       return await Task.FromResult(true); 
     }
 
-    public IOAuthAccessToken GetUserOAuthToken(IEntitySession session, string serverName, string accountName = null) {
-      accountName = accountName ?? Settings.DefaultAccountName; 
-      var context = session.Context;
-      var utcNow = context.App.TimeService.UtcNow;
-      var userId = context.User.UserId;
-      var accessToken = session.EntitySet<IOAuthAccessToken>().Where(t => t.Account.Server.Name == serverName && t.UserId == userId && t.ExpiresOn > utcNow)
-                    .OrderByDescending(t => t.RetrievedOn).FirstOrDefault();
-      return accessToken;
-    }
-
-    public void SetupWebClient(WebApiClient client, IOAuthAccessToken token) {
-      var tokenValue = token.AccessToken.DecryptString(Settings.EncryptionChannel);
-      client.AddAuthorizationHeader(tokenValue, scheme: token.TokenType.ToString());
-    }
-
-    public async Task<TProfile> GetBasicProfile<TProfile>(IOAuthAccessToken token) {
+    public async Task<TProfile> GetBasicProfile<TProfile>(OperationContext context, Guid tokenId) {
+      var session = context.OpenSystemSession();
+      var token = session.GetEntity<IOAuthAccessToken>(tokenId); 
       Util.Check(token != null, "AccessToken may not be null.");
       var server = token.Account.Server;
       string profileUrl = server.BasicProfileUrl;
       Util.CheckNotEmpty(profileUrl, "Basic profile URL for OAuth server {0} is empty, cannot retrieve profile.", server.Name);
       var profileUri = new Uri(profileUrl);
       var webClient = new WebApiClient(profileUrl, ClientOptions.Default, typeof(string));
-      SetupWebClient(webClient, token);
+      webClient.SetupForOAuth(token);
       var profile = await webClient.GetAsync<TProfile>(string.Empty);
       return profile;
     }
 
-    public async Task<string> GetBasicProfile(IOAuthAccessToken token) {
+    public async Task<string> GetBasicProfile(OperationContext context, Guid tokenId) {
+      var session = context.OpenSystemSession();
+      var token = session.GetEntity<IOAuthAccessToken>(tokenId);
       Util.Check(token != null, "AccessToken may not be null.");
       var server = token.Account.Server; 
       string profileUrl = server.BasicProfileUrl;
       Util.CheckNotEmpty(profileUrl, "Basic profile URL for OAuth server {0} is empty, cannot retrieve profile.", server.Name);
       var profileUri = new Uri(profileUrl);
       var webClient = new WebApiClient(profileUrl, ClientOptions.Default, typeof(string));
-      SetupWebClient(webClient, token);
+      webClient.SetupForOAuth(token); 
       var respStream = await webClient.GetAsync<System.IO.Stream>(string.Empty);
       var reader = new System.IO.StreamReader(respStream);
       var profile = reader.ReadToEnd();
       return profile;
     }
 
-    // A primitive way of finding user id inside json, by finding property by name (specified in IOAuthRemoteServer) and extracting its value,
-    // without converting Json into strongly typed object
-    public string ExtractUserId(IOAuthRemoteServer server, string profileJson) {
-      if(string.IsNullOrWhiteSpace(server.ProfileUserIdTag))
-        return null;
-      var qtag = '"' + server.ProfileUserIdTag + '"';
-      var tagPos = profileJson.IndexOf(qtag);
-      if(tagPos < 0)
-        return null;
-      var start = tagPos + qtag.Length + 1;
-      var qLeft = profileJson.IndexOf('"', start);
-      var qRight = profileJson.IndexOf('"', qLeft + 1);
-      var userId = profileJson.Substring(qLeft + 1, qRight - qLeft - 1);
-      return userId; 
-    }
     #endregion
 
     private void CheckFlowExpired(IOAuthClientFlow flow) {

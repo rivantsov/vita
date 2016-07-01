@@ -23,29 +23,29 @@ namespace Vita.Modules.Login {
     #region ILoginService Members
     public event EventHandler<LoginEventArgs> LoginEvent;
 
-    public LoginResult Login(OperationContext context, string userName, string password, Guid? tenantId = null, 
+    public LoginResult Login(OperationContext context, string userName, string password, Guid? tenantId = null,
                              string deviceToken = null) {
       context.ThrowIf(password.Length > 100, ClientFaultCodes.InvalidValue, "password", "Password too long, max size: 100.");
       var webCtx = context.WebContext;
       userName = CheckUserName(context, userName);
-      var login = FindLogin(context, userName, password, tenantId);
+      var session = context.OpenSystemSession();
+      var login = FindLogin(session, userName, password, tenantId);
       if(login == null) {
         if(webCtx != null)
-          webCtx.Flags |= WebCallFlags.AttackRedFlag;  
+          webCtx.Flags |= WebCallFlags.AttackRedFlag;
         OnLoginEvent(context, LoginEventType.LoginFailed, null, userName: userName);
         LogIncident(context, LoginIncidentType, LoginEventType.LoginFailed.ToString(), "User: " + userName, null, userName);
         return new LoginResult() { Status = LoginAttemptStatus.Failed };
       }
-      var session = EntityHelper.GetSession(login);
       var device = login.GetDevice(deviceToken);
       try {
-        var status = CheckCanLogin(login, device);
+        var status = CheckCanLoginImpl(login, device);
         //Check non-success statuses
         switch(status) {
           case LoginAttemptStatus.Success:
             PostLoginActions actions = GetPostLoginActions(login);
             context.User = login.CreateUserInfo();
-            if (_sessionService != null)
+            if(_sessionService != null)
               AttachUserSession(context, login, device);
             App.UserLoggedIn(context);
             var lastLogin = login.LastLoggedInOn; //save prev value
@@ -65,19 +65,36 @@ namespace Vita.Modules.Login {
             return new LoginResult() { Status = status };
         }
       } finally {
-        session.SaveChanges(); 
+        session.SaveChanges();
       }
     }//method
+
+    public LoginResult LoginUser(OperationContext context, Guid userId) {
+      var session = context.OpenSystemSession();
+      var login = session.EntitySet<ILogin>().Where(lg => lg.UserId == userId).FirstOrDefault();
+      if(login == null || login.Flags.IsSet(LoginFlags.Inactive))
+        return new LoginResult() { Status = LoginAttemptStatus.Failed };
+      context.User = login.CreateUserInfo();
+      if(_sessionService != null)
+        AttachUserSession(context, login);
+      App.UserLoggedIn(context);
+      var lastLogin = login.LastLoggedInOn; //save prev value
+      UpdateLastLoggedInOn(login);
+      OnLoginEvent(context, LoginEventType.Login, login, userName: login.UserName);
+      var sessionToken = context.UserSession == null ? null : context.UserSession.Token;
+      return new LoginResult() { Status = LoginAttemptStatus.Success, Login = login, User = context.User, SessionToken = sessionToken, LastLoggedInOn = lastLogin };
+    }
+
 
     public LoginResult CompleteMultiFactorLogin(OperationContext context, ILogin login) {
       PostLoginActions actions = GetPostLoginActions(login);
       context.User = login.CreateUserInfo();
-      var lastLogin =  login.LastLoggedInOn;
+      var lastLogin = login.LastLoggedInOn;
       UpdateLastLoggedInOn(login);
       AttachUserSession(context, login);
       OnLoginEvent(context, LoginEventType.MultiFactorLoginCompleted, login);
       App.UserLoggedIn(context);
-      return new LoginResult() { 
+      return new LoginResult() {
         Status = LoginAttemptStatus.Success, Login = login, Actions = actions, User = context.User, SessionToken = context.UserSession.Token, LastLoggedInOn = lastLogin };
     }
 
@@ -96,31 +113,33 @@ namespace Vita.Modules.Login {
     }
 
     //Low-level methods
-    public ILogin FindLogin(OperationContext context, string userName, string password, Guid? tenantId) {
+    public ILogin FindLogin(IEntitySession session, string userName, string password, Guid? tenantId) {
+      var context = session.Context;
       context.ValidateNotEmpty(userName, ClientFaultCodes.ValueMissing, "UserName", null, "UserName may not be empty");
       context.ValidateNotEmpty(password, ClientFaultCodes.ValueMissing, "Password", null, "Password may not be empty");
       context.ThrowValidation();
-      var session = context.OpenSystemSession();
       userName = CheckUserName(context, userName);
       var userNameHash = Util.StableHash(userName);
       var weakPwdHash = GetWeakPasswordHash(password);
-      var tenantIdValue = tenantId == null ? Guid.Empty : tenantId.Value; 
+      var tenantIdValue = tenantId == null ? Guid.Empty : tenantId.Value;
       // Note: we do not compare usernames, only UserNameHash values; UserName might be null if we don't save them
       var qryLogins = from lg in session.EntitySet<ILogin>()
                       where lg.UserNameHash == userNameHash && lg.WeakPasswordHash == weakPwdHash
                         && lg.TenantId == tenantIdValue
                       select lg;
       //Query logins table
-      var logins = qryLogins.ToList(); //these are candidates, but most often will be just one
-      ILogin login = logins.FirstOrDefault(lg => VerifyPassword(lg, password));
-      if(login != null)
-        VerifyExpirationSuspensionDates(login);
-      return login; 
+      using(session.WithElevateRead()) {
+        var logins = qryLogins.ToList(); //these are candidates, but most often will be just one
+        var login = logins.FirstOrDefault(lg => VerifyPassword(lg, password));
+        if(login != null)
+          VerifyExpirationSuspensionDates(login);
+        return login;
+      }
     }
 
     public LoginAttemptStatus CheckCanLogin(ILogin login, string deviceToken = null) {
       var device = login.GetDevice(deviceToken);
-      return CheckCanLogin(login, device); 
+      return CheckCanLoginImpl(login, device); 
     }
 
     public PostLoginActions GetPostLoginActions(ILogin login) {
@@ -152,7 +171,7 @@ namespace Vita.Modules.Login {
 
     #endregion
 
-    private LoginAttemptStatus CheckCanLogin(ILogin login, ITrustedDevice device = null) {
+    private LoginAttemptStatus CheckCanLoginImpl(ILogin login, ITrustedDevice device = null) {
       if(login.Flags.IsSet(LoginFlags.Inactive))
         return LoginAttemptStatus.AccountInactive;
       if(login.Flags.IsSet(LoginFlags.OneTimePassword)) {

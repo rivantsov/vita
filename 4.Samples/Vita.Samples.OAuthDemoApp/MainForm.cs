@@ -53,7 +53,7 @@ namespace Vita.Samples.OAuthDemoApp {
       var server = GetCurrentServer(session); 
       if (server != null) {
         linkDocs.Text = server.DocumentationUrl;
-        var act = server.GetOAuthAccount();
+        var act = session.GetOAuthAccount(server.Name);
         if (act == null) {
           BeginEditClientInfo();
         } else {
@@ -119,7 +119,7 @@ namespace Vita.Samples.OAuthDemoApp {
       var session = OpenSession();
       var server = GetCurrentServer(session);
       Log("=== Starting OAuth2 flow, server: {0}", server.Name);
-      var act = server.GetOAuthAccount();
+      var act = session.GetOAuthAccount(server.Name);
       var flow = act.BeginOAuthFlow(null, server.Scopes);
       session.SaveChanges();
       _processStatus = ProcessStatus.WaitingRedirect;
@@ -144,8 +144,8 @@ namespace Vita.Samples.OAuthDemoApp {
       Log("=== Redirected; server returned authorization code: {0}", flow.AuthorizationCode);
 
       Log("=== Retrieving access token using authorization code...");
-      var token = await _service.RetrieveAccessToken(flow);
-      session.SaveChanges();
+      var tokenId = await _service.RetrieveAccessToken(session.Context, flow.Id);
+      var token = session.GetEntity<IOAuthAccessToken>(tokenId); 
       var strToken = token.AccessToken.DecryptString();
       Log("=== Token retrieved: {0}", strToken);
       if (token.OpenIdToken != null) {
@@ -154,12 +154,12 @@ namespace Vita.Samples.OAuthDemoApp {
       }
 
       Log("=== Retreiving basic profile: GET {0}", server.BasicProfileUrl);
-      var profileJson = await _service.GetBasicProfile(token); 
+      var profileJson = await _service.GetBasicProfile(session.Context, tokenId); 
       Log("=== Server response: ");
       Log(profileJson);
 
       Log("=== Extracting remote User Id from response");
-      var userId = _service.ExtractUserId(server, profileJson);
+      var userId = server.ExtractUserId(profileJson);
       Log("      User id = {0}", userId);
 
       // Try to find user in external users table; if not found - register new one; 
@@ -174,14 +174,14 @@ namespace Vita.Samples.OAuthDemoApp {
       // For FB we test retreiving profile as object
       if (server.Name == "Facebook") {
         Log("=== Retreiving profile as object (FB only)");
-        var profile = await _service.GetBasicProfile<FacebookProfile>(token);
+        var profile = await _service.GetBasicProfile<FacebookProfile>(session.Context, tokenId);
         Log("       Success, Id = {0}, Name={1} ", profile.Id, profile.Name);
       }
       
       // Refresh token. We might not have it - Google returns it only for the first access token request
       if(!string.IsNullOrEmpty(server.TokenRefreshUrl) && token.RefreshToken != null) {
         Log("=== Server supports refreshing tokens; refreshing token...");
-        var success = await _service.RefreshAccessToken(token);
+        var success = await _service.RefreshAccessToken(session.Context, tokenId);
         Util.Check(success, "Failed to refresh token");
         var strToken2 = token.AccessToken.DecryptString();
         Log("=== Sucess, refreshed token (might be the same): {0}", strToken2);
@@ -221,7 +221,7 @@ namespace Vita.Samples.OAuthDemoApp {
       }
       var session = OpenSession();
       var server = GetCurrentServer(session);
-      var acct = server.GetOAuthAccount();
+      var acct = session.GetOAuthAccount(server.Name);
       if(acct == null) {
         acct = server.NewOAuthAccount(clientId, secret, "TestAccount");
       } else {

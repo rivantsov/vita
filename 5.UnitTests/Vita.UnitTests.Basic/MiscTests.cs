@@ -57,6 +57,10 @@ namespace Vita.UnitTests.Basic.MiscTests {
     //DependsOn is optional, used for auto PropertyChanged firing
     [Computed(typeof(MiscTestsExtensions), "GetFullName"), DependsOn("FirstName,LastName")] 
     string FullName { get; }
+    // another computer prop - test for a reported bug
+    [Computed(typeof(MiscTestsExtensions), "GetLastFirst"), DependsOn("FirstName,LastName")]
+    string LastFirst { get; }
+
     //Persistent computed property
     [Computed(typeof(MiscTestsExtensions), "GetLicenseHash", Persist=true), DependsOn("LicenseNumber")]
     int LicenseHash { get; }
@@ -94,6 +98,10 @@ namespace Vita.UnitTests.Basic.MiscTests {
     public static string GetFullName(IDriver driver) {
       return driver.FirstName + " " + driver.LastName; 
     }
+    public static string GetLastFirst(IDriver driver) {
+      return driver.LastName + ", " + driver.FirstName;
+    }
+
 
     public static int GetLicenseHash(IDriver driver) {
       return Util.StableHash(driver.LicenseNumber);
@@ -333,19 +341,18 @@ namespace Vita.UnitTests.Basic.MiscTests {
       // So when we change the FirstName, we get two events fired -
       // first for FirstName, then for FullName
       var iNpc = dr1 as INotifyPropertyChanged;
-      var raisedEvents = new Stack<string>();
-      iNpc.PropertyChanged += (ent, args) => { raisedEvents.Push(args.PropertyName); };
+      var changedProps = new List<string>();
+      iNpc.PropertyChanged += (ent, args) => { changedProps.Add(args.PropertyName); };
       dr1.FirstName = "NewFirst";
-      //We should have 2 properties in the stack
-      Assert.AreEqual(2, raisedEvents.Count, "Invalid number of properties in events stack.");
-      var prop1 = raisedEvents.Pop();
-      Assert.AreEqual("FullName", prop1, "Expected property changed on FullName");
-      var prop2 = raisedEvents.Pop();
-      Assert.AreEqual("FirstName", prop2, "Expected property changed on FirstName");
+      //We should have 3 properties in the stack - FistName, FullName, LastFirst
+      Assert.AreEqual(3, changedProps.Count, "Invalid number of properties in events stack.");
+      Assert.AreEqual("FirstName", changedProps[0], "Expected property changed on FirstName");
+      Assert.AreEqual("FullName", changedProps[1], "Expected property changed on FullName");
+      Assert.AreEqual("LastFirst", changedProps[2], "Expected property changed on LastFirst");
       //Try cancel changes
-      raisedEvents.Clear();
+      changedProps.Clear();
       session.CancelChanges();
-      Assert.IsTrue(raisedEvents.Count > 0, "Expected PropertyChanged fired on CancelChanges.");
+      Assert.IsTrue(changedProps.Count > 0, "Expected PropertyChanged fired on CancelChanges.");
 
       //Computed persistent prop; verify that column (LicenseHash) is updated in database after we update other prop (LicenseNumber) it dependent on
       var dr2 = session.NewDriver("Z002", "John", "Dow");
@@ -360,9 +367,7 @@ namespace Vita.UnitTests.Basic.MiscTests {
       Assert.AreNotEqual(oldHash, newHash, "Expected different hash.");
       var expectedHash = Util.StableHash("Z002X");
       Assert.AreEqual(expectedHash, newHash, "Invalid new hash");
-      
     }
-
     
   }//class
 }

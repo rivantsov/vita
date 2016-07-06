@@ -12,6 +12,7 @@ namespace Vita.Samples.BookStore.Api {
   // Base SearchParams defines OrderBy, Skip, Take - common search parameters
   // CreateSearch, ExecuteSearch helper methods expect SearchForm-derived object 
   public class BookSearch : SearchParams {
+    /// <summary>Title start substring to search for.</summary>
     public string Title { get; set; }
     public string Categories { get; set; } //comma-delimited string of values
     public double? MaxPrice { get; set; }

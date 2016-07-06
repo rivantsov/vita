@@ -73,13 +73,22 @@ namespace Vita.Entities.Web {
   [AttributeUsage(AttributeTargets.Parameter)]
   public class FromUrlAttribute : Attribute {}
 
-  // Name of json element, equivalent to JsonProperty; allows to define model objects without referencing NewtonSoft assembly
-  // Handled by custom NodeNameContractResolver
+  /// <summary>Name of json element, equivalent to JsonProperty.</summary>
+  /// <remarks>The attribute allows to define model objects without referencing NewtonSoft assembly.
+  /// Handled by custom NodeNameContractResolver. </remarks>
   [AttributeUsage(AttributeTargets.Property | AttributeTargets.Field | AttributeTargets.Class)]
   public class NodeAttribute : Attribute {
     public string Name;
     public NodeAttribute(string name) {
       Name = name;
+    }
+  }
+
+  [AttributeUsage(AttributeTargets.Class)]
+  public class ApiGroupAttribute : Attribute {
+    public readonly string Group;
+    public ApiGroupAttribute(string group) {
+      Group = group; 
     }
   }
 

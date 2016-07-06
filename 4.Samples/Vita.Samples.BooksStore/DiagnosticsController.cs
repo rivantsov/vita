@@ -24,7 +24,7 @@ namespace Vita.Samples.BookStore {
   ///   The offset endpoint is enabled only if static bool variable EnableTimeOffset is set to true - this should be set from config file only in test/staging environments.</item>
   /// </list>"
   /// </remarks>
-  [ApiRoutePrefix("diagnostics")]
+  [ApiRoutePrefix("diagnostics"), ApiGroup("Diagnostics")]
   public class DiagnosticsController : SlimApiController {
     public static bool EnableTimeOffset;
     static DateTime _lastCalledOn;

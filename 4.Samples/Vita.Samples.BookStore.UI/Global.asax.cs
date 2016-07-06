@@ -20,9 +20,15 @@ namespace Vita.Samples.BookStore.UI {
   public class MvcApplication : System.Web.HttpApplication {
 
     protected void Application_Start() {
+      AreaRegistration.RegisterAllAreas();
 
       var app = CreateConfigureBooksApp();
+      SwaggerConfig.Register(); 
+      RouteConfig.RegisterRoutes(RouteTable.Routes);
+      BundleConfig.RegisterBundles(BundleTable.Bundles);
+      GlobalConfiguration.Configuration.EnableCors(); 
       GlobalConfiguration.Configuration.EnsureInitialized();
+
       //Create sample data, import books
       var session = app.OpenSystemSession();
       if (session.EntitySet<IUser>().Count() == 0)
@@ -32,8 +38,6 @@ namespace Vita.Samples.BookStore.UI {
         import.ImportBooks(app, 200); 
       }
 
-      RouteConfig.RegisterRoutes(RouteTable.Routes);
-      BundleConfig.RegisterBundles(BundleTable.Bundles);
     }
 
     public static BooksEntityApp CreateConfigureBooksApp() {
@@ -52,6 +56,11 @@ namespace Vita.Samples.BookStore.UI {
       booksApp.ConnectTo(dbSettings);
       //Web Api
       WebHelper.ConfigureWebApi(GlobalConfiguration.Configuration, booksApp, logLevel: Entities.Services.LogLevel.Details);
+      /*
+      var hc = GlobalConfiguration.Configuration;
+      var webH = hc.MessageHandlers.First(h => h is WebCallContextHandler);
+      hc.MessageHandlers.Remove(webH);
+      */
       return booksApp;
     }
 

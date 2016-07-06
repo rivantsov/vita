@@ -1,9 +1,15 @@
 <!DOCTYPE html>
 <html ng-app="DomainApp" ng-controller="LoginController">
     <head>
-        <title>{{title}} Public Application</title>
+        <title>{{title}} Sample App</title>
         <base href="/">
         @Styles.Render("~/Content/css")
+      <script>
+        // used in link 'API Docs'; direct href does not work there  
+        var apiDoc = function () {
+          window.location = "swagger";
+        }
+      </script>
     </head>
     <body>
         <div class="container">
@@ -36,6 +42,8 @@
                       <li ng-if="IsLoggedIn == true">&nbsp;&nbsp;&nbsp;&nbsp;My Account</li>
                       <li class="indent" ng-if="IsLoggedIn == true"><a ui-sref="cart">Cart</a></li>
                       <li class="indent" ng-if="IsLoggedIn == true"><a ui-sref="myorders">My Orders</a></li>
+                      <!-- a/href does not work here. have to use this functiona call; the function is defined on top of this file -->
+                      <li><a onclick="apiDoc();" style="cursor:pointer" >API Docs</a></li>  
                     </ul>
                </div>
                 <div class="col-md-10">

@@ -8,7 +8,7 @@ using System.Web.Routing;
 namespace Vita.Samples.BookStore.UI {
   public partial class RouteConfig {
     public static void RegisterRoutes(RouteCollection routes) {
-      routes.IgnoreRoute("{resource}.axd/{*pathInfo}");
+      /*
 
       routes.MapRoute(
           name: "settings",
@@ -20,12 +20,19 @@ namespace Vita.Samples.BookStore.UI {
           url: "api/{controller}/{action}/{id}",
           defaults: new { controller = "Tasks", action = "Index", id = UrlParameter.Optional }
           );
-
       routes.MapRoute(
           name: "Default",
           url: "{*url}",
           defaults: new { controller = "Home", action = "Index", id = UrlParameter.Optional }
       );
+      */
+      routes.IgnoreRoute("{resource}.axd/{*pathInfo}");
+      routes.MapRoute(
+          name: "Default",
+          url: "{controller}/{action}/{id}",
+          defaults: new { controller = "Home", action = "Index", id = UrlParameter.Optional }
+      );
+
     }
   }
 }

@@ -27,6 +27,9 @@ namespace Vita.Modules.Login.Api {
       _sessionService = Context.App.GetService<IUserSessionService>(); 
     }
 
+    /// <summary>Performs user login with user name and password.</summary>
+    /// <param name="request">The request object.</param>
+    /// <returns>An object containing login attempt result.</returns>
     [ApiPost, ApiRoute("")]
     public LoginResponse Login(LoginRequest request) {
       Context.ThrowIfNull(request, ClientFaultCodes.ContentMissing, "LoginRequest", "Content object missing in API request.");

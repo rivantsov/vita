@@ -39,6 +39,8 @@ namespace Vita.Web {
     }
 
     protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, System.Threading.CancellationToken cancellationToken) {
+      if(IgnoreUri(request.RequestUri))
+        return await base.SendAsync(request, cancellationToken);
       WebCallInfo callInfo = null;
       WebCallContext webContext = null; 
       try {
@@ -57,6 +59,18 @@ namespace Vita.Web {
       }
     }//method
 
+    private bool IgnoreUri(Uri uri) {
+      var path = uri.LocalPath;
+      if(Settings.FilterPaths.Count > 0) {
+        if(!Settings.FilterPaths.Any(p => path.StartsWith(p)))
+          return true; //ignore
+      }
+      if (Settings.IgnorePaths.Count > 0) {
+        if(Settings.IgnorePaths.Any(p => path.StartsWith(p)))
+          return true; 
+      }
+      return false;
+    }
 
     private WebCallInfo InitWebCallInfo(HttpRequestMessage request) {
       var callInfo = new WebCallInfo(this.App, this.Settings, request);

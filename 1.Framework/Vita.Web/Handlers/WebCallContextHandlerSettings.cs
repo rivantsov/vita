@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-
+using Vita.Common;
 using Vita.Entities;
 using Vita.Entities.Services;
 
@@ -25,6 +25,8 @@ namespace Vita.Web {
 
     public LogLevel LogLevel;
     public WebHandlerOptions Options = WebHandlerOptions.DefaultDebug;
+    public StringSet IgnorePaths = new StringSet();
+    public StringSet FilterPaths = new StringSet(); 
     public IList<string> NoLogHeaders = new List<string>(new[] { "Auhorization" });
     public DbConnectionReuseMode ConnectionReuseMode;
     public IList<WebTokenHandler> TokenHandlers = new List<WebTokenHandler>(); 
@@ -45,9 +47,9 @@ namespace Vita.Web {
       // to protect against CSRF execution. Sometimes called synchronization token; read more in Wikipedia or other resources
       if (csrfToken != null)
         TokenHandlers.Add(new WebTokenHandler(csrfToken, WebTokenType.Header, WebTokenDirection.InputOutput));
-
+      //We ignore Swagger paths by default
+      IgnorePaths.Add("/swagger");
     }
-  }
 
-
+  }//class
 }

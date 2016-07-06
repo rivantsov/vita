@@ -20,8 +20,8 @@ namespace Vita.Web.SlimApi {
 
   internal class SlimApiActionDescriptor : ReflectedHttpActionDescriptor {
     private static readonly object[] _empty = new object[0];
+    public readonly ApiControllerInfo ControllerInfo;
     ApiConfiguration _apiConfig;
-    ApiControllerInfo _controllerInfo;
     MethodInfo _method; 
     ParameterInfo[] _parameterInfos;
     SlimApiActionExecutor _actionExecutor;
@@ -34,9 +34,10 @@ namespace Vita.Web.SlimApi {
     IAuthorizationService _authService;
     UrlDateTimeHandler _urlDateTimeHandler; 
 
-    public SlimApiActionDescriptor(HttpControllerDescriptor controllerDescriptor, MethodInfo method, ApiControllerInfo controllerInfo, ApiConfiguration apiConfig)
-                               : base(controllerDescriptor, method) {
-      _controllerInfo = controllerInfo;
+    public SlimApiActionDescriptor(HttpControllerDescriptor controllerDescriptor, MethodInfo method, 
+                                    ApiControllerInfo controllerInfo, ApiConfiguration apiConfig)
+                                  : base(controllerDescriptor, method) {
+      ControllerInfo = controllerInfo;
       _apiConfig = apiConfig;
       _method = method; 
       _parameterInfos = method.GetParameters();
@@ -50,7 +51,7 @@ namespace Vita.Web.SlimApi {
         base.SupportedHttpMethods.Add(ma.Method);
       //Routes. first get route prefix on controller
       var globalRoutePrefix = _apiConfig.GlobalRoutePrefix;
-      string routePrefix = CombineRoutes(globalRoutePrefix, _controllerInfo.RoutePrefix); 
+      string routePrefix = CombineRoutes(globalRoutePrefix, ControllerInfo.RoutePrefix); 
       // get ApiRoute attributes and create IDirectRouteFactory objects (as RouteAttribute instances)
       var apiRouteAttrs = method.GetAttributes<ApiRouteAttribute>();
       if(apiRouteAttrs.Count == 0) { //If no Route attr, assume it is empty route
@@ -62,8 +63,8 @@ namespace Vita.Web.SlimApi {
         RouteTemplates.Add(routeTemplate);
         RouteFactories.Add(new RouteAttribute(routeTemplate));
       }
-      _loggedInOnly = _controllerInfo.Flags.IsSet(ControllerFlags.LoggedInOnly) || method.HasAttribute<LoggedInOnlyAttribute>();
-      _secured = _controllerInfo.Flags.IsSet(ControllerFlags.Secured) || method.HasAttribute<SecuredAttribute>();
+      _loggedInOnly = ControllerInfo.Flags.IsSet(ControllerFlags.LoggedInOnly) || method.HasAttribute<LoggedInOnlyAttribute>();
+      _secured = ControllerInfo.Flags.IsSet(ControllerFlags.Secured) || method.HasAttribute<SecuredAttribute>();
       if(_secured)
         _loggedInOnly = true; 
     }
@@ -90,7 +91,7 @@ namespace Vita.Web.SlimApi {
         //Record controller name, method name in web context
         var webCtx = opContext.WebContext;
         if(webCtx != null) {
-          webCtx.ControllerName = _controllerInfo.Type.Name;
+          webCtx.ControllerName = ControllerInfo.Type.Name;
           webCtx.MethodName = this.MethodInfo.Name;
           webCtx.RequestUrlTemplate = this.RouteTemplates[0];
         }
@@ -119,12 +120,12 @@ namespace Vita.Web.SlimApi {
         Util.Check(auth != null, "Failed to retrieve Authority for user {0}.", context.User.UserName);
         context.User.Authority = auth;
       }
-      var accessTypes = auth.GetObjectAccess(context, _controllerInfo.Type);
+      var accessTypes = auth.GetObjectAccess(context, ControllerInfo.Type);
       var needAccess = AuthorizationModelExtensions.GetAccessType(context.WebContext.HttpMethod);
       if (!accessTypes.IsSet(needAccess))  {
         var msg = StringHelper.SafeFormat("Access denied to API controller method: {0}.{1}; Http method: {2}", 
           _method.DeclaringType, _method.Name,  context.WebContext.HttpMethod);
-        throw new AuthorizationException(msg, _controllerInfo.Type, needAccess, false, null);
+        throw new AuthorizationException(msg, ControllerInfo.Type, needAccess, false, null);
       }
     }
 
@@ -136,9 +137,9 @@ namespace Vita.Web.SlimApi {
     }
 
     private object GetController(OperationContext opContext) {
-      if(_controllerInfo.Instance != null)
-        return _controllerInfo.Instance; //singleton
-      var controller = Activator.CreateInstance(_controllerInfo.Type);
+      if(ControllerInfo.Instance != null)
+        return ControllerInfo.Instance; //singleton
+      var controller = Activator.CreateInstance(ControllerInfo.Type);
       var iContrInit = controller as ISlimApiControllerInit;
       if(iContrInit != null) 
         iContrInit.InitController(opContext);

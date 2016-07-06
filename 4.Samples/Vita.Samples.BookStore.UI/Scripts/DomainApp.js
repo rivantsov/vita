@@ -43,80 +43,80 @@ var configFunction = function ($stateProvider, $httpProvider, $locationProvider)
     
     $stateProvider
         .state('loginUser', {
-            url: '/login?redirectUrl',
-            views: {
-                "detailView": {
-                    templateUrl: '/Templates/login/Login.html',
-                    controller: LoginController
-                }
+          url: '/login?redirectUrl',
+          views: {
+            "detailView": {
+              templateUrl: '/Templates/login/Login.html',
+              controller: LoginController
             }
+          }
         })
         .state('registerUser', {
-        	url: '/register?redirectUrl',
-            views: {
-                "detailView": {
-                    templateUrl: '/Templates/login/Register.html',
-                    controller: LoginController
-                }
+          url: '/register?redirectUrl',
+          views: {
+            "detailView": {
+              templateUrl: '/Templates/login/Register.html',
+              controller: LoginController
             }
+          }
         })
         .state('programming', {
-            url: '/books/programming?orderBy&descending&page&pageSize',
-            views: {
-                "detailView": {
-                    templateUrl: '/Templates/Books/Programming.html',
-                    controller: ProgrammingBooksController
-                }
+          url: '/books/programming?orderBy&descending&page&pageSize',
+          views: {
+            "detailView": {
+              templateUrl: '/Templates/Books/Programming.html',
+              controller: ProgrammingBooksController
             }
+          }
         })
         .state('fiction', {
           url: '/books/fiction?orderBy&descending&page&pageSize',
-            views: {
-                "detailView": {
-                    templateUrl: '/Templates/Books/Fiction.html',
-                    controller: FictionBooksController
-                }
+          views: {
+            "detailView": {
+              templateUrl: '/Templates/Books/Fiction.html',
+              controller: FictionBooksController
             }
+          }
         })
         .state('kids', {
-            url: '/books/kids?orderBy&descending&page&pageSize',
-            views: {
-                "detailView": {
-                    templateUrl: '/Templates/Books/Kids.html',
-                    controller: KidBooksController
-                }
+          url: '/books/kids?orderBy&descending&page&pageSize',
+          views: {
+            "detailView": {
+              templateUrl: '/Templates/Books/Kids.html',
+              controller: KidBooksController
             }
+          }
         })
         .state('search', {
           url: '/books?title&categories&maxPrice&publisher&publishedBefore&publishedAfter&authorLastName&orderBy&descending&page&pageSize',
           views: {
-                "searchView": {
-                    templateUrl: '/Templates/Books/Search.html',
-                    controller: BooksController
-                },
-                "detailView": {
-                    templateUrl: '/Templates/Books/Results.html',
-                    controller: BooksController
-                }
+            "searchView": {
+              templateUrl: '/Templates/Books/Search.html',
+              controller: BooksController
+            },
+            "detailView": {
+              templateUrl: '/Templates/Books/Results.html',
+              controller: BooksController
             }
+          }
         })
         .state('bookGet', {
-            url: '/books/get?id',
-            views: {
-                "detailView": {
-                    templateUrl: '/Templates/books/Get.html',
-                    controller: BooksController
-                }
+          url: '/books/get?id',
+          views: {
+            "detailView": {
+              templateUrl: '/Templates/books/Get.html',
+              controller: BooksController
             }
+          }
         })
         .state('cart', {
-            url: '/cart?bookId',
-            views: {
-                "detailView": {
-                    templateUrl: '/Templates/Cart/Home.html',
-                    controller: CartController
-                }
+          url: '/cart?bookId',
+          views: {
+            "detailView": {
+              templateUrl: '/Templates/Cart/Home.html',
+              controller: CartController
             }
+          }
         })
         .state('order', {
           url: '/order',
@@ -154,6 +154,7 @@ var configFunction = function ($stateProvider, $httpProvider, $locationProvider)
             }
         });
 }
+
 configFunction.$inject = ['$stateProvider', '$httpProvider', '$locationProvider'];
 
 DomainApp.config(configFunction);

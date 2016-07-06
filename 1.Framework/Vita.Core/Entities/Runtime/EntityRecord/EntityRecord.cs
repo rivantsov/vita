@@ -254,7 +254,7 @@ namespace Vita.Entities.Runtime {
         OnPropertyChanged(member.MemberName);
         if (member.DependentMembers != null)
           for (int i=0; i< member.DependentMembers.Length; i++) //for loop is more efficient
-            OnPropertyChanged(member.DependentMembers[0].MemberName);
+            OnPropertyChanged(member.DependentMembers[i].MemberName);
       }
     }
 

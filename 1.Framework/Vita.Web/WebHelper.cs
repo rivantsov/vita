@@ -240,11 +240,13 @@ namespace Vita.Web {
         return "(content too long)";
       try {
         var stream = await content.ReadAsStreamAsync();
-        // copyTask.Wait();
-        // var stream = copyTask.Result;
         stream.Position = 0;
         var reader = new StreamReader(stream);
         var result = reader.ReadToEnd();
+        // Important - in some cases if we don't reset position, the response stream is empty on the wire
+        // Discovered it when playing with Swagger. We ignore swagger requests in this handler now, 
+        // but resetting position needs to be done. 
+        stream.Position = 0; 
         return result; 
       } catch (Exception ex) {
         return "(Read content failed); Error: " + ex.Message;
@@ -306,6 +308,13 @@ namespace Vita.Web {
 
     public static string EncryptVersionArray(long[] array) {
       return Encrypt(string.Join(",", array), "Versions");
+    }
+
+    public static string GetApiGroup(this HttpActionDescriptor descriptor) {
+      var slimDescr = descriptor as SlimApiActionDescriptor;
+      if(slimDescr != null)
+        return slimDescr.ControllerInfo.ApiGroup;
+      return descriptor.ControllerDescriptor.ControllerType.Name;
     }
 
     public static bool IsSet(this WebHandlerOptions options, WebHandlerOptions option) {

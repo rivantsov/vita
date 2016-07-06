@@ -23,6 +23,9 @@ namespace Vita.Entities.Web.Implementation {
     // Flags are set either thru attributes or set during registration 
     public ControllerFlags Flags;
 
+    /// <summary>Grouping tag for Swagger UI. By default, it last segment of namespace of controller type.</summary>
+    public string ApiGroup; 
+
     public ApiControllerInfo(object instance, Type type, string routePrefix = null) {
       Instance = instance; 
       Type = type;
@@ -40,6 +43,21 @@ namespace Vita.Entities.Web.Implementation {
      //Secured
       if (type.HasAttribute<SecuredAttribute>())
         Flags |= ControllerFlags.Secured;
+      ApiGroup = GetApiGroup(Type);
+    }
+
+    private static string GetApiGroup(Type controllerType) {
+      //check attr
+      var grpAttr = controllerType.GetAttribute<ApiGroupAttribute>();
+      if(grpAttr != null)
+        return grpAttr.Group; 
+      // For ApiGroup, select the last segment of namespace; if it is 'api', then take previous segment
+      // ex: Vita.Modules.Login.Api -> Login
+      var segms = controllerType.Namespace.Split('.');
+      var group = segms[segms.Length - 1];
+      if(group.Equals("api", StringComparison.InvariantCultureIgnoreCase) && segms.Length > 1)
+        group = segms[segms.Length - 2];
+      return group; 
     }
   }
 

@@ -34,7 +34,9 @@ namespace Vita.Samples.BookStore.Api {
         {"pubname" , "Publisher.Name"}
     };
 
-
+    /// <summary>Searches books by multiple criteria.</summary>
+    /// <param name="searchParams">Search parameters object.</param>
+    /// <returns>SearchResults object.</returns>
     // SearchParams object used for grabbing URL parameters into controller method. 
     // There are some problems in Web Api routing when using optional URL parameters, so such object is the easiest solution
     // when optional parameters are involved

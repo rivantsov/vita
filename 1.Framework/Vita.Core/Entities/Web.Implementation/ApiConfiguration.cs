@@ -50,13 +50,8 @@ namespace Vita.Entities.Web.Implementation {
       //check attr
       var grpAttr = controllerType.GetAttribute<ApiGroupAttribute>();
       if(grpAttr != null)
-        return grpAttr.Group; 
-      // For ApiGroup, select the last segment of namespace; if it is 'api', then take previous segment
-      // ex: Vita.Modules.Login.Api -> Login
-      var segms = controllerType.Namespace.Split('.');
-      var group = segms[segms.Length - 1];
-      if(group.Equals("api", StringComparison.InvariantCultureIgnoreCase) && segms.Length > 1)
-        group = segms[segms.Length - 2];
+        return grpAttr.Group;
+      var group = controllerType.Name.Replace("Controller", string.Empty);
       return group; 
     }
   }

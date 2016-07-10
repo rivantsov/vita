@@ -163,26 +163,6 @@ namespace Vita.Modules.OAuthClient {
     }
 
 
-    public static IOAuthAccessToken GetCurrentUserOAuthToken(this IEntitySession session, string serverName, string accountName = null) {
-      if (accountName == null) {
-        var stt = session.GetOAuthSettings();
-        accountName = stt.DefaultAccountName;
-      }
-      var context = session.Context;
-      var utcNow = context.App.TimeService.UtcNow;
-      var userId = context.User.UserId;
-      var accessToken = session.EntitySet<IOAuthAccessToken>().Where(t => t.Account.Server.Name == serverName && t.UserId == userId && t.ExpiresOn > utcNow)
-                    .OrderByDescending(t => t.RetrievedOn).FirstOrDefault();
-      return accessToken;
-    }
-
-    public static void SetupForOAuth(this WebApiClient client, IOAuthAccessToken token) {
-      var session = EntityHelper.GetSession(token);
-      var stt = session.GetOAuthSettings();
-      var tokenValue = token.AccessToken.DecryptString(stt.EncryptionChannel);
-      client.AddAuthorizationHeader(tokenValue, scheme: token.TokenType.ToString());
-    }
-
     public static bool IsSet(this OAuthServerOptions options, OAuthServerOptions option) {
       return (options & option) != 0;
     }

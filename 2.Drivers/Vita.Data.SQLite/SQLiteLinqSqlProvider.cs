@@ -9,6 +9,7 @@ using Vita.Data.Driver;
 using Vita.Data.Linq.Translation.Expressions;
 using Vita.Common;
 using Vita.Data.Linq.Translation.SqlGen;
+using System.Data;
 
 namespace Vita.Data.SQLite {
   public class SQLiteLinqSqlProvider : LinqSqlProvider {
@@ -60,5 +61,12 @@ namespace Vita.Data.SQLite {
       return base.GetLiteralStringEqual(x, y, forceIgnoreCase);
     }
 
+    //Datetime is a special case - we need to convert to string properly
+    public override void SetDbParameterValue(IDbDataParameter parameter, object value) {
+      if (value != null && value is DateTime) 
+        parameter.Value = SQLiteTypeRegistry.DateTimeToString(value);
+      else 
+        base.SetDbParameterValue(parameter, value);
+    }
   }
 }

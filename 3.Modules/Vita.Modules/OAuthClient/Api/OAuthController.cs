@@ -22,8 +22,9 @@ namespace Vita.Modules.OAuthClient.Api {
 
     [ApiGet, ApiRoute("{servername}/user/status")]
     public OAuthUserStatus GetUserOAuthStatus(string serverName) {
+      var service = Context.App.GetService<IOAuthClientService>();
       var session = Context.OpenSession();
-      var accessToken = session.GetCurrentUserOAuthToken(serverName);
+      var accessToken = service.GetUserOAuthToken(session, Context.User.UserId, serverName);
       return accessToken.ToOAuthStatus();
     }
 

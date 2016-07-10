@@ -111,7 +111,7 @@ namespace Vita.UnitTests.Common {
 
     public static void DeleteAllData(EntityApp app, IEnumerable<Type> inEntities = null, IEnumerable<Type> exceptEntities = null, 
          IList<string> extraTablesToDelete = null) {
-      var db = app.GetDatabase();
+      var db = app.GetDefaultDatabase();
       if (inEntities == null)
         inEntities = app.GetAllEntityTypes();
       var typesToClear = new HashSet<Type>(inEntities);
@@ -197,6 +197,15 @@ namespace Vita.UnitTests.Common {
         if(byteArray[i] != other[i])
           return false;
       return true;
+    }
+
+    public static Database GetDefaultDatabase(this EntityApp app) {
+      var ds = app.GetDefaultDataSource();
+      return ds.Database;
+    }
+
+    public static DataSource GetDefaultDataSource(this EntityApp app) {
+      return app.DataAccess.GetDataSources().First();
     }
 
 

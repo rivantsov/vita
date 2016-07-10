@@ -202,7 +202,7 @@ namespace Vita.UnitTests.Extended {
     public static void InvalidateCache(bool waitForReload = false) {
       if (!CacheEnabled)
         return;
-      var ds = BooksApp.GetDataSource();
+      var ds = BooksApp.GetDefaultDataSource();
       if(ds.Cache != null)
         ds.Cache.Invalidate(reload: waitForReload, waitForReloadComplete: waitForReload); 
     }

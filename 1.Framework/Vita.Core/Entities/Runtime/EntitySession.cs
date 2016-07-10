@@ -32,7 +32,6 @@ namespace Vita.Entities.Runtime {
   /// <remarks>This class provides methods for data access: reading, updating, deleting entitites. </remarks>
   public partial class EntitySession : IEntitySession  {
     public readonly OperationContext Context;
-    public readonly IDataAccessService DataAccess;
     public readonly MemoryLog LocalLog;
     public EntitySessionOptions Options;
 
@@ -80,8 +79,6 @@ namespace Vita.Entities.Runtime {
       this.Options = options;
       IsSecureSession = this is Vita.Entities.Authorization.SecureSession;
       _appEvents = Context.App.AppEvents;
-      DataAccess = Context.App.DataAccess;
-      Util.Check(DataAccess != null, "EntityApp not initialized/activated, cannot open session.");
       this.LocalLog = Context.LocalLog;
       // Multithreaded sessions must be readonly
       var isConcurrent = Options.IsSet(EntitySessionOptions.Concurrent);
@@ -225,15 +222,17 @@ namespace Vita.Entities.Runtime {
     }//method
 
     protected virtual void SubmitChanges() {
-      // If we have shared connection, we still need to call database to handle closing it and possibly transaction
       if (this.CurrentConnection == null && !this.HasChanges()) 
-        return; 
+        return;
+      EntityApp app; 
       if (this.RecordsChanged.Count > 0) {
         // account for LinkedApps
-        var targetApp = this.RecordsChanged[0].EntityInfo.Module.App;
-        targetApp.DataAccess.SaveChanges(this);
+        app = this.RecordsChanged[0].EntityInfo.Module.App;
       } else
-        this.DataAccess.SaveChanges(this); 
+        // If we have shared connection, we still need to call database to handle closing it and possibly committing transaction
+        app = this.Context.App;
+      var ds = app.DataAccess.GetDataSource(this.Context);
+      ds.SaveChanges(this); 
     }
 
     public IQueryable<TEntity> EntitySet<TEntity>() where TEntity : class {
@@ -401,7 +400,8 @@ namespace Vita.Entities.Runtime {
     public virtual IList<EntityRecord> ExecuteSelect(EntityCommand command, params object[] args) {
       try {
         var targetApp = command.TargetEntityInfo.Module.App;
-        var result = targetApp.DataAccess.ExecuteSelect(command, this, args);
+        var ds = targetApp.DataAccess.GetDataSource(this.Context);
+        var result = ds.ExecuteSelect(this, command, args);
         _appEvents.OnExecutedSelect(this, command);
         return result; 
       } catch(Exception ex) {
@@ -550,8 +550,9 @@ namespace Vita.Entities.Runtime {
         var someEntInfo = GetEntityInfo(someType);
         Util.Check(someEntInfo != null, "Type {0} is not a registered entity, cannot execute the query.", someType);
         targetApp = someEntInfo.Module.App; 
-      } 
-      var result = targetApp.DataAccess.ExecuteLinqCommand(command, this);
+      }
+      var ds = targetApp.DataAccess.GetDataSource(this.Context);
+      var result = ds.ExecuteLinqCommand(this, command);
       //fire events
       switch(command.CommandType) {
         case LinqCommandType.Select: 

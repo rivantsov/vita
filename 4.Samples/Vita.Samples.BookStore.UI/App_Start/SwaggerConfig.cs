@@ -17,8 +17,6 @@ namespace Vita.Samples.BookStore.UI
     {
         public static void Register()
         {
-            var thisAssembly = typeof(Vita.Samples.BookStore.BooksModule).Assembly;
-
             GlobalConfiguration.Configuration 
                 .EnableSwagger(c =>
                     {
@@ -102,7 +100,7 @@ namespace Vita.Samples.BookStore.UI
                       // those comments into the generated docs and UI. You can enable this by providing the path to one or
                       // more Xml comment files.
                       //
-                      var binFolder = GetXmlCommentsFoler();
+                      var binFolder = GetXmlCommentsFolder();
                       c.IncludeXmlComments(binFolder + "Vita.Samples.BookStore.xml");
                       c.IncludeXmlComments(binFolder + "Vita.Modules.xml");
 
@@ -233,7 +231,7 @@ namespace Vita.Samples.BookStore.UI
                         //c.EnableOAuth2Support("test-client-id", "test-realm", "Swagger UI");
                     });
         }
-    public static string GetXmlCommentsFoler() {
+    public static string GetXmlCommentsFolder() {
       return string.Format(@"{0}\bin\", System.AppDomain.CurrentDomain.BaseDirectory);
     }
 

@@ -184,7 +184,9 @@ namespace Vita.Data.Model {
           cmd.Peer = null;
       }
       foreach (var seq in this.Sequences)
-        seq.Peer = null; 
+        seq.Peer = null;
+      foreach(var tp in this.CustomDbTypes)
+        tp.Peer = null; 
     }
 
 

@@ -274,7 +274,7 @@ namespace Vita.UnitTests.Basic.SchemaUpdates {
         Assert.AreEqual(2, newTableEntCount, "Expected 2 entities in INewTable.");
 
         //  Now create model again, compare it and make sure no schema updates
-        var ds = app.GetDataSource();
+        var ds = app.GetDefaultDataSource();
         var dbUpdater = new DbUpgradeManager(ds);
         var upgradeInfo = dbUpdater.BuildUpgradeInfo();
         // if we have upgrade scripts, this is error
@@ -370,7 +370,7 @@ namespace Vita.UnitTests.Basic.SchemaUpdates {
         Assert.AreEqual(2, newTableEntCount, "Expected 2 entities in INewTable.");
 
         // Now create model again, compare it and make sure no schema updates
-        var ds = app.GetDataSource();
+        var ds = app.GetDefaultDataSource();
         var upgradeMgr = new DbUpgradeManager(ds);
         var upgradeInfo = upgradeMgr.BuildUpgradeInfo();
         if (upgradeInfo.AllScripts.Count > 0) {

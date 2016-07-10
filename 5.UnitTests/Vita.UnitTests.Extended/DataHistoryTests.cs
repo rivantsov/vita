@@ -9,6 +9,8 @@ using Vita.Common;
 using Vita.Entities;
 using Vita.Modules.DataHistory;
 using Vita.Samples.BookStore;
+using Vita.UnitTests.Common;
+using Vita.Entities.Services;
 
 namespace Vita.UnitTests.Extended {
 
@@ -26,9 +28,6 @@ namespace Vita.UnitTests.Extended {
 
     [TestMethod]
     public void TestDataHistory() {
-      // Currently fails for SQLite, something with date formatting
-      if(SetupHelper.ServerType == Data.Driver.DbServerType.Sqlite)
-        return; 
       var app = SetupHelper.BooksApp;
       try {
         //Book Review has history tracking enabled; let's create a review, update it a few times, and then delete it
@@ -83,9 +82,9 @@ namespace Vita.UnitTests.Extended {
         // a single history entry, at point in time - between 1st and second update; it is 9 hours ago; review should be r1
         var dt9hAgo = app.TimeService.UtcNow.AddHours(-9);
         var review9hAgo = histService.GetEntityOnDate(session, typeof(IBookReview), ferbReview.Id, dt9hAgo);
-        var lastCmd = session.GetLastCommand(); 
+        var lastCmd = session.GetLastCommand();
+        Assert.IsNotNull(review9hAgo, "Failed to retrieve history record.");
         Assert.AreEqual(r1, review9hAgo.Values["Review"], "Review history 9h ago does not match expected.");
-
       } finally {
         // in case we fail with exception
         app.TimeService.SetCurrentOffset(TimeSpan.Zero);

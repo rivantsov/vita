@@ -139,8 +139,11 @@ namespace Vita.Entities {
     public static Vita.Data.IDirectDbConnector GetDirectDbConnector(this IEntitySession session, bool admin = false) {
       var entSession = (EntitySession)session;
       var conn = entSession.CurrentConnection;
-      if (conn == null)
-        conn = entSession.CurrentConnection = session.Context.App.DataAccess.GetConnection(entSession, admin);
+      if (conn == null) {
+        var ds = session.Context.App.DataAccess.GetDataSource(session.Context);
+        conn = entSession.CurrentConnection = ds.Database.GetConnection(entSession, 
+           ConnectionLifetime.Explicit, admin: admin);
+      }  
       conn.Lifetime = ConnectionLifetime.Explicit; 
       return conn;
     }
@@ -245,7 +248,8 @@ namespace Vita.Entities {
       Util.Check(sequence != null, "Sequence parameter may not be null.");
       Util.Check(typeof(T) == sequence.DataType, "Requested next value type {0} does not match sequence {1} data type (2}.",
           typeof(T), sequence.Name, sequence.DataType);
-      var db = session.Context.App.GetDatabase(session.Context.DataSourceName);
+      var ds = session.Context.App.DataAccess.GetDataSource(session.Context);
+      var db = ds.Database;
       var entSession = (EntitySession)session;
       var v = db.GetSequenceNextValue(entSession, sequence);
       if (v.GetType() == typeof(T))

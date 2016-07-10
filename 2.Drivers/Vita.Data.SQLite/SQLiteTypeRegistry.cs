@@ -59,7 +59,7 @@ namespace Vita.Data.SQLite {
     }
 
     // Prop -> DbCol
-    protected object DateTimeToString(object x) {
+    public static object DateTimeToString(object x) {
       if(x == null || x == DBNull.Value)
         return DBNull.Value; 
       var dt = (DateTime)x;

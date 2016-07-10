@@ -75,7 +75,7 @@ namespace Vita.Data {
 
     #region IDataStore Members
 
-    public IList<EntityRecord> ExecuteSelect(EntityCommand command, EntitySession session, object[] args) {
+    public IList<EntityRecord> ExecuteSelect(EntitySession session, EntityCommand command, object[] args) {
       EntityInfo entInfo = command.TargetEntityInfo;
       var dbCommandInfo = GetDbCommandInfo(command);
       if (dbCommandInfo == null) {
@@ -109,13 +109,9 @@ namespace Vita.Data {
 
     public void SaveChanges(EntitySession session) {
       if (session.HasChanges()) {
-        //check if we need to sequence records
-        var useRefIntegrity = Settings.ModelConfig.Options.IsSet(DbOptions.UseRefIntegrity);
-        var canDeferIntegrCheck = _driver.Supports(DbFeatures.DeferredConstraintCheck);
-        var needSequencing = useRefIntegrity && !canDeferIntegrCheck;
         var records = session.RecordsChanged.Where(rec => ShouldUpdate(rec)).ToList();
         var conn = GetConnection(session);
-        var updateSet = new UpdateSet(conn, _timeService.UtcNow, records, needSequencing);
+        var updateSet = new UpdateSet(conn, _timeService.UtcNow, records);
         var batchMode = ShouldUseBatchMode(updateSet);
         if (batchMode)
           SaveChangesInBatchMode(updateSet);

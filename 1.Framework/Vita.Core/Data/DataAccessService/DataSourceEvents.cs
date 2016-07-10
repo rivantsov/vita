@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+
+using Vita.Entities; 
 using Vita.Data.Upgrades;
 
 namespace Vita.Data {
@@ -11,18 +13,28 @@ namespace Vita.Data {
     public event EventHandler<DbUpgradeEventArgs> DbUpgrading;
     public event EventHandler<DbUpgradeEventArgs> DbUpgraded;
     public event EventHandler<DataSourceEventArgs> DataSourceStatusChanging;
+    public event EventHandler<DataSourceAddEventArgs> DataSourceAdd;
+    private IDataAccessService _service; 
+
+    public DataSourceEvents(IDataAccessService service) {
+      _service = service; 
+    }
 
     internal void OnDataSourceStatusChanging(DataSourceEventArgs args) {
       if(DataSourceStatusChanging != null)
-        DataSourceStatusChanging(this, args);
+        DataSourceStatusChanging(_service, args);
     }
     internal void OnDbUpgrading(DbUpgradeEventArgs args) {
       if(DbUpgrading != null)
-        DbUpgrading(this, args);
+        DbUpgrading(_service, args);
     }
     internal void OnDbUpgraded(DbUpgradeEventArgs args) {
       if(DbUpgraded != null)
-        DbUpgraded(this, args);
+        DbUpgraded(_service, args);
+    }
+    internal void OnDataSourceAdd(DataSourceAddEventArgs args) {
+      if(DataSourceAdd != null)
+        DataSourceAdd(_service, args);
     }
   }
 
@@ -36,13 +48,19 @@ namespace Vita.Data {
 
   public class DataSourceEventArgs : EventArgs {
     public readonly DataSource DataSource;
-    public DataSourceEventType EventType;
+    public readonly DataSourceEventType EventType;
     public DataSourceEventArgs(DataSource dataSource, DataSourceEventType eventType) {
       DataSource = dataSource;
       EventType = eventType;
     }
-    public DbVersionInfo DbVersionInfo { get { return DataSource.Database.DbModel.VersionInfo; } }
-    public Version AppVersion { get { return DataSource.App.Version; } }
+  }
+
+  public class DataSourceAddEventArgs : EventArgs {
+    public readonly OperationContext Context; 
+    public DataSource NewDataSource;
+    public DataSourceAddEventArgs(OperationContext context) {
+      Context = context;
+    }
   }
 
   public class DbUpgradeEventArgs : EventArgs {

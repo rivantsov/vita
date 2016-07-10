@@ -46,15 +46,20 @@ namespace Vita.Data {
     public bool UsesOutParams;
     public List<BatchDbCommand> BatchCommands; //batch mode only
 
-    public UpdateSet(DataConnection connection, DateTime updateTime, IList<EntityRecord> records, bool sequence) {
+    public UpdateSet(DataConnection connection, DateTime updateTime, IList<EntityRecord> records) {
       Connection = connection;
       Session = connection.Session;
       UpdateTime = updateTime;
-      Id = Guid.NewGuid();
+      Id = Session.NextTransactionId;
       //Start explicit transaction only if we have more than one command to execute.
       UseTransaction = (records.Count + Session.ScheduledCommands.Count) > 1;
       AllRecords.AddRange(records);
-      if (sequence)
+      //check if we need sequencing
+      var stt = Connection.Database.Settings;
+      var useRefIntegrity = stt.ModelConfig.Options.IsSet(DbOptions.UseRefIntegrity);
+      var canDeferIntegrCheck = stt.Driver.Supports(Driver.DbFeatures.DeferredConstraintCheck);
+      var needSequencing = useRefIntegrity && !canDeferIntegrCheck;
+      if(needSequencing)
         SequenceRecords(); //fills entity info set
       else {
         // fill entity Info set

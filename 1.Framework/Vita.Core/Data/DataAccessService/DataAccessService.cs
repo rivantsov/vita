@@ -19,19 +19,16 @@ namespace Vita.Data {
   /// <summary>Manages access to one or more physical databases.  </summary>
   public class DataAccessService :
       IEntityService, //initialization
-      IDataAccessService, //data access, inherits IDataStore and IDataSourceManagementService
-      IDataSourceManagementService
+      IDataAccessService
   {
     EntityApp _app;
-    EntityCache _sharedCache;
     IDictionary<string, DataSource> _dataSources;
-    object _addLock = new object(); 
+    object _lock = new object(); 
 
     public DataAccessService(EntityApp app, EntityCache sharedCache = null) {
       _app = app;
-      _sharedCache = sharedCache;
-      app.RegisterService<IDataAccessService>(this);
-      app.RegisterService<IDataSourceManagementService>(this); 
+      _events = new DataSourceEvents(this);
+      app.RegisterService<IDataAccessService>(this); 
     }
 
     #region IEntityService methods
@@ -39,33 +36,44 @@ namespace Vita.Data {
     }
 
     void IEntityService.Shutdown() {
-      if (_sharedCache != null)
-        _sharedCache.Shutdown();
       foreach (var ds in GetDataSources())
         ds.Shutdown();
     }
     #endregion
 
     #region IDataSourceManagement service
-    public DataSource GetDataSource(string name = DataSource.DefaultName) {
-      if (_dataSources == null)
-        return null;
-      Util.CheckNotEmpty(name, "Data source name may not be null.");
-      DataSource ds;
-      if (_dataSources.TryGetValue(name, out ds))
-        return ds;
-      return null; 
-    }
 
     public IEnumerable<DataSource> GetDataSources() {
       return _dataSources.Values; 
-    } 
+    }
+
+    public DataSource GetDataSource(OperationContext context) {
+      // We must account for Linked apps, like logging app; the same contet/session might be used for quering entities in main app (book store) and logging app
+      // so cached data source in context might not be what we're looking for - it might be from different app. 
+      var ds = context.DataSource;
+      if(ds != null && ds.Name == context.DataSourceName && ds.App == context.App)
+        return ds;
+      ds = LookupDataSource(context.DataSourceName);
+      if (ds == null) {
+        //Fire event 
+        var args = new DataSourceAddEventArgs(context);
+        Events.OnDataSourceAdd(args);
+        ds = args.NewDataSource;
+        // If app/event handler uses app.ConnectTo method, then data source must be already registered
+        // but just in case, let's make sure it is registered (the call is ignored if ds is already there).
+        if(ds != null)
+          RegisterDataSource(ds); 
+      }
+      Util.Check(ds != null, "Failed to find data source, name: {0}", context.DataSourceName);
+      context.DataSource = ds;
+      return context.DataSource;
+    }
 
     public void RegisterDataSource(DataSource dataSource) {
       Util.CheckNotEmpty(dataSource.Name, "DataSource name may not be empty.");
       //dataSource.Database.CheckConnectivity();
-      lock (_addLock) {
-        var oldDs = GetDataSource(dataSource.Name);
+      lock (_lock) {
+        var oldDs = LookupDataSource(dataSource.Name);
         if (oldDs != null)
           return; 
         //create copy, add to it, and then replace with interlock
@@ -90,15 +98,34 @@ namespace Vita.Data {
       _events.OnDataSourceStatusChanging(new DataSourceEventArgs(dataSource, DataSourceEventType.Connected));
     }
 
+    public void RemoveDataSource(string name) {
+      lock(_lock) {
+        var newDict = new Dictionary<string, DataSource>(_dataSources, StringComparer.InvariantCultureIgnoreCase);
+        newDict.Remove(name);
+        _dataSources = newDict; 
+      }
+    }
+
     public DataSourceEvents Events {
       get { return _events; }
-    } DataSourceEvents _events = new DataSourceEvents();
+    } DataSourceEvents _events; 
     #endregion
 
     public DataConnection GetConnection(EntitySession session, bool admin = false) {
-      var ds = LookupDataSource(session.Context);
+      var ds = GetDataSource(session.Context);
       return ds.Database.GetConnection(session, admin: admin); 
     }
+
+    public DataSource LookupDataSource(string name = DataSource.DefaultName) {
+      if(_dataSources == null)
+        return null;
+      Util.CheckNotEmpty(name, "Data source name may not be null.");
+      DataSource ds;
+      if(_dataSources.TryGetValue(name, out ds))
+        return ds;
+      return null;
+    }
+
 
     private void ApplyMigrations(DbUpgradeInfo upgradeInfo) {
       if (upgradeInfo.PostUpgradeMigrations == null || upgradeInfo.PostUpgradeMigrations.Count == 0)
@@ -108,46 +135,6 @@ namespace Vita.Data {
         m.Action(session);
       }
       session.SaveChanges(); 
-    }
-
-    #region IDataAccessService
-    public IList<EntityRecord> ExecuteSelect(EntityCommand command, EntitySession session, object[] args) {
-      IList<EntityRecord> records; 
-      if(this._sharedCache != null) {
-        if(_sharedCache != null && _sharedCache.TryExecuteSelect(session, command, args, out records))
-          return records;
-      }
-      var ds = LookupDataSource(session.Context);
-      records = ds.ExecuteSelect(session, command, args);
-      return records; 
-
-    }
-
-    public void SaveChanges(EntitySession session) {
-      var ds = LookupDataSource(session.Context);
-      ds.SaveChanges(session); 
-    }
-
-    public object ExecuteLinqCommand(LinqCommand command, EntitySession session) {
-      //Check shared cache
-      object result;
-      if(command.CommandType == LinqCommandType.Select && this._sharedCache != null) {
-        if(_sharedCache.TryExecuteLinqQuery(session, command, out result))
-          return result;
-      }
-      //Simplified for now
-      var ds =  LookupDataSource(session.Context);
-      return ds.ExecuteLinqCommand(session, command);
-    }
-    #endregion
-
-    private DataSource LookupDataSource(OperationContext context) {
-      // We must account for Linked apps, like logging app; the same contet/session might be used for quering entities in main app (book store) and logging app
-      // so cached data source in context might not be what we're looking for - it might be from different app. 
-      if (context.DataSource != null && context.DataSource.Name == context.DataSourceName && context.DataSource.App == context.App)
-        return context.DataSource;
-      context.DataSource = GetDataSource(context.DataSourceName);
-      return context.DataSource;
     }
 
 

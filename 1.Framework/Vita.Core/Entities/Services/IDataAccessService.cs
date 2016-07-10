@@ -13,7 +13,7 @@ namespace Vita.Entities.Services {
   /// the entity model. </summary>
   /// <remarks>Manages access to one or more physical databases with associated cache. Identical to IDataStore, but 
   /// allows access to one of several data stores.</remarks>
-  public interface IDataAccessService : IDataStore {
+  public interface IDataAccessService { // : IDataStore {
   }
 
 

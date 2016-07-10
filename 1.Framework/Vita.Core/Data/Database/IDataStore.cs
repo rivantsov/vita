@@ -11,9 +11,9 @@ using Vita.Entities.Runtime;
 namespace Vita.Data {
 
   public interface IDataStore {
-    IList<EntityRecord> ExecuteSelect(EntityCommand command, EntitySession session, object[] args);
+    IList<EntityRecord> ExecuteSelect(EntitySession session, EntityCommand command, object[] args);
     void SaveChanges(EntitySession session);
-    object ExecuteLinqCommand(LinqCommand command, EntitySession session);
+    object ExecuteLinqCommand(EntitySession session, LinqCommand command);
     DataConnection GetConnection(EntitySession session, bool admin = false);
   }
 

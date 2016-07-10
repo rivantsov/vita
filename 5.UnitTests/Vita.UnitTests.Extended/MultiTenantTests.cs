@@ -56,8 +56,10 @@ namespace Vita.UnitTests.Extended {
       var dbSettings2 = new DbSettings(mainDbStt.ModelConfig,  connString2, upgradeMode: DbUpgradeMode.Always, dataSourceName: Books2);
       Vita.UnitTests.Common.TestUtil.DropSchemaObjects(dbSettings2);
       app.ConnectTo(dbSettings2);
-      
+
       //read from new store
+      var ctx1 = new OperationContext(app); // DataSourceName=Default
+      // The second context will point to another database
       var ctx2 = new OperationContext(app);
       ctx2.DataSourceName = Books2;
       var session = ctx2.OpenSession();
@@ -76,16 +78,16 @@ namespace Vita.UnitTests.Extended {
       Assert.IsNotNull(bookCopy, "Book not found.");
 
       //Check that it does not exist in 'main' VitaBooks database
-      session = app.OpenSession(); //open session in VitaBooks
+      session = ctx1.OpenSession(); //open session in VitaBooks
       var pub = session.EntitySet<IPublisher>().FirstOrDefault(p => p.Name == newPub.Name);
       Assert.IsNull(pub, "Publisher should not exist in VitaBooks");
       var book = session.EntitySet<IBook>().FirstOrDefault(b => b.Title == newBook.Title);
       Assert.IsNull(book, "Book should not exist in VitaBooks.");
 
       //Verify both data sources share the DbModel object
-      var dsService = app.GetService<IDataSourceManagementService>();
-      var ds1 = dsService.GetDataSource(DataSource.DefaultName);
-      var ds2 = dsService.GetDataSource(Books2);
+      var dsService = app.DataAccess;
+      var ds1 = dsService.GetDataSource(ctx1);
+      var ds2 = dsService.GetDataSource(ctx2);
       Assert.IsNotNull(ds1, "Default data source not found.");
       Assert.IsNotNull(ds2, "Books2 data source not found.");
       Assert.AreEqual(ds1.Database.DbModel, ds2.Database.DbModel, "Db models are not shared.");

@@ -117,7 +117,7 @@ namespace Vita.Entities {
 
     /// <summary>Gets the instance of the application authorization service. </summary>
     public readonly IAuthorizationService AuthorizationService;
-    /// <summary>Gets the instance of the application data access service. </summary>
+    /// <summary>Holds the instance of the data access service. </summary>
     public readonly IDataAccessService DataAccess; 
 
     internal readonly List<EntityReplacementInfo> Replacements = new List<EntityReplacementInfo>();
@@ -218,28 +218,8 @@ namespace Vita.Entities {
         dbSettings.DbInfoProvider = this.GetService<IDbInfoService>(); 
       var db = new Database(this, dbSettings); //this will construct DbModel for Database
       var ds = new DataSource(dbSettings.DataSourceName, db, this.CacheSettings);
-      var dsMgr = GetService<IDataSourceManagementService>(); 
-      dsMgr.RegisterDataSource(ds);
+      this.DataAccess.RegisterDataSource(ds);
       this.Status = EntityAppStatus.Connected; 
-    }
-
-    /// <summary> Retrieves a registered <c>DataSource</c> by name.</summary>
-    /// <param name="name">Data source name, optional. If null, returns default datasource.</param>
-    /// <returns>DataSource instance, or null if not found.</returns>
-    public DataSource GetDataSource(string name = DataSource.DefaultName) {
-      var dsM = this.GetService<IDataSourceManagementService>();
-      var ds = dsM.GetDataSource(name);
-      return ds;
-    }
-
-    /// <summary> Returns a <c>Database</c> instance by data source name. </summary>
-    /// <param name="name">Data source name, optional.</param>
-    /// <returns>Database object.</returns>
-    public Database GetDatabase(string name = DataSource.DefaultName) {
-      var ds = GetDataSource(name);
-      if (ds == null)
-        return null; 
-      return ds.Database;
     }
 
     /// <summary> Replaces one registered entity with extended version. </summary>

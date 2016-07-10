@@ -167,7 +167,7 @@ namespace Vita.UnitTests.Extended {
       var app = SetupHelper.BooksApp;
       //Once we started tests, db model is updated; now if we compare db model with entity model, there should be no changes
       // We test here how well the DbModelComparer works - it should not signal any false positives (find differences when there are none)
-      var ds = app.GetDataSource();
+      var ds = app.GetDefaultDataSource();
       var upgradeMgr = new Vita.Data.Upgrades.DbUpgradeManager(ds);
       var upgradeInfo = upgradeMgr.BuildUpgradeInfo(); //.AddDbModelChanges(currentDbModel, modelInDb, DbUpgradeOptions.Default, app.ActivationLog);
       Assert.AreEqual(0, upgradeInfo.TableChanges.Count + upgradeInfo.NonTableChanges.Count, "Expected no changes");

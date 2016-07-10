@@ -28,7 +28,7 @@ namespace Vita.Modules.Logging {
     public DbUpgradeLogModule(EntityArea area, string name = "DbUpgradeLog") : base(area, name, version: CurrentVersion) {
       RegisterEntities(EntityTypes);
       App.RegisterService<IDbUpgradeLogService>(this);
-      var dsService = App.GetService<IDataSourceManagementService>();
+      var dsService = App.DataAccess;
       dsService.Events.DataSourceStatusChanging += Events_DataSourceStatusChanging;
     }
 

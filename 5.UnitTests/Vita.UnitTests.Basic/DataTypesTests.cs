@@ -286,7 +286,7 @@ namespace Vita.UnitTests.Basic {
       if (SetupHelper.ServerType != DbServerType.MsSql)
         return; 
       // Verify data types
-      var db = _app.GetDatabase();
+      var db = _app.GetDefaultDatabase();
       var loader = SetupHelper.Driver.CreateDbModelLoader(db.Settings, null);
       var dtColumns = loader.GetColumns();
       CheckDataType(dtColumns, "CharNProp", "char", 10);

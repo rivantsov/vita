@@ -175,6 +175,23 @@ namespace Vita.Modules.OAuthClient {
       return await Task.FromResult(true); 
     }
 
+    public IOAuthAccessToken GetUserOAuthToken(IEntitySession session, Guid userId, string serverName, string accountName = null) {
+      accountName = accountName ?? Settings.DefaultAccountName;
+      var context = session.Context;
+      var utcNow = context.App.TimeService.UtcNow;
+      var accessToken = session.EntitySet<IOAuthAccessToken>()
+          .Where(t => t.Account.Server.Name == serverName && t.UserId == userId && t.ExpiresOn > utcNow)
+          .OrderByDescending(t => t.RetrievedOn).FirstOrDefault();
+      return accessToken;
+    }
+
+
+    public void SetupOAuthClient(WebApiClient client, IOAuthAccessToken token) {
+      var session = EntityHelper.GetSession(token);
+      var tokenValue = token.AccessToken.DecryptString(this.Settings.EncryptionChannel);
+      client.AddAuthorizationHeader(tokenValue, scheme: token.TokenType.ToString());
+    }
+
     public async Task<TProfile> GetBasicProfile<TProfile>(OperationContext context, Guid tokenId) {
       var session = context.OpenSystemSession();
       var token = session.GetEntity<IOAuthAccessToken>(tokenId); 
@@ -184,7 +201,7 @@ namespace Vita.Modules.OAuthClient {
       Util.CheckNotEmpty(profileUrl, "Basic profile URL for OAuth server {0} is empty, cannot retrieve profile.", server.Name);
       var profileUri = new Uri(profileUrl);
       var webClient = new WebApiClient(profileUrl, ClientOptions.Default, typeof(string));
-      webClient.SetupForOAuth(token);
+      SetupOAuthClient(webClient, token);
       var profile = await webClient.GetAsync<TProfile>(string.Empty);
       return profile;
     }
@@ -198,7 +215,7 @@ namespace Vita.Modules.OAuthClient {
       Util.CheckNotEmpty(profileUrl, "Basic profile URL for OAuth server {0} is empty, cannot retrieve profile.", server.Name);
       var profileUri = new Uri(profileUrl);
       var webClient = new WebApiClient(profileUrl, ClientOptions.Default, typeof(string));
-      webClient.SetupForOAuth(token); 
+      SetupOAuthClient(webClient, token); 
       var respStream = await webClient.GetAsync<System.IO.Stream>(string.Empty);
       var reader = new System.IO.StreamReader(respStream);
       var profile = reader.ReadToEnd();

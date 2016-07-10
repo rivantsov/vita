@@ -123,7 +123,7 @@ namespace Vita.Entities.Caching {
           }
           var entInfo = _app.Model.GetEntityInfo(entType);
           var cmd = entInfo.CrudCommands.SelectAll;
-          var records = _dataStore.ExecuteSelect(cmd, session, null);
+          var records = _dataStore.ExecuteSelect(session, cmd, null);
           var entSet = new FullyCachedSet(entInfo, records);
           entSets.Add(entType, entSet);
         }

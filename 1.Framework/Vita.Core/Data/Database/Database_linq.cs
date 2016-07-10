@@ -23,7 +23,7 @@ namespace Vita.Data {
   //Dynamic LINQ execution
   public partial class Database {
 
-    public object ExecuteLinqCommand(LinqCommand command, EntitySession session) {
+    public object ExecuteLinqCommand(EntitySession session, LinqCommand command) {
       var conn = GetLinqCommandConnection(session, command.Info.Flags);
       try {
         object result = command.CommandType == LinqCommandType.Select ?

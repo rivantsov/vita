@@ -15,7 +15,7 @@ namespace Vita.Data {
 
   /// <summary>DataSource is a tuple combining a Database and associated data cache.</summary>
   /// <remarks>All select operations are first checked with cache, then submitted to the database.</remarks>
-  public class DataSource {
+  public class DataSource : IDataStore {
     public const string DefaultName = "(Default)";
 
     public readonly string Name; 
@@ -37,11 +37,12 @@ namespace Vita.Data {
       Database.Shutdown();
     }
 
+
     public IList<EntityRecord> ExecuteSelect(EntitySession session, EntityCommand command, object[] args) {
       IList<EntityRecord> records;
       if(Cache != null && Cache.TryExecuteSelect(session, command, args, out records))
           return records;
-      records = Database.ExecuteSelect(command, session, args);
+      records = Database.ExecuteSelect(session, command, args);
       if(Cache != null)
         Cache.CacheRecords(records);
       return records; 
@@ -55,7 +56,7 @@ namespace Vita.Data {
       object result;
       if(command.CommandType == LinqCommandType.Select && Cache != null && Cache.TryExecuteLinqQuery(session, command, out result))
         return result;
-      result = Database.ExecuteLinqCommand(command, session);
+      result = Database.ExecuteLinqCommand(session, command);
       //If we are returning entities, cache them
       if(command.CommandType == LinqCommandType.Select) {
         var recs = result as IList<EntityRecord>;
@@ -67,6 +68,10 @@ namespace Vita.Data {
           Cache.Invalidate();
       }
       return result; 
+    }
+
+    public DataConnection GetConnection(EntitySession session, bool admin = false) {
+      return this.Database.GetConnection(session, admin: admin); 
     }
 
   }

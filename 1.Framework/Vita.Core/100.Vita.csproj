@@ -186,7 +186,7 @@
     <Compile Include="Entities\Runtime\EntityMaterializer.cs" />
     <Compile Include="Data\Database\IDataStore.cs" />
     <Compile Include="Data\Database\UpdateSet.cs" />
-    <Compile Include="Data\DataAccessService\IDataSourceManagementService.cs" />
+    <Compile Include="Data\DataAccessService\IDataAccessService.cs" />
     <Compile Include="Entities\Caching\CacheSettings.cs" />
     <Compile Include="Entities\Caching\CacheType.cs" />
     <Compile Include="Entities\Caching\EntityCache.cs" />
@@ -240,7 +240,7 @@
     <Compile Include="Entities\Services\ITimerService.cs" />
     <Compile Include="Entities\Logging\MemoryLog.cs" />
     <Compile Include="PublicAPI\StaticHelpers\EntityQueryExtensions.cs" />
-    <Compile Include="Entities\Services\IDataAccessService.cs" />
+    <None Include="Entities\Services\IDataAccessService.cs" />
     <Compile Include="Entities\Services\Implementations\_IEntityService.cs" />
     <Compile Include="Entities\Services\IErrorLogService.cs" />
     <Compile Include="Entities\Services\ITimeService.cs" />

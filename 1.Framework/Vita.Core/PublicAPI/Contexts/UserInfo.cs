@@ -24,10 +24,13 @@ namespace Vita.Entities {
     public readonly Guid UserId;
     public readonly string UserName;
     public readonly UserKind Kind;
-    public Authority Authority;
     /// <summary>Alternative User ID; for applications that use int/identity IDs</summary>
     public readonly Int64 AltUserId;
     internal readonly string Key; //used by some caches and dictionaries; concat of UserId and AltUserId
+
+    public Authority Authority {
+      get { return (_authorityDescriptor == null) ? null : _authorityDescriptor.Authority; }
+    }
 
     public UserInfo(Int64 altUserId, string userName) : this(BlankUserId, userName, UserKind.AuthenticatedUser, altUserId) { }
     public UserInfo(Guid userId, string userName) : this(userId, userName, UserKind.AuthenticatedUser, 0) { }
@@ -37,7 +40,11 @@ namespace Vita.Entities {
       UserName = userName;
       Kind = kind;
       AltUserId = altUserId;
-      Key = UserId + "/" + AltUserId; 
+      Key = GetKey(UserId, AltUserId); 
+    }
+
+    public static string GetKey(Guid userId, Int64 altUserId) {
+      return userId + "/" + altUserId; 
     }
 
     public static UserInfo Create(UserKind kind, Guid? userId, Int64? altUserId, string userName) {
@@ -53,6 +60,19 @@ namespace Vita.Entities {
       }
     }
 
+    #region CachedAuthority
+    // we use AuthorityDescriptor - a wrapper with Authority + Invalided flag - to be able to invalidate the Authority instances for all UserInfo objects using it. 
+    // it happens when we change user roles at runtime - we need to invalidate their Authority objects and force its recalculation.
+    public AuthorityDescriptor GetAuthorityDescriptor() {
+      return _authorityDescriptor;
+    }
+    public void SetAuthority(AuthorityDescriptor auth) {
+      _authorityDescriptor = auth;
+    }
+    AuthorityDescriptor _authorityDescriptor;
+    #endregion
+
+
     //Static singletons for anon and system users
     public static readonly Guid SystemUserId = new Guid("00000000-0000-0000-0000-000000000001");
     public static readonly Guid AnonymousUserId = new Guid("00000000-0000-0000-0000-000000000002");
@@ -62,6 +82,7 @@ namespace Vita.Entities {
     //Used as blank value for UserId when application uses integer AltUserId
     public static readonly Guid BlankUserId = new Guid("00000000-0000-0000-0000-0000000000FF");
     public static readonly int BlankAltUserId = -1;
+
 
     public override string ToString() {
       return UserName;

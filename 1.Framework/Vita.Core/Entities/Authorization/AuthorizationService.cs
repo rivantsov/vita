@@ -21,7 +21,7 @@ namespace Vita.Entities.Authorization {
     EntityApp _app;
     AuthorityBuilder _builder; 
     ObjectCache<Authority> _authorityByRoleSet;
-    ObjectCache<Authority> _authorityByUserId;
+    ObjectCache<AuthorityDescriptor> _authorityByUserId;
 
     public AuthorizationService(EntityApp app) {
       _app = app; 
@@ -34,13 +34,18 @@ namespace Vita.Entities.Authorization {
     public void Init(EntityApp app) {
       _app = app;
       _authorityByRoleSet = new ObjectCache<Authority>("AuthorityByRoleSet", RoleCacheExpirationSec);
-      _authorityByUserId = new ObjectCache<Authority>("AuthorityByUserId", UserCacheExpirationSec);
+      _authorityByUserId = new ObjectCache<AuthorityDescriptor>("AuthorityByUserId", UserCacheExpirationSec);
+      _authorityByUserId.OnRemoved = OnAuthorityRemoved;
     }
 
     public void Shutdown() {
       
     }
     #endregion
+
+    void OnAuthorityRemoved(string key, AuthorityDescriptor auth) {
+      auth.Invalidated = true; 
+    }
 
     #region IAuthorizationService Members
     public Authority GetAuthority(IList<Role> userRoles) {
@@ -53,20 +58,30 @@ namespace Vita.Entities.Authorization {
       _authorityByRoleSet.Add(authority.Key, authority);
       return authority;
     }
-    public Authority GetAuthority(UserInfo user) {
+
+    public AuthorityDescriptor GetAuthority(UserInfo user) {
       var userKey = user.Key; 
-      var auth = _authorityByUserId.Lookup(userKey);
-      if(auth == null) {
+      var cAuth = _authorityByUserId.Lookup(userKey);
+      if(cAuth == null) {
         var roles = _app.GetUserRoles(user);
-        auth = GetAuthority(roles);
-        _authorityByUserId.Add(userKey, auth);
+        var auth = GetAuthority(roles);
+        cAuth = new AuthorityDescriptor(auth); 
+        _authorityByUserId.Add(userKey, cAuth);
       }
-      user.Authority = auth;
-      return auth; 
+      return cAuth; 
     }
 
     public void UserLoggedOut(UserInfo user) {
-      _authorityByUserId.Remove(user.Key);
+      InvalidateCachedAuthority(user.UserId, user.AltUserId); 
+    }
+
+    public void InvalidateCachedAuthority(Guid userId, Int64 altUserId = 0) {
+      // It is not enough to simply remove authority object from cache. Authority is also cached in UserInfo.Authority, and userInfo is saved in UserSession, 
+      // so if there's an active user out there, he might still be using his saved userInfo.Authority object. We need to Invalidate this authority object. 
+      // We do not need to do it here; we do it in on-remove handler - when item is removed from cache, it fires a callback in which we set auth.Invalidated = true; 
+      // Secure session checks Invalidated flag, and if it is set, it refreshes the Authority object. 
+      var key = UserInfo.GetKey(userId, altUserId);
+      _authorityByUserId.Remove(key);
     }
     #endregion
 

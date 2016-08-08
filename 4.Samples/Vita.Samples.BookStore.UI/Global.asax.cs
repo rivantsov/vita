@@ -55,12 +55,9 @@ namespace Vita.Samples.BookStore.UI {
       var dbSettings = new DbSettings(driver, dbOptions, connString, upgradeMode: DbUpgradeMode.Always);
       booksApp.ConnectTo(dbSettings);
       //Web Api
-      WebHelper.ConfigureWebApi(GlobalConfiguration.Configuration, booksApp, logLevel: Entities.Services.LogLevel.Details);
-      /*
-      var hc = GlobalConfiguration.Configuration;
-      var webH = hc.MessageHandlers.First(h => h is WebCallContextHandler);
-      hc.MessageHandlers.Remove(webH);
-      */
+      WebHelper.ConfigureWebApi(GlobalConfiguration.Configuration, booksApp, logLevel: Entities.Services.LogLevel.Details 
+        
+        );
       return booksApp;
     }
 

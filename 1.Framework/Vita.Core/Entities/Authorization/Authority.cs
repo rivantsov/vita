@@ -24,7 +24,7 @@ namespace Vita.Entities.Authorization {
     internal HashSet<GrantedPermission> NonEntityPermissionGrants = new HashSet<GrantedPermission>();
     //All dynamic grants
     internal HashSet<DynamicActivityGrant> DynamicGrants =  new HashSet<DynamicActivityGrant>();
-    
+
     string _permissionsSummary;//cached value
 
     internal Authority(string key, IEnumerable<Role> roles) {

@@ -34,8 +34,7 @@ namespace Vita.Modules.OAuthClient.Api {
         webctx.OutgoingHeaders.Add("Location", stt.RedirectResponseRedirectsTo);
       } else {
         var msg = stt.RedirectResponseText ?? "Authorization completed.";
-        webctx.OutgoingResponseContent = new System.Net.Http.StreamContent(new System.IO.MemoryStream(Encoding.UTF8.GetBytes(msg)));
-        webctx.OutgoingResponseContent.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("text/plain");
+        webctx.OutgoingResponseContent = msg;
         webctx.OutgoingResponseStatus = System.Net.HttpStatusCode.OK; 
       }
     }//method

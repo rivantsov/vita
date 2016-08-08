@@ -15,7 +15,7 @@ using Vita.Modules.ApiClients.Recaptcha;
 namespace Vita.Modules.Login.Api {
 
   // Handles Password reset
-  [ApiRoutePrefix("passwordreset")] 
+  [ApiRoutePrefix("passwordreset"), ApiGroup("Login/PasswordReset")] 
   public class PasswordResetController : SlimApiController {
     LoginModuleSettings _loginSettings; 
     ILoginProcessService _processService;
@@ -117,7 +117,7 @@ namespace Vita.Modules.Login.Api {
     }
 
     [ApiGet, ApiRoute("{token}/userquestions")]
-    public IList<SecretQuestion> GetUserSecretQuestions(string token) {
+    public IList<SecretQuestion> GetUserQuestions(string token) {
       var process = GetActiveProcess(token);
       if(process == null)
         return new List<SecretQuestion>();
@@ -127,7 +127,7 @@ namespace Vita.Modules.Login.Api {
     }
 
     [ApiPut, ApiRoute("{token}/questionanswer")]
-    public bool SubmitUserQuestionAnswer(string token, SecretQuestionAnswer answer) {
+    public bool SubmitSecretQuestionAnswer(string token, SecretQuestionAnswer answer) {
       Context.WebContext.MarkConfidential();
       var process = GetActiveProcess(token);
       if(process == null)
@@ -139,7 +139,7 @@ namespace Vita.Modules.Login.Api {
     }
 
     [ApiPut, ApiRoute("{token}/questionanswers")]
-    public bool SubmitAllUserQuestionAnswers(string token, List<SecretQuestionAnswer> answers) {
+    public bool SubmitAllQuestionAnswers(string token, List<SecretQuestionAnswer> answers) {
       Context.WebContext.MarkConfidential();
       var process = GetActiveProcess(token);
       if(process == null)
@@ -149,7 +149,7 @@ namespace Vita.Modules.Login.Api {
     }
 
     [ApiPut, ApiRoute("{token}")]
-    public bool ChangePassword(string token, PasswordChangeInfo changeInfo) {
+    public bool ResetPassword(string token, PasswordChangeInfo changeInfo) {
       Context.WebContext.MarkConfidential();
       var process = GetActiveProcess(token);
       if(process == null)

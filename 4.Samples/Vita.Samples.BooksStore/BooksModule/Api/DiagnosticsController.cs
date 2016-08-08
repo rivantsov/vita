@@ -13,7 +13,7 @@ namespace Vita.Samples.BookStore {
   //Special methods: heartbeat, throwerror, get/set time offset
   /// <summary>A controller with special diagnostics functions: heartbeat, throw-error, get/set timeoffset. </summary>
   /// <remarks>We recommend to include have this (or similar) controller in a Web application (including production envrironment). 
-  /// It provides some utility functionality: 
+  /// It provides diagnostic endpoints: 
   /// <list>
   ///   <item>Heartbeat: an endpoint providing verification that server is up and running; this endpoint might be used in automatic monitoring services (WebSitePulse.com)</item>
   ///   <item>Throw error on demand - to check that error logging functionality is working properly. Hitting on the endpoint throws exception on the server - you then check that it is logged 
@@ -23,6 +23,7 @@ namespace Vita.Samples.BookStore {
   ///   VITA uses internal TimeService for all time inquiries, and this service allows setting an offset value, so that for all internal functions the current time will appear to be shifted. 
   ///   The offset endpoint is enabled only if static bool variable EnableTimeOffset is set to true - this should be set from config file only in test/staging environments.</item>
   /// </list>"
+  /// The controller methods return plain text (content-type = application/text), so they can be used directly in a Web browser. 
   /// </remarks>
   [ApiRoutePrefix("diagnostics"), ApiGroup("Diagnostics")]
   public class DiagnosticsController : SlimApiController {
@@ -40,28 +41,30 @@ namespace Vita.Samples.BookStore {
     }
 
     [ApiGet, ApiRoute("heartbeat")]
-    public System.IO.Stream GetHeartbeat() {
+    public string GetHeartbeat() {
       Context.LogLevel = Vita.Entities.Services.LogLevel.None;
       Context.WebContext.OutgoingHeaders.Add("Content-type", "application/text");
       var utcNow = Context.App.TimeService.UtcNow;
       if(_lastCalledOn.AddSeconds(HeartbeatPauseSeconds) > utcNow)
-        return AsStream(TimeframeLockout);
+        return AsPlainText(TimeframeLockout);
       _lastCalledOn = utcNow;
       try {
         var session = Context.App.OpenSystemSession();
         var someUser = session.EntitySet<IUser>().FirstOrDefault(); 
         if(someUser == null)
-          return AsStream(StatusFailed);
+          return AsPlainText(StatusFailed);
         else 
-          return AsStream(StatusOK);
+          return AsPlainText(StatusOK);
       } catch(Exception ex) {
-        return AsStream("Error:" + ex.Message);
+        return AsPlainText("Error:" + ex.Message);
       }
     }//method
 
-    private Stream AsStream(string value) {
-      return new MemoryStream(Encoding.UTF8.GetBytes(value));
+    private string AsPlainText(string value) {
+      Context.WebContext.OutgoingResponseContent = value; 
+      return value; 
     }
+
 
     [ApiGet, ApiRoute("throwerror")]
     public string ThrowError() {
@@ -77,18 +80,18 @@ namespace Vita.Samples.BookStore {
     }
 
     [ApiGet, ApiRoute("timeoffset")]
-    public Stream GetTimeOffset() {
+    public string GetTimeOffset() {
       if(!EnableTimeOffset)
-        return AsStream(FunctionNotEnabled);
+        return AsPlainText(FunctionNotEnabled);
       var utcNow = Context.App.TimeService.UtcNow;
       var offset = (int)Context.App.TimeService.CurrentOffset.TotalMinutes;
-      return AsStream("Current offset: " + offset + " minutes, current UTC: " + utcNow.ToString("G"));
+      return AsPlainText("Current offset: " + offset + " minutes, current UTC: " + utcNow.ToString("G"));
     }
 
     [ApiGet, ApiRoute("timeoffset/{minutes}")]
-    public Stream SetTimeOffset(int minutes) {
+    public string SetTimeOffset(int minutes) {
       if(!EnableTimeOffset)
-        return AsStream(FunctionNotEnabled);
+        return AsPlainText(FunctionNotEnabled);
       Context.App.TimeService.SetCurrentOffset(TimeSpan.FromMinutes(minutes));
       return GetTimeOffset();
     }

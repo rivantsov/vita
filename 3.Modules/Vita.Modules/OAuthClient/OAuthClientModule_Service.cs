@@ -200,7 +200,7 @@ namespace Vita.Modules.OAuthClient {
       string profileUrl = server.BasicProfileUrl;
       Util.CheckNotEmpty(profileUrl, "Basic profile URL for OAuth server {0} is empty, cannot retrieve profile.", server.Name);
       var profileUri = new Uri(profileUrl);
-      var webClient = new WebApiClient(profileUrl, ClientOptions.Default, typeof(string));
+      var webClient = new WebApiClient(profileUrl, ClientOptions.Default, ApiNameMapping.Default, typeof(string));
       SetupOAuthClient(webClient, token);
       var profile = await webClient.GetAsync<TProfile>(string.Empty);
       return profile;
@@ -214,7 +214,7 @@ namespace Vita.Modules.OAuthClient {
       string profileUrl = server.BasicProfileUrl;
       Util.CheckNotEmpty(profileUrl, "Basic profile URL for OAuth server {0} is empty, cannot retrieve profile.", server.Name);
       var profileUri = new Uri(profileUrl);
-      var webClient = new WebApiClient(profileUrl, ClientOptions.Default, typeof(string));
+      var webClient = new WebApiClient(profileUrl, ClientOptions.Default, ApiNameMapping.Default, typeof(string));
       SetupOAuthClient(webClient, token); 
       var respStream = await webClient.GetAsync<System.IO.Stream>(string.Empty);
       var reader = new System.IO.StreamReader(respStream);

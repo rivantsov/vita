@@ -59,10 +59,7 @@ namespace Vita.Data {
         var args = new DataSourceAddEventArgs(context);
         Events.OnDataSourceAdd(args);
         ds = args.NewDataSource;
-        // If app/event handler uses app.ConnectTo method, then data source must be already registered
-        // but just in case, let's make sure it is registered (the call is ignored if ds is already there).
-        if(ds != null)
-          RegisterDataSource(ds); 
+        // if DataSource is returned by event handler, it might be registered or not - it is up to a handler
       }
       Util.Check(ds != null, "Failed to find data source, name: {0}", context.DataSourceName);
       context.DataSource = ds;

@@ -9,7 +9,7 @@ using Vita.Entities.Web;
 
 namespace Vita.Modules.Login.Api {
 
-  [ApiRoutePrefix("mylogin"), LoggedInOnly]
+  [ApiRoutePrefix("mylogin"), LoggedInOnly, ApiGroup("Login/Management")]
   public class LoginSelfServiceController : SlimApiController {
     ILoginManagementService _loginManager; 
 
@@ -41,7 +41,7 @@ namespace Vita.Modules.Login.Api {
     }
 
     [ApiGet, ApiRoute("questions")]
-    public List<SecretQuestion> GetUserSecretQuestions() {
+    public List<SecretQuestion> GetMySecretQuestions() {
       var login = GetCurrentLogin();
       var questions = _loginManager.GetUserSecretQuestions(login);
       return questions.Select(q => q.ToModel()).ToList();
@@ -159,8 +159,18 @@ namespace Vita.Modules.Login.Api {
       session.SaveChanges();
     }
 
-    [ApiPost, ApiPut, ApiRoute("device")]
-    public DeviceInfo RegisterOrUpdateDevice(DeviceInfo device) {
+    //We could handle PUT and POST in one method, but swagger creates two entries with the same operation_id
+    // and this crushes the API Client generator (AutoRest)
+    [ApiPost, ApiRoute("device")]
+    public DeviceInfo RegisterDevice(DeviceInfo device) {
+      return RegisterOrUpdateDevice(device); 
+    }
+    [ApiPut, ApiRoute("device")]
+    public DeviceInfo UpdateDevice(DeviceInfo device) {
+      return RegisterOrUpdateDevice(device);
+    }
+
+    private DeviceInfo RegisterOrUpdateDevice(DeviceInfo device) {
       var login = GetCurrentLogin();
       ITrustedDevice deviceEnt = null;
       if(!string.IsNullOrWhiteSpace(device.Token))

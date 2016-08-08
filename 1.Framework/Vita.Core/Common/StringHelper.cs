@@ -109,5 +109,30 @@ namespace Vita.Common {
       var base64EncodedBytes = System.Convert.FromBase64String(base64EncodedData);
       return System.Text.Encoding.UTF8.GetString(base64EncodedBytes);
     }
+
+    public static string ToCamelCase(this string value) {
+      if(string.IsNullOrEmpty(value))
+        return value;
+      return Char.ToLowerInvariant(value[0]) + value.Substring(1);
+    }
+
+    public static string ToUnderscoreAllLower(this string value) {
+      if(string.IsNullOrEmpty(value))
+        return value;
+      var chars = value.ToCharArray();
+      var newChars = new List<char>();
+      foreach(var ch in chars) {
+        if(char.IsUpper(ch)) {
+          if(newChars.Count > 0)
+            newChars.Add('_');
+          newChars.Add(char.ToLowerInvariant(ch));
+        } else
+          newChars.Add(ch);
+      }
+      var result = new string(newChars.ToArray());
+      return result;
+    }
+
+
   }//class
 } //ns

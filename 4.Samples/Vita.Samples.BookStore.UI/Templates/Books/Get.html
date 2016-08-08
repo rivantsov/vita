@@ -5,13 +5,13 @@
     <table>
       <tr>
         <td>
-          <p class="bookItem">&nbsp;<img src="data:image/jpeg;base64,{{itemForm.coverImage}}" /></p>
+          <p class="bookItem">&nbsp;<img src="api/images/{{itemForm.coverImageId}}" /></p>
         </td>
         <td>
           <p class="bookItem">&nbsp;&nbsp;&nbsp;</p>
         </td>
         <td>
-          <p class="bookItem bookItemSmall"><b>By: </b>
+          <p class="bookItem bookItemSmall"><b>By : </b>
             <span ng-repeat="author in itemForm.authors">{{$index > 0 ? ' and ' : ''}} {{author.FirstName}} {{author.LastName}}</span>
           </p>
           <p class="bookItem bookItemSmall"><b>Editions:</b> {{itemForm.editions}}</p>

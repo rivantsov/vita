@@ -6,16 +6,18 @@ using System.Threading.Tasks;
 
 using Newtonsoft.Json;
 using Vita.Common;
+using Vita.Modules.WebClient.Json;
 
 namespace Vita.Modules.WebClient {
   public static class WebApiClientUtil {
     public static bool IsSet(this ClientOptions options, ClientOptions option) {
       return (options & option) != 0;
     }
-    public static string ToCamelCase(this string value) {
-      if (string.IsNullOrEmpty(value))
-        return value;
-      return Char.ToLowerInvariant(value[0]) + value.Substring(1); 
+    public static Newtonsoft.Json.JsonSerializer GetJsonSerializer(this WebApiClient client) {
+      var jsonContentSer = (JsonContentSerializer) client.Settings.ContentSerializer;
+      if(jsonContentSer == null)
+        return null;
+      return jsonContentSer.JsonSerializer;
     }
 
 

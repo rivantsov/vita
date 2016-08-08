@@ -98,7 +98,7 @@ namespace Vita.Web {
         if (webContext.OutgoingResponseStatus != null)
           response.StatusCode = webContext.OutgoingResponseStatus.Value;
         if (webContext.OutgoingResponseContent != null)
-          response.Content = webContext.OutgoingResponseContent;
+          response.Content = UnpackContent(webContext.OutgoingResponseContent);
         //call token handlers
         foreach(var handler in Settings.TokenHandlers)
           if (handler.Direction.IsSet(WebTokenDirection.Output))
@@ -118,7 +118,22 @@ namespace Vita.Web {
       } finally {
       }
     }
-
+    
+    private HttpContent UnpackContent(object outContent) {
+      if(outContent == null)
+        return null; 
+      var httpCont = outContent as HttpContent;
+      if(httpCont != null)
+        return httpCont; 
+      var text = outContent as string; 
+      if (text != null) {
+        var cont = new System.Net.Http.StreamContent(new System.IO.MemoryStream(Encoding.UTF8.GetBytes(text)));
+        cont.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("text/plain");
+        return cont; 
+      }
+      Util.Throw("Invalid OutgoingResponseContent value type: {0}. Must be string or HttpContent.", outContent.GetType());
+      return null; 
+    }
     private async Task LogWebCallInfo(WebCallInfo callInfo) {
       if(_webCallLog == null)
         return;

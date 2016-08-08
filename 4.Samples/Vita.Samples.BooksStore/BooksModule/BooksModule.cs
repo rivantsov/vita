@@ -13,7 +13,7 @@ namespace Vita.Samples.BookStore {
   // a data module that handles all book-related functionality - including entity registration, stored procedures, etc.
   // We also define a small static extension class to add handy entity-creation methods.
   public partial class BooksModule : EntityModule {
-    public static readonly Version CurrentVersion = new Version("1.2.0.0");
+    public static readonly Version CurrentVersion = new Version("1.3.0.0");
 
     public BooksModule(EntityArea area) : base(area, "Books", "Books module", version: CurrentVersion) {
       RegisterEntities(typeof(IBook), typeof(IPublisher), typeof(IAuthor), typeof(IBookAuthor), typeof(IBookReview),

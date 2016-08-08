@@ -10,7 +10,7 @@ Note: The project was recently migrated from Codeplex. The documentation pages a
 * **Entities are defined as .NET interfaces** - minimum coding required. Just _'string Name {get;set;}'_ for a property - compact and clear. 
 * **Entities are self-tracking** - they maintain original and modified property values, automatically register for update. 
 * **Database model is automatically created/updated from entity model**. Existing data is preserved. Database schema follows c# code. 
-* *Database keys and indexes* are defined through entity attributes in c# - you can define most of the database artifacts in c# code.
+* **Database keys and indexes** are defined through entity attributes in c# - you can define most of the database artifacts in c# code.
 * **Automatically generated CRUD stored procedures**. Alternatively, application can use direct SQL queries.
 * **Support for one-to-many and many-to-many relationships.** Foreign keys are automatically inferred from c# entity references. Properties which are lists of related entities are automatically "filled-up" on first read. 
 * **Full LINQ support** for database querying. And not only SELECTs - you can use *LINQ expressions to execute INSERT, UPDATE and DELETE* statements.
@@ -21,7 +21,7 @@ Note: The project was recently migrated from Codeplex. The documentation pages a
 * **Compiled LINQ Query Cache** - dynamic LINQ queries are compiled into SQL on the first use, and later served from the query cache, avoiding the overhead of SQL translation. 
 * **Built-in Role-based Authorization framework** - access permissions are configured at table/row/field level at application startup. During application execution all read/write operations by the current user are checked automatically (and transparently, behind the scene) by VITA.  
 * **Component Packaging Technology** - with VITA we have a way to pack a set of entities/tables with the surrounding code into a self-contained component - entity module. Entity modules can cover specific areas of functionality, can be independently developed, tested and distributed, just like Windows Control libraries. The application is then assembled from independent modules, each covering specific part of functionality. 
-* **Standard modules** - VITA comes with a number of pre-built modules: ErrorLog, UserLogin, TrasactionLog, etc. 
+* **Standard modules** - VITA comes with a number of pre-built modules: ErrorLog, UserLogin, TransactionLog, etc. 
 * **Web API stack integration**. Fully integrated with Web API technology stack, provides numerous benefits for easy creation of fast and reliable RESTful data services. 
 * **Full support for identity columns and auto-generated GUIDs**
 * **Computed properties**.

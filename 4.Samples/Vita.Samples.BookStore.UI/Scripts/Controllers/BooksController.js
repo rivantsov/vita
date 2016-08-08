@@ -121,18 +121,13 @@ var BooksController = function($scope, $stateParams, $state, $window, $location,
                 $scope.itemForm.price = result.data.Price;
                 $scope.itemForm.publisher = result.data.Publisher;
                 $scope.itemForm.publisherId = result.data.PublisherId;
+                $scope.itemForm.coverImageId = result.data.CoverImageId;
                 $scope.itemForm.authors = result.data.Authors;
                 $scope.itemForm.canEdit = result.data.CanEdit;
                 $scope.itemForm.canDelete = result.data.CanDelete;
                 if (isEdit == true && $scope.itemForm.canEdit == false) {
                     $scope.status.isReadOnly = true;
                 }
-                var imageResult = BooksService.getImage(result.data.CoverImageId);
-                imageResult.then(function (imageResult) {
-                  if (imageResult.isSuccess) {
-                    $scope.itemForm.coverImage = imageResult.data._buffer;
-                  }
-                });
                 $scope.init();
             } else {
                 $scope.status.isError = true;
@@ -219,18 +214,7 @@ var BooksController = function($scope, $stateParams, $state, $window, $location,
     }
     
     // init api
-    $scope.init = function () {
-        var publisherResult = PublishersService.listPublisher($scope.itemForm.publisherId);
-        publisherResult.then(function(result) {
-            if (result.isSuccess) {
-                $scope.itemForm.publishers = result.data.Items;
-            } else {
-                $scope.status.isError = true;
-                $scope.status.isSuccess = false;
-                $scope.status.errorMessage = result.message;
-            }
-        });
-    }
+    $scope.init = function () { }
 }
 
 BooksController.$inject = ['$scope', '$stateParams', '$state', '$window', '$location', 'BooksService'];

@@ -12,7 +12,7 @@ using System.Diagnostics;
 using Vita.Entities;
 using Vita.Entities.Services;
 using Vita.Web;
-using Vita.Data; 
+using Vita.Data;
 using Vita.Data.Model;
 using Vita.Modules.Logging;
 using Vita.Data.MsSql;
@@ -24,6 +24,7 @@ using Vita.UnitTests.Common;
 using Vita.Samples.BookStore;
 using Vita.Samples.BookStore.SampleData;
 using Vita.Modules.Notifications;
+using Vita.Entities.Web;
 
 namespace Vita.UnitTests.Web {
 
@@ -78,7 +79,7 @@ namespace Vita.UnitTests.Web {
       SampleDataGenerator.CreateUnitTestData(BooksApp);
       var serviceUrl = ConfigurationManager.AppSettings["ServiceUrl"];
       StartService(serviceUrl);
-      Client = new WebApiClient(serviceUrl);
+      Client = new WebApiClient(serviceUrl, nameMapping: GetNameMapping());
       Client.InnerHandler.AllowAutoRedirect = false; //we need it for Redirect test
     }
 
@@ -89,10 +90,11 @@ namespace Vita.UnitTests.Web {
       //Add extra controllers we use in tests
       BooksApp.ApiConfiguration.RegisterControllerType(typeof(SpecialMethodsController));
       BooksApp.ApiConfiguration.RegisterController(new SingletonController("Some config info"));
-      // Explicitly load ApiController type - to ensure WebApi can find it. Do this if your controllers live in a separate assembly (not in data service host project). 
+      // Explicitly load ApiController type - to ensure WebApi can find it. 
+      // Needed for classic API controllers that live in a separate assembly (not in data service host project). Not needed for SlimApi controllers
       var contrTypes = new Type[] { typeof(ClassicWebApiController) };
       WebHelper.ConfigureWebApi(config, BooksApp, LogLevel.Details,
-        WebHandlerOptions.ReturnBadRequestOnAuthenticationRequired | WebHandlerOptions.ReturnExceptionDetails);
+        WebHandlerOptions.ReturnBadRequestOnAuthenticationRequired | WebHandlerOptions.ReturnExceptionDetails, GetNameMapping());
       config.MaxReceivedMessageSize = int.MaxValue;
       config.MaxBufferSize = int.MaxValue;
       Server = new HttpSelfHostServer(config); 
@@ -102,6 +104,12 @@ namespace Vita.UnitTests.Web {
 
     public static void FlushLogs() {
       BooksApp.Flush();
+    }
+
+    private static ApiNameMapping GetNameMapping() {
+      var jsonNames = ConfigurationManager.AppSettings["JsonStyleNames"] == "true";
+      var nameMapping = jsonNames ? ApiNameMapping.UnderscoreAllLower : ApiNameMapping.Default;
+      return nameMapping; 
     }
 
     //Init log and delete log file only once at app startup; important when running in batch mode for multiple servers

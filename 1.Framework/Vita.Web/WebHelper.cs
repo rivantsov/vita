@@ -13,9 +13,9 @@ using System.Web.Http;
 using System.Web.Http.Controllers;
 using System.Web.Http.ModelBinding;
 using System.Web.Security;
+
 using Vita.Common;
 using Vita.Entities;
-using Vita.Entities.Runtime;
 using Vita.Entities.Services;
 using Vita.Entities.Web;
 using Vita.Web.SlimApi;
@@ -27,7 +27,8 @@ namespace Vita.Web {
 
     public static void ConfigureWebApi(HttpConfiguration httpConfiguration, EntityApp app, 
                              LogLevel logLevel = LogLevel.Basic,
-                             WebHandlerOptions webHandlerOptions = WebHandlerOptions.DefaultDebug) {
+                             WebHandlerOptions webHandlerOptions = WebHandlerOptions.DefaultDebug, 
+                             ApiNameMapping nameMapping = ApiNameMapping.Default) {
       // Logging message handler
       var webHandlerStt = new WebCallContextHandlerSettings(logLevel, webHandlerOptions);
       var webContextHandler = new WebCallContextHandler(app, webHandlerStt);
@@ -44,7 +45,7 @@ namespace Vita.Web {
       var jsonFmter = new JsonMediaTypeFormatter();
       // add converter that will serialize all enums as strings, not integers
       jsonFmter.SerializerSettings.Converters.Add(new Newtonsoft.Json.Converters.StringEnumConverter());
-      var resolver = jsonFmter.SerializerSettings.ContractResolver = new JsonContractResolver(jsonFmter);
+      jsonFmter.SerializerSettings.ContractResolver = jsonFmter.SerializerSettings.ContractResolver = new JsonNameContractResolver(nameMapping);
       httpConfiguration.Formatters.Add(jsonFmter);
 
       //Api configuration
@@ -310,11 +311,21 @@ namespace Vita.Web {
       return Encrypt(string.Join(",", array), "Versions");
     }
 
-    public static string GetApiGroup(this HttpActionDescriptor descriptor) {
+    public static string GetSwaggerApiGroup(this HttpActionDescriptor descriptor) {
       var slimDescr = descriptor as SlimApiActionDescriptor;
       if(slimDescr != null)
         return slimDescr.ControllerInfo.ApiGroup;
       return descriptor.ControllerDescriptor.ControllerType.Name;
+    }
+
+    public static string GetSwaggerOperationId(this HttpActionDescriptor descriptor) {
+      string contrTypeName;
+      var slimDescr = descriptor as SlimApiActionDescriptor;
+      if(slimDescr != null)
+        contrTypeName = slimDescr.ControllerInfo.Type.Name;
+      else
+        contrTypeName = descriptor.ControllerDescriptor.ControllerType.Name;
+      return contrTypeName  + "_" + descriptor.ActionName;
     }
 
     public static bool IsSet(this WebHandlerOptions options, WebHandlerOptions option) {

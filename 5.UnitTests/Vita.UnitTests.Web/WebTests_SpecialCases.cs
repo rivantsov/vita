@@ -10,6 +10,8 @@ using Vita.Samples.BookStore;
 using Vita.Samples.BookStore.Api;
 using Vita.Modules.WebClient.Sync;
 using Vita.Modules.WebClient;
+using Vita.Common;
+using System.Threading.Tasks;
 
 namespace Vita.UnitTests.Web {
 
@@ -63,7 +65,7 @@ namespace Vita.UnitTests.Web {
     [TestMethod]
     public void TestDiagnosticsController() {
       var client = SetupHelper.Client;
-      var acceptText = "application/text";
+      var acceptText = "application/text,text/plain";
       //Heartbeat
       DiagnosticsController.Reset();
       var serverStatus = client.ExecuteGetString(acceptText, "api/diagnostics/heartbeat");
@@ -114,6 +116,17 @@ namespace Vita.UnitTests.Web {
       var client = SetupHelper.Client;
       var result = client.ExecuteGet<string>("api/special/getdateasync");
       Assert.IsTrue(!string.IsNullOrWhiteSpace(result), "Async method call failed.");
+    }
+
+    [TestMethod]
+    public void TestClientCallAsync() {
+      AsyncHelper.RunSync(() => TestClientCallAsyncImpl());      
+    }
+    public async Task TestClientCallAsyncImpl() {
+      var client = SetupHelper.Client;
+      //Test WebApiClient.CallAsync
+      var res2 = await client.CallAsync<object, string>(System.Net.Http.HttpMethod.Get, null, "api/special/getdateasync");
+      Assert.IsTrue(!string.IsNullOrWhiteSpace(res2), "Async method call failed.");
     }
 
   }//class

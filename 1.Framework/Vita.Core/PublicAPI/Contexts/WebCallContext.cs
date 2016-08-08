@@ -2,9 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
-using System.Net.Http;
 using System.Text;
-using System.Threading.Tasks;
 
 using Vita.Entities;
 using Vita.Entities.Services;
@@ -72,7 +70,10 @@ namespace Vita.Entities.Web {
     // Use it to specify response status other than OK(200) in controller. 
     // For example, a typical status for POST would be 201 (Created) - meaning we created new record(s)
     public HttpStatusCode? OutgoingResponseStatus;
-    public HttpContent OutgoingResponseContent; 
+
+    /// <summary>Explicit content value. API controller can set this value to return non-Json content. 
+    /// The value must be either string or HttpContent instance. </summary>
+    public object OutgoingResponseContent; 
     public IList<Cookie> OutgoingCookies = new List<Cookie>();
     public IDictionary<string, string> OutgoingHeaders = new Dictionary<string, string>();
 

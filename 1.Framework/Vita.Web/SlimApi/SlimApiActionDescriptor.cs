@@ -47,8 +47,8 @@ namespace Vita.Web.SlimApi {
       var methodAttrs = method.GetAttributes<ApiMethodAttribute>(orSubClass: true);
       if(methodAttrs.Count == 0)
         return; //no ApiGet/Post... attrs, it is not api method
-      foreach(var ma in methodAttrs)
-        base.SupportedHttpMethods.Add(ma.Method);
+      foreach(var ma in methodAttrs) 
+        base.SupportedHttpMethods.Add(GetHttpMethod(ma.Method));
       //Routes. first get route prefix on controller
       var globalRoutePrefix = _apiConfig.GlobalRoutePrefix;
       string routePrefix = CombineRoutes(globalRoutePrefix, ControllerInfo.RoutePrefix); 
@@ -69,6 +69,20 @@ namespace Vita.Web.SlimApi {
         _loggedInOnly = true; 
     }
 
+    private HttpMethod GetHttpMethod(string methodName) {
+      switch(methodName.ToUpperInvariant()) {
+        case "GET": return HttpMethod.Get;
+        case "PUT":
+          return HttpMethod.Put;
+        case "POST":
+          return HttpMethod.Post;
+        case "DELETE":
+          return HttpMethod.Delete;
+        default:
+          return new HttpMethod(methodName); 
+      }
+    }
+
     private void SetupUrlDateTimeHandler() {
       // Check for datetime parameters
       var needHandler = _parameterInfos.Any(p => p.ParameterType == typeof(DateTime) || p.ParameterType == typeof(DateTime?));
@@ -82,44 +96,42 @@ namespace Vita.Web.SlimApi {
         _urlDateTimeHandler = new UrlDateTimeHandler(fromUrlParam);
     }
 
-    public override Task<object> ExecuteAsync(HttpControllerContext controllerContext, IDictionary<string, object> arguments, System.Threading.CancellationToken cancellationToken) {
+    public override async Task<object> ExecuteAsync(HttpControllerContext controllerContext, IDictionary<string, object> arguments, System.Threading.CancellationToken cancellationToken) {
       if(cancellationToken.IsCancellationRequested) {
         return GetCancelledTask<object>();
       }
-      try {
-        var opContext = GetOperationContext(controllerContext);
-        //Record controller name, method name in web context
-        var webCtx = opContext.WebContext;
-        if(webCtx != null) {
-          webCtx.ControllerName = ControllerInfo.Type.Name;
-          webCtx.MethodName = this.MethodInfo.Name;
-          webCtx.RequestUrlTemplate = this.RouteTemplates[0];
-        }
-        if(_loggedInOnly && opContext.User.Kind == UserKind.Anonymous)
-          throw new AuthenticationRequiredException();
-        if(_secured && _apiConfig.AuthorizationEnabled)
-          CheckAuthorization(opContext);
-        //Retrieve controller (singleton or create dynamic instance)
-        var contr = GetController(opContext);
-        // A hack to fix missing parameter values 
-        ReadMissingModelBoundParameters(controllerContext, arguments, opContext);
-        object[] argumentValues = PrepareParameters(opContext, arguments, controllerContext);
-        _actionExecutor = _actionExecutor ?? CreateActionExecutor(MethodInfo);
-        return _actionExecutor.Execute(contr, argumentValues);
-      } catch(Exception e) {
-        return CreateErrorTask<object>(e);
+      var opContext = GetOperationContext(controllerContext);
+      //Record controller name, method name in web context
+      var webCtx = opContext.WebContext;
+      if(webCtx != null) {
+        webCtx.ControllerName = ControllerInfo.Type.Name;
+        webCtx.MethodName = this.MethodInfo.Name;
+        webCtx.RequestUrlTemplate = this.RouteTemplates[0];
       }
+      if(_loggedInOnly && opContext.User.Kind == UserKind.Anonymous)
+        throw new AuthenticationRequiredException();
+      if(_secured && _apiConfig.AuthorizationEnabled)
+        CheckAuthorization(opContext);
+      //Retrieve controller (singleton or create dynamic instance)
+      var contr = GetController(opContext);
+      // A hack to fix missing parameter values 
+      ReadMissingModelBoundParameters(controllerContext, arguments, opContext);
+      object[] argumentValues = PrepareParameters(opContext, arguments, controllerContext);
+      _actionExecutor = _actionExecutor ?? CreateActionExecutor(MethodInfo);
+      var result = await _actionExecutor.Execute(contr, argumentValues);
+      return result; 
     }//method
 
     private void CheckAuthorization(OperationContext context) {
-      var auth = context.User.Authority; 
-      if(auth == null) {
+      var authD = context.User.GetAuthorityDescriptor(); 
+      if(authD == null) {
         if (_authService == null)
           _authService = context.App.GetService<IAuthorizationService>();
-        auth = _authService.GetAuthority(context.User);
-        Util.Check(auth != null, "Failed to retrieve Authority for user {0}.", context.User.UserName);
-        context.User.Authority = auth;
+        authD = _authService.GetAuthority(context.User);
+        Util.Check(authD != null, "Failed to retrieve Authority for user {0}.", context.User.UserName);
+        context.User.SetAuthority(authD);
       }
+      var auth = authD.Authority; 
       var accessTypes = auth.GetObjectAccess(context, ControllerInfo.Type);
       var needAccess = AuthorizationModelExtensions.GetAccessType(context.WebContext.HttpMethod);
       if (!accessTypes.IsSet(needAccess))  {
@@ -275,12 +287,6 @@ namespace Vita.Web.SlimApi {
       return tcs.Task;
     }
 
-    internal static Task<TResult> CreateErrorTask<TResult>(Exception exception) {
-      TaskCompletionSource<TResult> tcs = new TaskCompletionSource<TResult>();
-      tcs.SetException(exception);
-      return tcs.Task;
-    }
-
     private static string CombineRoutes(string prefix, string route) {
       if(string.IsNullOrWhiteSpace(prefix))
         return route;
@@ -290,6 +296,13 @@ namespace Vita.Web.SlimApi {
       return result; 
     }
 
+    /*
+    internal static Task<TResult> CreateErrorTask<TResult>(Exception exception) {
+      TaskCompletionSource<TResult> tcs = new TaskCompletionSource<TResult>();
+      tcs.SetException(exception);
+      return tcs.Task;
+    }
+    */
 
   }//class
 }

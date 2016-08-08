@@ -24,13 +24,6 @@ namespace Vita.Entities {
     }
 
     public static ISecureSession OpenSecureSession(this OperationContext context) {
-      if(context.User.Authority == null) {
-        var authService = context.App.GetService<IAuthorizationService>();
-        Util.Check(authService != null, "Authorization service not available.");
-        var auth = authService.GetAuthority(context.User);
-        Util.Check(auth != null, "Failed to retrieve Authority for user {0}.", context.User.UserName);
-        context.User.Authority = auth; 
-      }
       var session = new SecureSession(context);
       return session;
     }

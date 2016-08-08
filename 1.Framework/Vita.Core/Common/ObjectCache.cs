@@ -11,19 +11,27 @@ using System.Runtime.Caching;
 namespace Vita.Common {
 
   public class ObjectCache<TValue> where TValue: class {
+    public Action<string, TValue> OnRemoved;
+
     MemoryCache _cache;
     int _expirationSecs;
+    CacheItemPolicy _slidingExpirationPolicy; 
 
-    public ObjectCache(string name, int expirationSecs = 30) {
+    public ObjectCache(string name, int expirationSecs = 60, bool sliding = true) {
       _expirationSecs = expirationSecs;
       _cache = new MemoryCache(name);
+      if(sliding)
+        _slidingExpirationPolicy = new CacheItemPolicy() { RemovedCallback = OnCacheEntryRemoved, SlidingExpiration = TimeSpan.FromSeconds(_expirationSecs) };
     }
-
 
     public void Add(string key, TValue value) {
       var item = new CacheItem(key, value);
-      var policy = new CacheItemPolicy() { AbsoluteExpiration = DateTime.UtcNow.AddSeconds(_expirationSecs) };
+      var policy = _slidingExpirationPolicy ?? new CacheItemPolicy() {RemovedCallback = OnCacheEntryRemoved, AbsoluteExpiration = DateTime.UtcNow.AddSeconds(_expirationSecs)  };
       _cache.Add(item, policy);
+    }
+
+    void OnCacheEntryRemoved(CacheEntryRemovedArguments args) {
+      OnRemoved?.Invoke(args.CacheItem.Key, (TValue) args.CacheItem.Value);
     }
 
     public TValue Lookup(string key) {

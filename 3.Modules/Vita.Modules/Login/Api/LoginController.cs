@@ -14,7 +14,7 @@ using Vita.Modules.Logging;
 namespace Vita.Modules.Login.Api {
 
   // Handles Login/logout operations
-  [ApiRoutePrefix("login")]
+  [ApiRoutePrefix("login"), ApiGroup("Login")]
   public class LoginController : SlimApiController {
     ILoginService _loginService;
     ILoginProcessService _processService;
@@ -120,7 +120,7 @@ namespace Vita.Modules.Login.Api {
     }
 
     [ApiPut, ApiRoute("{token}/questionanswer")]
-    public bool SubmitUserQuestionAnswer(string token, SecretQuestionAnswer answer) {
+    public bool SubmitQuestionAnswer(string token, SecretQuestionAnswer answer) {
       Context.WebContext.MarkConfidential();
       var process = GetActiveProcess(token);
       var storedAnswer = process.Login.SecretQuestionAnswers.FirstOrDefault(a => a.Question.Id == answer.QuestionId);
@@ -130,7 +130,7 @@ namespace Vita.Modules.Login.Api {
     }
 
     [ApiPut, ApiRoute("{token}/questionanswers")]
-    public bool SubmitAllUserQuestionAnswers(string token, List<SecretQuestionAnswer> answers) {
+    public bool SubmitQuestionAnswers(string token, List<SecretQuestionAnswer> answers) {
       Context.WebContext.MarkConfidential();
       var process = GetActiveProcess(token);
       var result = _processService.CheckAllSecretQuestionAnswers(process, answers);

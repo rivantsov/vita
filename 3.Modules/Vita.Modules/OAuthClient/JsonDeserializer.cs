@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 
 using Newtonsoft.Json;
 using System.IO;
+using Vita.Entities.Web;
 
 namespace Vita.Modules.OAuthClient {
 
@@ -21,7 +22,7 @@ namespace Vita.Modules.OAuthClient {
       if(_serializer == null) {
         _serializer = new Newtonsoft.Json.JsonSerializer();
         // to support Node() attr
-        _serializer.ContractResolver = new WebClient.Json.NodeNameContractResolver(WebClient.ClientOptions.Default);
+        _serializer.ContractResolver = new WebClient.Json.ClientJsonNameContractResolver(ApiNameMapping.Default);
       }
     }
 

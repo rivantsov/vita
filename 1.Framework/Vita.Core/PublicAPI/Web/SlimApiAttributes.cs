@@ -1,9 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Net.Http;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Vita.Entities.Web {
   // The attributes to use on SlimApi controllers; work similar to Web API attributes like HttpGet/Route, etc. These attributes do not  reference Web API packages, 
@@ -28,9 +23,9 @@ namespace Vita.Entities.Web {
 
   [AttributeUsage(AttributeTargets.Method, AllowMultiple = true)]
   public class ApiMethodAttribute : Attribute {
-    public readonly HttpMethod Method;
-    public ApiMethodAttribute(HttpMethod method) {
-      Method = method; 
+    public readonly string Method;
+    public ApiMethodAttribute(string method = "GET") {
+      Method = method.ToUpperInvariant(); 
     }
     //this constructor is only to satisfy CLS-compliance
     protected ApiMethodAttribute() { }
@@ -38,22 +33,22 @@ namespace Vita.Entities.Web {
 
   [AttributeUsage(AttributeTargets.Method)]
   public class ApiGetAttribute : ApiMethodAttribute {
-    public ApiGetAttribute() : base(HttpMethod.Get) { }
+    public ApiGetAttribute() : base("GET") { }
   }
 
   [AttributeUsage(AttributeTargets.Method)]
   public class ApiPostAttribute : ApiMethodAttribute {
-    public ApiPostAttribute() : base(HttpMethod.Post) { }
+    public ApiPostAttribute() : base("POST") { }
   }
 
   [AttributeUsage(AttributeTargets.Method)]
   public class ApiPutAttribute : ApiMethodAttribute {
-    public ApiPutAttribute() : base(HttpMethod.Put) { }
+    public ApiPutAttribute() : base("PUT") { }
   }
 
   [AttributeUsage(AttributeTargets.Method)]
   public class ApiDeleteAttribute : ApiMethodAttribute {
-    public ApiDeleteAttribute() : base(HttpMethod.Delete) { }
+    public ApiDeleteAttribute() : base("DELETE") { }
   }
 
   /// <summary>Restricts a controller or method to authenticated users only. </summary>

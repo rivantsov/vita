@@ -17,7 +17,7 @@ namespace Vita.Entities.Caching {
 
     public SparseEntityCache(CacheSettings settings) {
       _settings = settings;
-      _cacheTable = new ObjectCache<CachedRecordData>("SparseEntityCache", _settings.SparseCacheExpirationSec);
+      _cacheTable = new ObjectCache<CachedRecordData>("SparseEntityCache", _settings.SparseCacheExpirationSec, sliding: false); // use abs expiration
     }
 
     public EntityRecord Lookup(EntityKey primaryKey, EntitySession session) {

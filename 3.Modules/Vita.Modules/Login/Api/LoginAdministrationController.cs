@@ -9,7 +9,7 @@ using Vita.Entities;
 using Vita.Entities.Web;
 
 namespace Vita.Modules.Login.Api {
-  [ApiRoutePrefix("logins"), LoggedInOnly, Secured]
+  [ApiRoutePrefix("logins"), LoggedInOnly, Secured, ApiGroup("Login/Administration")]
   public class LoginAdministrationController : SlimApiController {
     ILoginAdministrationService _adminService; 
 

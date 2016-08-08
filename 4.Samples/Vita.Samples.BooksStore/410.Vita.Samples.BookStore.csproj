@@ -50,9 +50,7 @@
   <ItemGroup>
     <Reference Include="System" />
     <Reference Include="System.Core" />
-    <Reference Include="Microsoft.CSharp" />
     <Reference Include="System.Data" />
-    <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="BooksModule\Api\Models\SearchParams.cs" />
@@ -70,7 +68,7 @@
     <Compile Include="BooksModule\Api\Models\ModelExtensions.cs" />
     <Compile Include="BooksModule\Api\Models\Models.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="DiagnosticsController.cs" />
+    <Compile Include="BooksModule\Api\DiagnosticsController.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\1.Framework\Vita.Core\100.Vita.csproj">

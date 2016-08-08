@@ -16,7 +16,7 @@ namespace Vita.Samples.BookStore.SampleData.Import {
     public WebApiClient ApiClient;
 
     public GoogleBooksApiClient() {
-      ApiClient = new WebApiClient(GoogleBooksUrl, ClientOptions.Default | ClientOptions.CamelCaseNames, typeof(GoogleBadRequestResponse));
+      ApiClient = new WebApiClient(GoogleBooksUrl, ClientOptions.Default | ClientOptions.CamelCaseNames, Entities.Web.ApiNameMapping.Default, typeof(GoogleBadRequestResponse));
     }
 
     public VolumeSet GetVolumes(string keywords, int skip = 0, int take = 40) {

@@ -11,29 +11,35 @@ using System.Net.Http.Headers;
 using System.Collections.ObjectModel;
 using Vita.Entities;
 using Vita.Common;
-
+using Vita.Entities.Web;
 
 namespace Vita.Modules.WebClient.Json {
 
   public class JsonContentSerializer : IContentSerializer {
     public const string JsonMediaType = "application/json";
-    JsonSerializerSettings _jsonSerializerSettings;
-    JsonSerializer _serializer; 
+    // Some APIs follow this draft for errors in REST APIs: https://tools.ietf.org/html/draft-nottingham-http-problem-07
+    // So returned error is JSon but content type is problem+json
+    public const string JsonErrorMediaType = "application/problem+json";
+    public readonly JsonSerializer JsonSerializer;
+    public readonly JsonSerializerSettings SerializerSettings;
     int _maxDepth = 50;
     public bool Indent = true;
     public Collection<Encoding> SupportedEncodings = new Collection<Encoding>();
 
-    public JsonContentSerializer(ClientOptions clientOptions, JsonSerializerSettings settings = null) {
+    public JsonContentSerializer(ClientOptions clientOptions, ApiNameMapping nameMapping = ApiNameMapping.Default, JsonSerializerSettings settings = null) {
       if (settings == null) {
         settings = new JsonSerializerSettings();
         settings.Converters.Add(new Newtonsoft.Json.Converters.StringEnumConverter()); //serialize enum as names, not numbers
-        settings.ContractResolver = new NodeNameContractResolver(clientOptions); //to process NodeAttribute attribute
       }
-      _jsonSerializerSettings = settings;
-      _serializer = JsonSerializer.Create(_jsonSerializerSettings);
+      SerializerSettings = settings;
+      if (SerializerSettings.ContractResolver == null) {
+        SerializerSettings.ContractResolver = new ClientJsonNameContractResolver(nameMapping); //to process NodeAttribute attribute
+      }
+      JsonSerializer = JsonSerializer.Create(SerializerSettings);
       SupportedEncodings.Add(new UTF8Encoding(encoderShouldEmitUTF8Identifier: false, throwOnInvalidBytes: true));
       SupportedEncodings.Add(new UnicodeEncoding(bigEndian: false, byteOrderMark: true, throwOnInvalidBytes: true));
       _mediaTypes.Add(JsonMediaType);
+      _mediaTypes.Add(JsonErrorMediaType);
     }
 
     public IList<string> MediaTypes {
@@ -54,7 +60,7 @@ namespace Vita.Modules.WebClient.Json {
       Encoding effectiveEncoding = SelectCharacterEncoding(headers);
       using (JsonTextReader jsonTextReader = new JsonTextReader(new StreamReader(stream, effectiveEncoding)) 
            { CloseInput = false, MaxDepth = _maxDepth }) {
-        return _serializer.Deserialize(jsonTextReader, type);
+        return JsonSerializer.Deserialize(jsonTextReader, type);
       }
     }
 
@@ -65,7 +71,7 @@ namespace Vita.Modules.WebClient.Json {
         using (JsonTextWriter jsonTextWriter = new JsonTextWriter(new StreamWriter(stream, effectiveEncoding)) { CloseOutput = false }) {
           if (Indent)
             jsonTextWriter.Formatting = Newtonsoft.Json.Formatting.Indented;
-          _serializer.Serialize(jsonTextWriter, value);
+          JsonSerializer.Serialize(jsonTextWriter, value);
           jsonTextWriter.Flush();
         }
       }
@@ -96,9 +102,7 @@ namespace Vita.Modules.WebClient.Json {
       }
       Util.Throw("JSonContentSerializer: SupportedEncodings list is empty.");
       return null; //never happens
-      
     }
-
 
   }//class
 }

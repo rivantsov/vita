@@ -9,7 +9,6 @@ using Vita.Entities;
 
 namespace Vita.Data {
 
-
   /// <summary>Management of data sources inside data access service. </summary>
   public interface IDataAccessService {
     IEnumerable<DataSource> GetDataSources();
@@ -18,8 +17,5 @@ namespace Vita.Data {
     void RemoveDataSource(string name); 
     DataSourceEvents Events { get; }
   }
-
-  [Obsolete("The service is deprecated, use IDataAccessService instead.")]
-  public interface IDatatSourceManagementService : IDataAccessService { }
 
 }

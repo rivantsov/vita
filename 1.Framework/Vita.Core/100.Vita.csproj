@@ -44,9 +44,7 @@
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Data" />
-    <Reference Include="System.Net.Http" />
     <Reference Include="System.Runtime.Caching" />
-    <Reference Include="System.Transactions" />
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
@@ -78,6 +76,7 @@
     <Compile Include="Data\Linq\Translation\LinqTranslationException.cs" />
     <Compile Include="Data\Linq\Translation\SqlGen\SqlBuilder_NonQuery.cs" />
     <Compile Include="Data\Linq\Translation\_LinqEngine_NonQuery.cs" />
+    <Compile Include="Entities\Authorization\AuthorityDescriptor.cs" />
     <Compile Include="Entities\Authorization\Model\ObjectAccessPermission.cs" />
     <Compile Include="Entities\Authorization\Runtime\CumulativeRecordPermission.cs" />
     <Compile Include="Entities\Authorization\Runtime\UserEntityPermissionSet.cs" />
@@ -96,6 +95,7 @@
     <Compile Include="Entities\Model\IEntityModelExtender.cs" />
     <Compile Include="PublicAPI\Exceptions\AuthenticationRequiredException.cs" />
     <Compile Include="Entities\Services\IDbInfoService.cs" />
+    <Compile Include="PublicAPI\Web\ApiNameMapping.cs" />
     <Compile Include="PublicAPI\Web\SlimApiAttributes.cs" />
     <Compile Include="Entities\Web.Implementation\ISlimApiControllerInit.cs" />
     <Compile Include="Entities\Web.Implementation\ApiConfiguration.cs" />

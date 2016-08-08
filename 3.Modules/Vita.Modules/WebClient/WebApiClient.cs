@@ -13,6 +13,7 @@ using System.Security.Cryptography.X509Certificates;
 using Vita.Common;
 using Vita.Entities;
 using Vita.Modules.WebClient.Json;
+using Vita.Entities.Web;
 
 namespace Vita.Modules.WebClient {
 
@@ -32,12 +33,13 @@ namespace Vita.Modules.WebClient {
 
     #region constructors
 
-    public WebApiClient(string baseUrl, ClientOptions options = ClientOptions.Default, Type badRequestContentType = null)
-      : this(new WebApiClientSettings(baseUrl, options, badRequestContentType: badRequestContentType)) { }
+    public WebApiClient(string baseUrl, ClientOptions options = ClientOptions.Default, 
+           ApiNameMapping nameMapping = ApiNameMapping.Default,  Type badRequestContentType = null)
+      : this(new WebApiClientSettings(baseUrl, options, nameMapping, badRequestContentType: badRequestContentType)) { }
 
     public WebApiClient(WebApiClientSettings settings) {
       Util.Check(settings != null, "Settings parameter may not be null.");
-      Util.Check(settings.Serializer != null, "Settings.Serializer property may not be null.");
+      Util.Check(settings.ContentSerializer != null, "Settings.Serializer property may not be null.");
       Settings = settings; 
       InnerHandler = new HttpClientHandler();
       InnerHandler.AllowAutoRedirect = settings.Options.IsSet(ClientOptions.AllowAutoRedirect); 
@@ -49,7 +51,7 @@ namespace Vita.Modules.WebClient {
       if(Settings.Options.IsSet(ClientOptions.AllowSelfIssuedCertificate))
         ServicePointManager.ServerCertificateValidationCallback = DummyValidateCertificate;
       //Create default HTTP Client for JSon calls
-      Client = CreateClient(Settings.Serializer.MediaTypes.ToArray()); 
+      Client = CreateClient(Settings.ContentSerializer.MediaTypes.ToArray()); 
     }
 
     private HttpClient CreateClient(params string[] mediaTypes) {
@@ -137,13 +139,27 @@ namespace Vita.Modules.WebClient {
       var result = await response.Content.ReadAsStringAsync();
       return result;
     }
+
+    public async Task<TResult> CallAsync<TContent, TResult>(HttpMethod method, TContent content, string url, params object[] args) {
+      url = FormatUrl(url, args);
+      HttpContent httpContent = null;
+      if (content != null) 
+        httpContent = content is HttpContent ? (content as HttpContent) : Settings.ContentSerializer.Serialize(content);
+      var request = new HttpRequestMessage(method, url);
+      request.Content = httpContent;
+      var response = await Client.SendAsync(request); 
+      var exc = await CheckResponse(response);
+      if(exc != null)
+        return await Task.FromException<TResult>(exc);
+      return await GetResponseContentAsync<TResult>(response);
+    }//method
     #endregion
 
 
     #region private methods
     private async Task<TResult> PostPutAsync<TResult>(bool post, object data, string url, params object[] args) {
       url = FormatUrl(url, args);
-      HttpContent content = data is HttpContent ? (HttpContent)data : Settings.Serializer.Serialize(data);
+      HttpContent content = data is HttpContent ? (HttpContent)data : Settings.ContentSerializer.Serialize(data);
       HttpResponseMessage response;
       if(post)
         response = await Client.PostAsync(url, content);
@@ -166,7 +182,7 @@ namespace Vita.Modules.WebClient {
         var stream = await response.Content.ReadAsStreamAsync();
         return (TResult)(object)stream;
       }
-      var result = await Settings.Serializer.DeserializeAsync(typeof(TResult), response.Content);
+      var result = await Settings.ContentSerializer.DeserializeAsync(typeof(TResult), response.Content);
       return (TResult)result;
     }
 

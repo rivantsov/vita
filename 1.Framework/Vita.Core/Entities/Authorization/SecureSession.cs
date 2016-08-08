@@ -31,7 +31,12 @@ namespace Vita.Entities.Authorization {
     #endregion
     
     public SecureSession(OperationContext context) : base(context) {
-      Util.Check(Context.User.Authority != null, "User.Authority must be specified in the operation context for secure session.");
+      // Check if user Authority is assigned and it is not Invalidated
+      var autD = context.User.GetAuthorityDescriptor(); 
+      if (autD == null || autD.Invalidated) {
+        autD = Context.App.AuthorizationService.GetAuthority(Context.User);
+        Context.User.SetAuthority(autD);
+      }
       DemandReadAccessLevel = ReadAccessLevel.Peek;
       DenyReadAction = DenyReadActionType.Throw;
     }
@@ -41,7 +46,6 @@ namespace Vita.Entities.Authorization {
     }
 
     public bool IsAccessAllowed<TEntity>(AccessType accessType) {
-      Util.Check(Context.User.Authority != null, "User Authority is not set.");
       var entInfo = GetEntityInfo(typeof(TEntity));
       var access = Context.User.Authority.GetEntityTypePermissions(Context, entInfo);
       //Check each action type separately

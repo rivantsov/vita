@@ -54,7 +54,14 @@ namespace Vita.UnitTests.Basic.LockTests {
       cmdGetDb.CommandText = "SELECT DB_NAME()";
       var dbName = (string)dbConn.ExecuteDbCommand(cmdGetDb, Data.DbExecutionType.Scalar);
       var cmd = dbConn.DbConnection.CreateCommand();
-      cmd.CommandText = string.Format("ALTER DATABASE {0} SET ALLOW_SNAPSHOT_ISOLATION ON;", dbName);
+      //Note: for real-wold databases, when you enable these options, you need to switch to single-user mode
+      // temporarily; otherwise the statement might hang trying to lock database
+      cmd.CommandText = string.Format(@"
+ALTER DATABASE {0} SET SINGLE_USER WITH ROLLBACK IMMEDIATE;
+ALTER DATABASE {0} SET ALLOW_SNAPSHOT_ISOLATION ON;
+ALTER DATABASE {0} SET READ_COMMITTED_SNAPSHOT OFF;
+ALTER DATABASE {0} SET MULTI_USER;
+", dbName);
       dbConn.ExecuteDbCommand(cmd, Data.DbExecutionType.NonQuery);
       dbConn.CloseConnection();
     }

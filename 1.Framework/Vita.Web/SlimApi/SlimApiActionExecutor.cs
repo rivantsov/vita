@@ -21,9 +21,9 @@ namespace Vita.Web.SlimApi {
           _executor = GetExecutor(methodInfo);
       }
 
-      public Task<object> Execute(object instance, object[] arguments)
+      public async Task<object> Execute(object instance, object[] arguments)
       {
-          return _executor(instance, arguments);
+          return await _executor(instance, arguments);
       }
 
       // Method called via reflection.

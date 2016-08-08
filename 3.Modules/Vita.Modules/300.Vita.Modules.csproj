@@ -98,7 +98,7 @@
     <Compile Include="WebClient\ApiExceptions.cs" />
     <Compile Include="WebClient\Interfaces.cs" />
     <Compile Include="WebClient\Json\JsonContentSerializer.cs" />
-    <Compile Include="WebClient\Json\NodeNameContractResolver.cs" />
+    <Compile Include="WebClient\Json\ClientJsonNameContractResolver.cs" />
     <Compile Include="WebClient\Sync\WebClientSyncExtensions.cs" />
     <Compile Include="WebClient\WebApiClient.cs" />
     <Compile Include="WebClient\WebApiClientSettings.cs" />

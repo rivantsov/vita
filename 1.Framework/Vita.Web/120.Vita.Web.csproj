@@ -65,6 +65,7 @@
     <Compile Include="BaseApiController\BaseApiController.cs" />
     <Compile Include="Exceptions\ModelStateException.cs" />
     <Compile Include="Attributes\CheckModelStateAttribute.cs" />
+    <Compile Include="Formatters\JsonNameContractResolver.cs" />
     <Compile Include="Formatters\StreamMediaTypeFormatter.cs" />
     <Compile Include="Handlers\ExceptionHandlingFilter.cs" />
     <Compile Include="Handlers\WebCallContextHandler.cs" />

@@ -5,7 +5,6 @@ using System.Text;
 
 using Vita.Entities.Runtime;
 using Vita.Entities.Model;
-using System.Net.Http;
 using System.Linq.Expressions;
 
 namespace Vita.Entities.Authorization {

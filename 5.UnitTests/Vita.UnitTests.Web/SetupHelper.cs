@@ -85,6 +85,8 @@ namespace Vita.UnitTests.Web {
 
     public static void StartService(string baseAddress) {
       var config = new HttpSelfHostConfiguration(baseAddress);
+      // Add top-level handler first
+      config.MessageHandlers.Add(new TopHttpHandler());
       //Enable set-time-offset function in diagnostics controller - this should be done in testing environment only
       DiagnosticsController.EnableTimeOffset = true; 
       //Add extra controllers we use in tests

@@ -43,7 +43,7 @@ namespace Vita.Samples.BookStore {
     [ApiGet, ApiRoute("heartbeat")]
     public string GetHeartbeat() {
       Context.LogLevel = Vita.Entities.Services.LogLevel.None;
-      Context.WebContext.OutgoingHeaders.Add("Content-type", "application/text");
+      Context.WebContext.OutgoingHeaders.Add("Content-type", "text/plain");
       var utcNow = Context.App.TimeService.UtcNow;
       if(_lastCalledOn.AddSeconds(HeartbeatPauseSeconds) > utcNow)
         return AsPlainText(TimeframeLockout);

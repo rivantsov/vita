@@ -19,7 +19,7 @@ namespace Vita.Modules.Login {
       var userId = process.Login.UserId;
       var msg = new NotificationMessage() { Type = notificationType, MediaType = mediaType, Recipients = factor, MainRecipientUserId = userId, Culture = session.Context.UserCulture };
       msg.From = _settings.DefaultEmailFrom;
-      msg.Parameters[LoginNotificationKeys.BackHitUrlBase] = _settings.BackHitUrlBase;
+      msg.Parameters[LoginNotificationKeys.BackHitUrlBase] = _settings.BackHitUrlBase; 
       msg.Parameters[LoginNotificationKeys.Pin] = pin;
       msg.Parameters[LoginNotificationKeys.ProcessToken] = process.Token;
       msg.Parameters[LoginNotificationKeys.UserName] = process.Login.UserName;

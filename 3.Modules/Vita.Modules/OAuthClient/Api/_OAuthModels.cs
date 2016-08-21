@@ -15,7 +15,7 @@ namespace Vita.Modules.OAuthClient.Api {
   }
 
   public class OAuthUserStatus {
-    public Guid UserId;
+    public Guid? UserId;
     public bool Authorized;
     public DateTime? RetrievedOn;
     public DateTime? ExpiresOn;
@@ -39,7 +39,7 @@ namespace Vita.Modules.OAuthClient.Api {
         return new OAuthUserStatus() { Authorized = false };
       return new OAuthUserStatus() {
         Authorized = true, RetrievedOn = accessToken.RetrievedOn, ExpiresOn = accessToken.ExpiresOn,
-        Scopes = accessToken.GetScopes()
+        Scopes = accessToken.GetScopes(), UserId = accessToken.UserId
       };
     }
 

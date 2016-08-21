@@ -43,10 +43,9 @@ namespace Vita.Modules.Login {
     public readonly RecaptchaSettings Recaptcha;
 
     public string DefaultEmailFrom = null;
-    public string PinBackHitUrl = null; 
 
     public Func<ILoginProcess, ILoginExtraFactor, string> PinGenerator = LoginModule.DefaultGeneratePin;  //default generator, replace with your own if you need to
-    public string BackHitUrlBase; //base URL for back-hit link in confirmation email to user. 
+    public string BackHitUrlBase; //base URL for back-hit link in emails (pin, confirmation) to user. 
     public string MagicCaptcha = null; //if set, allows bypassing captcha check in unit tests
     public LoginFailedTriggerSettings LoginFailedTriggerSettings = new LoginFailedTriggerSettings();
 

@@ -67,6 +67,7 @@ namespace Vita.Modules.OAuthClient {
     Guid Id { get; }
     [Auto(AutoType.CreatedOn), Utc]
     DateTime CreatedOn { get; }
+    [GrantAccess]
     IOAuthRemoteServer Server { get; set; }
     [Size(50)]
     string Name { get; set; }
@@ -95,7 +96,7 @@ namespace Vita.Modules.OAuthClient {
     Guid Id { get; }
     [Auto(AutoType.CreatedOn), Utc]
     DateTime CreatedOn { get; }
-
+    [GrantAccess]
     IOAuthRemoteServerAccount Account { get; set; }
     [Unlimited, Nullable]
     string Scopes { get; set; }

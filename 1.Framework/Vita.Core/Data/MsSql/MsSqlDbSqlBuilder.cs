@@ -230,7 +230,10 @@ SELECT {0}
       var outColumns = table.Columns.GetSelectable();
       var strColumns = outColumns.GetSqlNameList();
       //build WHERE clause
-      var whereExpr = dbKey.KeyColumns[0].Column.ColumnName + " IN (SELECT [Value] FROM " + cmdInfo.Parameters[0].Name + ")";
+      var whereTemplate = "\"{0}\" IN (SELECT CAST([Value] AS {1}) FROM {2})";
+      var keyCol0 = dbKey.KeyColumns[0].Column;
+      string castType = keyCol0.TypeInfo.SqlTypeSpec;
+      var whereExpr = string.Format(whereTemplate, keyCol0.ColumnName, castType, cmdInfo.Parameters[0].Name);
       if (!string.IsNullOrWhiteSpace(entityCommand.Filter))
         whereExpr = whereExpr + " AND " + ProcessFilter(entityCommand, table);
       string orderByExpr = null;

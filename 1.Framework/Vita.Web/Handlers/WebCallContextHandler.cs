@@ -47,6 +47,7 @@ namespace Vita.Web {
         callInfo = InitWebCallInfo(request);
         webContext = callInfo.WebContext;
         PreprocessRequest(callInfo);
+        OnWebCallStarting(callInfo); // Fire WebCallStarting event - UserSession service will handle it and attach user session and setup UserInfo in OperationContext
         callInfo.Response = await base.SendAsync(request, cancellationToken);
         OnWebCallEnding(callInfo);
         PostProcessResponse(callInfo);
@@ -82,8 +83,6 @@ namespace Vita.Web {
       foreach (var handler in Settings.TokenHandlers)
         if (handler.Direction.IsSet(WebTokenDirection.Input))
           handler.HandleRequest(callInfo.WebContext, callInfo.Request);
-      // Fire WebCallStarting event - UserSession service will handle it and attach user session and setup UserInfo in OperationContext
-      OnWebCallStarting(callInfo);
     }
 
     private void PostProcessResponse(WebCallInfo callInfo) {
@@ -128,7 +127,7 @@ namespace Vita.Web {
       var text = outContent as string; 
       if (text != null) {
         var cont = new System.Net.Http.StreamContent(new System.IO.MemoryStream(Encoding.UTF8.GetBytes(text)));
-        cont.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("text/plain");
+        cont.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("text/html");
         return cont; 
       }
       Util.Throw("Invalid OutgoingResponseContent value type: {0}. Must be string or HttpContent.", outContent.GetType());

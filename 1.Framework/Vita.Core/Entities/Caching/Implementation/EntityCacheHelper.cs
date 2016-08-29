@@ -36,7 +36,7 @@ namespace Vita.Entities.Caching {
       StringStartsWith1Method = typeof(string).GetMethods(flags).First(m => m.Name == "StartsWith" && m.GetParameters().Length == 1);
       StringStartsWith2Method = typeof(string).GetMethods(flags).First(m => m.Name == "StartsWith" && m.GetParameters().Length == 2);
       ConstInvariantCulture = Expression.Constant(StringComparison.InvariantCulture);
-      ConstInvariantCultureIgnoreCase = Expression.Constant(StringComparison.InvariantCultureIgnoreCase);
+      ConstInvariantCultureIgnoreCase = Expression.Constant(StringComparison.OrdinalIgnoreCase);
     }
 
 

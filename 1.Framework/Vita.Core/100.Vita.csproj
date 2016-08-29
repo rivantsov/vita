@@ -48,6 +48,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="Common\AsyncHelper_OLD.cs" />
     <Compile Include="Common\Binary.cs" />
     <Compile Include="Common\Collections.cs" />
     <Compile Include="Common\CompressionHelper.cs" />
@@ -63,6 +64,7 @@
     <Compile Include="Data\DataAccessService\DataSourceEvents.cs" />
     <Compile Include="Data\Database\DbBatchCommandSetBuilder.cs" />
     <Compile Include="Data\Driver\SqlSourceHasher.cs" />
+    <Compile Include="Data\Driver\_DataTableReplacement.cs" />
     <Compile Include="Data\Linq\Translation\Expressions\TableFilterExpression.cs" />
     <Compile Include="Data\Linq\Translation\TranslationContext.cs" />
     <Compile Include="Data\Upgrades\Migrations\DbMigrationSet.cs" />
@@ -240,7 +242,6 @@
     <Compile Include="Entities\Services\ITimerService.cs" />
     <Compile Include="Entities\Logging\MemoryLog.cs" />
     <Compile Include="PublicAPI\StaticHelpers\EntityQueryExtensions.cs" />
-    <None Include="Entities\Services\IDataAccessService.cs" />
     <Compile Include="Entities\Services\Implementations\_IEntityService.cs" />
     <Compile Include="Entities\Services\IErrorLogService.cs" />
     <Compile Include="Entities\Services\ITimeService.cs" />

@@ -52,7 +52,7 @@ namespace Vita.Entities.Model.Construction {
       var cnt = 0;
       var result = defaultName;
       while (true) {
-        if(! entity.Keys.Any(k => k.Name.Equals(result, StringComparison.InvariantCultureIgnoreCase)))
+        if(! entity.Keys.Any(k => k.Name.Equals(result, StringComparison.OrdinalIgnoreCase)))
           return result;
         cnt++;
         result = defaultName + cnt; 

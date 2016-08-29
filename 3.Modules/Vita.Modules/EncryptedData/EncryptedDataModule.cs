@@ -12,7 +12,7 @@ namespace Vita.Modules.EncryptedData {
     public static readonly Version CurrentVersion = new Version("1.0.0.0"); 
 
     public static string DefaultSeed = "C155A981-BD2D-11E4-8939-FAEE54130FBE"; //just random guid
-    private Dictionary<string, EncryptionChannel> _channels = new Dictionary<string, EncryptionChannel>(StringComparer.InvariantCultureIgnoreCase);
+    private Dictionary<string, EncryptionChannel> _channels = new Dictionary<string, EncryptionChannel>(StringComparer.OrdinalIgnoreCase);
     private EncryptionChannel _defaultChannel; 
 
     public EncryptedDataModule(EntityArea area): base(area, "EncryptedData", version: CurrentVersion) {

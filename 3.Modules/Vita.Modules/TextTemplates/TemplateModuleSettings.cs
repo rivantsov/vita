@@ -8,7 +8,7 @@ using Vita.Common;
 namespace Vita.Modules.TextTemplates {
 
   public class TemplateModuleSettings {
-    public IDictionary<string, ITemplateEngine> Engines = new Dictionary<string, ITemplateEngine>(StringComparer.InvariantCultureIgnoreCase);
+    public IDictionary<string, ITemplateEngine> Engines = new Dictionary<string, ITemplateEngine>(StringComparer.OrdinalIgnoreCase);
 
     public TemplateModuleSettings(IList<ITemplateEngine> engines = null) {
       var simpleEng = new SimpleTemplateEngine();

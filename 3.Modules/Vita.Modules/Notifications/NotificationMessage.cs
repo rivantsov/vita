@@ -26,8 +26,8 @@ namespace Vita.Modules.Notifications {
     public string Error; 
 
     public string Culture;
-    public IDictionary<string, object> Parameters = new Dictionary<string, object>(StringComparer.InvariantCultureIgnoreCase);
-    public IDictionary<string, object> Attachments = new Dictionary<string, object>(StringComparer.InvariantCultureIgnoreCase);
+    public IDictionary<string, object> Parameters = new Dictionary<string, object>(StringComparer.OrdinalIgnoreCase);
+    public IDictionary<string, object> Attachments = new Dictionary<string, object>(StringComparer.OrdinalIgnoreCase);
   }
 
 }

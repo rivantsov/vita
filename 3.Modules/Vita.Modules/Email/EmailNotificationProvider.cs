@@ -32,7 +32,7 @@ namespace Vita.Modules.Email {
     }
 
     public bool CanSend(NotificationMessage message) {
-      return message.MediaType.Equals(NotificationMediaTypes.Email, StringComparison.InvariantCultureIgnoreCase);  
+      return message.MediaType.Equals(NotificationMediaTypes.Email, StringComparison.OrdinalIgnoreCase);  
     }
 
     public async Task SendAsync(OperationContext context, NotificationMessage message) {

@@ -27,7 +27,7 @@ namespace Vita.Common {
     public void Add(string key, TValue value) {
       var item = new CacheItem(key, value);
       var policy = _slidingExpirationPolicy ?? new CacheItemPolicy() {RemovedCallback = OnCacheEntryRemoved, AbsoluteExpiration = DateTime.UtcNow.AddSeconds(_expirationSecs)  };
-      _cache.Add(item, policy);
+      _cache.Add(item, policy); 
     }
 
     void OnCacheEntryRemoved(CacheEntryRemovedArguments args) {

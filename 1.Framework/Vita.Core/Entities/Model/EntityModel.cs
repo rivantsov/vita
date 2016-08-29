@@ -17,7 +17,7 @@ namespace Vita.Entities.Model {
     public readonly EntityApp App;
     public EntityModelState ModelState { get; internal set; }
 
-    public Dictionary<string, Type> EnumTypes = new Dictionary<string, Type>(StringComparer.InvariantCultureIgnoreCase);
+    public Dictionary<string, Type> EnumTypes = new Dictionary<string, Type>(StringComparer.OrdinalIgnoreCase);
 
     public EntityClassesAssembly ClassesAssembly; 
     internal string ClassesNamespace;
@@ -26,7 +26,7 @@ namespace Vita.Entities.Model {
     private IList<EntityInfo> _entities = new List<EntityInfo>();
 
     private Dictionary<Type, EntityInfo> _entitiesByType = new Dictionary<Type, EntityInfo>(); //interfaceType -> EntityInfo
-    private Dictionary<string, EntityInfo> _entitiesByName = new Dictionary<string, EntityInfo>(StringComparer.InvariantCultureIgnoreCase); //name -> EntityInfo
+    private Dictionary<string, EntityInfo> _entitiesByName = new Dictionary<string, EntityInfo>(StringComparer.OrdinalIgnoreCase); //name -> EntityInfo
 
     public EntityModel(EntityApp app) {
       App = app;
@@ -111,14 +111,14 @@ namespace Vita.Entities.Model {
     public SequenceDefinition FindSequence(string name, EntityModule module = null) {
       //If it is a simple name, find in the sequences defined in the module
       if (module != null && !name.Contains('.')) 
-        return module.Sequences.FirstOrDefault(s => s.Name.Equals(name, StringComparison.InvariantCultureIgnoreCase));
+        return module.Sequences.FirstOrDefault(s => s.Name.Equals(name, StringComparison.OrdinalIgnoreCase));
       //It is a fully-qualified name: schema.name
       var segms = name.Split('.');
       var schema = segms[0];
       var nm = segms[1];
       foreach (var m in this.App.Modules) {
-        if (!m.Area.Name.Equals(schema, StringComparison.InvariantCultureIgnoreCase)) continue;
-        var seq = m.Sequences.FirstOrDefault(s => s.Name.Equals(nm, StringComparison.InvariantCultureIgnoreCase));
+        if (!m.Area.Name.Equals(schema, StringComparison.OrdinalIgnoreCase)) continue;
+        var seq = m.Sequences.FirstOrDefault(s => s.Name.Equals(nm, StringComparison.OrdinalIgnoreCase));
         if (seq != null)
           return seq;
       }

@@ -22,7 +22,7 @@ namespace Vita.Data.Linq.Translation.SqlGen {
         {
             if (text == null)
                 return false;
-            var comparison = ignoreCase ? StringComparison.InvariantCultureIgnoreCase : StringComparison.InvariantCulture;
+            var comparison = ignoreCase ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
             var endIndex = text.IndexOf(find, 0, comparison);
             return endIndex >= 0;
         }
@@ -30,7 +30,7 @@ namespace Vita.Data.Linq.Translation.SqlGen {
         public static string ReplaceCase(this string text, string find, string replace, bool ignoreCase)
         {
             var result = new StringBuilder();
-            var comparison = ignoreCase ? StringComparison.InvariantCultureIgnoreCase : StringComparison.InvariantCulture;
+            var comparison = ignoreCase ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
             for (int index = 0; ; )
             {
                 var endIndex = text.IndexOf(find, index, comparison);

@@ -16,7 +16,7 @@ namespace Vita.Data.Model {
     public readonly DbNamingPolicy NamingPolicy;
     // areaname => schema name
     public readonly Dictionary<string, string> SchemaMappings 
-             = new Dictionary<string, string>(StringComparer.InvariantCultureIgnoreCase);
+             = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
 
     internal DbModel SharedDbModel; 
 

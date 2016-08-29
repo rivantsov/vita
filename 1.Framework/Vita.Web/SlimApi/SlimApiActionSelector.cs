@@ -26,7 +26,7 @@ namespace Vita.Web.SlimApi {
   internal class SlimApiActionSelector : ApiControllerActionSelector {
     ApiConfiguration _apiConfig; 
     IDictionary<string, List<SlimApiActionDescriptor>> _actions = 
-        new Dictionary<string, List<SlimApiActionDescriptor>>(StringComparer.InvariantCultureIgnoreCase);
+        new Dictionary<string, List<SlimApiActionDescriptor>>(StringComparer.OrdinalIgnoreCase);
     
     public SlimApiActionSelector(ApiConfiguration apiConfiguration) {
       _apiConfig = apiConfiguration; 

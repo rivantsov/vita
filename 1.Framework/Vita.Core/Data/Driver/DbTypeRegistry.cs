@@ -16,7 +16,7 @@ namespace Vita.Data.Driver {
     protected DbDriver Driver; 
 
     public IList<VendorDbTypeInfo> Types = new List<VendorDbTypeInfo>();
-    public HashSet<string> AutoMemoTypes = new HashSet<string>(StringComparer.InvariantCultureIgnoreCase);
+    public HashSet<string> AutoMemoTypes = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
     public DbValueConverterRegistry Converters = new DbValueConverterRegistry();
 
     public DbTypeRegistry(DbDriver driver) {

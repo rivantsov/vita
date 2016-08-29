@@ -21,7 +21,7 @@ namespace Vita.Common {
     public static string TrimSuffix(this string value, string suffix) {
       if (value == null || suffix == null || value.Length <= suffix.Length)
         return value;
-      if (value.EndsWith(suffix, StringComparison.InvariantCultureIgnoreCase))
+      if (value.EndsWith(suffix, StringComparison.OrdinalIgnoreCase))
         return value.Substring(0, value.Length - suffix.Length);
       else
         return value;

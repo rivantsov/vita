@@ -9,7 +9,7 @@ namespace Vita.Entities {
   /// <summary>A container for standard string size values for use in the <c>Size</c> attribute.</summary>
   public static class Sizes {
     public class SizeTable : Dictionary<string, int> {
-      public SizeTable() : base(StringComparer.InvariantCultureIgnoreCase) { }
+      public SizeTable() : base(StringComparer.OrdinalIgnoreCase) { }
     }
 
     public const string Name = "Name";

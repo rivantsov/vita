@@ -58,7 +58,7 @@ namespace Vita.Entities {
           lock (_lock) {
             if (_values == null)
             _values = new DictionaryWrapper<string, object>(
-                new ConcurrentDictionary<string, object>(StringComparer.InvariantCultureIgnoreCase));
+                new ConcurrentDictionary<string, object>(StringComparer.OrdinalIgnoreCase));
           }
         }
         return _values; 

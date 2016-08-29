@@ -13,7 +13,7 @@ namespace Vita.Common {
       Expression expr = target;
       var propNames = propChain.SplitNames('.');
       foreach(var propName in propNames) {
-        var propInfo = expr.Type.GetAllProperties().FirstOrDefault(p => p.Name.Equals(propName, StringComparison.InvariantCultureIgnoreCase)); //we have to ignore case
+        var propInfo = expr.Type.GetAllProperties().FirstOrDefault(p => p.Name.Equals(propName, StringComparison.OrdinalIgnoreCase)); //we have to ignore case
         Util.Check(propInfo != null, "Property {0} not found on type {1}. Property change: {2}", propName, expr.Type, propChain);
         expr = Expression.MakeMemberAccess(expr, propInfo);
       }

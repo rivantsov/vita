@@ -22,9 +22,9 @@ namespace Vita.Samples.BookStore.SampleData.Import {
       _app = app;
       _session = _app.OpenSystemSession();
       //Preload caches
-      _bookCache = _session.GetEntities<IBook>(take: 1000).ToDictionary(b => b.Title, StringComparer.InvariantCultureIgnoreCase);
-      _publishersCache = _session.GetEntities<IPublisher>(take: 200).ToDictionary(p => p.Name, StringComparer.InvariantCultureIgnoreCase);
-      _authorsCache = _session.GetEntities<IAuthor>(take: 1000).ToDictionary(a => a.FirstName + a.LastName, StringComparer.InvariantCultureIgnoreCase);
+      _bookCache = _session.GetEntities<IBook>(take: 1000).ToDictionary(b => b.Title, StringComparer.OrdinalIgnoreCase);
+      _publishersCache = _session.GetEntities<IPublisher>(take: 200).ToDictionary(p => p.Name, StringComparer.OrdinalIgnoreCase);
+      _authorsCache = _session.GetEntities<IAuthor>(take: 1000).ToDictionary(a => a.FirstName + a.LastName, StringComparer.OrdinalIgnoreCase);
       _client = new GoogleBooksApiClient();
       var batchSize = count / 5;
       ImportBooksInCategory(BookCategory.Programming, "c#", batchSize);

@@ -14,8 +14,7 @@ namespace Vita.Common {
       using(var outStream = new MemoryStream()) {
         using(var gStream = new GZipStream(outStream, CompressionMode.Compress)) {
           gStream.Write(bytes, 0, bytes.Length);
-          gStream.Close();
-          var outbytes = outStream.ToArray();
+          var outbytes = outStream.ToArray(); 
           return outbytes;
         }
       }//using outStream

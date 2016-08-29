@@ -52,7 +52,7 @@ namespace Vita.Entities {
     public IDictionary<string, object> Values {
       get {
         if(_values == null)
-          _values = new ConcurrentDictionary<string, object>(StringComparer.InvariantCultureIgnoreCase); 
+          _values = new ConcurrentDictionary<string, object>(StringComparer.OrdinalIgnoreCase); 
         return _values; 
       }
     } IDictionary<string, object> _values; 

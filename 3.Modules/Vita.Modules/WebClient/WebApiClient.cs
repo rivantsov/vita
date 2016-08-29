@@ -218,14 +218,5 @@ namespace Vita.Modules.WebClient {
     }
     #endregion
 
-    #region static constructor
-    // Register exception as 'NoWrap', to rethrow as-is when passing asyn-> sync boundary. 
-    // This simplifies handling the exception for calling code, if for example it wants to catch 
-    // BadRequestException separately. Without this registration all exceptions in async method are 
-    // rethrown wrapped in AggregateException on the calling 'sync' thread.
-    static WebApiClient() {
-      AsyncHelper.AddNoWrapExceptions(typeof(ApiException));
-    }
-    #endregion
   }//class
 }

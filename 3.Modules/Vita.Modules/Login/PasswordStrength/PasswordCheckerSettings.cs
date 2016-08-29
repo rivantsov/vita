@@ -31,7 +31,7 @@ namespace Vita.Modules.Login {
     public string Description;
     public int MinLength = 6;
     public IList<StrengthLevelData> StrengthLevels = new List<StrengthLevelData>();  
-    public HashSet<string> ForbiddenTokens = new HashSet<string>(StringComparer.InvariantCultureIgnoreCase);
+    public HashSet<string> ForbiddenTokens = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
     public static PasswordCheckerSettings CreateDefault() {
       var stt = new PasswordCheckerSettings();

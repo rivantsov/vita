@@ -32,7 +32,7 @@ namespace Vita.Data.Driver {
     protected SqlSourceHasher SourceHasher = new SqlSourceHasher(); 
 
     //Static empty table, to use as return object for methods that return 'nothing' (not supported aspects)
-    protected DataTable EmptyTable = new DataTable();
+    protected DbTable EmptyTable = new DbTable();
 
     //Schemas are initially copied from Settings. But app can reset them to desired list later.  
     //note: if _schemas is empty, it means - load all.
@@ -98,8 +98,8 @@ namespace Vita.Data.Driver {
       var supportsRoutines = Driver.Supports(DbFeatures.StoredProcedures);
       if (!supportsRoutines) return;
       var data = GetRoutines();
-      bool hasCustomTag = data.Columns.Contains("ROUTINE_CUSTOM");
-      foreach (DataRow row in data.Rows) {
+      bool hasCustomTag = data.HasColumn("ROUTINE_CUSTOM");
+      foreach (DbRow row in data.Rows) {
         var schema = row.GetAsString("ROUTINE_SCHEMA");
         if (!IncludeSchema(schema)) continue; 
         var name = row.GetAsString("ROUTINE_NAME");
@@ -140,7 +140,7 @@ namespace Vita.Data.Driver {
       if (!SupportsSchemas())
         return; 
       var data = GetSchemas();
-      foreach (DataRow row in data.Rows) {
+      foreach (DbRow row in data.Rows) {
         var schema = row.GetAsString("SCHEMA_NAME");
         if (IncludeSchema(schema)) //add only schemas that are relevant to the model
           Model.Schemas.Add(new DbSchemaInfo(Model, schema));
@@ -149,7 +149,7 @@ namespace Vita.Data.Driver {
 
     protected virtual void LoadTables() {
       var data = GetTables();
-      foreach (DataRow row in data.Rows) {
+      foreach (DbRow row in data.Rows) {
         var schema = row.GetAsString("TABLE_SCHEMA");
         if (!IncludeSchema(schema)) continue; 
         var tableName = row.GetAsString("TABLE_NAME");
@@ -160,7 +160,7 @@ namespace Vita.Data.Driver {
     protected virtual void LoadViews() {
       var data = GetViews();
       var supportsMatViews = Driver.Supports(DbFeatures.MaterializedViews);
-      foreach(DataRow row in data.Rows) {
+      foreach(DbRow row in data.Rows) {
         var schema = row.GetAsString("TABLE_SCHEMA");
         if(!IncludeSchema(schema)) continue;
         var viewName = row.GetAsString("TABLE_NAME");
@@ -185,7 +185,7 @@ namespace Vita.Data.Driver {
     protected virtual void LoadTableColumns() {
       DbTableInfo currTblInfo = null;
       var data = GetColumns();
-      foreach (DataRow row in data.Rows) {
+      foreach (DbRow row in data.Rows) {
         var schema = row.GetAsString("TABLE_SCHEMA");
         if (!IncludeSchema(schema)) continue;
         var tableName = row.GetAsString("TABLE_NAME");
@@ -213,7 +213,7 @@ namespace Vita.Data.Driver {
 
     protected virtual void LoadTableConstaints() {
       var data = GetTableConstraints();
-      foreach (DataRow row in data.Rows) {
+      foreach (DbRow row in data.Rows) {
         var schema = row.GetAsString("TABLE_SCHEMA");
         if (!IncludeSchema(schema)) continue;
         var tableName = row.GetAsString("TABLE_NAME");
@@ -240,7 +240,7 @@ namespace Vita.Data.Driver {
     }
     protected virtual void LoadTableConstaintColumns() {
       var data = GetTableConstraintColumns();
-      foreach (DataRow row in data.Rows) {
+      foreach (DbRow row in data.Rows) {
         var schema = row.GetAsString("TABLE_SCHEMA");
         if (!IncludeSchema(schema)) continue;
         var tableName = row.GetAsString("TABLE_NAME");
@@ -262,7 +262,7 @@ namespace Vita.Data.Driver {
 
     protected virtual void LoadReferentialConstraints() {
       var data = GetReferentialConstraintsExt();
-      foreach (DataRow row in data.Rows) {
+      foreach (DbRow row in data.Rows) {
         //Load names for Foreign key and Unique key
         var fkSchema = row.GetAsString("CONSTRAINT_SCHEMA");
         var toSchema = row.GetAsString("UNIQUE_CONSTRAINT_SCHEMA");
@@ -300,7 +300,7 @@ namespace Vita.Data.Driver {
 
     protected virtual void LoadIndexes() {
       var data = GetIndexes();
-      foreach (DataRow row in data.Rows) {
+      foreach (DbRow row in data.Rows) {
         var schema = row.GetAsString("TABLE_SCHEMA");
         if (!IncludeSchema(schema)) continue;
         var tableName = row.GetAsString("TABLE_NAME");
@@ -336,7 +336,7 @@ namespace Vita.Data.Driver {
 
     protected virtual void LoadIndexColumns() {
       var data = GetIndexColumns();
-      foreach (DataRow row in data.Rows) {
+      foreach (DbRow row in data.Rows) {
         var schema = row.GetAsString("TABLE_SCHEMA");
         if (!IncludeSchema(schema)) continue;
         var tableName = row.GetAsString("TABLE_NAME");
@@ -371,7 +371,7 @@ namespace Vita.Data.Driver {
       if (!Settings.Driver.Supports(DbFeatures.Sequences))
         return; 
       var data = GetSequences();
-      foreach(DataRow row in data.Rows) {
+      foreach(DbRow row in data.Rows) {
         var schema = row.GetAsString("SEQUENCE_SCHEMA");
         var name = row.GetAsString("SEQUENCE_NAME");
         var dataType = row.GetAsString("DATA_TYPE");
@@ -389,7 +389,7 @@ namespace Vita.Data.Driver {
 
     protected virtual void LoadUserDefinedTypes() {
       var data = GetUserDefinedTypes();
-      foreach (DataRow row in data.Rows) {
+      foreach (DbRow row in data.Rows) {
         var schema = row.GetAsString("TYPE_SCHEMA");
         var name = row.GetAsString("TYPE_NAME");
         var typeInfo = new DbCustomTypeInfo(this.Model, schema, name);
@@ -398,7 +398,7 @@ namespace Vita.Data.Driver {
     }
 
 
-    protected static bool IsTrueOrNonZero(DataRow row, string columnName) {
+    protected static bool IsTrueOrNonZero(DbRow row, string columnName) {
       var value = row[columnName];
       if (value == null || value == DBNull.Value) return false;
       var t = value.GetType();
@@ -424,7 +424,7 @@ namespace Vita.Data.Driver {
       return tag;
     }
 
-    public virtual DataTable ExecuteSelect(string sql) {
+    public virtual DbTable ExecuteSelect(string sql) {
       IDbConnection connection = null;
       IDbCommand cmd = null;
       try {
@@ -433,11 +433,7 @@ namespace Vita.Data.Driver {
         cmd = connection.CreateCommand();
         cmd.CommandText = sql;
         var reader = (IDataReader)Driver.ExecuteCommand(cmd, DbExecutionType.Reader);
-        var table = new DataTable();
-        //Have to put table into Dataset to disable constraints - see below about SQL CE
-        var ds = new DataSet();
-        ds.EnforceConstraints = false;
-        ds.Tables.Add(table);
+        var table = new DbTable(reader);
         table.Load(reader); 
         return table;
       } finally {

@@ -47,78 +47,29 @@ namespace Vita.Common {
     }
 
     // Sync/Async bridge ==========================================================================================================================
-    class ResultBox<T> {
-      public T Result;
-      public bool Completed;
-      public Exception Exception;
-    }
 
-    public static T RunSync<T>(Func<Task<T>> func) {
-      var rbox = new ResultBox<T>();
-      ThreadPool.QueueUserWorkItem(async (d) => {
-        try {
-          rbox.Result = await func();
-          rbox.Completed = true;
-        } catch (Exception ex) {
-          rbox.Exception = ex;
-          rbox.Completed = true;
-        }
-      });
-      while (!rbox.Completed)
-        Thread.Yield();
-      CheckException(rbox.Exception);
-      return rbox.Result;
-    }
-
-    public static void RunSync(Func<Task> action) {
-      var rbox = new ResultBox<object>();
-      ThreadPool.QueueUserWorkItem(async (d) => {
-        try {
-          await action();
-          rbox.Completed = true;
-        } catch (Exception ex) {
-          rbox.Exception = ex;
-          rbox.Completed = true;
-        }
-      });
-      while (!rbox.Completed)
-        Thread.Yield();
-      CheckException(rbox.Exception); 
-    }
-
-    private static void CheckException(Exception ex) {
-      if (ex == null) return;
-      // if it is 'soft' exc, like ClientFaultExc, throw it as-is; we don't care about stack, but handlers may expect certain exc type
-      // otherwise wrap it into aggregate exception (to preserve original call stack) - standard practice
-      if (IsNoWrap(ex.GetType()))
-        throw ex;
-      throw new AggregateException(ex.Message, ex);
-    }
-
-
-    static HashSet<Type> _noWrapExceptions = new HashSet<Type>(new [] {typeof(OperationAbortException)});
-    static object _lock = new object();
-
-    /// <summary>Register exception(s) as 'NoWrap', to rethrow them as-is when passing asyn-> sync boundary.</summary>
-    /// <param name="exceptionTypes">Exception types.</param>
-    /// <remarks>Simplifies handling some specific exceptions for calling code.
-    /// By default, exception on pool thread (async side) is rethrown on calling thread
-    /// as wrapped into AggregateException, to preserve original exception's call stack. 
-    /// But for some exceptions, like ClientFaultException (client error), we do not need call stack and 
-    /// it is easier to set cach block for this exception type if exception is rethrown as is. 
-    /// By default, the no-wrap set contains OperationAbortException, which causes this exception and 
-    /// derived ClientFaultException to rethrown as-is on the calling thread. 
-    /// </remarks>
-    public static void AddNoWrapExceptions(params Type[] exceptionTypes) {
-      lock (_lock) {
-        _noWrapExceptions.UnionWith(exceptionTypes); 
+    public static T RunSync<T>(Func<Task<T>> func, bool unwrapException = true) {
+      try {
+        var result = Task.Factory.StartNew(func).Unwrap().GetAwaiter().GetResult();
+        return result;
+      } catch(AggregateException exc) {
+        if(unwrapException)
+          throw exc.InnerExceptions[0];
+        else 
+          throw; 
       }
     }
-    public static bool IsNoWrap(Type excType) {
-      lock (_lock) {
-        return _noWrapExceptions.Any(t => t.IsAssignableFrom(excType));
+
+    public static void RunSync(Func<Task> action, bool unwrapException = true) {
+      try {
+        Task.Factory.StartNew(action).Unwrap().GetAwaiter().GetResult();
+      } catch(AggregateException exc) {
+        if(unwrapException)
+          throw exc.InnerExceptions[0];
+        else
+          throw;
       }
     }
- 
+
   }//class
 }

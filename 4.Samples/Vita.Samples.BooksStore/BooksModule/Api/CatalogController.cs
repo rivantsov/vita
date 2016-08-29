@@ -30,7 +30,7 @@ namespace Vita.Samples.BookStore.Api {
     // into "order by book.Publisher.Name"
     // This mapping facility allows us use more friendly names in UI code when forming search query, without thinking 
     // about exact relations between entities and property names
-    static Dictionary<string, string> _orderByMapping = new Dictionary<string, string>(StringComparer.InvariantCultureIgnoreCase) {
+    static Dictionary<string, string> _orderByMapping = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase) {
         {"pubname" , "Publisher.Name"}
     };
 

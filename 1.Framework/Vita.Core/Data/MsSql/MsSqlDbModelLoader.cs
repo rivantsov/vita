@@ -22,7 +22,7 @@ namespace Vita.Data.MsSql {
 
     //Columns:CATALOG_NAME	SCHEMA_NAME	SCHEMA_OWNER	DEFAULT_CHARACTER_SET_CATALOG	DEFAULT_CHARACTER_SET_SCHEMA 
     //	DEFAULT_CHARACTER_SET_NAME  
-    public override DataTable GetSchemas() {
+    public override DbTable GetSchemas() {
       var filter = GetSchemaFilter("SCHEMA_NAME");
       var sql = string.Format(
 @"SELECT * FROM INFORMATION_SCHEMA.SCHEMATA 
@@ -34,7 +34,7 @@ AND {0};",   filter);
 
     //SQL Server INFORMATION_SCHEMA.ROUTINES view defines ROUTINE_DEFINITION column (proc body) as nvarchar(4000), 
     // so it is truncated for long SPs. We use a workaround to get full text
-    public override DataTable GetRoutines() {
+    public override DbTable GetRoutines() {
       var filter = GetSchemaFilter("R.ROUTINE_SCHEMA");
       var sql = string.Format(@"SELECT R.ROUTINE_SCHEMA, R.ROUTINE_NAME, 
        OBJECT_DEFINITION(OBJECT_ID(R.ROUTINE_SCHEMA + '.' + R.Routine_Name)) as ROUTINE_DEFINITION,
@@ -45,7 +45,7 @@ WHERE R.ROUTINE_TYPE='PROCEDURE' AND {0}", filter);
     }
 
     //INFORMATION_SCHEMA does not have a view for indexes, so we have to do it through MSSQL special objects
-    public override DataTable GetIndexes() {
+    public override DbTable GetIndexes() {
       var filter = GetSchemaFilter("ss.name");
       //Slightly adjusting column names to match SQL CE Indexes view
       var sql = string.Format(@"
@@ -65,7 +65,7 @@ ORDER BY table_schema, table_name, index_name;", filter);
       return ExecuteSelect(sql);
     }
 
-    public override DataTable GetIndexColumns() {
+    public override DbTable GetIndexColumns() {
       var filter = GetSchemaFilter("ss.name");
       var sql = string.Format(@"
 SELECT ss.name AS table_schema, st.name AS table_name, si.name AS index_name, 
@@ -82,11 +82,10 @@ ORDER BY table_schema, table_name, index_name, column_ordinal_position; ", filte
     }
 
     // MS SQL stores View definition with 'CREATE VIEW (name) AS ' header. We need to cut it off
-    public override DataTable GetViews() {
+    public override DbTable GetViews() {
       string col_def = "VIEW_DEFINITION";
       var views = base.GetViews();
-      views.Columns[col_def].ReadOnly = false; 
-      foreach(DataRow row in views.Rows) {
+      foreach(DbRow row in views.Rows) {
         var sql = row.GetAsString(col_def);
         var isMatView = sql != null && sql.Contains("WITH SCHEMABINDING");
         row["IS_MATERIALIZED"] = isMatView? "Y" : "N";
@@ -107,7 +106,7 @@ ORDER BY table_schema, table_name, index_name, column_ordinal_position; ", filte
       LoadDefaultConstraintNames();
     }
 
-    public override DataTable GetUserDefinedTypes() {
+    public override DbTable GetUserDefinedTypes() {
       var sql = @"
 Select s.[name] AS TYPE_SCHEMA, tt.[Name] AS TYPE_NAME  
 From sys.table_types tt 
@@ -125,7 +124,7 @@ SELECT s.name AS table_schema, t.name AS table_name, c.name AS column_name
   INNER JOIN sys.schemas s ON s.schema_id = t.schema_id 
   WHERE c.is_identity = 1 AND {0};", filter);
       var data = ExecuteSelect(sql);
-      foreach(DataRow row in data.Rows) {
+      foreach(DbRow row in data.Rows) {
         var schema = row.GetAsString("TABLE_SCHEMA");
         var tableName = row.GetAsString("TABLE_NAME");
         var colName = row.GetAsString("COLUMN_NAME");
@@ -156,7 +155,7 @@ WHERE {0};
       var filter = GetSchemaFilter("TABLE_SCHEMA");
       var sql = string.Format(sqlGetConstraints, filter);
       var data = ExecuteSelect(sql);
-      foreach(DataRow row in data.Rows) {
+      foreach(DbRow row in data.Rows) {
         var schema = row.GetAsString("TABLE_SCHEMA");
         if(!base.IncludeSchema(schema))
           continue;

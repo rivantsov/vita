@@ -76,9 +76,9 @@ namespace Vita.Data {
         //create copy, add to it, and then replace with interlock
         IDictionary<string, DataSource> newDict;
         if (_dataSources == null)
-          newDict = new Dictionary<string, DataSource>(StringComparer.InvariantCultureIgnoreCase);
+          newDict = new Dictionary<string, DataSource>(StringComparer.OrdinalIgnoreCase);
         else
-          newDict = new Dictionary<string, DataSource>(_dataSources, StringComparer.InvariantCultureIgnoreCase);
+          newDict = new Dictionary<string, DataSource>(_dataSources, StringComparer.OrdinalIgnoreCase);
         newDict.Add(dataSource.Name, dataSource);
         System.Threading.Interlocked.Exchange(ref _dataSources, newDict);
       }
@@ -97,7 +97,7 @@ namespace Vita.Data {
 
     public void RemoveDataSource(string name) {
       lock(_lock) {
-        var newDict = new Dictionary<string, DataSource>(_dataSources, StringComparer.InvariantCultureIgnoreCase);
+        var newDict = new Dictionary<string, DataSource>(_dataSources, StringComparer.OrdinalIgnoreCase);
         newDict.Remove(name);
         _dataSources = newDict; 
       }

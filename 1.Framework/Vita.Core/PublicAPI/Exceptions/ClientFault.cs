@@ -12,7 +12,7 @@ namespace Vita.Entities {
     public string Tag;  //Property name, optional
     public string Path; // Optional, target object path: 'BookOrder/123'
 
-    public IDictionary<string, string> Parameters = new Dictionary<string, string>(StringComparer.InvariantCultureIgnoreCase);
+    public IDictionary<string, string> Parameters = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
 
     public ClientFault() { }
     public ClientFault(string code, string message, string tag = null, string path = null) {

@@ -37,7 +37,7 @@ namespace Vita.Data {
     public DbInstanceType InstanceType;
     public Version Version = ZeroVersion; 
     public IList<ModuleDbVersionInfo> Modules = new List<ModuleDbVersionInfo>();
-    public IDictionary<string, string> Values = new Dictionary<string, string>(StringComparer.InvariantCultureIgnoreCase);
+    public IDictionary<string, string> Values = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
 
     //Used when loading from DB
     public DbVersionInfo() { }

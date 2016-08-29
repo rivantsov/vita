@@ -170,7 +170,7 @@ namespace Vita.Web {
     }
     public static void SetHeaders(this HttpResponseMessage response, WebCallContext webContext) {
       foreach(var kv in webContext.OutgoingHeaders) {
-        if (kv.Key.StartsWith("Content-", StringComparison.InvariantCultureIgnoreCase)) {
+        if (kv.Key.StartsWith("Content-", StringComparison.OrdinalIgnoreCase)) {
           if(response.Content == null)
             continue; 
           var headers = response.Content.Headers;

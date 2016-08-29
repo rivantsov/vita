@@ -100,7 +100,8 @@ namespace Vita.Entities.Model {
     public readonly List<EntityMemberInfo> Members = new List<EntityMemberInfo>();
     public readonly List<EntityKeyInfo> Keys = new List<EntityKeyInfo>(); 
     public EntityKeyInfo PrimaryKey;
-    public Dictionary<string, EntityMemberInfo> MembersByName = new Dictionary<string, EntityMemberInfo>(StringComparer.InvariantCultureIgnoreCase);
+    public Dictionary<string, EntityMemberInfo> MembersByName 
+          = new Dictionary<string, EntityMemberInfo>(StringComparer.OrdinalIgnoreCase);
     public IList<Type> CompanionTypes = new List<Type>(); // Companion classes or interfaces - derived from Entity, 
                                                           // and specifying additional attributes
     public List<Attribute> Attributes = new List<Attribute>(); //attributes on entity itself and on companion types
@@ -173,7 +174,7 @@ namespace Vita.Entities.Model {
     public EntityMemberInfo FindMemberOrColumn(string name) {
       name = name.Trim();
       foreach (var member in Members)
-        if (member.MemberName == name || string.Equals(member.ColumnName, name, StringComparison.InvariantCultureIgnoreCase))
+        if (member.MemberName == name || string.Equals(member.ColumnName, name, StringComparison.OrdinalIgnoreCase))
           return member; 
       return null;
     }

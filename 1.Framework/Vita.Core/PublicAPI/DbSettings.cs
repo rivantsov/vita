@@ -22,7 +22,7 @@ namespace Vita.Data {
     /// <summary>A DB server role to grant execute permissions for Insert, Update, Delete stored procedures (MS SQL only).</summary>
     public string GrantExecWriteToRole = "public";
 
-    private HashSet<string> _schemas = new HashSet<string>(StringComparer.InvariantCultureIgnoreCase);
+    private HashSet<string> _schemas = new StringSet();
 
 
     public IDbInfoService DbInfoProvider; 

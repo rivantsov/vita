@@ -53,7 +53,7 @@ namespace Vita.Tools.DbFirst {
       AutoValues = ParseAutoValuesSpec(autoValueSpec);
       var dataTypesSpec = xmlConfig.GetValue(ToolConfigNames.ForceDataTypes);
       ForceDataTypes = ParseDataTypesSpec(dataTypesSpec);
-      IgnoreTables = new HashSet<string>(StringComparer.InvariantCultureIgnoreCase);
+      IgnoreTables = new StringSet();
       var ignoreList = xmlConfig.GetValue(ToolConfigNames.IgnoreTables);
       if(!string.IsNullOrWhiteSpace(ignoreList))
         IgnoreTables.UnionWith(ignoreList.Split(new [] {',', ';'}, StringSplitOptions.RemoveEmptyEntries));
@@ -66,7 +66,7 @@ namespace Vita.Tools.DbFirst {
     }
 
     public static Dictionary<string, AutoType> ParseAutoValuesSpec(string autoValuesSpec) {
-      var autoValues = new Dictionary<string, AutoType>(StringComparer.InvariantCultureIgnoreCase);
+      var autoValues = new Dictionary<string, AutoType>(StringComparer.OrdinalIgnoreCase);
       if(string.IsNullOrWhiteSpace(autoValuesSpec))
         return autoValues;
       AutoType autoType;
@@ -82,7 +82,7 @@ namespace Vita.Tools.DbFirst {
       return autoValues;
     }
     public static Dictionary<string, Type> ParseDataTypesSpec(string spec) {
-      var dict = new Dictionary<string, Type>(StringComparer.InvariantCultureIgnoreCase);
+      var dict = new Dictionary<string, Type>(StringComparer.OrdinalIgnoreCase);
       if(string.IsNullOrWhiteSpace(spec))
         return dict;
       var segments = spec.SplitNames(',');

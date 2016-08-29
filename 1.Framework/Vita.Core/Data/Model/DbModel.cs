@@ -24,8 +24,8 @@ namespace Vita.Data.Model {
     internal bool CustomCommandsCompiled { get; private set; }
 
     // Contains all DbObjects (tables, keys, commands) by name. 
-    Dictionary<string, DbModelObjectBase> _dbObjectsByName = new Dictionary<string, DbModelObjectBase>(StringComparer.InvariantCultureIgnoreCase);
-    Dictionary<string, DbCommandInfo> _commandsByTag = new Dictionary<string, DbCommandInfo>(StringComparer.InvariantCultureIgnoreCase);
+    Dictionary<string, DbModelObjectBase> _dbObjectsByName = new Dictionary<string, DbModelObjectBase>(StringComparer.OrdinalIgnoreCase);
+    Dictionary<string, DbCommandInfo> _commandsByTag = new Dictionary<string, DbCommandInfo>(StringComparer.OrdinalIgnoreCase);
     IList<DbTableInfo> _tables = new List<DbTableInfo>();
     IList<DbCommandInfo> _commands = new List<DbCommandInfo>();
     IList<DbSequenceInfo> _sequences = new List<DbSequenceInfo>();

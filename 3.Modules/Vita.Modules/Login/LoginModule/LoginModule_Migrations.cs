@@ -14,7 +14,7 @@ namespace Vita.Modules.Login {
 
     public override void RegisterMigrations(DbMigrationSet migrations) {
       // In LoginModule v 1.1, email template naming conventions changed; so this migration action renames existing templates
-      var templateRenamingMap = new Dictionary<string, string>(StringComparer.InvariantCultureIgnoreCase) {
+      var templateRenamingMap = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase) {
         {"MultiFactorEmailSubject" , LoginMessageTemplates.MultiFactorEmailSubject},
         {"MultiFactorEmailBody" , LoginMessageTemplates.MultiFactorEmailBody},
         {"MultiFactorSmsBody" , LoginMessageTemplates.MultiFactorSmsBody},

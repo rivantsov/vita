@@ -120,7 +120,7 @@ namespace Vita.UnitTests.Common {
       // get existing tables; in unit tests it might happen that when we delete all for table that does not exist yet
       var modelLoader = db.DbModel.Driver.CreateDbModelLoader(db.Settings, null);
       var oldModel = modelLoader.LoadModel(); 
-      var oldtableNames = new HashSet<string>(oldModel.Tables.Select(t => t.FullName), StringComparer.InvariantCultureIgnoreCase);
+      var oldtableNames = new HashSet<string>(oldModel.Tables.Select(t => t.FullName), StringComparer.OrdinalIgnoreCase);
       //Figure out table/entity list and sort it
       var modelInfo = db.DbModel.EntityApp.Model;
       var entList = new List<EntityInfo>();

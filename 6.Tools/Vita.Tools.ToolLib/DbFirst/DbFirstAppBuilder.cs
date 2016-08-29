@@ -85,7 +85,7 @@ namespace Vita.Tools.DbFirst {
       var viewPrefix = _dbModel.Config.NamingPolicy.ViewPrefix;
       var tablePrefix = _dbModel.Config.NamingPolicy.TablePrefix;
       //track uniqueness of type names - we might have trouble if we have 2 tables with the same name in different schemas 
-      var typeNames = new HashSet<string>(StringComparer.InvariantCultureIgnoreCase);
+      var typeNames = new StringSet();
       foreach (var table in _dbModel.Tables) {
         if(_config.IgnoreTables.Contains(table.TableName))
           continue;
@@ -273,7 +273,7 @@ namespace Vita.Tools.DbFirst {
             var targetTableName = constr.ToKey.Table.TableName;
             if (cutOffSuffix.StartsWith(targetTableName))
               cutOffSuffix = cutOffSuffix.Substring(targetTableName.Length).Replace("_", string.Empty); // "Id"
-            if (memberName.EndsWith(cutOffSuffix, StringComparison.InvariantCultureIgnoreCase)) {
+            if (memberName.EndsWith(cutOffSuffix, StringComparison.OrdinalIgnoreCase)) {
               memberName = memberName.Substring(0, memberName.Length - cutOffSuffix.Length);
               if (string.IsNullOrEmpty(memberName))
                 memberName = targetEnt.Name;
@@ -346,9 +346,9 @@ namespace Vita.Tools.DbFirst {
       //Account for providers that do not support schemas (SQL CE, SQLite)
       if(schema == null && !_dbSettings.ModelConfig.Driver.Supports(DbFeatures.Schemas))
         return _app.Modules.FirstOrDefault(); 
-      var module = _app.Modules.FirstOrDefault(m => m.Area.Name.Equals(schema, StringComparison.InvariantCultureIgnoreCase));
+      var module = _app.Modules.FirstOrDefault(m => m.Area.Name.Equals(schema, StringComparison.OrdinalIgnoreCase));
       Util.Check(module != null, "EntityModule for schema {0} not found.", schema);
-      return module; 
+      return module;
     }
 
     DbTypeInfo _guidTypeInfo;

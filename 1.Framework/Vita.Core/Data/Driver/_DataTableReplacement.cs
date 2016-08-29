@@ -12,7 +12,7 @@ namespace Vita.Data.Driver {
   // so here are simple replacements
   public class DbColumn {
     public readonly DbTable Table;
-    public readonly string Name;
+    public string Name;
     public readonly Type DataType;
     public readonly int Index; 
     internal DbColumn(DbTable table, string name, Type dataType, int index) {
@@ -25,7 +25,7 @@ namespace Vita.Data.Driver {
 
   public class DbTable {
     public readonly IList<DbColumn> Columns = new List<DbColumn>();
-    public readonly IList<DbRow> Rows = new List<DbRow>();
+    public IList<DbRow> Rows = new List<DbRow>();
 
     public DbTable() { }
 
@@ -50,10 +50,10 @@ namespace Vita.Data.Driver {
     }
     public DbColumn FindColumn(string name) {
       name = name.ToLowerInvariant();
-      return Columns.FirstOrDefault(c => c.Name == name);
+      return Columns.FirstOrDefault(c => c.Name.Equals(name, StringComparison.OrdinalIgnoreCase));
     }
     public DbColumn AddColumn(string name, Type dataType) {
-      var col = new DbColumn(this, name.ToLowerInvariant(), dataType, Columns.Count);
+      var col = new DbColumn(this, name, dataType, Columns.Count);
       Columns.Add(col);
       return col; 
     }
@@ -67,6 +67,13 @@ namespace Vita.Data.Driver {
       var row = new DbRow(this);
       Rows.Add(row);
       return row; 
+    }
+
+    public DbRow FindRow(string columnName, string value) {
+      foreach(var row in this.Rows)
+        if(value.Equals(row.GetAsString(columnName), StringComparison.OrdinalIgnoreCase))
+          return row;
+      return null; 
     }
    
   }

@@ -69,8 +69,7 @@ namespace Vita.UnitTests.Basic {
 
       //Start new session, load all and check that IDs and relationships are correct
       session = _app.OpenSession();
-      var persons = session.GetEntities<IPerson>().ToList();
-      john = persons[0];
+      john = session.EntitySet<IPerson>().Where(p => p.Name == "John S").Single();
       var cars = session.GetEntities<ICar>().ToList();
       car1 = cars[0];
       car2 = cars[1];

@@ -9,17 +9,6 @@ using System.Threading.Tasks;
 namespace Vita.Common {
   public static class CompressionHelper {
 
-    public static byte[] Compress(byte[] bytes) {
-      //Save to mem stream
-      using(var outStream = new MemoryStream()) {
-        using(var gStream = new GZipStream(outStream, CompressionMode.Compress)) {
-          gStream.Write(bytes, 0, bytes.Length);
-          var outbytes = outStream.ToArray(); 
-          return outbytes;
-        }
-      }//using outStream
-    }//method
-
     public static byte[] CompressString(string text) {
       byte[] buffer = Encoding.UTF8.GetBytes(text);
       return Compress(buffer);
@@ -31,6 +20,21 @@ namespace Vita.Common {
       return result; 
     }//method
 
+    public static byte[] Compress(byte[] bytes) {
+      //Save to mem stream
+      using(var outStream = new MemoryStream()) {
+        using(var gStream = new GZipStream(outStream, CompressionMode.Compress)) {
+          gStream.Write(bytes, 0, bytes.Length);
+          // should be simply Close, but not supported in .NET core, so using Dispose instead
+          // without it does not work
+          // gStream.Close();          
+          gStream.Dispose();
+          var outbytes = outStream.ToArray();
+          return outbytes;
+        }
+      }//using outStream
+    }//method
+
     public static byte[] Decompress(byte[] data) {
       //Save to mem stream
       using(var inputStream = new MemoryStream()) {
@@ -39,6 +43,7 @@ namespace Vita.Common {
         using(var outStream = new MemoryStream()) {
           using(var gStream = new GZipStream(inputStream, CompressionMode.Decompress)) {
             gStream.CopyTo(outStream);
+            gStream.Flush();
             return outStream.ToArray();
           } //using gStream
         }//using outStream

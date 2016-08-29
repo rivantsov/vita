@@ -318,10 +318,9 @@ namespace Vita.UnitTests.Basic {
       Assert.AreEqual(ent1.DateTimeOffsetProp, ent1Copy.DateTimeOffsetProp, "Datetime offset prop does not match");
     }//test method
 
-    private void CheckDataType(DataTable dtColumns, string columnName, string dataType, int size = 0) {
+    private void CheckDataType(DbTable dtColumns, string columnName, string dataType, int size = 0) {
       //find row
-      dtColumns.DefaultView.RowFilter = "column_name = '" + columnName + "'";
-      var colRow = dtColumns.DefaultView[0];
+      var colRow = dtColumns.FindRow("column_name", columnName);
       Assert.AreEqual(dataType, (string)colRow["Data_Type"], "Data type does not match, column: " + columnName);
       if (size > 0)
         Assert.AreEqual(size, (int)colRow["character_maximum_length"], "Size does not match, column: " + columnName);

@@ -9,7 +9,8 @@ using System.Threading.Tasks;
 using Vita.Common;
 using Vita.Entities;
 using Vita.Entities.Services;
-using Vita.Data; 
+using Vita.Data;
+using Vita.Data.Driver;
 
 namespace Vita.Modules.DbInfo {
 
@@ -36,7 +37,7 @@ namespace Vita.Modules.DbInfo {
         var dbInfo = new DbVersionInfo();
         var sql = string.Format("SELECT * FROM {0};", dbInfoTableName);
         var dt = loader.ExecuteSelect(sql); 
-        var appRow = dt.Rows.FindRow("AppName", appName);
+        var appRow = dt.FindRow("AppName", appName);
         if (appRow != null) {
           dbInfo.InstanceType = (DbInstanceType)appRow.GetAsInt("InstanceType");
           var strVersion = appRow.GetAsString("Version");
@@ -44,7 +45,7 @@ namespace Vita.Modules.DbInfo {
           if (Version.TryParse(strVersion, out dbVersion))
             dbInfo.Version = dbVersion;
           // 'Values' column appears in v 1.1
-          if (dt.Columns.Contains("Values")) {
+          if (dt.HasColumn("Values")) {
             var strValues = appRow.GetAsString("Values");
             DeserializeValues(dbInfo, strValues);
           }
@@ -52,7 +53,7 @@ namespace Vita.Modules.DbInfo {
         //Read modules
         sql = string.Format("SELECT * FROM {0};", dbModuleInfoTableName);
         dt = loader.ExecuteSelect(sql); 
-        foreach(DataRow row in dt.Rows) {
+        foreach(DbRow row in dt.Rows) {
           var moduleName = row.GetAsString("ModuleName");
           var schema = row.GetAsString("Schema");
           var strModuleVersion = row.GetAsString("Version");

@@ -20,14 +20,14 @@ namespace Vita.Data.Postgres {
       base.RoutineTypeTag = "FUNCTION";
     }
 
-    public override DbTypeInfo GetDbTypeInfo(DataRow columnRow) {
+    public override DbTypeInfo GetDbTypeInfo(DbRow columnRow) {
       var typeInfo =  base.GetDbTypeInfo(columnRow);
       if(typeInfo.SqlTypeSpec == "text") {
         typeInfo.Size = -1;
       }
       return typeInfo; 
     }
-    public override DataTable GetColumns() {
+    public override DbTable GetColumns() {
       //Postgres does not return mat views' columns in information_schema.columns. 
       // So we retrieve basic column info from raw pg tables/views; 
       // we also join information_schema.columns to be able to get some additional attributes (numeric scale, precision)
@@ -57,7 +57,7 @@ FROM pg_class t
 ORDER BY table_schema, table_name, ordinal_position;
 ", filter);
       var colData = ExecuteSelect(sql); 
-      foreach(DataRow row in colData.Rows) {
+      foreach(DbRow row in colData.Rows) {
         // for mat views data_type coming from outer join might end up empty; fill it in with default; 
         //  exact type does not matter, we only use col names in view
         var dataType = row.GetAsString("DATA_TYPE");
@@ -73,7 +73,7 @@ ORDER BY table_schema, table_name, ordinal_position;
     // from View. 
     // For other servers we keep view hash in special comment.So for postgres we save hash in view description (special attribute in Postgres),
     // and for loading views construct artificial definition consisting only of hash comment line
-    public override DataTable GetViews() {
+    public override DbTable GetViews() {
       var filter = GetSchemaFilter("n.nspname");
       var sql = string.Format(@"
 SELECT n.nspname AS TABLE_SCHEMA, c.relname as TABLE_NAME,  
@@ -84,7 +84,7 @@ LEFT OUTER JOIN pg_description d on d.objoid = c.oid
 WHERE (c.relkind = 'm' OR c.relkind = 'v') AND {0};", filter, SqlSourceHasher.HashPrefix);
       var dt = ExecuteSelect(sql);
       // set Is_materialized column
-      foreach (DataRow row in dt.Rows) {
+      foreach (DbRow row in dt.Rows) {
         var kind = row.GetAsString("VIEW_KIND");
         if (kind == "m")
           row["IS_MATERIALIZED"] = "Y";
@@ -92,7 +92,7 @@ WHERE (c.relkind = 'm' OR c.relkind = 'v') AND {0};", filter, SqlSourceHasher.Ha
       return dt; 
     }
 
-    public override DataTable GetRoutines() {
+    public override DbTable GetRoutines() {
       var filter = GetSchemaFilter("n.nspname");
       var sql = string.Format(@"
 SELECT p.proname AS ROUTINE_NAME,
@@ -106,7 +106,7 @@ SELECT p.proname AS ROUTINE_NAME,
     }
 
     // Expected columns: table_schema, table_name, index_name, primary_key, clustered, unique, disabled 
-    public override DataTable GetIndexes() {
+    public override DbTable GetIndexes() {
       var filter = GetSchemaFilter("n.nspname");
       var sql = string.Format(@"
 SELECT
@@ -131,8 +131,8 @@ ORDER BY n.nspname,t.relname,a.relname;", filter);
 
     // We use index definition string to get columns and DESC flags for each index. GetIndexes call returns index definition in a separate column.
     // Just did not find any other way to get columns with IsDescending flag. 
-    // Output datatable expected columns: table_schema, table_name, index_name, column_name, column_ordinal_position, is_descending
-    public override DataTable GetIndexColumns() {
+    // Output DbTable expected columns: table_schema, table_name, index_name, column_name, column_ordinal_position, is_descending
+    public override DbTable GetIndexColumns() {
       var filter = GetSchemaFilter("n.nspname");
       var sql = string.Format(@"
 CREATE EXTENSION IF NOT EXISTS intarray;
@@ -153,7 +153,7 @@ ORDER BY table_schema, table_name, index_name, column_ordinal_position
       var colData = ExecuteSelect(sql);
       // our query returns a flag value from indoption array; this value is 3 for DESC column; 
       // change it to 1 as caller method expects
-      foreach(DataRow row in colData.Rows) {
+      foreach(DbRow row in colData.Rows) {
         if (row.GetAsInt("is_descending") == 3)
           row["is_descending"] = 1;
       }//foreach indRow

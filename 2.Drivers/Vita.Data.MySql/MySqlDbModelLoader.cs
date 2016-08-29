@@ -19,7 +19,7 @@ namespace Vita.Data.MySql {
     }
 
     //INFORMATION_SCHEMA does not have a view for indexes, so we have to do it through MSSQL special objects
-    public override DataTable GetIndexes() {
+    public override DbTable GetIndexes() {
       const string getIndexesTemplate = @"
 SELECT DISTINCT TABLE_SCHEMA, TABLE_NAME, INDEX_NAME, (0=1) AS PRIMARY_KEY, '' AS CLUSTERED, 
   (-NON_UNIQUE + 1) AS ""UNIQUE"", 0 AS DISABLED, '' as FILTER_CONDITION  
@@ -33,7 +33,7 @@ ORDER BY TABLE_SCHEMA, TABLE_NAME, INDEX_NAME
       return ExecuteSelect(sql);
     }
 
-    public override DataTable GetIndexColumns() {
+    public override DbTable GetIndexColumns() {
       const string getIndexColumnsTemplate = @"
 SELECT TABLE_SCHEMA, TABLE_NAME, INDEX_NAME, COLUMN_NAME, 
   SEQ_IN_INDEX AS COLUMN_ORDINAL_POSITION, 0 AS IS_DESCENDING
@@ -47,7 +47,7 @@ ORDER BY TABLE_SCHEMA, TABLE_NAME, INDEX_NAME, COLUMN_ORDINAL_POSITION
       return ExecuteSelect(sql);
     }
 
-    public override DbTypeInfo GetDbTypeInfo(DataRow columnRow) {
+    public override DbTypeInfo GetDbTypeInfo(DbRow columnRow) {
       // For 'unsigned' types, Data_type column does not show this attribute, but Column_type does. 
       // We search matching by data_type column (and we register names with 'unsigned' included, like 'int unsigned'). 
       // So we just append the unsigned to data_type value, so lookup works. 
@@ -85,7 +85,7 @@ SELECT table_schema, table_name, column_name
   FROM INFORMATION_SCHEMA.Columns 
   WHERE EXTRA = 'auto_increment' AND {0};", filter);
       var data = ExecuteSelect(sql);
-      foreach(DataRow row in data.Rows) {
+      foreach(DbRow row in data.Rows) {
         var schema = row.GetAsString("TABLE_SCHEMA");
         if(!base.IncludeSchema(schema))
           continue;
@@ -101,7 +101,7 @@ SELECT table_schema, table_name, column_name
 
     // In MySql constraint name is not globally unique, it is unique only in scope of the table. 
     // We have to add matching by table names in joins
-    public override DataTable GetReferentialConstraintsExt() {
+    public override DbTable GetReferentialConstraintsExt() {
       var filter = GetSchemaFilter("tc1.CONSTRAINT_SCHEMA");
       var sql = string.Format(@"
 SELECT rc.*, tc1.TABLE_NAME as C_TABLE, tc2.TABLE_NAME AS U_TABLE 

@@ -434,7 +434,8 @@ namespace Vita.Data.Driver {
         cmd.CommandText = sql;
         var reader = (IDataReader)Driver.ExecuteCommand(cmd, DbExecutionType.Reader);
         var table = new DbTable(reader);
-        table.Load(reader); 
+        table.Load(reader);
+        reader.Close();
         return table;
       } finally {
         if(cmd != null)

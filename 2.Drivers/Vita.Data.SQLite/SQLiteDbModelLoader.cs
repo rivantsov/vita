@@ -19,40 +19,40 @@ namespace Vita.Data.SQLite {
     public SQLiteDbModelLoader(DbSettings settings, MemoryLog log) : base(settings, log) {
     }
 
-    public override DataTable GetDatabases() {
+    public override DbTable GetDatabases() {
       return null; 
     }
 
-    public override DataTable GetSchemas() {
+    public override DbTable GetSchemas() {
       return null; 
     }
 
     //Columns: TABLE_CATALOG	TABLE_SCHEMA	TABLE_NAME	TABLE_TYPE  
-    public override DataTable GetTables() {
+    public override DbTable GetTables() {
       return GetSchemaCollection("Tables"); 
     }
 
     public override bool TableExists(string schema, string tableName) {
       var tables = GetTables();
-      foreach (DataRow r in tables.Rows) {
+      foreach (DbRow r in tables.Rows) {
         if (r.GetAsString("TABLE_NAME") == tableName)
           return true; 
       }
       return false; 
     }
     //Columns: TABLE_CATALOG	TABLE_SCHEMA	TABLE_NAME VIEW_DEFINITION CHECK_OPTION IS_UPDATABLE  
-    public override DataTable GetViews() {
+    public override DbTable GetViews() {
       var views = GetSchemaCollection("Views");
       return views; 
     }
 
-    public override DataTable GetColumns() {
+    public override DbTable GetColumns() {
       var dtCol = GetSchemaCollection("Columns");
       // IS_NULLABLE column is bool here, but standard expected arrangement is string (yes/no)
-      // so let's reformat the datatable
-      dtCol.Columns["IS_NULLABLE"].ColumnName = "IS_NULLABLE_BOOL";
-      dtCol.Columns.Add("IS_NULLABLE", typeof(string));
-      foreach(DataRow row in dtCol.Rows) {
+      // so let's reformat the DbTable
+      dtCol.FindColumn("IS_NULLABLE").Name = "IS_NULLABLE_BOOL";
+      dtCol.AddColumn("IS_NULLABLE", typeof(string));
+      foreach(DbRow row in dtCol.Rows) {
         var isNull =  (bool) row["IS_NULLABLE_BOOL"];
         row["IS_NULLABLE"] = isNull ? "YES" : "NO";
         // for view columns data type string is empty; set it to blob
@@ -63,14 +63,14 @@ namespace Vita.Data.SQLite {
       return dtCol;
     }
 
-    public override DataTable GetTableConstraints() {
+    public override DbTable GetTableConstraints() {
       var dtAll = GetSchemaCollection("ForeignKeys"); //this gives us only foreign keys
       // We need to add PKs; Each PK in SQLite is 'supported' by an index named 'sqlite_autoindex_*'
       // We scan index columns to pick up such names and add PK rows to dtAll.
       //Add PKs by scanning index columns and finding special-named indexes (starting with sqlite_autoindex)
       var dtIndexes = GetIndexColumns();
       var tNames = new StringSet(); //track tables to prevent duplicates
-      foreach(DataRow row in dtIndexes.Rows) {
+      foreach(DbRow row in dtIndexes.Rows) {
         var ixName = row.GetAsString("INDEX_NAME");
         if(!IsPrimaryKeyIndex(ixName))
           continue;
@@ -78,11 +78,10 @@ namespace Vita.Data.SQLite {
         if (tNames.Contains(tblName)) continue; //don't add duplicates
         tNames.Add(tblName); 
         //it is auto-index for PK, create a row for the index
-        var pkRow = dtAll.NewRow();
+        var pkRow = dtAll.AddRow();
         pkRow["TABLE_NAME"] = tblName;
         pkRow["CONSTRAINT_NAME"] = row.GetAsString("INDEX_NAME");
         pkRow["CONSTRAINT_TYPE"] = "PRIMARY KEY";
-        dtAll.Rows.Add(pkRow); 
       }
       return dtAll; 
     }
@@ -95,22 +94,21 @@ namespace Vita.Data.SQLite {
 
     // Columns: TABLE_NAME	COLUMN_NAME ORDINAL_POSITION CONSTRAINT_NAME 
     // Empty: TABLE_CATALOG	TABLE_SCHEMA 	CONSTRAINT_CATALOG CONSTRAINT_SCHEMA			
-    public override DataTable GetTableConstraintColumns() {
+    public override DbTable GetTableConstraintColumns() {
       //We manually construct result table by merging information from 2 sources - for PKs and FKs, separately
-      var dtCols = new DataTable();
-      dtCols.Columns.Add("TABLE_NAME", typeof(string));
-      dtCols.Columns.Add("COLUMN_NAME", typeof(string));
-      dtCols.Columns.Add("CONSTRAINT_NAME", typeof(string));
-      dtCols.Columns.Add("ORDINAL_POSITION", typeof(int));
-      dtCols.Columns.Add("TABLE_CATALOG", typeof(string));
-      dtCols.Columns.Add("TABLE_SCHEMA", typeof(string));
-      dtCols.Columns.Add("CONSTRAINT_SCHEMA", typeof(string));
-      dtCols.Columns.Add("CONSTRAINT_CATALOG", typeof(string));
+      var dtCols = new DbTable();
+      dtCols.AddColumn("TABLE_NAME", typeof(string));
+      dtCols.AddColumn("COLUMN_NAME", typeof(string));
+      dtCols.AddColumn("CONSTRAINT_NAME", typeof(string));
+      dtCols.AddColumn("ORDINAL_POSITION", typeof(int));
+      dtCols.AddColumn("TABLE_CATALOG", typeof(string));
+      dtCols.AddColumn("TABLE_SCHEMA", typeof(string));
+      dtCols.AddColumn("CONSTRAINT_SCHEMA", typeof(string));
+      dtCols.AddColumn("CONSTRAINT_CATALOG", typeof(string));
 
       //Add Primary key columns
       var dtIndexCols = GetIndexColumns();
-      var dtResult = dtIndexCols.Clone();
-      foreach(DataRow pkRow in dtIndexCols.Rows) {
+      foreach(DbRow pkRow in dtIndexCols.Rows) {
         var ixName = pkRow.GetAsString("INDEX_NAME");
         if(IsPrimaryKeyIndex(ixName))
           AddKeyColumnRow(dtCols, ixName, pkRow.GetAsString("TABLE_NAME"), pkRow.GetAsString("COLUMN_NAME"), pkRow.GetAsInt("COLUMN_ORDINAL_POSITION"));
@@ -121,7 +119,7 @@ namespace Vita.Data.SQLite {
         var sql = string.Format("pragma foreign_key_list([{0}])", tbl.TableName);
         // returns id, seq, table, from, to, on_update, on_delete, match
         var dt = ExecuteSelect(sql);
-        foreach(DataRow fkRow in dt.Rows) {
+        foreach(DbRow fkRow in dt.Rows) {
           var fromColName = fkRow.GetAsString("from");
           var fromCol = tbl.Columns.FindByName(fromColName);
           var id = fkRow.GetAsInt("id");
@@ -135,40 +133,39 @@ namespace Vita.Data.SQLite {
     }
 
     //helper method
-    private DataRow AddKeyColumnRow(DataTable table, string constrName, string tableName, string columnName, int ordinalPosition) {
-      var row = table.NewRow();
+    private DbRow AddKeyColumnRow(DbTable table, string constrName, string tableName, string columnName, int ordinalPosition) {
+      var row = table.AddRow();
       row["CONSTRAINT_NAME"] = constrName;
       row["TABLE_NAME"] = tableName;
       row["COLUMN_NAME"] = columnName;
       row["ORDINAL_POSITION"] = ordinalPosition;
-      table.Rows.Add(row); 
       return row; 
     }
 
 
 
-    public override DataTable GetReferentialConstraintsExt() {
+    public override DbTable GetReferentialConstraintsExt() {
       var dt = GetSchemaCollection("ForeignKeys");
       //adjust column names
-      dt.Columns["TABLE_NAME"].ColumnName = "C_TABLE";
-      dt.Columns["FKEY_TO_SCHEMA"].ColumnName = "UNIQUE_CONSTRAINT_SCHEMA";
-      dt.Columns["FKEY_TO_TABLE"].ColumnName = "U_TABLE";
-      dt.Columns["FKEY_ON_DELETE"].ColumnName = "DELETE_RULE";
+      dt.FindColumn("TABLE_NAME").Name = "C_TABLE";
+      dt.FindColumn("FKEY_TO_SCHEMA").Name = "UNIQUE_CONSTRAINT_SCHEMA";
+      dt.FindColumn("FKEY_TO_TABLE").Name = "U_TABLE";
+      dt.FindColumn("FKEY_ON_DELETE").Name = "DELETE_RULE";
       return dt;
     }
-    public override DataTable GetIndexes() {
+    public override DbTable GetIndexes() {
       var dt = GetSchemaCollection("Indexes");
       return dt; 
     }
 
     // Rename ORDINAL_POSITION to COLUMN_ORDINAL_POSITION and increment the value (it should be 1-based)
     // Change SORT_MODE (ASC/DESC: string) into bool column IS_DESCENDING
-    public override DataTable GetIndexColumns() {
+    public override DbTable GetIndexColumns() {
       var colOrdPos = "column_ordinal_position";
       var dt = GetSchemaCollection("INDEXCOLUMNS");
-      dt.Columns["ORDINAL_POSITION"].ColumnName = colOrdPos;
-      dt.Columns.Add("IS_DESCENDING", typeof(int));
-      foreach(DataRow row in dt.Rows) {
+      dt.FindColumn("ORDINAL_POSITION").Name = colOrdPos;
+      dt.AddColumn("IS_DESCENDING", typeof(int));
+      foreach(DbRow row in dt.Rows) {
         var sm = row.GetAsString("SORT_MODE");
         row["IS_DESCENDING"] = sm == "ASC" ? 0 : -1;
         //ordinal position is usually 1-based, but SQLite seems to be 0-based; so we increment the value
@@ -180,17 +177,28 @@ namespace Vita.Data.SQLite {
     // See GetSchema source here: 
     // https://github.com/OpenDataSpace/System.Data.SQLite/blob/master/System.Data.SQLite/SQLiteConnection.cs
     // Note that not all standard collections are supported
-    private DataTable GetSchemaCollection(string collectionName) {
+    private DbTable GetSchemaCollection(string collectionName) {
       var conn = new SQLiteConnection(Settings.ConnectionString);
       try {
         conn.Open();
         var coll = conn.GetSchema(collectionName);
-        return coll;
+        return ToDbTable(coll);
       } finally {
         conn.Close(); 
       }
     }
 
+    private DbTable ToDbTable(System.Data.DataTable table) {
+      var tbl = new DbTable();
+      foreach(DataColumn col in table.Columns)
+        tbl.AddColumn(col.ColumnName, col.DataType);
+      foreach(DataRow drow in table.Rows) {
+        var row = tbl.AddRow();
+        foreach(var c in tbl.Columns)
+          row[c.Index] = drow[c.Index];
+      }
+      return tbl; 
+    }
   }//class
 
 }

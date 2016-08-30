@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -18,7 +19,7 @@ namespace Vita.Entities.Web.Implementation {
 
   public class ApiControllerInfo {
     public readonly object Instance; //for singleton
-    public readonly Type Type;
+    public readonly TypeInfo TypeInfo;
     public readonly string RoutePrefix;
     // Flags are set either thru attributes or set during registration 
     public ControllerFlags Flags;
@@ -27,28 +28,28 @@ namespace Vita.Entities.Web.Implementation {
     public string ApiGroup; 
 
     public ApiControllerInfo(object instance, Type type, string routePrefix = null) {
-      Instance = instance; 
-      Type = type;
-      if(Type == null && Instance != null)
-        Type = Instance.GetType(); 
+      Instance = instance;
+      if(type == null && instance != null)
+        type = instance.GetType();
+      TypeInfo = type.GetTypeInfo();
       RoutePrefix = routePrefix;
       //Prefix
       if(RoutePrefix == null) {
-        var prefAttr = Type.GetAttribute<ApiRoutePrefixAttribute>();
+        var prefAttr = TypeInfo.GetAttribute<ApiRoutePrefixAttribute>();
         if(prefAttr != null)
           RoutePrefix = prefAttr.Prefix; 
       }
-      if (type.HasAttribute<LoggedInOnlyAttribute>())
+      if (TypeInfo.HasAttribute<LoggedInOnlyAttribute>())
         Flags |= ControllerFlags.LoggedInOnly;
      //Secured
-      if (type.HasAttribute<SecuredAttribute>())
+      if (TypeInfo.HasAttribute<SecuredAttribute>())
         Flags |= ControllerFlags.Secured;
-      ApiGroup = GetApiGroup(Type);
+      ApiGroup = GetApiGroup(TypeInfo);
     }
 
     private static string GetApiGroup(Type controllerType) {
       //check attr
-      var grpAttr = controllerType.GetAttribute<ApiGroupAttribute>();
+      var grpAttr = controllerType.GetTypeInfo().GetAttribute<ApiGroupAttribute>();
       if(grpAttr != null)
         return grpAttr.Group;
       var group = controllerType.Name.Replace("Controller", string.Empty);
@@ -85,7 +86,7 @@ namespace Vita.Entities.Web.Implementation {
     }
 
     public ApiControllerInfo GetControllerInfo(Type controllerType) {
-      return ControllerInfos.FirstOrDefault(ci => ci.Type == controllerType);
+      return ControllerInfos.FirstOrDefault(ci => ci.TypeInfo == controllerType);
     }
 
   } //class

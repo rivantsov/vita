@@ -307,28 +307,9 @@ END
       var customTableType = DbModel.CustomDbTypes.First(t => t.Name == MsSqlDbDriver.ArrayAsTableTypeName);
       var tableTypeFullName = customTableType.FullName;
       ArrayAsTableDbTypeInfo = new DbTypeInfo(userDefinedVendorType, tableTypeFullName, false, 0, 0, 0);
-      ArrayAsTableDbTypeInfo.PropertyToColumnConverter = ConvertListToDataTable;
+      ArrayAsTableDbTypeInfo.PropertyToColumnConverter = MsSqlDbDriver.ConvertListToRecordList;
     }
 
-    private static object ConvertListToDataTable(object value) {
-      var list = value as IEnumerable;
-      var valueType = value.GetType();
-      Type elemType;
-      Util.Check(valueType.IsListOfDbPrimitive(out elemType), "Value must list of DB primitives. Value type: {0} ", valueType);
-      if (elemType.IsNullableValueType()) 
-        elemType = Nullable.GetUnderlyingType(elemType); //DataTable does not support Nullable<T>
-      bool isEnum = elemType.IsEnum;
-      if (isEnum)
-        elemType = typeof(int);
-      var dt = new DataTable();
-      var col = dt.Columns.Add("Value", elemType);
-      if (elemType == typeof(string))
-        col.MaxLength = 100; //to prevent from using nvarchar(max) which would fail
-      foreach (object v in list) {
-        dt.Rows.Add(isEnum ? (int)v : v);
-      }
-      return dt;
-    }
     #endregion
 
 

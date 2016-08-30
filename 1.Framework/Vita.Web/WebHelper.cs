@@ -322,7 +322,7 @@ namespace Vita.Web {
       string contrTypeName;
       var slimDescr = descriptor as SlimApiActionDescriptor;
       if(slimDescr != null)
-        contrTypeName = slimDescr.ControllerInfo.Type.Name;
+        contrTypeName = slimDescr.ControllerInfo.TypeInfo.Name;
       else
         contrTypeName = descriptor.ControllerDescriptor.ControllerType.Name;
       return contrTypeName  + "_" + descriptor.ActionName;

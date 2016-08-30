@@ -36,7 +36,7 @@ namespace Vita.Web.SlimApi {
       if(controllerDescriptor.ControllerType == typeof(SlimApiGhostController)) {
         var newActions = new List<HttpActionDescriptor>(); 
         foreach(var contrInfo in _apiConfig.ControllerInfos) {
-          var methods = contrInfo.Type.GetMethods(BindingFlags.Instance | BindingFlags.Public | BindingFlags.DeclaredOnly);
+          var methods = contrInfo.TypeInfo.GetMethods(BindingFlags.Instance | BindingFlags.Public | BindingFlags.DeclaredOnly);
           foreach(var method in methods) {
             var dtype = method.DeclaringType;
             if (dtype == typeof(object)) //skip ToString()

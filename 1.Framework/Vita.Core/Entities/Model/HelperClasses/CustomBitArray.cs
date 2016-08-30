@@ -5,10 +5,7 @@ using System.Text;
 
 namespace Vita.Entities.Model {
     // A copy of BitArray, with extra methods: AllZero, IsSuperSetOf, IsSubsetOf
-
-
-    [Serializable()] 
-    public class CustomBitArray : ICollection, ICloneable {
+    public class CustomBitArray : ICollection {
       const int AllOne = unchecked(((int)0xffffffff));
 
       #region new methods
@@ -473,8 +470,7 @@ namespace Vita.Entities.Model {
           return n > 0 ? (((n - 1) / div) + 1) : 0;
       }
 
-      [Serializable] 
-      private class BitArrayEnumeratorSimple : IEnumerator, ICloneable
+      private class BitArrayEnumeratorSimple : IEnumerator
       { 
           private CustomBitArray bitarray; 
           private int index;
@@ -524,7 +520,6 @@ namespace Vita.Entities.Model {
       private int[] m_array; 
       private int m_length;
       private int _version; 
-      [NonSerialized]
       private Object _syncRoot;
 
       private const int _ShrinkThreshold = 256;

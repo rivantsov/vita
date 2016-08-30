@@ -2,8 +2,8 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
-using System.Timers;
 using Vita.Entities;
 using Vita.Entities.Logging;
 using Vita.Entities.Model;
@@ -14,6 +14,7 @@ namespace Vita.Entities.Services.Implementations {
   public class TimerService : ITimerService, ITimerServiceControl {
     OperationContext _timerContext;
     private Timer _timer;
+    private bool _activated; 
     private IOperationLogService _logService; 
     int _elapseCount;
     object _lock = new object();
@@ -34,18 +35,19 @@ namespace Vita.Entities.Services.Implementations {
     public void Init(EntityApp app) {
       _timerContext = app.CreateSystemContext(); 
       _logService = app.GetService<IOperationLogService>(); 
-      _timer = new Timer(100);
-      _timer.Elapsed += Timer_Elapsed;
+      _timer = new Timer(Timer_Elapsed, null, 100, 100);
       app.AppEvents.Initializing += Events_Initializing;
     }
 
     void Events_Initializing(object sender, AppInitEventArgs e) {
       if(e.Step == EntityAppInitStep.Initialized) {
-        _timer.Start(); 
+        _activated = true; 
       }
     }
 
-    void Timer_Elapsed(object sender, ElapsedEventArgs e) {
+    void Timer_Elapsed(object state) {
+      if(!_activated)
+        return; 
       unchecked {
         _elapseCount++;
       }
@@ -69,7 +71,7 @@ namespace Vita.Entities.Services.Implementations {
     }
 
     public void Shutdown() {
-      _timer.Stop();      
+      _activated = false;      
     }
 
     //ITimerServiceControl

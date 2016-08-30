@@ -26,7 +26,6 @@ namespace Vita.Entities.Runtime {
     Fantom, //just deleted in database; or: created as new but then marked for deletion; so no action in database
   }
 
-  [Serializable]
   public partial class EntityRecord {
     public EntityInfo EntityInfo;
     public EntitySession Session;

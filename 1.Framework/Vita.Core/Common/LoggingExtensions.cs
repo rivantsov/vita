@@ -7,7 +7,6 @@ using System.Runtime.CompilerServices;
 using System.Data;
 using System.Collections;
 using Vita.Entities;
-using System.Net.Mail;
 
 namespace Vita.Common {
   public static class LoggingExtensions {
@@ -44,9 +43,6 @@ namespace Vita.Common {
           strValue = "[" + dt.ToString("o") + ", Kind=" + dt.Kind + "]";
         } else if (value is Guid) {
           strValue = "{" + value.ToString() + "}";
-        } else if(value is MailMessage) {
-          var msg = (MailMessage)value;
-          strValue = msg.ToLogString();
         } else if(value is IDbCommand) {
           var cmd = (IDbCommand)value;
           strValue = cmd.ToLogString();
@@ -56,9 +52,11 @@ namespace Vita.Common {
         } else if (value is IDataRecord) {
           var dr = (IDataRecord)value;
           strValue = dr.ToLogString();
+        /*
         } else if (value is DataTable) {
           var dt = (DataTable)value;
           return dt.ToLogString();
+          */
         } else if (value is byte[]) {
           var bytes = (byte[])value;
           strValue = bytes.ToLogString();
@@ -138,25 +136,11 @@ namespace Vita.Common {
       return result;
     }
 
+    /*
     public static string ToLogString(this DataTable table) {
       return StringHelper.SafeFormat("(DataTable, {0} rows)", table.Rows.Count);
     }
-
-
-    public static string ToLogString(this MailMessage message) {
-      var template = @"TO: {0}
-Subject: {1}
-Body:
-{2}
-";
-      if(message == null)
-        return null;
-      var strTo = string.Join(", ", message.To.Select(a => a.Address)).TrimMiddle(100);
-      var subj = message.Subject.TrimMiddle();
-      var body = message.Body.TrimMiddle();
-      var str = StringHelper.SafeFormat(template, strTo, subj, body);
-      return str; 
-    }
+    */
 
     public static string ToLogString(this IDbCommand command) {
       const string template =
@@ -373,9 +357,11 @@ Parameters:
       } else if (type.IsArray || (type.IsGenericType && value is IList)) {
         var list = (IList)value;
         sValue = "[" + list.ToLogString() + "]";
+      /*
       } else if (value is DataTable) {
         var dt = (DataTable)value; 
         return string.Format("-- (@P0: DataTable, RowCount={0})", dt.Rows.Count);
+        */
       } else 
         sValue = value.ToLogString();
       sValue = sValue.TrimMiddle(maxLen);

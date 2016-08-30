@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using System.Runtime.Serialization;
 using System.Xml;
 
 using Vita.Entities.Runtime; 
@@ -10,7 +9,6 @@ using Vita.Common;
 
 namespace Vita.Entities {
 
-  [Serializable]
   public class ClientFaultException : OperationAbortException {
     public readonly IList<ClientFault> Faults;
 

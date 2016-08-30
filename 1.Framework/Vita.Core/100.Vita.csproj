@@ -48,7 +48,6 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="Common\AsyncHelper_OLD.cs" />
     <Compile Include="Common\Binary.cs" />
     <Compile Include="Common\Collections.cs" />
     <Compile Include="Common\CompressionHelper.cs" />

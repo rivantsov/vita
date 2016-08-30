@@ -9,7 +9,6 @@ using Vita.Entities.Authorization;
 namespace Vita.Entities.Runtime {
 
   // Default base class for entity classes
-  [Serializable]
   public abstract class EntityBase : INotifyPropertyChanged {
     public readonly EntityRecord Record;
 

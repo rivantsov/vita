@@ -352,7 +352,7 @@ namespace Vita.Data.MsSql {
         var sqlParam = (SqlParameter)parameter;
         sqlParam.SqlDbType = SqlDbType.Structured;
         sqlParam.TypeName = GetArrayAsTableTypeName();
-        sqlParam.Value = ConvertListToDataTable(value as IEnumerable, elemType);
+        sqlParam.Value = MsSqlDbDriver.ConvertListToRecordList(value as IEnumerable);
         return;
       }
       base.SetDbParameterValue(parameter, value);
@@ -370,20 +370,6 @@ namespace Vita.Data.MsSql {
         _arrayAsTableTypeName = tpInfo.FullName;
       }
       return _arrayAsTableTypeName;
-    }
-
-    private static DataTable ConvertListToDataTable(IEnumerable list, Type elemType) {
-      var dt = new DataTable();
-      bool isEnum = elemType.IsEnum; 
-      if (isEnum)
-        elemType = typeof(int); 
-      var col = dt.Columns.Add("Value", elemType);
-      if (elemType == typeof(string))
-        col.MaxLength = 100; //to prevent from using nvarchar(max) which would fail
-      foreach (object v in list) {
-        dt.Rows.Add(isEnum ? (int)v : v);
-      }
-      return dt;
     }
 
 

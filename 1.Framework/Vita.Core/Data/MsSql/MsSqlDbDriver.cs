@@ -10,6 +10,8 @@ using Vita.Data.Model;
 using Vita.Data.Driver;
 using Vita.Entities.Logging;
 using Vita.Entities.Linq;
+using Microsoft.SqlServer.Server;
+using System.Collections.Generic;
 
 namespace Vita.Data.MsSql {
 
@@ -180,6 +182,34 @@ namespace Vita.Data.MsSql {
         return MsSqlVersion.V2008;
       }//using
     }
+
+    // Used for sending lists in SqlParameter, to use in SQL clauses like 'WHERE x IN (@P0)"
+    // @P0 should be declarate as VITA_ArrayAsTable data type. 
+    // We can use DataTable as a container, but DataTable is not supported by .NET core;
+    // we use alternative: IEnumerable<SqlDataRecord>, it is supported. 
+    // TODO: review the method and optimize it. 
+    internal static object ConvertListToRecordList(object value) {
+      var list = value as System.Collections.IEnumerable;
+      var valueType = value.GetType();
+      Type elemType;
+      Util.Check(valueType.IsListOfDbPrimitive(out elemType), "Value must list of DB primitives. Value type: {0} ", valueType);
+      if(elemType.IsNullableValueType())
+        elemType = Nullable.GetUnderlyingType(elemType); 
+      bool isEnum = elemType.IsEnum;
+      var records = new List<SqlDataRecord>();
+      var colData = new SqlMetaData("Value", SqlDbType.Variant);
+      foreach(object v in list) {
+        var rec = new SqlDataRecord(colData);
+        var v1 = isEnum ? (int)v : v;
+        rec.SetValue(0, v1);
+        records.Add(rec);
+      }
+      if(records.Count == 0)
+        return null; // with 0 rows throws error, advising to send NULL
+      return records;
+    }
+
+
 
   }//class
 }

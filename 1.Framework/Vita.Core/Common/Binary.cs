@@ -7,7 +7,6 @@ namespace Vita.Common {
 
   // derived from System.Data.Linq.Binary class - to avoid referencing System.Data.Linq assembly
   // Also provides an option in constructor to avoid copying the byte array
-  [Serializable]
   public sealed class Binary : IEquatable<Binary> {
     byte[] _bytes;
     int? _hashCode;

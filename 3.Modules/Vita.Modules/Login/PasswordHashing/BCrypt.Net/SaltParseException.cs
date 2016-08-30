@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Runtime.Serialization;
 
 namespace Vita.Modules.Login.BCryptNet
 {
@@ -27,12 +26,5 @@ namespace Vita.Modules.Login.BCryptNet
         {
         }
 
-        /// <summary>Initializes a new instance of <see cref="SaltParseException"/>.</summary>
-        /// <param name="info">   The information.</param>
-        /// <param name="context">The context.</param>
-        protected SaltParseException(SerializationInfo info, StreamingContext context)
-            : base(info, context)
-        {
-        }
     }
 }

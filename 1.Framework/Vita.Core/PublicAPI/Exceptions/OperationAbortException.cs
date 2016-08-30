@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using System.Runtime.Serialization;
 using System.Xml;
 
 using Vita.Entities.Runtime;
@@ -15,7 +14,6 @@ namespace Vita.Entities {
   /// <remarks>A simple example is a client fault - invalid data submitted from the client. 
   /// Other examples - concurrency violation, unique index violation.
   /// </remarks>
-  [Serializable]
   public class OperationAbortException : Exception {
     /// <summary>Indicates if error should be logged as serious error in error log. 
     /// The application code can set this value explicitly after creating exception object. 

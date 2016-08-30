@@ -104,7 +104,7 @@ namespace Vita.Web.SlimApi {
       //Record controller name, method name in web context
       var webCtx = opContext.WebContext;
       if(webCtx != null) {
-        webCtx.ControllerName = ControllerInfo.Type.Name;
+        webCtx.ControllerName = ControllerInfo.TypeInfo.Name;
         webCtx.MethodName = this.MethodInfo.Name;
         webCtx.RequestUrlTemplate = this.RouteTemplates[0];
       }
@@ -132,12 +132,12 @@ namespace Vita.Web.SlimApi {
         context.User.SetAuthority(authD);
       }
       var auth = authD.Authority; 
-      var accessTypes = auth.GetObjectAccess(context, ControllerInfo.Type);
+      var accessTypes = auth.GetObjectAccess(context, ControllerInfo.TypeInfo);
       var needAccess = AuthorizationModelExtensions.GetAccessType(context.WebContext.HttpMethod);
       if (!accessTypes.IsSet(needAccess))  {
         var msg = StringHelper.SafeFormat("Access denied to API controller method: {0}.{1}; Http method: {2}", 
           _method.DeclaringType, _method.Name,  context.WebContext.HttpMethod);
-        throw new AuthorizationException(msg, ControllerInfo.Type, needAccess, false, null);
+        throw new AuthorizationException(msg, ControllerInfo.TypeInfo, needAccess, false, null);
       }
     }
 
@@ -151,7 +151,7 @@ namespace Vita.Web.SlimApi {
     private object GetController(OperationContext opContext) {
       if(ControllerInfo.Instance != null)
         return ControllerInfo.Instance; //singleton
-      var controller = Activator.CreateInstance(ControllerInfo.Type);
+      var controller = Activator.CreateInstance(ControllerInfo.TypeInfo);
       var iContrInit = controller as ISlimApiControllerInit;
       if(iContrInit != null) 
         iContrInit.InitController(opContext);

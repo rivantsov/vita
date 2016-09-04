@@ -12,9 +12,10 @@ namespace Vita.Modules.OAuthClient {
 
   public static class OAuthClientExtensions {
     public static IOAuthRemoteServer NewOAuthRemoteServer(this IEntitySession session, string name, 
-                                        OAuthServerOptions options, string siteUrl,                                               
-                                        string authorizationUrl, string tokenRequestUrl, string tokenRefreshUrl, 
-                                        string documentationUrl, string basicProfileUrl, string profileUserIdTag) {
+                OAuthServerOptions options, string siteUrl,                                               
+                string authorizationUrl, string tokenRequestUrl, string tokenRefreshUrl, 
+                string documentationUrl, string basicProfileUrl, string profileUserIdTag, 
+                string tokenRevokeUrl = null) {
       var srv = session.NewEntity<IOAuthRemoteServer>();
       srv.Name = name;
       srv.Options = options;
@@ -24,7 +25,8 @@ namespace Vita.Modules.OAuthClient {
       srv.TokenRefreshUrl = tokenRefreshUrl;
       srv.DocumentationUrl = documentationUrl;
       srv.BasicProfileUrl = basicProfileUrl;
-      srv.ProfileUserIdTag = profileUserIdTag; 
+      srv.ProfileUserIdTag = profileUserIdTag;
+      srv.TokenRevokeUrl = tokenRevokeUrl;
       return srv;
     }
 
@@ -124,13 +126,14 @@ namespace Vita.Modules.OAuthClient {
       var flow = account.NewOAuthFlow();
       var redirectUrl = stt.RedirectUrl;
       if(account.Server.Options.IsSet(OAuthServerOptions.TokenReplaceLocalIpWithLocalHost))
-        redirectUrl = redirectUrl.Replace("127.0.0.1", "localhost"); //Facebook special case
+        redirectUrl = redirectUrl.Replace("127.0.0.1", "localhost"); 
       flow.UserId = userId;
       flow.Scopes = scopes ?? account.Server.Scopes; //all scopes
       flow.RedirectUrl = redirectUrl;
       var clientId = account.ClientIdentifier;
       flow.AuthorizationUrl = account.Server.AuthorizationUrl + 
-            StringHelper.FormatUri(OAuthClientModule.AuthorizationUrlQuery, clientId, redirectUrl, flow.Scopes, flow.Id.ToString());
+            StringHelper.FormatUri(OAuthClientModule.AuthorizationUrlQuery, clientId, redirectUrl,
+            flow.Scopes, flow.Id.ToString());
       return flow;
     }
 
@@ -162,6 +165,12 @@ namespace Vita.Modules.OAuthClient {
       return userId;
     }
 
+    internal static void UpdateStatus(this IEntitySession session, Guid tokenId, OAuthTokenStatus status) {
+      var updQuery = from t in session.EntitySet<IOAuthAccessToken>()
+                     where t.Id == tokenId
+                     select new { Id = t.Id, Status = status };
+      var cnt = updQuery.ExecuteUpdate<IOAuthAccessToken>();
+    }
 
     public static bool IsSet(this OAuthServerOptions options, OAuthServerOptions option) {
       return (options & option) != 0;

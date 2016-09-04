@@ -59,7 +59,8 @@ namespace Vita.Samples.OAuthDemoApp {
         } else {
           txtClientId.Text = act.ClientIdentifier;
           txtClientSecret.Text = act.ClientSecret.DecryptString();
-          EndEditClientInfo(); 
+          EndEditClientInfo();
+          chkRevoke.Enabled = !string.IsNullOrWhiteSpace(act.Server.TokenRevokeUrl);
         }
       }
     }
@@ -144,7 +145,7 @@ namespace Vita.Samples.OAuthDemoApp {
       Log("=== Redirected; server returned authorization code: {0}", flow.AuthorizationCode);
 
       Log("=== Retrieving access token using authorization code...");
-      var tokenId = await _service.RetrieveAccessToken(session.Context, flow.Id);
+      var tokenId = await _service.RetrieveAccessTokenAsync(session.Context, flow.Id);
       var token = session.GetEntity<IOAuthAccessToken>(tokenId); 
       var strToken = token.AccessToken.DecryptString();
       Log("=== Token retrieved: {0}", strToken);
@@ -154,7 +155,7 @@ namespace Vita.Samples.OAuthDemoApp {
       }
 
       Log("=== Retreiving basic profile: GET {0}", server.BasicProfileUrl);
-      var profileJson = await _service.GetBasicProfile(session.Context, tokenId); 
+      var profileJson = await _service.GetBasicProfileAsync(session.Context, tokenId); 
       Log("=== Server response: ");
       Log(profileJson);
 
@@ -174,19 +175,24 @@ namespace Vita.Samples.OAuthDemoApp {
       // For FB we test retreiving profile as object
       if (server.Name == "Facebook") {
         Log("=== Retreiving profile as object (FB only)");
-        var profile = await _service.GetBasicProfile<FacebookProfile>(session.Context, tokenId);
+        var profile = await _service.GetBasicProfileAsync<FacebookProfile>(session.Context, tokenId);
         Log("       Success, Id = {0}, Name={1} ", profile.Id, profile.Name);
       }
       
       // Refresh token. We might not have it - Google returns it only for the first access token request
       if(!string.IsNullOrEmpty(server.TokenRefreshUrl) && token.RefreshToken != null) {
         Log("=== Server supports refreshing tokens; refreshing token...");
-        var success = await _service.RefreshAccessToken(session.Context, tokenId);
+        var success = await _service.RefreshAccessTokenAsync(session.Context, tokenId);
         Util.Check(success, "Failed to refresh token");
         var strToken2 = token.AccessToken.DecryptString();
         Log("=== Sucess, refreshed token (might be the same): {0}", strToken2);
       }
-    }
+      if (chkRevoke.Checked && !string.IsNullOrEmpty(server.TokenRevokeUrl)) {
+        Log("=== Server supports revoking of token. Revoking token...");
+        await _service.RevokeAccessTokenAsync(session.Context, tokenId);
+        Log("=== Success, token revoked.");
+      }
+    }//method
 
     // For FB we test retreiving profile as object
     class FacebookProfile {

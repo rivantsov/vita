@@ -41,12 +41,14 @@
       this.label1 = new System.Windows.Forms.Label();
       this.groupBox1 = new System.Windows.Forms.GroupBox();
       this.txtLog = new System.Windows.Forms.TextBox();
+      this.chkRevoke = new System.Windows.Forms.CheckBox();
       this.pnlTop.SuspendLayout();
       this.groupBox1.SuspendLayout();
       this.SuspendLayout();
       // 
       // pnlTop
       // 
+      this.pnlTop.Controls.Add(this.chkRevoke);
       this.pnlTop.Controls.Add(this.label7);
       this.pnlTop.Controls.Add(this.linkSpecialCases);
       this.pnlTop.Controls.Add(this.linkDocs);
@@ -235,6 +237,16 @@
       this.txtLog.Size = new System.Drawing.Size(1514, 476);
       this.txtLog.TabIndex = 0;
       // 
+      // chkRevoke
+      // 
+      this.chkRevoke.AutoSize = true;
+      this.chkRevoke.Location = new System.Drawing.Point(940, 307);
+      this.chkRevoke.Name = "chkRevoke";
+      this.chkRevoke.Size = new System.Drawing.Size(352, 29);
+      this.chkRevoke.TabIndex = 18;
+      this.chkRevoke.Text = "Revoke access token at the end";
+      this.chkRevoke.UseVisualStyleBackColor = true;
+      // 
       // MainForm
       // 
       this.AutoScaleDimensions = new System.Drawing.SizeF(12F, 25F);
@@ -272,6 +284,7 @@
     private System.Windows.Forms.LinkLabel linkDocs;
     private System.Windows.Forms.Label label7;
     private System.Windows.Forms.LinkLabel linkSpecialCases;
+    private System.Windows.Forms.CheckBox chkRevoke;
   }
 }
 

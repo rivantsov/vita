@@ -24,11 +24,13 @@ namespace Vita.Modules.OAuthClient {
 
     Task OnRedirected(OperationContext context, string state, string authCode, string error);
     event AsyncEvent<RedirectEventArgs> Redirected;
-    Task<Guid> RetrieveAccessToken(OperationContext context, Guid flowId);
-    Task<bool> RefreshAccessToken(OperationContext context, Guid tokenId);
+    Task<Guid> RetrieveAccessTokenAsync(OperationContext context, Guid flowId);
+    Task<bool> RefreshAccessTokenAsync(OperationContext context, Guid tokenId);
+    Task RevokeAccessTokenAsync(OperationContext context, Guid tokenId);
+    void UpdateTokenStatus(IEntitySession session, Guid tokenId, OAuthTokenStatus status);
 
     void SetupOAuthClient(WebApiClient client, IOAuthAccessToken token);
-    Task<string> GetBasicProfile(OperationContext context, Guid tokenId);
-    Task<TProfile> GetBasicProfile<TProfile>(OperationContext context, Guid tokenId);
+    Task<string> GetBasicProfileAsync(OperationContext context, Guid tokenId);
+    Task<TProfile> GetBasicProfileAsync<TProfile>(OperationContext context, Guid tokenId);
   }
 }

@@ -45,15 +45,16 @@ namespace Vita.Web {
       var jsonFmter = new JsonMediaTypeFormatter();
       // add converter that will serialize all enums as strings, not integers
       jsonFmter.SerializerSettings.Converters.Add(new Newtonsoft.Json.Converters.StringEnumConverter());
-      jsonFmter.SerializerSettings.ContractResolver = jsonFmter.SerializerSettings.ContractResolver = new JsonNameContractResolver(nameMapping);
+      jsonFmter.SerializerSettings.ContractResolver = new JsonNameContractResolver(nameMapping);
+      jsonFmter.SerializerSettings.DateTimeZoneHandling = Newtonsoft.Json.DateTimeZoneHandling.Unspecified;
       httpConfiguration.Formatters.Add(jsonFmter);
 
       //Api configuration
       if (app.ApiConfiguration.ControllerInfos.Count > 0)
-        ConfigureSlimApi(httpConfiguration, app);
+        ConfigureSlimApiControllers(httpConfiguration, app);
     }
 
-    public static void ConfigureSlimApi(HttpConfiguration config, EntityApp app) {
+    public static void ConfigureSlimApiControllers(HttpConfiguration config, EntityApp app) {
       var actionSelector = new SlimApiActionSelector(app.ApiConfiguration);
       config.Services.Replace(typeof(System.Web.Http.Controllers.IHttpActionSelector), actionSelector);
       var prov = new SlimApiDirectRouteProvider();

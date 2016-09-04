@@ -64,7 +64,7 @@ namespace Vita.Modules.OAuthClient {
       }
     }
 
-    public async Task<Guid> RetrieveAccessToken(OperationContext context, Guid flowId) {
+    public async Task<Guid> RetrieveAccessTokenAsync(OperationContext context, Guid flowId) {
       var session = context.OpenSystemSession();
       var flow = session.GetEntity<IOAuthClientFlow>(flowId);
       Util.Check(flow != null, "OAuth client flow not found, ID: {0}", flowId);
@@ -84,10 +84,8 @@ namespace Vita.Modules.OAuthClient {
       var serverOptions = server.Options;
       // Some servers expect clientId/secret in auth header
       string query;
-      if(serverOptions.IsSet(OAuthServerOptions.RequestTokenClientInfoInAuthHeader)) {
-        var clientInfo = flow.Account.ClientIdentifier + ":" + clientSecret;
-        var encClientInfo = StringHelper.Base64Encode(clientInfo);
-        apiClient.AddAuthorizationHeader(encClientInfo, "Basic");
+      if(serverOptions.IsSet(OAuthServerOptions.ClientInfoInAuthHeader)) {
+        AddClientInfoHeader(apiClient, flow.Account.ClientIdentifier, clientSecret);
         query = StringHelper.FormatUri(AccessTokenUrlQueryTemplate, flow.AuthorizationCode, flow.RedirectUrl);
       } else {
         //others - clientId/secret in URL
@@ -132,7 +130,7 @@ namespace Vita.Modules.OAuthClient {
       return cnt;
     }
 
-    public async Task<bool> RefreshAccessToken(OperationContext context, Guid tokenId) {
+    public async Task<bool> RefreshAccessTokenAsync(OperationContext context, Guid tokenId) {
       var session = context.OpenSystemSession();
       var token = session.GetEntity<IOAuthAccessToken>(tokenId);
       Util.Check(token != null, "Token not found, ID: {0}.", tokenId); 
@@ -145,10 +143,8 @@ namespace Vita.Modules.OAuthClient {
       var strRtoken = token.RefreshToken.DecryptString(Settings.EncryptionChannel);
       // Some servers expect clientId/secret in auth header
       string query;
-      if(serverOptions.IsSet(OAuthServerOptions.RequestTokenClientInfoInAuthHeader)) {
-        var clientInfo = acct.ClientIdentifier + ":" + clientSecret;
-        var encClientInfo = StringHelper.Base64Encode(clientInfo);
-        apiClient.AddAuthorizationHeader(encClientInfo, "Basic");
+      if(serverOptions.IsSet(OAuthServerOptions.ClientInfoInAuthHeader)) {
+        AddClientInfoHeader(apiClient, acct.ClientIdentifier, clientSecret);
         query = StringHelper.FormatUri(RefreshTokenUrlQueryTemplate, strRtoken);
       } else {
         //others - clientId/secret in URL
@@ -175,13 +171,61 @@ namespace Vita.Modules.OAuthClient {
       return await Task.FromResult(true); 
     }
 
+    public async Task RevokeAccessTokenAsync(OperationContext context, Guid tokenId) {
+      var session = context.OpenSystemSession();
+      var token = session.GetEntity<IOAuthAccessToken>(tokenId);
+      Util.Check(token != null, "Token not found, ID: {0}.", tokenId);
+      if(token.Status != OAuthTokenStatus.Active)
+        return;
+      var revokeUrl = token.Account.Server.TokenRevokeUrl;
+      if(string.IsNullOrWhiteSpace(revokeUrl))
+        return; 
+      var acct = token.Account;
+      var apiClient = new WebApiClient(revokeUrl, ClientOptions.Default,
+          badRequestContentType: typeof(string));
+      var clientSecret = acct.ClientSecret.DecryptString(this.Settings.EncryptionChannel);
+      var strToken = token.AccessToken.DecryptString(Settings.EncryptionChannel);
+      var server = acct.Server;
+      string query = StringHelper.FormatUri("?token={0}", strToken);
+      // Some servers expect clientId/secret in auth header or in URL
+      if (server.Options.IsSet(OAuthServerOptions.RevokeNeedsClientInfo)) {
+        if(server.Options.IsSet(OAuthServerOptions.ClientInfoInAuthHeader))
+          AddClientInfoHeader(apiClient, acct.ClientIdentifier, clientSecret);
+        else
+          //others - clientId/secret in URL
+          query += StringHelper.FormatUri("&client_id={0}&client_secret={1}", acct.ClientIdentifier, clientSecret);
+      }
+      //Make a call; standard is POST, but some servers use GET (Google)
+      AccessTokenResponse tokenResp;
+      if(server.Options.IsSet(OAuthServerOptions.RevokeUseGet)) {
+        //GET, no body
+        tokenResp = await apiClient.GetAsync<AccessTokenResponse>(query);
+      } else {
+        var formContent = CreateFormUrlEncodedContent(query);
+        tokenResp = await apiClient.PostAsync<HttpContent, AccessTokenResponse>(formContent, query);
+      }
+      // Update token info
+      session.UpdateStatus(token.Id, OAuthTokenStatus.Revoked);
+    }
+
+
+    //Fitbit is the only one requiring this in auth header: https://dev.fitbit.com/docs/oauth2/#access-token-request
+    private void AddClientInfoHeader(WebApiClient client, string clientId, string clientSecret) {
+      var encClientInfo = StringHelper.Base64Encode(clientId + ":" + clientSecret);
+      client.AddAuthorizationHeader(encClientInfo, "Basic");
+    }
+
     public IOAuthAccessToken GetUserOAuthToken(IEntitySession session, Guid userId, string serverName, string accountName = null) {
       accountName = accountName ?? Settings.DefaultAccountName;
       var context = session.Context;
       var utcNow = context.App.TimeService.UtcNow;
       var accessToken = session.EntitySet<IOAuthAccessToken>()
-          .Where(t => t.Account.Server.Name == serverName && t.UserId == userId && t.ExpiresOn > utcNow)
+          .Where(t => t.Account.Server.Name == serverName && t.UserId == userId && t.Status == OAuthTokenStatus.Active)
           .OrderByDescending(t => t.RetrievedOn).FirstOrDefault();
+      if (accessToken != null && accessToken.ExpiresOn < utcNow) {
+        session.UpdateStatus(accessToken.Id, OAuthTokenStatus.Expired); //update directly in db
+        return null; 
+      }
       return accessToken;
     }
 
@@ -192,7 +236,7 @@ namespace Vita.Modules.OAuthClient {
       client.AddAuthorizationHeader(tokenValue, scheme: token.TokenType.ToString());
     }
 
-    public async Task<TProfile> GetBasicProfile<TProfile>(OperationContext context, Guid tokenId) {
+    public async Task<TProfile> GetBasicProfileAsync<TProfile>(OperationContext context, Guid tokenId) {
       var session = context.OpenSystemSession();
       var token = session.GetEntity<IOAuthAccessToken>(tokenId); 
       Util.Check(token != null, "AccessToken may not be null.");
@@ -206,7 +250,7 @@ namespace Vita.Modules.OAuthClient {
       return profile;
     }
 
-    public async Task<string> GetBasicProfile(OperationContext context, Guid tokenId) {
+    public async Task<string> GetBasicProfileAsync(OperationContext context, Guid tokenId) {
       var session = context.OpenSystemSession();
       var token = session.GetEntity<IOAuthAccessToken>(tokenId);
       Util.Check(token != null, "AccessToken may not be null.");
@@ -220,6 +264,10 @@ namespace Vita.Modules.OAuthClient {
       var reader = new System.IO.StreamReader(respStream);
       var profile = reader.ReadToEnd();
       return profile;
+    }
+
+    public void UpdateTokenStatus(IEntitySession session, Guid tokenId, OAuthTokenStatus status) {
+      session.UpdateStatus(tokenId, status); 
     }
 
     #endregion

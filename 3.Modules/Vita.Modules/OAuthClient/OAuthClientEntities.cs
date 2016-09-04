@@ -9,6 +9,32 @@ using Vita.Modules.EncryptedData;
 
 namespace Vita.Modules.OAuthClient {
 
+  public enum OAuthFlowStatus {
+    Started,
+    Authorized,
+    TokenRetrieved,
+    Error,
+    Expired,
+  }
+
+  public enum OAuthTokenType {
+    Bearer,
+    Basic,
+  }
+
+  /// <summary>Status of OAuth token.</summary>
+  public enum OAuthTokenStatus {
+    /// <summary>Token is active and can be used to access the target server. </summary>
+    Active = 0,
+    /// <summary>Token expired. </summary>
+    Expired, 
+    /// <summary>Token was revoked by OAuth client by calling server API endpoint. </summary>
+    Revoked,
+    /// <summary>The server rejected an access attempt, most likely because the user revoked access permissions
+    /// for the client app at the target server Web site. </summary>
+    Rejected,
+  }
+
   [Flags]
   public enum OAuthServerOptions {
     None = 0,
@@ -19,16 +45,23 @@ namespace Vita.Modules.OAuthClient {
     TokenUseGet = 1 << 8, 
     /// <summary>Access token endpoint expects Authorization header with Basic scheme and Base64-encoded 
     /// string [client_id:clientsecret]. </summary>
-    RequestTokenClientInfoInAuthHeader = 1 << 9, 
+    ClientInfoInAuthHeader = 1 << 9, 
 
     /// <summary>
-    /// Replace IP address 127.0.0.1 with localhost. Useful in some cases for testing (Facebook).
+    /// Replace IP address 127.0.0.1 with localhost. Useful in some cases for testing (Facebook, WindowsLive).
     /// </summary>
     /// <remarks>Most servers do not allow localhost as redirect URI, so we use local IP (127.0.0.1) for testing. 
     /// Facebook does not allow either in allowed Domains, but it does allow specifying localhost as Site URL. 
     /// So with this flag, we replace local IP address with localhost when we test Facebook. 
     /// </remarks>
-    TokenReplaceLocalIpWithLocalHost = 1 << 11, 
+    TokenReplaceLocalIpWithLocalHost = 1 << 11,
+
+    /// <summary>Use GET method for revoke-token endpoint; by default POST is used.</summary>
+    RevokeUseGet = 1 << 12,
+
+    /// <summary>Revoke token endpoint requires client info (id and secret). </summary>
+    RevokeNeedsClientInfo = 1 << 13, 
+
   }
 
 
@@ -51,6 +84,8 @@ namespace Vita.Modules.OAuthClient {
     string TokenRequestUrl { get; set; }
     [Size(100), Nullable]
     string TokenRefreshUrl { get; set; }
+    [Size(100), Nullable]
+    string TokenRevokeUrl { get; set; }
     [Unlimited, Nullable]
     string Scopes { get; set; }
     [Size(100), Nullable]
@@ -75,19 +110,6 @@ namespace Vita.Modules.OAuthClient {
     string ClientIdentifier { get; set; } //client ID is not a secret
     [GrantAccess]
     IEncryptedData ClientSecret { get; set; }
-  }
-
-  public enum OAuthFlowStatus {
-    Started,
-    Authorized,
-    TokenRetrieved,
-    Error,
-    Expired,
-  }
-
-  public enum OAuthTokenType {
-    Bearer,
-    Basic,
   }
 
   [Entity]
@@ -124,6 +146,7 @@ namespace Vita.Modules.OAuthClient {
     Guid Id { get; }
     IOAuthRemoteServerAccount Account { get; set; }
     Guid? UserId { get; set; }
+    OAuthTokenStatus Status { get; set; }
     [GrantAccess]
     IEncryptedData AccessToken { get; set; }
     OAuthTokenType TokenType { get; set; }

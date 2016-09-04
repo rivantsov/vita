@@ -18,6 +18,7 @@ namespace Vita.Modules.OAuthClient {
         "https://login.live.com/oauth20_authorize.srf",
         "https://login.live.com/oauth20_token.srf",
         "https://login.live.com/oauth20_token.srf",  // refresh URL, same as access token URL
+        null, //no revoke URL
         "wl.basic wl.emails wl.photos wl.offline_access wl.signin",
         "https://msdn.microsoft.com/en-us/library/hh243647.aspx",
         "https://apis.live.net/v5.0/me", 
@@ -26,11 +27,12 @@ namespace Vita.Modules.OAuthClient {
       // Google 
       // Specifics: Refresh token is returned only in the first request for access token
       CreateOrUpdateServer(session, "Google",
-          OAuthServerOptions.OpenIdConnect,
+          OAuthServerOptions.OpenIdConnect | OAuthServerOptions.RevokeUseGet,
           "http://www.google.com",
           "https://accounts.google.com/o/oauth2/v2/auth",
           "https://www.googleapis.com/oauth2/v4/token",
           "https://www.googleapis.com/oauth2/v4/token",
+          "https://accounts.google.com/o/oauth2/revoke", //?token={token}", //revoke
           "profile email",
           "https://developers.google.com/identity/protocols/OAuth2WebServer",
           "https://www.googleapis.com/plus/v1/people/me", 
@@ -40,14 +42,16 @@ namespace Vita.Modules.OAuthClient {
       // TODO: Investigage; looks like FB supports id_token (like in OpenIdConnect), but requires some twists 
       // investigate why currently does not return id_token
       CreateOrUpdateServer(session, "Facebook",
-        OAuthServerOptions.TokenUseGet | OAuthServerOptions.OpenIdConnect | OAuthServerOptions.TokenReplaceLocalIpWithLocalHost,
+        OAuthServerOptions.TokenUseGet | OAuthServerOptions.OpenIdConnect 
+            | OAuthServerOptions.TokenReplaceLocalIpWithLocalHost,
         "http://www.facebook.com",
         "https://www.facebook.com/dialog/oauth",
         "https://graph.facebook.com/v2.3/oauth/access_token",
         null,
+        null, // no revoke permissions; FB says you can use 'DELETE /{user-id}/permissions', but it's out of the line of oauth
         "public_profile email",
         "https://developers.facebook.com/docs/facebook-login/manually-build-a-login-flow",
-        "https://graph.facebook.com/v2.5/me", 
+        "https://graph.facebook.com/v2.5/me", //basic profile 
         "id");
 
       // LinkedIn. Specifics: 
@@ -57,7 +61,8 @@ namespace Vita.Modules.OAuthClient {
         "http://www.linkedin.com",
         "https://www.linkedin.com/oauth/v2/authorization",
         "https://www.linkedin.com/oauth/v2/accessToken",
-        null,  
+        null,  //refresh
+        null,  // revoke 
         "r_basicprofile r_emailaddress rw_company_admin w_share",
         "https://developer.linkedin.com/docs/oauth2",
         "https://api.linkedin.com/v1/people/~?format=json", 
@@ -66,11 +71,12 @@ namespace Vita.Modules.OAuthClient {
       // Fitbit. 
       //  1. Access token endpoint requries authorization header which is Base64 encoded 'clientid:clientsecret'
       CreateOrUpdateServer(session, "Fitbit", 
-          OAuthServerOptions.RequestTokenClientInfoInAuthHeader,
+          OAuthServerOptions.ClientInfoInAuthHeader | OAuthServerOptions.RevokeNeedsClientInfo,
           "https://www.fitbit.com",
           "https://www.fitbit.com/oauth2/authorize",
           "https://api.fitbit.com/oauth2/token",
           "https://api.fitbit.com/oauth2/token",  // refresh token
+          "https://api.fitbit.com/oauth2/revoke", // ?token={token}", //revoke, use POST
           "activity heartrate location nutrition profile settings sleep social weight",
           "https://dev.fitbit.com/docs/oauth2/",
           "https://api.fitbit.com/1/user/-/profile.json", 
@@ -83,6 +89,7 @@ namespace Vita.Modules.OAuthClient {
           "https://jawbone.com/auth/oauth2/auth",
           "https://jawbone.com/auth/oauth2/token",
           "https://jawbone.com/auth/oauth2/token",  
+          null, //revoke
           "basic_read extended_read location_read friends_read mood_read mood_write move_read move_write " +
             "sleep_read sleep_write meal_read meal_write weight_read weight_write " +
             "generic_event_read generic_event_write heartrate_read",
@@ -112,8 +119,9 @@ namespace Vita.Modules.OAuthClient {
     }
 
     public static IOAuthRemoteServer CreateOrUpdateServer(IEntitySession session,  string name, OAuthServerOptions options, 
-                    string siteUrl, string authorizationUrl, string tokenRequestUrl, string tokenRefreshUrl, string scopes,
-                    string documentationUrl, string basicProfileUrl, string profileUserIdTag) {
+                    string siteUrl, string authorizationUrl, string tokenRequestUrl, string tokenRefreshUrl,
+                    string tokenRevokeUrl,
+                    string scopes, string documentationUrl, string basicProfileUrl, string profileUserIdTag) {
       IOAuthRemoteServer srv = session.EntitySet<IOAuthRemoteServer>().Where(s => s.Name == name).FirstOrDefault();
       if(srv == null)
         srv = session.NewEntity<IOAuthRemoteServer>();
@@ -123,6 +131,7 @@ namespace Vita.Modules.OAuthClient {
       srv.AuthorizationUrl = authorizationUrl;
       srv.TokenRequestUrl = tokenRequestUrl;
       srv.TokenRefreshUrl = tokenRefreshUrl;
+      srv.TokenRevokeUrl = tokenRevokeUrl;
       srv.Scopes = scopes;
       srv.DocumentationUrl = documentationUrl;
       srv.BasicProfileUrl = basicProfileUrl;

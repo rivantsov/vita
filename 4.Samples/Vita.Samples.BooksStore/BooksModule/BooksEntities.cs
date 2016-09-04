@@ -11,7 +11,7 @@ namespace Vita.Samples.BookStore {
   // Note that Book and Author have Paged attribute - meaning they are paged in database (in stored procedure)
   // Publisher does not have this attribute, we expect it to be a small table. We can still read/query it with 
   // skip/take parameters, but paging is performed on the client: all records are loaded and then code extracts the span of requested records. 
-  [Entity, Paged, OrderBy("Title"), Validate(typeof(BooksModule), "ValidateBook")]
+  [Entity, Paged, OrderBy("Title"), Validate(typeof(BooksModule), nameof(BooksModule.ValidateBook))]
   [Display("{Title}, {Editions}, {Publisher.Name}")]
   [Description("Represents a book.")]
   public interface IBook {

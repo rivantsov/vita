@@ -49,13 +49,13 @@ namespace Vita.Modules.OAuthClient.Api {
       Util.Check(loginService != null, "Login service not found, cannot login.");
       var server = session.GetOAuthServer(serverName);
       Util.Check(server != null, "Server {0} not registered.", server.Name);
-      var tokenId = await service.RetrieveAccessToken(Context, flowId);
+      var tokenId = await service.RetrieveAccessTokenAsync(Context, flowId);
       var token = session.GetEntity<IOAuthAccessToken>(tokenId);
       var oauthStatus = token.ToOAuthStatus(); 
       if (!oauthStatus.Authorized)
         return new LoginResponse() { Status = LoginAttemptStatus.Failed };
       //get basic profile
-      var profile = await service.GetBasicProfile(this.Context, tokenId);
+      var profile = await service.GetBasicProfileAsync(this.Context, tokenId);
       var extUserId = server.ExtractUserId(profile);
       Util.CheckNotEmpty(extUserId, "Failed to extract user ID from profile Json. Profile: {0}", profile);
       var extUser = server.FindUser(extUserId); 

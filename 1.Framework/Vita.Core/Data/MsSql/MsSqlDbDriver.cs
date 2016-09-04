@@ -192,7 +192,8 @@ namespace Vita.Data.MsSql {
       var list = value as System.Collections.IEnumerable;
       var valueType = value.GetType();
       Type elemType;
-      Util.Check(valueType.IsListOfDbPrimitive(out elemType), "Value must list of DB primitives. Value type: {0} ", valueType);
+      Util.Check(valueType.IsListOfDbPrimitive(out elemType),
+        "Value must be list of DB primitives. Value type: {0} ", valueType);
       if(elemType.IsNullableValueType())
         elemType = Nullable.GetUnderlyingType(elemType); 
       bool isEnum = elemType.IsEnum;

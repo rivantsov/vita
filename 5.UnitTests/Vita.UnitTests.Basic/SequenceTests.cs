@@ -60,13 +60,13 @@ namespace Vita.UnitTests.Basic.Sequences {
     [TestMethod]
     public void TestSequences() {
       //Only MS SQL and Postgres support sequences
-      switch (SetupHelper.ServerType) {
+      switch (Startup.ServerType) {
         case Data.Driver.DbServerType.MsSql: case Data.Driver.DbServerType.Postgres: break;
         default: return; 
       }
       _app = new SequenceTestApp();
-      SetupHelper.DropSchemaObjects("seq"); 
-      SetupHelper.ActivateApp(_app);
+      Startup.DropSchemaObjects("seq"); 
+      Startup.ActivateApp(_app);
       var session = _app.OpenSession();
       for(int i = 0; i < 10; i++) {
        var intValue = session.GetSequenceNextValue<int>("seq.IntSequence");

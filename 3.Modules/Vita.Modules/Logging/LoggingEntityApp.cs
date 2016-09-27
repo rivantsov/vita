@@ -25,9 +25,9 @@ namespace Vita.Modules.Logging {
     public readonly IDbUpgradeLogService DbModelChangeLog;
     public readonly IUserSessionService SessionService;
     public readonly IDbInfoService DbInfoService;
-    public readonly IEventLogService EventLogService; 
+    public readonly IEventLogService EventLogService;
+    public readonly IWebClientLogService WebClientLogService;
 
-    public EntityApp MainApp { get; private set; } //owner, 
     private TransactionLogModule _transactionLogModule;
 
     public LoggingEntityApp(string schema = "log", UserSessionSettings sessionSettings = null) : base("LoggingApp", CurrentVersion) {
@@ -42,21 +42,23 @@ namespace Vita.Modules.Logging {
       DbModelChangeLog = new DbUpgradeLogModule(area);
       SessionService = new UserSessionModule(area, sessionSettings);
       DbInfoService = new DbInfoModule(area);
-      EventLogService = new EventLogModule(area); 
+      EventLogService = new EventLogModule(area);
+      WebClientLogService = new WebClientLogModule(area); 
     }
 
     public void LinkTo(EntityApp mainApp) {
-      MainApp = mainApp; 
-      MainApp.LinkedApps.Add(this);
-      MainApp.ImportServices(this, typeof(IErrorLogService), typeof(IOperationLogService), typeof(IIncidentLogService),
+      mainApp.LinkedApps.Add(this);
+      mainApp.ImportServices(this, typeof(IErrorLogService), typeof(IOperationLogService), typeof(IIncidentLogService),
                                    typeof(ITransactionLogService), typeof(IWebCallLogService), typeof(INotificationLogService), 
                                    typeof(ILoginLogService), typeof(IDbUpgradeLogService), typeof(IUserSessionService), 
-                                   typeof(IEventLogService)
+                                   typeof(IEventLogService), typeof(IWebClientLogService)
                                    );
-      _transactionLogModule.TargetApp = MainApp;
+      _transactionLogModule.TargetApp = mainApp;
       //Replace time service with the instance from the main app
-      base.TimeService = MainApp.TimeService;
-      this.ImportServices(MainApp, typeof(ITimeService));
+      base.TimeService = mainApp.TimeService;
+      if(this.LogPath == null && !string.IsNullOrWhiteSpace(mainApp.LogPath))
+        this.LogPath = mainApp.LogPath; 
+      this.ImportServices(mainApp, typeof(ITimeService));
     }
 
     public IDisposable Suspend() {

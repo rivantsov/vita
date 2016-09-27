@@ -44,18 +44,24 @@ namespace Vita.Modules.WebClient {
         case HttpStatusCode.BadRequest:
           if(BadRequestContentType == typeof(string))
             return await ReadErrorString(response);
-          var errors = await Serializer.DeserializeAsync(BadRequestContentType, response.Content);
+          var serErrors = await Serializer.DeserializeAsync(BadRequestContentType, response.Content);
           if (BadRequestContentType == typeof(List<ClientFault>)) {
-            var faults = (List<ClientFault>)errors;
+            var faults = (List<ClientFault>)serErrors.Object;
             return new ClientFaultException(faults);
           } else
-            return new BadRequestException(errors);
+            return new BadRequestException(serErrors.Object);
         default:
           if(ServerErrorContentType == typeof(string))
             return await ReadErrorString(response);
-          //deserialize
-          var err = await Serializer.DeserializeAsync(ServerErrorContentType, response.Content);
-          return new ApiException("Server error: " + err.ToString(), response.StatusCode, err);
+          //deserialize custom object
+          try {
+            var serErr = await Serializer.DeserializeAsync(ServerErrorContentType, response.Content);
+            return new ApiException("Server error: " + serErr.Raw, response.StatusCode, serErr.Object);
+          } catch(Exception ex) {
+            var remoteErr = await response.Content.SafeReadContent();
+            var msg = StringHelper.SafeFormat("Remote server error: {0}\r\n !!! Failed to deserialize response into error object, exc: {1}", remoteErr, ex.ToLogString()); 
+            return new ApiException(msg, response.StatusCode, remoteErr);
+          }
       }//switch 
     }
 

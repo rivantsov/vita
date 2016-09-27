@@ -21,17 +21,17 @@ namespace Vita.UnitTests.Extended {
 
     [TestInitialize]
     public void TestInit() {
-      SetupHelper.InitApp();
+      Startup.InitApp();
     }
 
     [TestCleanup]
     public void TearDown() {
-      SetupHelper.TearDown();
+      Startup.TearDown();
     }
   
     [TestMethod]
     public void TestLinqSearch() {
-      var app = SetupHelper.BooksApp;
+      var app = Startup.BooksApp;
       var session = app.OpenSession();
       //We use catalog controller's SearchBooks method to invoke search method. 
       // This is also a demo of using Api controllers outside Web server environment

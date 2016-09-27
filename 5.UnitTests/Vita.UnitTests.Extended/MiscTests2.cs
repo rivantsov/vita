@@ -19,7 +19,7 @@ namespace Vita.UnitTests.Extended {
 
     [TestMethod]
     public void TestBugFixes() {
-      var app = SetupHelper.BooksApp;
+      var app = Startup.BooksApp;
       var session = app.OpenSession();
       session.EnableCache(false);
 
@@ -53,7 +53,7 @@ namespace Vita.UnitTests.Extended {
       Assert.IsTrue(booksByAllPubs.Count > 0, "Expected all books.");
 
       //bug: entity list property based on nullable reference (property user.EditedBooks, with book.Editor nullable property)
-      if(SetupHelper.ServerType != DbServerType.SqlCe) { //SQL CE does not allow subqueries
+      if(Startup.ServerType != DbServerType.SqlCe) { //SQL CE does not allow subqueries
         var qEditorsOfProgBooks = session.EntitySet<IUser>().Where(u => u.BooksEdited.Any(b => b.Category == BookCategory.Programming));
         var editorsOfProgBooks = qEditorsOfProgBooks.ToList();
       }
@@ -73,7 +73,7 @@ namespace Vita.UnitTests.Extended {
       Assert.IsTrue(hasFiction, "Expected hasFiction to be true");
 
       //Test All(); SQL CE does not support subqueries
-      if(SetupHelper.ServerType != DbServerType.SqlCe) {
+      if(Startup.ServerType != DbServerType.SqlCe) {
         session = app.OpenSession();
         session.EnableCache(false); //don't mess with cache here
         var books = session.EntitySet<IBook>().Where(b => b.Authors.All(a => a.LastName != null)).ToArray();
@@ -86,7 +86,7 @@ namespace Vita.UnitTests.Extended {
       Assert.IsNotNull(bkNotPublished, "Failed to find not published book.");
 
       // Test that using entity-type parameter with null value works
-      if(SetupHelper.ServerType != DbServerType.SqlCe) {
+      if(Startup.ServerType != DbServerType.SqlCe) {
         // SQL CE does not accept expressions like "@P1 IS NULL"
         IUser nullUser = null;
         var authorsNonUsers = session.EntitySet<IAuthor>().Where(a => a.User == nullUser).ToList();
@@ -101,7 +101,7 @@ namespace Vita.UnitTests.Extended {
       Assert.IsTrue(lstBooksNotPublished.Count > 0, "Failed to find not published book.");
 
       //Testing that SQLite DbCommand is disconnected - this releases server-side resources
-      if(SetupHelper.ServerType == DbServerType.Sqlite) {
+      if(Startup.ServerType == DbServerType.Sqlite) {
         app.Flush(); //force flushing all logs, so no more background saves
         session = app.OpenSession();
         var fileName = "VitaBooksSQLite.db";
@@ -128,12 +128,12 @@ namespace Vita.UnitTests.Extended {
     [TestMethod]
     public void TestDbViews() {
       //SQL CE does not support views
-      if(SetupHelper.ServerType == DbServerType.SqlCe)
+      if(Startup.ServerType == DbServerType.SqlCe)
         return;
-      var app = SetupHelper.BooksApp;
+      var app = Startup.BooksApp;
       var session = app.OpenSession();
       session.EnableCache(false);
-      if(SetupHelper.ServerType == DbServerType.Postgres) {
+      if(Startup.ServerType == DbServerType.Postgres) {
         //Postgres requires to manually refresh materialized views
         session.ExecuteNonQuery(@"Refresh materialized view ""books"".""vBookSales"";");
         //session.ExecuteNonQuery(@"Refresh materialized view ""books"".""vAuthorUser"";");
@@ -164,7 +164,7 @@ namespace Vita.UnitTests.Extended {
 
     [TestMethod]
     public void TestDbModelCompare() {
-      var app = SetupHelper.BooksApp;
+      var app = Startup.BooksApp;
       //Once we started tests, db model is updated; now if we compare db model with entity model, there should be no changes
       // We test here how well the DbModelComparer works - it should not signal any false positives (find differences when there are none)
       var ds = app.GetDefaultDataSource();

@@ -23,12 +23,12 @@ namespace Vita.UnitTests.Basic {
         // init action for server type; must return true to run the tests
         servType => {
           Console.WriteLine("SERVER TYPE: " + servType);
-          SetupHelper.Reset(servType);
+          Startup.Reset(servType);
           // Check if server is available
           string error;
-          if (ToolHelper.TestConnection(SetupHelper.Driver, SetupHelper.ConnectionString, out error)) 
+          if (ToolHelper.TestConnection(Startup.Driver, Startup.ConnectionString, out error)) 
             return true; 
-          runner.ConsoleWriteRed("  Connection test failed for connection string: {0}, \r\n   Error: {1}", SetupHelper.ConnectionString, error);
+          runner.ConsoleWriteRed("  Connection test failed for connection string: {0}, \r\n   Error: {1}", Startup.ConnectionString, error);
           skipServerCount++;
           return false; 
         });

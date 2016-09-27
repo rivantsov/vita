@@ -114,15 +114,15 @@ namespace Vita.UnitTests.Basic.MiscTests {
     EntityApp _app;
 
     public void DeleteAll() {
-      SetupHelper.DeleteAll(_app, typeof(IVehicle), typeof(IDriver)); //, typeof(IStateProvince));
+      Startup.DeleteAll(_app, typeof(IVehicle), typeof(IDriver)); //, typeof(IStateProvince));
     }
 
     [TestInitialize]
     public void Init() {
       if(_app == null) {
-        SetupHelper.DropSchemaObjects("misc");
+        Startup.DropSchemaObjects("misc");
         _app = new MiscTestsEntityApp();
-        SetupHelper.ActivateApp(_app);
+        Startup.ActivateApp(_app);
       }
     }
 
@@ -235,7 +235,7 @@ namespace Vita.UnitTests.Basic.MiscTests {
     public void TestMultipleReadWrites() {
       var timeService = _app.TimeService; 
       //temporarily disable for SQL CE, takes too long for unknown reason and fails
-      if (SetupHelper.ServerType == DbServerType.SqlCe)
+      if (Startup.ServerType == DbServerType.SqlCe)
         return; 
       DeleteAll();
       //We test here that multiple sessions/selects don't bring down the system - that connections are opened/closed appropriately 
@@ -264,7 +264,7 @@ namespace Vita.UnitTests.Basic.MiscTests {
       // the test runs at 6500 ms instead of 450ms
       // TODO: investigate SQL CE slow behavior
       int Timeout = 5000; //5 sec for my laptop
-      switch(SetupHelper.ServerType) {
+      switch(Startup.ServerType) {
         case DbServerType.Sqlite:
           Timeout = 10000; //10 sec, these 2 are a bit slower
           break;
@@ -279,7 +279,7 @@ namespace Vita.UnitTests.Basic.MiscTests {
       IEntitySession session;
       object indexAlias, memberNames;
       DataAccessException dex;
-      var servType = SetupHelper.ServerType;
+      var servType = Startup.ServerType;
 
       // Try 2 cases
       // 1. Submit 2 drivers with the same license in one update

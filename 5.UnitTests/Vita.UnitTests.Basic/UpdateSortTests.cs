@@ -75,8 +75,8 @@ namespace Vita.UnitTests.Basic {
     [TestInitialize]
     public void Init() {
       _app = new UpdateSortEntityApp();
-      SetupHelper.DropSchemaObjects("usort");
-      SetupHelper.ActivateApp(_app);
+      Startup.DropSchemaObjects("usort");
+      Startup.ActivateApp(_app);
     }
 
     [TestCleanup]

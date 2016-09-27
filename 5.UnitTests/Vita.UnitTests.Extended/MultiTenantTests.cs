@@ -36,23 +36,23 @@ namespace Vita.UnitTests.Extended {
 
     [TestInitialize]
     public void TestInit() {
-      SetupHelper.InitApp();
+      Startup.InitApp();
     }
 
     [TestCleanup]
     public void TearDown() {
-      SetupHelper.TearDown(); 
+      Startup.TearDown(); 
     }
 
     [TestMethod]
     public void TestMultiTenant() {
       // Multi-tenant test is available only for MS SQL Server.
-      if (SetupHelper.ServerType != DbServerType.MsSql)
+      if (Startup.ServerType != DbServerType.MsSql)
         return;
       const string Books2 = "VitaBooks2";
-      var app = SetupHelper.BooksApp; 
-      var connString2 = SetupHelper.ConnectionString.Replace("VitaBooks", Books2);
-      var mainDbStt = SetupHelper.DbSettings; 
+      var app = Startup.BooksApp; 
+      var connString2 = Startup.ConnectionString.Replace("VitaBooks", Books2);
+      var mainDbStt = Startup.DbSettings; 
       var dbSettings2 = new DbSettings(mainDbStt.ModelConfig,  connString2, upgradeMode: DbUpgradeMode.Always, dataSourceName: Books2);
       Vita.UnitTests.Common.TestUtil.DropSchemaObjects(dbSettings2);
       app.ConnectTo(dbSettings2);

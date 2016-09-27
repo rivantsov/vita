@@ -186,7 +186,7 @@ namespace Vita.UnitTests.Basic {
           var area = AddArea("types");
           var mainModule = new EntityModule(area, "MainModule");
           mainModule.RegisterEntities(typeof(IDataTypesEntity));
-          switch(SetupHelper.ServerType) {
+          switch(Startup.ServerType) {
             case DbServerType.MsSql: 
               mainModule.RegisterEntities(typeof(IMsSqlDataTypesEntity), typeof(IMsSqlRowVersionedProduct));
               break; 
@@ -200,9 +200,9 @@ namespace Vita.UnitTests.Basic {
 
       [TestInitialize]
       public void Init() {
-        SetupHelper.DropSchemaObjects("types");
+        Startup.DropSchemaObjects("types");
         _app = new DataTypesTestEntityApp();
-        SetupHelper.ActivateApp(_app);
+        Startup.ActivateApp(_app);
       }
       [TestCleanup]
       public void TestCleanup() {
@@ -274,7 +274,7 @@ namespace Vita.UnitTests.Basic {
 
     [TestMethod]
     public void TestDataTypesProviderSpecific() {
-      switch(SetupHelper.ServerType) {
+      switch(Startup.ServerType) {
         case DbServerType.MsSql: 
           TestMsSqlTypes();
           TestMsSqlRowVersion(); 
@@ -283,11 +283,11 @@ namespace Vita.UnitTests.Basic {
     }
 
     public void TestMsSqlTypes() {
-      if (SetupHelper.ServerType != DbServerType.MsSql)
+      if (Startup.ServerType != DbServerType.MsSql)
         return; 
       // Verify data types
       var db = _app.GetDefaultDatabase();
-      var loader = SetupHelper.Driver.CreateDbModelLoader(db.Settings, null);
+      var loader = Startup.Driver.CreateDbModelLoader(db.Settings, null);
       var dtColumns = loader.GetColumns();
       CheckDataType(dtColumns, "CharNProp", "char", 10);
       CheckDataType(dtColumns, "NCharNProp", "nchar", 10);
@@ -394,7 +394,7 @@ namespace Vita.UnitTests.Basic {
 
     public void TestMsSqlRowVersion() {
       //RowVersion is not supported for SQL CE
-      if(SetupHelper.ServerType != DbServerType.MsSql)
+      if(Startup.ServerType != DbServerType.MsSql)
         return;
       var session = _app.OpenSession();
       var prod = session.NewEntity<IMsSqlRowVersionedProduct>();
@@ -443,7 +443,7 @@ namespace Vita.UnitTests.Basic {
     //Helper methods to compare 
     private bool Equal(DateTime x, DateTime y) {
       int precMs = 10;
-      if(SetupHelper.ServerType == DbServerType.MySql)
+      if(Startup.ServerType == DbServerType.MySql)
         precMs = 1000;
       return y > x.AddMilliseconds(-precMs) && y < x.AddMilliseconds(precMs);
     }

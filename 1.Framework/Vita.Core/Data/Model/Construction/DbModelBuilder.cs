@@ -343,17 +343,32 @@ namespace Vita.Data.Model {
     private void SetupOrderBy() {
       foreach (var table in _dbModel.Tables) {
         var orderBy = table.Entity.DefaultOrderBy;
-        if (orderBy == null) continue; 
-          table.DefaultOrderBy = ConstructOrderBy(table);
+        if (orderBy != null) 
+          table.DefaultOrderBy = ConstructOrderBy(orderBy, table);
+        foreach(var key in table.Keys)
+          // some keys do not have entity key (indexes)
+          if (key.EntityKey != null && key.EntityKey.OrderByForSelect != null) {
+            key.OrderByForSelect = ConstructOrderBy(key.EntityKey.OrderByForSelect, table); 
+          }
       }//foreach 
       CheckErrors(); 
     }//method
 
-    private IList<DbKeyColumnInfo> ConstructOrderBy(DbTableInfo table) {
+    private IList<DbKeyColumnInfo> ConstructOrderBy(IList<EntityKeyMemberInfo> keyMembers, DbTableInfo table) {
+      if(keyMembers == null || keyMembers.Count == 0)
+        return null; 
       var orderByList = new List<DbKeyColumnInfo>(); 
       var ent = table.Entity;
-      foreach (var keyMember in ent.DefaultOrderBy) {
+      foreach (var keyMember in keyMembers) {
         var col = table.Columns.FirstOrDefault(c=>c.Member == keyMember.Member); 
+        if (col == null) {
+          // This might happen in OrderBy on many-to-many list, when we order by member in target table 
+          // ex: Author.Books, order by book.PublishedOn; in this case primary table is link table IBookAuthor;
+          // otherTbl is IBook
+          var otherTbl = _dbModel.GetTable(keyMember.Member.Entity.EntityType); 
+          if (otherTbl != null)
+            col = otherTbl.Columns.FirstOrDefault(c => c.Member == keyMember.Member);
+        }
         if (col == null)
           LogError("Failed to build ORDER BY list for table {0}: cannot find column for member {1}.", table.TableName, keyMember.Member.MemberName);
         var dbKeyColumn = new DbKeyColumnInfo(col, keyMember);

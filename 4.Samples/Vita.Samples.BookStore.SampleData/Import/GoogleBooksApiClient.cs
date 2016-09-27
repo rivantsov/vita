@@ -4,7 +4,9 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+
 using Vita.Common;
+using Vita.Entities;
 using Vita.Modules.WebClient;
 using Vita.Modules.WebClient.Sync;
 
@@ -15,8 +17,9 @@ namespace Vita.Samples.BookStore.SampleData.Import {
     const string GoogleBooksUrl = "https://www.googleapis.com/books/v1";
     public WebApiClient ApiClient;
 
-    public GoogleBooksApiClient() {
-      ApiClient = new WebApiClient(GoogleBooksUrl, ClientOptions.Default | ClientOptions.CamelCaseNames, Entities.Web.ApiNameMapping.Default, typeof(GoogleBadRequestResponse));
+    public GoogleBooksApiClient(OperationContext context) {
+      ApiClient = new WebApiClient(context, GoogleBooksUrl, ClientOptions.Default, nameMapping: Entities.Web.ApiNameMapping.CamelCase, 
+          badRequestContentType: typeof(GoogleBadRequestResponse));
     }
 
     public VolumeSet GetVolumes(string keywords, int skip = 0, int take = 40) {

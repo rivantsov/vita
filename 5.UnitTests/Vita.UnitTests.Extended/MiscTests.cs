@@ -20,11 +20,11 @@ namespace Vita.UnitTests.Extended {
 
     [TestInitialize]
     public void TestInit() {
-      SetupHelper.InitApp();
+      Startup.InitApp();
     }
     [TestCleanup]
     public void TearDown() {
-      SetupHelper.TearDown(); 
+      Startup.TearDown(); 
     }
 
     // Not exactly a test, just generates a few authenticator passcodes for current time. 
@@ -47,7 +47,7 @@ namespace Vita.UnitTests.Extended {
 
     [TestMethod]
     public void TestValidation() {
-      var app = SetupHelper.BooksApp; 
+      var app = Startup.BooksApp; 
       var session = app.OpenSession();
       // Entity validation: trying to save entities with errors -----------------------------------------
       var invalidAuthor = session.NewAuthor("First", 
@@ -64,7 +64,7 @@ namespace Vita.UnitTests.Extended {
 
     [TestMethod]
     public void TestCanDelete() {
-      var app = SetupHelper.BooksApp;
+      var app = Startup.BooksApp;
       var session = app.OpenSession();
 
       // create some book to delete
@@ -104,7 +104,7 @@ namespace Vita.UnitTests.Extended {
 
       //Bug fix: CanDelete blows up in secure session
       var lindaTheEditor = session.EntitySet<IUser>().First(u => u.UserName == "Linda").ToUserInfo();
-      var opContext = new OperationContext(SetupHelper.BooksApp, lindaTheEditor);
+      var opContext = new OperationContext(Startup.BooksApp, lindaTheEditor);
       var secSession = opContext.OpenSecureSession();
       msPub = secSession.EntitySet<IPublisher>().Single(p => p.Name.StartsWith("MS"));
       canDelete = secSession.CanDeleteEntity(msPub, out blockingEntities);
@@ -114,9 +114,9 @@ namespace Vita.UnitTests.Extended {
 
     [TestMethod]
     public void TestEntityCache() {
-      if (!SetupHelper.CacheEnabled)
+      if (!Startup.CacheEnabled)
         return;
-      var app = SetupHelper.BooksApp;
+      var app = Startup.BooksApp;
       IEntitySession session; 
       // Books catalog (books, authors, publishers) is kept in FULL entity cache - entire tables are held in memory
       // Book orders, order lines are cached in sparse cache - only single records are kept for limited time (30 seconds).
@@ -171,7 +171,7 @@ namespace Vita.UnitTests.Extended {
     [TestMethod]
     public void TestEntityToString() {
       // Entity.ToString() is determined by Display attribute
-      var session = SetupHelper.BooksApp.OpenSession();
+      var session = Startup.BooksApp.OpenSession();
 
       var johnSharp = session.EntitySet<IAuthor>().First(u => u.LastName == "Sharp");
       Assert.AreEqual("Sharp, John", johnSharp.ToString());
@@ -189,8 +189,8 @@ namespace Vita.UnitTests.Extended {
 
     [TestMethod]
     public void TestPasswordStrengthChecker() {
-      var app = SetupHelper.BooksApp;
-      var loginStt = SetupHelper.BooksApp.GetConfig<LoginModuleSettings>(); 
+      var app = Startup.BooksApp;
+      var loginStt = Startup.BooksApp.GetConfig<LoginModuleSettings>(); 
       var checker = loginStt.PasswordChecker;
 
       // Basics
@@ -206,7 +206,7 @@ namespace Vita.UnitTests.Extended {
 
     [TestMethod]
     public void TestGetEntitiesByIdArray() {
-      var app = SetupHelper.BooksApp;
+      var app = Startup.BooksApp;
       var session = app.OpenSession();
       // Thread.Sleep(100); //to let the cache reload
       // disable cache just for testing; in general it should work in cache and in db

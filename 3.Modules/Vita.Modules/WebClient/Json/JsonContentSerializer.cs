@@ -46,25 +46,31 @@ namespace Vita.Modules.WebClient.Json {
       get { return _mediaTypes; }
     } IList<string> _mediaTypes = new List<string>(); 
 
-    public async Task<object> DeserializeAsync(Type type, HttpContent content) {
+    public async Task<SerializedContent> DeserializeAsync(Type type, HttpContent content) {
       HttpContentHeaders headers = content == null ? null : content.Headers;
       // If content length is 0 then return default value for this type
       if (headers != null) {
         if (headers.ContentLength == 0)
-          return ReflectionHelper.GetDefaultValue(type);
+          return new SerializedContent() { Object = ReflectionHelper.GetDefaultValue(type), Content = content };
         var mediaType = headers.ContentType.MediaType;
         Util.Check(_mediaTypes.Contains(mediaType), "JsonContentSerializer: cannot deserialize response body with content type {0}.", mediaType);
       }
       //Get stream
       var stream = await content.ReadAsStreamAsync();
+      //read raw data
+      var reader = new StreamReader(stream);
+      var raw = reader.ReadToEnd();
+      //deserialize
+      stream.Position = 0; 
       Encoding effectiveEncoding = SelectCharacterEncoding(headers);
       using (JsonTextReader jsonTextReader = new JsonTextReader(new StreamReader(stream, effectiveEncoding)) 
            { CloseInput = false, MaxDepth = _maxDepth }) {
-        return JsonSerializer.Deserialize(jsonTextReader, type);
+        var obj = JsonSerializer.Deserialize(jsonTextReader, type);
+        return new SerializedContent() { Object = obj, Content = content, Raw = raw };
       }
     }
 
-    public StreamContent Serialize(object value) {
+    public async Task<SerializedContent> SerializeAsync(object value) {
       var stream = new MemoryStream();
       var effectiveEncoding = SupportedEncodings[0];
       if (value != null) {
@@ -75,11 +81,16 @@ namespace Vita.Modules.WebClient.Json {
           jsonTextWriter.Flush();
         }
       }
+      //Get raw content
       stream.Position = 0;
-      var content = new StreamContent(stream);
+      var reader = new StreamReader(stream);
+      var raw = reader.ReadToEnd();
+      //create httpContent
+      var content = new StringContent(raw);
       content.Headers.ContentType = new MediaTypeHeaderValue(JsonMediaType);
       content.Headers.ContentType.CharSet = effectiveEncoding.WebName;
-      return content; 
+      var serCont = new SerializedContent() { Object = value, Raw = raw, Content = content };
+      return await Task.FromResult(serCont); 
     }
 
 

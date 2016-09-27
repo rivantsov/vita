@@ -242,7 +242,9 @@ namespace Vita.Data.Model {
     public string Filter;
     public EntityKeyInfo EntityKey;
     //used only when loading schema from database and finding a foreign key with target not PK, but a random set of fields
-    public bool NotSupported; 
+    public bool NotSupported;
+    // set from [OrderBy] attribute on list property in parent/target entity
+    public IList<DbKeyColumnInfo> OrderByForSelect;
 
     //Used in analyzing changes. In old model, points to the object in new model, and vice versa
     public DbKeyInfo Peer;

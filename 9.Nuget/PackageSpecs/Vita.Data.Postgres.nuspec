@@ -5,8 +5,8 @@
     <version>$version$</version>
     <authors>Roman Ivantsov</authors>
     <owners>Roman Ivantsov</owners>
-    <licenseUrl>http://vita.codeplex.com/license</licenseUrl>
-    <projectUrl>http://vita.codeplex.com</projectUrl>
+    <projectUrl>https://github.com/rivantsov/vita</projectUrl>
+    <licenseUrl>https://github.com/rivantsov/vita/blob/master/LICENSE</licenseUrl>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
     <description>VITA ORM driver for PostgreSql. </description>
     <releaseNotes></releaseNotes>

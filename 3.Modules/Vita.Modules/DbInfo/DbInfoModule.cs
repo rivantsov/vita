@@ -35,7 +35,7 @@ namespace Vita.Modules.DbInfo {
       var dbModuleInfoTableName = settings.Driver.GetFullName(thisSchema, "DbModuleInfo");
       try {
         var dbInfo = new DbVersionInfo();
-        var sql = string.Format("SELECT * FROM {0};", dbInfoTableName);
+        var sql = settings.Driver.GetDirectSelectAllSql(thisSchema, "DbInfo"); 
         var dt = loader.ExecuteSelect(sql); 
         var appRow = dt.FindRow("AppName", appName);
         if (appRow != null) {
@@ -51,7 +51,7 @@ namespace Vita.Modules.DbInfo {
           }
         } //if appRow
         //Read modules
-        sql = string.Format("SELECT * FROM {0};", dbModuleInfoTableName);
+        sql = settings.Driver.GetDirectSelectAllSql(thisSchema, "DbModuleInfo");
         dt = loader.ExecuteSelect(sql); 
         foreach(DbRow row in dt.Rows) {
           var moduleName = row.GetAsString("ModuleName");
@@ -80,9 +80,10 @@ namespace Vita.Modules.DbInfo {
         var app = db.DbModel.EntityApp;
         var session = App.OpenSystemSession();
         // Disable stored procs and disable batch mode
-        session.DisableStoredProcs();
+        // session.DisableStoredProcs();
         session.DisableBatchMode();
-        var ent = session.GetEntities<IDbInfo>(take: 1).FirstOrDefault(e => e.AppName == app.AppName);
+        // important - should use EntitySet here; otherwise MySql fails
+        var ent = session.EntitySet<IDbInfo>().FirstOrDefault(e => e.AppName == app.AppName);
         if(ent == null) {
           ent = session.NewEntity<IDbInfo>();
           ent.Version = app.Version.ToString();
@@ -108,10 +109,10 @@ namespace Vita.Modules.DbInfo {
       }
     }
 
-    private string SerializeValues(DbVersionInfo version) {
-      if (version.Values == null || version.Values.Count == 0)
+    private string SerializeValues(DbVersionInfo versionInfo) {
+      if (versionInfo.Values == null || versionInfo.Values.Count == 0)
         return null;
-      return string.Join(Environment.NewLine, version.Values.Select(de => de.Key + "=" + de.Value));
+      return string.Join(Environment.NewLine, versionInfo.Values.Select(de => de.Key + "=" + de.Value));
     }
 
     private void DeserializeValues(DbVersionInfo version, string str) {
@@ -129,7 +130,8 @@ namespace Vita.Modules.DbInfo {
 
 
     private void SaveModulesInfo(IEntitySession session, DbVersionInfo dbVersion) {
-      var moduleRecs = session.GetEntities<IDbModuleInfo>(take: 1000);
+      // important - should use EntitySet here; otherwise MySql fails
+      var moduleRecs = session.EntitySet<IDbModuleInfo>().ToList();
       foreach (var mi in dbVersion.Modules) {
         var mrec = moduleRecs.FirstOrDefault(r => r.ModuleName == mi.ModuleName && r.Schema == mi.Schema);
         if (mrec == null) {

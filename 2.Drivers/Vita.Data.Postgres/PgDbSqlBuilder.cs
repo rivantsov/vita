@@ -38,7 +38,7 @@ LIMIT {3}__maxRows;";
       //Build column list
       var outColumns = table.Columns.GetSelectable();
       var strColumns = outColumns.GetSqlNameList();
-      string strOrderBy = (table.DefaultOrderBy == null) ? "ORDER BY (SELECT 1)" : BuildOrderBy(table.DefaultOrderBy);
+      string strOrderBy = (table.DefaultOrderBy == null) ? "ORDER BY (SELECT 1)" : BuildOrderBy(table, table.DefaultOrderBy);
       var prmPrefix = GetParameterPrefix();
       var sql = string.Format(SqlSelectAllPaged, strColumns, table.FullName, strOrderBy, prmPrefix);
       var cmdName = ModelConfig.NamingPolicy.ConstructDbCommandName(entityCommand, table.TableName, "SelectAllPaged");
@@ -71,7 +71,7 @@ SELECT {0}
       if (dbKey.KeyType == KeyType.PrimaryKey)
         orderByExpr = null;
       else
-        orderByExpr = BuildOrderBy(table.DefaultOrderBy);
+        orderByExpr = BuildOrderBy(table, table.DefaultOrderBy);
       var sql = string.Format(SqlSelectByFkTemplate, strColumns, table.FullName, whereExpr, orderByExpr);
       //Damn postgres reformats the SQL in stored proc body and this screws up comparison; so we are careful here
       sql = sql.Trim() + ";";

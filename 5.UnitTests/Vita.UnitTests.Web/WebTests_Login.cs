@@ -28,7 +28,7 @@ namespace Vita.UnitTests.Web {
 
     [TestMethod]
     public void TestLogin() {
-      var client = SetupHelper.Client;
+      var client = Startup.Client;
       var loginUrl = "api/login";
 
       // try bad credentials
@@ -43,7 +43,7 @@ namespace Vita.UnitTests.Web {
 
     [TestMethod]
     public void TestSignup() {
-      var client = SetupHelper.Client;
+      var client = Startup.Client;
       //bad signup attempts
       var badSignup = new UserSignup() { UserName = "dora", Password = "abcefg", DisplayName = "Anonymous" }; //should get 'username is already used'
       var faultExc = TestUtil.ExpectClientFault(() => client.ExecutePost<UserSignup, User>(badSignup, "api/signup"));
@@ -63,7 +63,7 @@ namespace Vita.UnitTests.Web {
     }
     [TestMethod]
     public void TestLoginAdministration() {
-      var client = SetupHelper.Client;
+      var client = Startup.Client;
 
       // Test authorization - access to login admin API controller is allowed only to administrators
       // Dora is not admin
@@ -104,7 +104,7 @@ namespace Vita.UnitTests.Web {
       Assert.IsTrue(tempPwd.ExpiresHours > 0, "Expected expiration hours > 0.");
       // System will email Cartman with temp password, automatically
 
-      var pwdEmail = SetupHelper.GetLastMessageTo(cartmanEmail);
+      var pwdEmail = Startup.GetLastMessageTo(cartmanEmail);
       Assert.IsNotNull(pwdEmail, "One-time password notification not sent.");
       var pwdFromEmail = (string)pwdEmail.GetString(LoginNotificationKeys.OneTimePassword);
       Assert.AreEqual(tempPwd.Password, pwdFromEmail, "Temp passwords do not match.");
@@ -126,7 +126,7 @@ namespace Vita.UnitTests.Web {
 
     [TestMethod]
     public void TestLoginFailedTrigger() {
-      var client = SetupHelper.Client;
+      var client = Startup.Client;
       //first try successful login
       var resp = LoginAs("stan");
       Logout();
@@ -164,7 +164,7 @@ namespace Vita.UnitTests.Web {
     public void TestLoginAdvancedFeatures() {
       // ================================ Completing login setup - verifying email, setup secret questions =====================
       // User Ferb has email (non-verified) and no secret questions setup. Let's setup his account thru API calls.
-      var client = SetupHelper.Client;
+      var client = Startup.Client;
       var ferbUserName = "Ferb";
       var ferbEmail = "ferb@email.com";
 
@@ -191,7 +191,7 @@ namespace Vita.UnitTests.Web {
       client.ExecutePost<object, HttpStatusCode>(null, "api/mylogin/factors/{0}/pin", emailFactor.Id);
       //let's do it twice - to make sure it works even if we have multiple pins sent
       client.ExecutePost<object, HttpStatusCode>(null, "api/mylogin/factors/{0}/pin", emailFactor.Id);
-      var pinEmail = SetupHelper.GetLastMessageTo(ferbEmail);
+      var pinEmail = Startup.GetLastMessageTo(ferbEmail);
       Assert.IsNotNull(pinEmail, "Pin email not received.");
       var pin = pinEmail.GetString("Pin"); //get pin from email
       Assert.IsFalse(string.IsNullOrEmpty(pin), "Expected non-null pin");
@@ -278,7 +278,7 @@ namespace Vita.UnitTests.Web {
       var httpStatus = client.ExecutePost<SendPinRequest, HttpStatusCode>(sendPinRequest, "api/passwordreset/{0}/pin", processToken);
       Assert.AreEqual(HttpStatusCode.NoContent, httpStatus, "Failed to send pin.");
       // 3. Ferb receives email - we check our mock email service, retrieve the message and pin
-      pinEmail = SetupHelper.GetLastMessageTo(ferbEmail);
+      pinEmail = Startup.GetLastMessageTo(ferbEmail);
       Assert.IsNotNull(pinEmail, "Email with pin not received.");
       pin = (string)pinEmail.GetString("Pin");
       Assert.IsTrue(!string.IsNullOrWhiteSpace(pin), "Failed to receive/extract pin.");
@@ -315,7 +315,7 @@ namespace Vita.UnitTests.Web {
       var success = client.ExecutePut<PasswordChangeInfo, bool>(passwordResetReq, "api/passwordreset/{0}", processToken);
       Assert.IsTrue(success, "Failed to change password");
       // 9. Verify that email notification was sent about password change
-      var notifEmail = SetupHelper.GetLastMessageTo(ferbEmail);
+      var notifEmail = Startup.GetLastMessageTo(ferbEmail);
       Assert.IsNotNull(notifEmail, "Password change notification was not sent.");
       Assert.AreEqual(LoginNotificationTypes.PasswordReset, notifEmail.Type, "Expected password change message.");
       // 10. Try to login with changed password
@@ -355,7 +355,7 @@ namespace Vita.UnitTests.Web {
       httpStatus = client.ExecutePost<object, HttpStatusCode>(null, "api/login/{0}/pin?factortype={1}", processToken, ExtraFactorTypes.Email);
       Assert.AreEqual(HttpStatusCode.NoContent, httpStatus, "Expected NoContent status");
       //Get message with pin from mock inbox and extract pin
-      pinEmail = SetupHelper.GetLastMessageTo(ferbEmail);
+      pinEmail = Startup.GetLastMessageTo(ferbEmail);
       Assert.IsNotNull(pinEmail, "Email with pin not sent.");
       pin = pinEmail.GetString("Pin");
       // Ferb copies pin from email and enters it in UI. UI submits the pin 
@@ -399,8 +399,8 @@ namespace Vita.UnitTests.Web {
         TestSessionExpirationImpl(); 
     }
     public void TestSessionExpirationImpl() {
-      var client = SetupHelper.Client;
-      var timeService = SetupHelper.BooksApp.TimeService; //it is shared with LoggingApp
+      var client = Startup.Client;
+      var timeService = Startup.BooksApp.TimeService; //it is shared with LoggingApp
       var dora = LoginAs("dora");
       var doraUser = client.ExecuteGet<User>("api/user"); //get current user
       try {

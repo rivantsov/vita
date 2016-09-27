@@ -26,8 +26,8 @@ namespace Vita.Entities.Runtime {
     public void CopyValues(EntityRecord fromRecord) {
       for (int i = 0; i < Values.Length; i++)
         Values[i] = fromRecord.GetValueDirect(KeyInfo.ExpandedKeyMembers[i].Member);
-      _asString = null;
       _hashCode = 0;
+      _asString = null; 
     }
 
     //Verify values and create key
@@ -66,27 +66,18 @@ namespace Vita.Entities.Runtime {
         return false;
       //Use efficient calc-once representation. Note - this method is heavily used by loaded records dictionary, to lookup by PK
       return this.AsString() == other.AsString(); 
-      /* Old version, less efficient
-      for (int i = 0; i < KeyInfo.ExpandedKeyMembers.Count; i++) {
-        var member = KeyInfo.ExpandedKeyMembers[i].Member;
-        var eq = member.AreValuesEqual(Values[i], other.Values[i]);
-        if (!eq)
-          return false;
-      }
-      return true;
-       */ 
     }
 
-    //Efficient, calc-once string representation
+    //Efficient, calc-once string representation; Note - this method is heavily used by loaded records dictionary, to lookup by PK
     string _asString; 
     public string AsString() {
       if (_asString == null)
-        _asString = KeyInfo.Name + "/" + ValuesToString();
+        _asString = KeyInfo.Entity.EntityType.Name + "/" + ValuesToString();
       return _asString;
     }
     public override string ToString() {
       if (this.KeyInfo.KeyType.IsSet(KeyType.PrimaryKey)) 
-        return AsString(); // StringHelper.SafeFormat("{0}/{1}", this.KeyInfo.Entity.Name, ValuesToString()); 
+        return AsString(); 
       else if (this.KeyInfo.OwnerMember != null && this.KeyInfo.KeyType == KeyType.ForeignKey)
         return StringHelper.SafeFormat("{0}.{1}/{2}/{3}", this.KeyInfo.Entity.Name, this.KeyInfo.OwnerMember.MemberName, this.KeyInfo.KeyType, ValuesToString());
       else 

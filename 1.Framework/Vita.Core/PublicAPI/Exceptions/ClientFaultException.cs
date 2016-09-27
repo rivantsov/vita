@@ -10,10 +10,12 @@ using Vita.Common;
 namespace Vita.Entities {
 
   public class ClientFaultException : OperationAbortException {
+    /// <summary>If set to true, suppresses listing of fault messages in Message property. By default is false. </summary>
+    public static bool SuppressFaultsListInMessage; 
     public readonly IList<ClientFault> Faults;
 
     public ClientFaultException(IList<ClientFault> faults, string message = "Client faults detected.", Exception inner = null) 
-      : base(message, OperationAbortReasons.ClientFault, inner) {
+                        : base(FormatMessage(message, faults), OperationAbortReasons.ClientFault, inner) {
       Faults = faults; 
     }
 
@@ -25,6 +27,12 @@ namespace Vita.Entities {
 
     public string[] GetMessages() {
       return Faults.Select(s => s.Message).ToArray();
+    }
+    public static  string FormatMessage(string message, IList<ClientFault> faults) {
+      if(SuppressFaultsListInMessage)
+        return message; 
+      var msg = message + " " + string.Join(" ", faults.Select(s => s.Message));
+      return msg; 
     }
 
     public override string ToString() {

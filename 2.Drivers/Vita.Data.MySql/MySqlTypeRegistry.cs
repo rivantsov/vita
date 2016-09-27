@@ -14,9 +14,9 @@ namespace Vita.Data.MySql {
   public class MySqlTypeRegistry : DbTypeRegistry {
     public MySqlTypeRegistry(MySqlDbDriver driver)  : base(driver) {
       //numerics
-      AddType("float", DbType.Single, typeof(Single), MySqlDbType.Float);
-      AddType("double", DbType.Double, typeof(Double), MySqlDbType.Double, aliases: "real");
-      AddType("decimal", DbType.Decimal, typeof(Decimal), MySqlDbType.Decimal, args: "({precision},{scale})", aliases: "numeric,fixed,dec");
+      AddType("float", DbType.Single, typeof(Single), MySqlDbType.Float, aliases: "float unsigned");
+      AddType("double", DbType.Double, typeof(Double), MySqlDbType.Double, aliases: "real;double unsigned");
+      AddType("decimal", DbType.Decimal, typeof(Decimal), MySqlDbType.Decimal, args: "({precision},{scale})", aliases: "numeric,fixed,dec,decimal unsigned");
       //Just to handle props marked with DbType=DbType.Currency
       AddType("decimal", DbType.Currency, typeof(Decimal), MySqlDbType.Decimal, args: "({precision},{scale})", isDefault: false, isSubType: true);
 

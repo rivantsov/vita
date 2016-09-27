@@ -44,9 +44,9 @@ namespace Vita.Modules.ApiClients.Recaptcha {
       return token; 
     }
 
-    public bool Verify(string response, string clientIp = null, bool throwIfFail = true) {
+    public bool Verify(OperationContext context, string response, string clientIp = null, bool throwIfFail = true) {
       RecaptchaResponse resp; 
-      var client = new WebClient.WebApiClient(RecaptchaUrl);
+      var client = new WebClient.WebApiClient(context, RecaptchaUrl);
       if (_settings.Options.IsSet(RecaptchaOptions.CheckClientIp)) {
         Util.Check(!string.IsNullOrWhiteSpace(clientIp), "Client IP must be provided to verify the captcha.");
         resp = client.ExecutePost<object, RecaptchaResponse>(null, "?secret={0}&response={1}&remoteip={2}", _settings.SiteSecret, response, clientIp);

@@ -332,7 +332,7 @@ namespace Vita.Modules.Login {
         return true;
       if (_recaptchaService != null) {
         string clientIp = context.WebContext == null ? null : context.WebContext.IPAddress;
-        _recaptchaService.Verify(captcha, clientIp); //will throw if not valid
+        _recaptchaService.Verify(context, captcha, clientIp); //will throw if not valid
       }
       return true;
     }

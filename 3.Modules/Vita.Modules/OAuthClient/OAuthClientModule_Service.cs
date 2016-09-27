@@ -78,20 +78,25 @@ namespace Vita.Modules.OAuthClient {
       Util.Check(err == null, "Cannot retrieve token: {0}.", err);
       Util.CheckNotEmpty(flow.AuthorizationCode, "Authorization code not retrieved, cannot retrieve access token.");
 
-      var apiClient = new WebApiClient(flow.Account.Server.TokenRequestUrl, ClientOptions.Default, badRequestContentType: typeof(string));
+      var apiClient = new WebApiClient(context, flow.Account.Server.TokenRequestUrl, ClientOptions.Default, badRequestContentType: typeof(string));
       var clientSecret = flow.Account.ClientSecret.DecryptString(this.Settings.EncryptionChannel);
       var server = flow.Account.Server;
       var serverOptions = server.Options;
-      // Some servers expect clientId/secret in auth header
+      // Some servers expect clientId/secret in Authorization header
       string query;
       if(serverOptions.IsSet(OAuthServerOptions.ClientInfoInAuthHeader)) {
         AddClientInfoHeader(apiClient, flow.Account.ClientIdentifier, clientSecret);
         query = StringHelper.FormatUri(AccessTokenUrlQueryTemplate, flow.AuthorizationCode, flow.RedirectUrl);
       } else {
-        //others - clientId/secret in URL
+        //others - clientId/secret mixed with other parameters
         query = StringHelper.FormatUri(AccessTokenUrlQueryTemplateWithClientInfo, flow.AuthorizationCode, 
             flow.RedirectUrl, flow.Account.ClientIdentifier, clientSecret);
       }
+
+      query = StringHelper.FormatUri(AccessTokenUrlQueryTemplateWithClientInfo, flow.AuthorizationCode,
+          flow.RedirectUrl, flow.Account.ClientIdentifier, clientSecret);
+
+
       //Make a call; standard is POST, but some servers use GET (LinkedIn)
       AccessTokenResponse tokenResp;
       if(serverOptions.IsSet(OAuthServerOptions.TokenUseGet)) {
@@ -136,7 +141,7 @@ namespace Vita.Modules.OAuthClient {
       Util.Check(token != null, "Token not found, ID: {0}.", tokenId); 
       Util.Check(token.RefreshToken != null, "RefreshToken value is empty, cannot refresh access token.");
       var acct = token.Account;
-      var apiClient = new WebApiClient(acct.Server.TokenRefreshUrl, ClientOptions.Default, badRequestContentType: typeof(string));
+      var apiClient = new WebApiClient(context, acct.Server.TokenRefreshUrl, ClientOptions.Default, badRequestContentType: typeof(string));
       var clientSecret = acct.ClientSecret.DecryptString(this.Settings.EncryptionChannel);
       var server = acct.Server;
       var serverOptions = server.Options;
@@ -181,23 +186,21 @@ namespace Vita.Modules.OAuthClient {
       if(string.IsNullOrWhiteSpace(revokeUrl))
         return; 
       var acct = token.Account;
-      var apiClient = new WebApiClient(revokeUrl, ClientOptions.Default,
+      var apiClient = new WebApiClient(context, revokeUrl, ClientOptions.Default,
           badRequestContentType: typeof(string));
       var clientSecret = acct.ClientSecret.DecryptString(this.Settings.EncryptionChannel);
       var strToken = token.AccessToken.DecryptString(Settings.EncryptionChannel);
       var server = acct.Server;
       string query = StringHelper.FormatUri("?token={0}", strToken);
       // Some servers expect clientId/secret in auth header or in URL
-      if (server.Options.IsSet(OAuthServerOptions.RevokeNeedsClientInfo)) {
-        if(server.Options.IsSet(OAuthServerOptions.ClientInfoInAuthHeader))
-          AddClientInfoHeader(apiClient, acct.ClientIdentifier, clientSecret);
-        else
-          //others - clientId/secret in URL
-          query += StringHelper.FormatUri("&client_id={0}&client_secret={1}", acct.ClientIdentifier, clientSecret);
-      }
+      if(server.Options.IsSet(OAuthServerOptions.ClientInfoInAuthHeader))
+        AddClientInfoHeader(apiClient, acct.ClientIdentifier, clientSecret);
+      else if (!server.Options.IsSet(OAuthServerOptions.RevokeUseGetNoClientInfo))
+        //others - clientId/secret in URL; Google does not need this and rejectes if there's client info
+        query += StringHelper.FormatUri("&client_id={0}&client_secret={1}", acct.ClientIdentifier, clientSecret);
       //Make a call; standard is POST, but some servers use GET (Google)
       AccessTokenResponse tokenResp;
-      if(server.Options.IsSet(OAuthServerOptions.RevokeUseGet)) {
+      if(server.Options.IsSet(OAuthServerOptions.RevokeUseGetNoClientInfo)) {
         //GET, no body
         tokenResp = await apiClient.GetAsync<AccessTokenResponse>(query);
       } else {
@@ -244,7 +247,7 @@ namespace Vita.Modules.OAuthClient {
       string profileUrl = server.BasicProfileUrl;
       Util.CheckNotEmpty(profileUrl, "Basic profile URL for OAuth server {0} is empty, cannot retrieve profile.", server.Name);
       var profileUri = new Uri(profileUrl);
-      var webClient = new WebApiClient(profileUrl, ClientOptions.Default, ApiNameMapping.Default, typeof(string));
+      var webClient = new WebApiClient(context, profileUrl, ClientOptions.Default, ApiNameMapping.Default, typeof(string));
       SetupOAuthClient(webClient, token);
       var profile = await webClient.GetAsync<TProfile>(string.Empty);
       return profile;
@@ -258,7 +261,7 @@ namespace Vita.Modules.OAuthClient {
       string profileUrl = server.BasicProfileUrl;
       Util.CheckNotEmpty(profileUrl, "Basic profile URL for OAuth server {0} is empty, cannot retrieve profile.", server.Name);
       var profileUri = new Uri(profileUrl);
-      var webClient = new WebApiClient(profileUrl, ClientOptions.Default, ApiNameMapping.Default, typeof(string));
+      var webClient = new WebApiClient(context, profileUrl, ClientOptions.Default, ApiNameMapping.Default, typeof(string));
       SetupOAuthClient(webClient, token); 
       var respStream = await webClient.GetAsync<System.IO.Stream>(string.Empty);
       var reader = new System.IO.StreamReader(respStream);

@@ -179,9 +179,9 @@ namespace Vita.UnitTests.Basic.SchemaUpdates {
     public void TestSchemaUpdate() {
       try {
         //Make sure config file is loaded and ServerType is set
-        if(SetupHelper.Driver == null)
-          SetupHelper.SetupForTestExplorerMode();
-        if(SetupHelper.ServerType == DbServerType.Sqlite)
+        if(Startup.Driver == null)
+          Startup.SetupForTestExplorerMode();
+        if(Startup.ServerType == DbServerType.Sqlite)
           TestSchemaUpdateImplSQLite();
         else
           TestSchemaUpdateImpl(); 
@@ -194,17 +194,17 @@ namespace Vita.UnitTests.Basic.SchemaUpdates {
 
     private void TestSchemaUpdateImpl() {
 
-      SetupHelper.DropSchemaObjects(SchemaName);
-      var supportsClustIndex = SetupHelper.Driver.Supports(DbFeatures.ClusteredIndexes);
+      Startup.DropSchemaObjects(SchemaName);
+      var supportsClustIndex = Startup.Driver.Supports(DbFeatures.ClusteredIndexes);
 
       //version 1 of model/schema
       {
         var app = new EntityAppV1();
 
-        SetupHelper.ActivateApp(app); //updates schema
+        Startup.ActivateApp(app); //updates schema
 
         // Load DbModel and verify it is correct
-        var dbModel = SetupHelper.LoadDbModel(SchemaName, app.ActivationLog);
+        var dbModel = Startup.LoadDbModel(SchemaName, app.ActivationLog);
         Assert.AreEqual(6, dbModel.Tables.Count(), "Expected 6 tables."); //2 tables in DbInfo + 4 tables in our module
         var parTable = dbModel.GetTable(SchemaName, "ParentEntity");
         Assert.AreEqual(8, parTable.Columns.Count, "Invalid number of columns in parent table.");
@@ -248,11 +248,11 @@ namespace Vita.UnitTests.Basic.SchemaUpdates {
       //Now change to version 2 ================================================================
       {
         var app = new EntityAppV2();
-        SetupHelper.ActivateApp(app, dropUnknownTables: true);
+        Startup.ActivateApp(app, dropUnknownTables: true);
 
         //At this point the schema should have been updated; let's check it      
         // Load DbModel and verify it is correct
-        var dbModel = SetupHelper.LoadDbModel(SchemaName, app.ActivationLog);
+        var dbModel = Startup.LoadDbModel(SchemaName, app.ActivationLog);
         Assert.AreEqual(6, dbModel.Tables.Count(), "Expected 6 tables after update.");
         var parTable = dbModel.GetTable(SchemaName, "ParentEntity");
         Assert.AreEqual(7, parTable.Columns.Count, "Invalid number of columns in parent table after schema update.");
@@ -306,10 +306,10 @@ namespace Vita.UnitTests.Basic.SchemaUpdates {
       //version 1 of model/schema
       {
         var app = new EntityAppV1();
-        SetupHelper.ActivateApp(app); //updates schema
+        Startup.ActivateApp(app); //updates schema
 
         // Load DbModel and verify it is correct
-        var dbModel = SetupHelper.LoadDbModel(SchemaName, app.ActivationLog);
+        var dbModel = Startup.LoadDbModel(SchemaName, app.ActivationLog);
         Assert.AreEqual(6, dbModel.Tables.Count(), "Expected 4 tables.");
         var parTable = dbModel.GetTable(SchemaName, "ParentEntity");
         Assert.AreEqual(8, parTable.Columns.Count, "Invalid number of columns in parent table.");
@@ -347,11 +347,11 @@ namespace Vita.UnitTests.Basic.SchemaUpdates {
       //Now change to version 2 ================================================================
       {
         var app = new EntityAppV2();
-        SetupHelper.ActivateApp(app, dropUnknownTables: true);
+        Startup.ActivateApp(app, dropUnknownTables: true);
 
         //At this point the schema should have been updated; let's check it      
         // Load DbModel and verify it is correct
-        var dbModel = SetupHelper.LoadDbModel(SchemaName, app.ActivationLog);
+        var dbModel = Startup.LoadDbModel(SchemaName, app.ActivationLog);
         //Note that we still have 4 tables, EntityToDelete is not dropped because of incoming FK
         Assert.AreEqual(7, dbModel.Tables.Count(), "Expected 7 tables after update.");
         var parTable = dbModel.GetTable(SchemaName, "ParentEntity");

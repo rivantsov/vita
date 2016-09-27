@@ -191,8 +191,8 @@ WHERE {0};", filter);
       var isNullable = (columnRow.GetAsString("IS_NULLABLE") == "YES");
       bool isMemo = (charSize < 0 || byteSize < 0);
       var typeDef = Driver.TypeRegistry.FindVendorDbTypeInfo(dataTypeString);
-      if(typeDef == null)
-        typeDef = Driver.TypeRegistry.Types.FirstOrDefault(td => td.Aliases.Contains(dataTypeString));
+      // if(typeDef == null)
+      //    typeDef = Driver.TypeRegistry.Types.FirstOrDefault(td => td.Aliases.Contains(dataTypeString));
       if(typeDef == null)
         return null;
       var isAutoMemo = Driver.TypeRegistry.AutoMemoTypes.Contains(dataTypeString);

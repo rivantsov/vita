@@ -31,7 +31,6 @@ namespace Vita.Data.MsSql {
         | DbFeatures.SkipTakeRequireOrderBy | DbFeatures.AllowsFakeOrderBy
         | DbFeatures.BatchedUpdates | DbFeatures.OutParamsInBatchedUpdates
         | DbFeatures.Paging | DbFeatures.TreatBitAsInt 
-        //| DbFeatures.ArrayParameters //-work in progress
         ;
     public const DbFeatures MsSql12Features = MsSql08Features | DbFeatures.HeapTables | DbFeatures.Sequences;
 

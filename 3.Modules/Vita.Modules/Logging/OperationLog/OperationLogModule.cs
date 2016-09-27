@@ -37,7 +37,7 @@ namespace Vita.Modules.Logging {
       //Registering handler for LogEntry would cover all derived classes
     }
 
-    #region ILogService Members
+    #region IOperationLogService Members
     public LogLevel LogLevel { get; private set; }
 
     public void Log(OperationLogEntry entry) {

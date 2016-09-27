@@ -23,21 +23,22 @@ namespace Vita.UnitTests.Web {
 
     [TestInitialize]
     public void InitTest() {
-      SetupHelper.Init();
+      Startup.Init();
     }
     [TestCleanup]
     public void TestCleanup() {
-      SetupHelper.FlushLogs();
+      Startup.FlushLogs();
     }
 
     //Helper methods used by othere tests
     private LoginResponse LoginAs(string userName, string password = null, bool assertSuccess = true, string deviceToken = null) {
       password = password ?? Samples.BookStore.SampleData.SampleDataGenerator.DefaultPassword;
       var loginRq = new LoginRequest() { UserName = userName, Password = password , DeviceToken = deviceToken};
-      var resp = SetupHelper.Client.ExecutePost<LoginRequest, LoginResponse>(loginRq, "api/login");
+      var resp = Startup.Client.ExecutePost<LoginRequest, LoginResponse>(loginRq, "api/login");
       Assert.IsTrue(resp != null, "Authentication failed.");
       if(resp.Status == LoginAttemptStatus.Success) {
-        SetupHelper.Client.AddRequestHeader("Authorization", resp.AuthenticationToken);
+        //We can use AddAuthorizationHeader here as well
+        Startup.Client.AddAuthorizationHeader("Authorization", resp.AuthenticationToken);
         return resp; 
       }
       if (assertSuccess)
@@ -46,8 +47,8 @@ namespace Vita.UnitTests.Web {
     }
 
     private void Logout() {
-      SetupHelper.Client.ExecuteDelete("api/login");
-      SetupHelper.Client.RemoveRequestHeader("Authorization");
+      Startup.Client.ExecuteDelete("api/login");
+      Startup.Client.RemoveRequestHeader("Authorization");
     }
 
   }//class

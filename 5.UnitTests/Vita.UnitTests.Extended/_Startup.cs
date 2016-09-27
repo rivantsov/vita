@@ -41,7 +41,7 @@ namespace Vita.UnitTests.Extended {
   }
 
 
-  public static class SetupHelper {
+  public static class Startup {
     public static string ConnectionString;
     public static string LogConnectionString;
     public static string LoginCryptoKey; 
@@ -139,7 +139,8 @@ namespace Vita.UnitTests.Extended {
       // dbOptions |= DbOptions.ForceArraysAsLiterals; -- just to test this flag      
       DbSettings = new DbSettings(Driver, dbOptions, ConnectionString, upgradeMode: DbUpgradeMode.Always);
       //Test: remap login schema into login2
-      DbSettings.ModelConfig.MapSchema("login", "login2");
+      // if (ServerType == DbServerType.MsSql)
+      //    DbSettings.ModelConfig.MapSchema("login", "login2");
     }
 
     private static string ReplaceBinFolderToken(string value) {

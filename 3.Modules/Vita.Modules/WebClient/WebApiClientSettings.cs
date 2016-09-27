@@ -17,21 +17,19 @@ namespace Vita.Modules.WebClient {
     None = 0,
     /// <summary>Accept self-issued certificates from the server, typical in development/testing environments.</summary>
     AllowSelfIssuedCertificate = 1,
-    /// <summary>Enable cookes. </summary>
-    EnableCookies = 1 << 1,
-    /// <summary>Automatically process redirect response from the server.</summary>
-    AllowAutoRedirect = 1 << 2,
-    /// <summary>Default options: AllowSelfIssuedCertificate, EnableCookies</summary>
-    Default = AllowSelfIssuedCertificate | EnableCookies,
 
-    [Obsolete("Use nameMapping (ApiNameMapping) parameter to WebClient constructor.")]
+    /// <summary>Default options: AllowSelfIssuedCertificate, EnableCookies</summary>
+    Default = None,
+
+    [Obsolete("Use nameMapping (ApiNameMapping) parameter in WebClientSettings constructor instead.")]
     CamelCaseNames = None,
   }
 
   public class WebApiClientSettings {
     public string ServiceUrl;
     public ClientOptions Options;
-    public ApiNameMapping NameMapping; 
+    public ApiNameMapping NameMapping;
+    public string UrlAuthenticationParams;
     public IContentSerializer ContentSerializer;
     public IClientErrorHandler ErrorHandler;
     public Action<HttpResponseMessage> ResponseSpy;

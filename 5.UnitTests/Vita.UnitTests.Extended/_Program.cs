@@ -25,11 +25,11 @@ namespace Vita.UnitTests.Extended {
         cfg => {
           Console.WriteLine(); 
           Console.WriteLine(cfg.ToString());
-          SetupHelper.Reset(cfg);
+          Startup.Reset(cfg);
           // Check if server is available
           string error;
-          if (ToolHelper.TestConnection(SetupHelper.Driver, SetupHelper.ConnectionString, out error)) return true; 
-          runner.ConsoleWriteRed("  Connection test failed for connection string: {0}, \r\n   Error: {1}", SetupHelper.ConnectionString, error);
+          if (ToolHelper.TestConnection(Startup.Driver, Startup.ConnectionString, out error)) return true; 
+          runner.ConsoleWriteRed("  Connection test failed for connection string: {0}, \r\n   Error: {1}", Startup.ConnectionString, error);
           skipServerCount++;
           return false; 
         });

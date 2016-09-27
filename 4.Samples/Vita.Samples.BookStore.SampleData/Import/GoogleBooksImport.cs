@@ -25,7 +25,7 @@ namespace Vita.Samples.BookStore.SampleData.Import {
       _bookCache = _session.GetEntities<IBook>(take: 1000).ToDictionary(b => b.Title, StringComparer.OrdinalIgnoreCase);
       _publishersCache = _session.GetEntities<IPublisher>(take: 200).ToDictionary(p => p.Name, StringComparer.OrdinalIgnoreCase);
       _authorsCache = _session.GetEntities<IAuthor>(take: 1000).ToDictionary(a => a.FirstName + a.LastName, StringComparer.OrdinalIgnoreCase);
-      _client = new GoogleBooksApiClient();
+      _client = new GoogleBooksApiClient(_session.Context);
       var batchSize = count / 5;
       ImportBooksInCategory(BookCategory.Programming, "c#", batchSize);
       ImportBooksInCategory(BookCategory.Programming, "Linux", batchSize);

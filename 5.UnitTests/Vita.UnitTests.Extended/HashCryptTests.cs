@@ -20,7 +20,7 @@ namespace Vita.UnitTests.Extended {
     [TestMethod]
     public void TestPasswordHashers() {
       //run it only for MS SQL, to avoid slowing down console run for all servers
-      if(SetupHelper.ServerType != DbServerType.MsSql)
+      if(Startup.ServerType != DbServerType.MsSql)
         return; 
 
       IPasswordHasher hasher; 
@@ -52,7 +52,7 @@ namespace Vita.UnitTests.Extended {
       //It is not actually a test but simple convenience method to generate cryptokeys of appropriate length for various crypto algorithms
       // Run it when you need a key to setup encryption channel in EncryptedDataModule
       // Enable it only for MS SQL, to avoid slowing down console run for all servers
-      if(SetupHelper.ServerType != DbServerType.MsSql)
+      if(Startup.ServerType != DbServerType.MsSql)
         return;
       GenerateKey(new RijndaelManaged());
       GenerateKey(new AesManaged());

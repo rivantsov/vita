@@ -23,17 +23,17 @@ namespace Vita.UnitTests.Extended {
 
     [TestInitialize]
     public void TestInit() {
-      SetupHelper.InitApp();
+      Startup.InitApp();
     }
     [TestCleanup]
     public void TearDown() {
-      SetupHelper.TearDown(); 
+      Startup.TearDown(); 
     }
 
     [TestMethod]
     public void TestLogin() {
       var password = Samples.BookStore.SampleData.SampleDataGenerator.DefaultPassword; 
-      var app = SetupHelper.BooksApp;
+      var app = Startup.BooksApp;
       var loginService = app.GetService<ILoginService>();
       var loginMgr = app.GetService<ILoginManagementService>();
       var loginProcessService = app.GetService<ILoginProcessService>(); 
@@ -74,7 +74,7 @@ namespace Vita.UnitTests.Extended {
       loginProcessService.SendPin(process, doraEmailFactor);
 
       //Dora receives email, copies pin
-      var emailMsg = SetupHelper.GetLastMessageTo(doraEmail);
+      var emailMsg = Startup.GetLastMessageTo(doraEmail);
       var pin = (string) emailMsg.Parameters[LoginNotificationKeys.Pin]; //get pin
       //Find the login process
       session = app.OpenSystemSession(); 
@@ -120,7 +120,7 @@ namespace Vita.UnitTests.Extended {
     [TestMethod]
     public void TestLoginFailedTrigger() {
       var password = Samples.BookStore.SampleData.SampleDataGenerator.DefaultPassword;
-      var app = SetupHelper.BooksApp;
+      var app = Startup.BooksApp;
       var loginService = app.GetService<ILoginService>();
       if(loginService == null)
         return;

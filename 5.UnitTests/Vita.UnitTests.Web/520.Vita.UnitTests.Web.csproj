@@ -72,7 +72,7 @@
     <Compile Include="WebTests_SpecialCases.cs" />
     <Compile Include="WebTests_Login.cs" />
     <Compile Include="WebTests_Init.cs" />
-    <Compile Include="SetupHelper.cs" />
+    <Compile Include="_Startup.cs" />
     <Compile Include="WebTests_Errors.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="TestControllers\SpecialMethodsController.cs" />

@@ -320,11 +320,12 @@ namespace Vita.Entities.Runtime {
         if(EntityInfo.DisplayMethod != null) {
           return EntityInfo.DisplayMethod(this);
         } else
-          return PrimaryKey + "/" + _status; //includes entity name and pk values
+          return PrimaryKey + "/" + _status; 
       } catch(Exception ex) {
         return "(Error in ToString(): " + ex.Message + ")";
       }
     }
+
     public override int GetHashCode() {
       if (_primaryKey == null)
         return 0; 

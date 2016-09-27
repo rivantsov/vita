@@ -26,7 +26,7 @@ namespace Vita.UnitTests.Extended {
 
     [TestInitialize]
     public void TestInit() {
-      SetupHelper.InitApp();
+      Startup.InitApp();
     }
 
     [TestMethod]
@@ -45,11 +45,11 @@ namespace Vita.UnitTests.Extended {
 </Settings>
 ";
       var sqliteForceTypes = "CreatedOn:System.DateTime,CreatedIn:System.Guid,UpdatedIn:System.Guid";
-      var forceTypes = SetupHelper.ServerType == DbServerType.Sqlite? sqliteForceTypes : string.Empty;
-      var driver = SetupHelper.Driver; 
+      var forceTypes = Startup.ServerType == DbServerType.Sqlite? sqliteForceTypes : string.Empty;
+      var driver = Startup.Driver; 
       var xml = xmlConfigTemplate
-        .Replace("@Provider@", SetupHelper.ServerType.ToString())
-        .Replace("@ConnString@", SetupHelper.ConnectionString)
+        .Replace("@Provider@", Startup.ServerType.ToString())
+        .Replace("@ConnString@", Startup.ConnectionString)
         .Replace("@ForceDataTypes@", forceTypes);
       var xmlConfig = new XmlDocument();
       xmlConfig.LoadXml(xml);

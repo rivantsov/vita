@@ -781,18 +781,18 @@ namespace Vita.Entities.Model.Construction {
       // we do it in a separate loop because for one-to-many lists, the command is the same as select-by-key 
       // (if no Filter), so we just copy the command from there - it is created in previous loop
       foreach (var entity in _model.Entities) {
-        foreach (var member in entity.Members) {
-          if (member.Kind != MemberKind.EntityList) continue;
+        foreach(var member in entity.Members) {
+          if(member.Kind != MemberKind.EntityList) continue;
           var listInfo = member.ChildListInfo;
-          if (string.IsNullOrWhiteSpace(listInfo.Filter))
+          if(string.IsNullOrWhiteSpace(listInfo.Filter)) {
             listInfo.SelectDirectChildList = listInfo.ParentRefMember.ReferenceInfo.FromKey.SelectByKeyCommand; // no filter, so it's just select-by-key
-          else {
+          } else {
             //with filter
             var nameSuffix = "For" + listInfo.OwnerMember.MemberName;
             listInfo.SelectDirectChildList = commandBuilder.BuildCrudSelectByKeyCommand(
                  listInfo.ParentRefMember.ReferenceInfo.FromKey, listInfo.Filter, nameSuffix);
           }
-          if (listInfo.RelationType == EntityRelationType.ManyToMany) 
+          if(listInfo.RelationType == EntityRelationType.ManyToMany)
             listInfo.SelectTargetListManyToMany = commandBuilder.BuildSelectTargetListManyToManyCommand(listInfo);
         }//foreach member
       } //foreach entity

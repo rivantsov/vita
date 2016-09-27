@@ -42,6 +42,10 @@ namespace Vita.Entities.Authorization {
 
     #endregion
 
+    public void AddChildRoles(params Role[] roles) {
+      this.ChildRoles.AddRange(roles); 
+    }
+
     public void Grant(params Activity[] activities) {
       Grant(null, activities);
     }

@@ -46,6 +46,7 @@ namespace Vita.Data.Upgrades {
     }
 
     public DbUpgradeScript AddScript(DbScriptType scriptType, ApplyPhase phase, string sqlTemplate, params object[] args) {
+      Util.CheckNotEmpty(sqlTemplate, "Fatal error: attempt to add empty upgrade SQL scrpt; scriptType: {0}", scriptType);
       string sql = sqlTemplate;
       if(args != null && args.Length > 0)
         sql = string.Format(sqlTemplate, args);

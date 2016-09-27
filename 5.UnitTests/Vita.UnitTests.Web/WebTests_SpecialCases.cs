@@ -20,7 +20,7 @@ namespace Vita.UnitTests.Web {
     // Tests special methods in controller
     [TestMethod]
     public void TestSpecialMethods() {
-      var client = SetupHelper.Client;
+      var client = Startup.Client;
       Logout(); // just in case there's still session there from other tests
 
       //Test date handling in URL
@@ -62,9 +62,11 @@ namespace Vita.UnitTests.Web {
 
     }
 
+
+
     [TestMethod]
     public void TestDiagnosticsController() {
-      var client = SetupHelper.Client;
+      var client = Startup.Client;
       var acceptText = "application/text,text/plain";
       //Heartbeat
       DiagnosticsController.Reset();
@@ -86,7 +88,7 @@ namespace Vita.UnitTests.Web {
       Assert.IsTrue(currOffset.StartsWith("Current offset: 0 minutes"), "Expected no offset");
 
       //test that heartbeat call is not logged in web log - controller method sets log level to None
-      var serverSession = SetupHelper.BooksApp.OpenSession();
+      var serverSession = Startup.BooksApp.OpenSession();
       var hbeatEntry = serverSession.EntitySet<IWebCallLog>().Where(wl => wl.Url.Contains("heartbeat")).FirstOrDefault();
       Assert.IsNull(hbeatEntry, "Expected no heartbeat entry in web log.");
     }
@@ -102,7 +104,7 @@ namespace Vita.UnitTests.Web {
     // We then retrieve this report thru second call and verify that connection was in fact closed properly. 
     [TestMethod]
     public void TestDbConnectionHandling() {
-      var client = SetupHelper.Client;
+      var client = Startup.Client;
       var ok = client.ExecuteGet<string>("api/special/connectiontest");
       Assert.AreEqual("OK", ok, "Connection test did not return OK");
       //get report
@@ -113,7 +115,7 @@ namespace Vita.UnitTests.Web {
 
     [TestMethod]
     public void TestAsyncServerMethod() {
-      var client = SetupHelper.Client;
+      var client = Startup.Client;
       var result = client.ExecuteGet<string>("api/special/getdateasync");
       Assert.IsTrue(!string.IsNullOrWhiteSpace(result), "Async method call failed.");
     }
@@ -123,9 +125,9 @@ namespace Vita.UnitTests.Web {
       AsyncHelper.RunSync(() => TestClientCallAsyncImpl());      
     }
     public async Task TestClientCallAsyncImpl() {
-      var client = SetupHelper.Client;
+      var client = Startup.Client;
       //Test WebApiClient.CallAsync
-      var res2 = await client.CallAsync<object, string>(System.Net.Http.HttpMethod.Get, null, "api/special/getdateasync");
+      var res2 = await client.SendAsync<object, string>(System.Net.Http.HttpMethod.Get, null, "api/special/getdateasync");
       Assert.IsTrue(!string.IsNullOrWhiteSpace(res2), "Async method call failed.");
     }
 

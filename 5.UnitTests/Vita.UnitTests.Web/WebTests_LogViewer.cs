@@ -24,14 +24,14 @@ namespace Vita.UnitTests.Web {
     [TestMethod]
     public void TestLogViewerApi() {
       // Here we test Vita.Modules.Logging.Api.LoggingDataController functions 
-      var client = SetupHelper.Client;
+      var client = Startup.Client;
       // Make two calls, a good one, and one with server error; then try to retrieve the logs
       var vbBooks = client.ExecuteGet<SearchResults<Book>>("api/books?titlestart={0}", "vb");
       Assert.IsTrue(vbBooks.Results.Count > 0, "Failed to find VB book");
       var exc = TestUtil.ExpectFailWith<Exception>(() => client.ExecuteGet<string>("api/special/nullref"));
       Assert.IsNotNull(exc, "Expected exception");
       //Flush all logs - they are usually flushed every second
-      SetupHelper.FlushLogs();
+      Startup.FlushLogs();
 
       // Login as Kevin, he is site admin
       this.LoginAs("Kevin");
@@ -62,8 +62,8 @@ namespace Vita.UnitTests.Web {
 
     [TestMethod]
     public void TestEventLog() {
-      var client = SetupHelper.Client;
-      var time = SetupHelper.BooksApp.TimeService; 
+      var client = Startup.Client;
+      var time = Startup.BooksApp.TimeService; 
       // 'api/events/public' is an endpoint for sending event data if there's no user logged in. 
       // it is enabled if we register EventsPost controller
       var clickEvt = new EventData() {
@@ -85,7 +85,7 @@ namespace Vita.UnitTests.Web {
 
       // let's search and find this event. We need to be logged in as site admin
       // Login as Kevin, he is site admin
-      SetupHelper.BooksApp.Flush(); //force flush it
+      Startup.BooksApp.Flush(); //force flush it
       this.LoginAs("Kevin");
       var events = client.ExecuteGet<SearchResults<EventData>>("api/logs/events?eventtype={0}",  "BannerClick");
       Assert.IsTrue(events.Results.Count >= 2, "Expected to find an event");

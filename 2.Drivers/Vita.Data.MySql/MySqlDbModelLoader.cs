@@ -10,6 +10,7 @@ using Vita.Entities.Logging;
 using Vita.Entities.Model;
 using Vita.Data.Driver;
 using Vita.Data.Model;
+using Vita.Common;
 
 namespace Vita.Data.MySql {
   class MySqlDbModelLoader : DbModelLoader {
@@ -57,7 +58,7 @@ ORDER BY TABLE_SCHEMA, TABLE_NAME, INDEX_NAME, COLUMN_ORDINAL_POSITION
       }
       //auto-set memo
       var dbType = base.GetDbTypeInfo(columnRow);
-      if(dbType.VendorDbType.ClrTypes.Contains(typeof(string)) && dbType.Size > 100 * 1000)
+      if(dbType != null && dbType.VendorDbType.ClrTypes.Contains(typeof(string)) && dbType.Size > 100 * 1000)
         dbType.Size = -1;
       return dbType; 
     }

@@ -49,7 +49,7 @@ SELECT * FROM NumberedQuery
       //Build column list
       var outColumns = table.Columns.GetSelectable();
       var strColumns = outColumns.GetSqlNameList(); 
-      var strOrderBy = BuildOrderBy(table.DefaultOrderBy);
+      var strOrderBy = BuildOrderBy(table, table.DefaultOrderBy);
       //In paged version, inside OVER clause we must have some ORDER BY clause. If the table has no ORDER BY, then just use PK
       if (string.IsNullOrEmpty(strOrderBy))
         strOrderBy = "ORDER BY " + table.PrimaryKey.KeyColumns.GetSqlNameList();
@@ -72,7 +72,7 @@ SELECT {0}
       //Build column list
       var outColumns = table.Columns.GetSelectable();
       var strColumns = outColumns.GetSqlNameList();
-      string strOrderBy = (table.DefaultOrderBy == null) ? "ORDER BY (SELECT 1)" : BuildOrderBy(table.DefaultOrderBy);
+      string strOrderBy = (table.DefaultOrderBy == null) ? "ORDER BY (SELECT 1)" : BuildOrderBy(table, table.DefaultOrderBy);
       var sql = string.Format(SqlSelectAllPaged, strColumns, table.FullName, strOrderBy);
       var cmdName = ModelConfig.NamingPolicy.ConstructDbCommandName(entCommand, table.TableName, "SelectAllPaged");
       var cmdInfo = CreateDbCommandInfo(entCommand, cmdName, table, DbExecutionType.Reader, sql);
@@ -240,7 +240,7 @@ SELECT {0}
       if (dbKey.KeyType == KeyType.PrimaryKey)
         orderByExpr = null;
       else
-        orderByExpr = BuildOrderBy(table.DefaultOrderBy);
+        orderByExpr = BuildOrderBy(table, table.DefaultOrderBy);
       var sql = string.Format(SqlSelectByFkTemplate, strColumns, table.FullName, whereExpr, orderByExpr);
       //Damn postgres reformats the SQL in stored proc body and this screws up comparison; so we are careful here
       sql = sql.Trim() + ";";

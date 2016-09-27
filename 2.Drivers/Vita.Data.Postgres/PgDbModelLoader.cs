@@ -22,7 +22,7 @@ namespace Vita.Data.Postgres {
 
     public override DbTypeInfo GetDbTypeInfo(DbRow columnRow) {
       var typeInfo =  base.GetDbTypeInfo(columnRow);
-      if(typeInfo.SqlTypeSpec == "text") {
+      if(typeInfo != null && typeInfo.SqlTypeSpec == "text") {
         typeInfo.Size = -1;
       }
       return typeInfo; 

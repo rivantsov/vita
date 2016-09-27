@@ -23,7 +23,7 @@ namespace Vita.UnitTests.Web {
 
     [TestMethod]
     public void TestUserReviews() {
-      var client = SetupHelper.Client;
+      var client = Startup.Client;
       var csBk = client.ExecuteGet<SearchResults<Book>>("api/books?title={0}", "c#").Results[0];
       //get details - with reviews
       var csBkDet = client.ExecuteGet<Book>("api/books/{0}", csBk.Id);
@@ -66,7 +66,7 @@ namespace Vita.UnitTests.Web {
 
     [TestMethod]
     public void TestUserOrders() {
-      var client = SetupHelper.Client;
+      var client = Startup.Client;
 
       //Get dora's order(s) - she has 1 order for c# book; 
       LoginAs("dora");

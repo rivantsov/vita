@@ -158,7 +158,7 @@ namespace Vita.Data.Driver {
           if(cmd2 != null)
             BuildStoredProcDropSql(change, cmd2); 
           cmd2 = (DbCommandInfo)change.NewObject;
-          if(cmd2 != null)
+          if(cmd2 != null && !cmd2.IsTemplatedSql)
             BuildStoredProcAddSql(change, cmd2);
           break; 
 

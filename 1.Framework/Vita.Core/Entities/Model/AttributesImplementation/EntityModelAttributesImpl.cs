@@ -68,6 +68,9 @@ namespace Vita.Entities {
       }
       // Validation passed, assign order member
       member.ChildListInfo.PersistentOrderMember = orderMember;
+      // Make list order to be by orderMember
+      var fromKey = member.ChildListInfo.ParentRefMember.ReferenceInfo.FromKey;
+      fromKey.OrderByForSelect = new[] { new EntityKeyMemberInfo(orderMember, desc: false) };
     }
   }
 
@@ -78,16 +81,19 @@ namespace Vita.Entities {
       ConstructOrderBy(context, entity);
     }
 
+    //This is a special case - OrderBy attribute specifies the order of entities in list property.
     public override void Apply(AttributeContext context, Attribute attribute, EntityMemberInfo member) {
       var entity = member.Entity; 
-      if (member.Kind == MemberKind.EntityList) {
-        //This is a special case - OrderBy attribute specifies the order of entities in list property.
-        member.ChildListInfo.OrderBy = EntityAttributeHelper.ParseMemberNames(member.ChildListInfo.TargetEntity, this.OrderByList, ordered: true, 
+      if (member.Kind != MemberKind.EntityList) {
+        context.Log.Error("OrderBy attribute may be used only on entities or list properties. Entity: {0}, property: {1}", 
+             entity.Name, member.MemberName);
+        return; 
+      }
+      var fromKey = member.ChildListInfo.ParentRefMember.ReferenceInfo.FromKey;
+      fromKey.OrderByForSelect  = EntityAttributeHelper.ParseMemberNames(member.ChildListInfo.TargetEntity, this.OrderByList, ordered: true, 
           errorAction: spec => {
             context.Log.Error("Invalid member/spec: {0} in {1} attribute, property {2}.{3}", spec, this.GetAttributeName(), entity.Name, member.MemberName);
           });
-      } else 
-        context.Log.Error("OrderBy attribute may be used only on entities or list properties. Entity: {0}, property: {1}", entity.Name, member.MemberName);
     }
 
     private void ConstructOrderBy(AttributeContext context, EntityInfo entity) {

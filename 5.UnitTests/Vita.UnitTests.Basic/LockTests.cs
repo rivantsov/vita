@@ -95,16 +95,16 @@ ALTER DATABASE {0} SET MULTI_USER;
 
     [TestMethod]
     public void TestLocking() {
-      switch (SetupHelper.ServerType) {
+      switch (Startup.ServerType) {
         case Data.Driver.DbServerType.SqlCe:
         case Data.Driver.DbServerType.Sqlite: 
           return; //do not support locks
       }
       if (File.Exists(_logFileName))
         File.Delete(_logFileName);
-      SetupHelper.DropSchemaObjects("lck");
+      Startup.DropSchemaObjects("lck");
       _app = new LockTestApp();
-      SetupHelper.ActivateApp(_app);
+      Startup.ActivateApp(_app);
 
       //Run with locks - we should see no errors
       RunTests(LockOptions.SharedRead, LockOptions.ForUpdate, 30, 50);
@@ -123,7 +123,7 @@ ALTER DATABASE {0} SET MULTI_USER;
 
     private void RunTests(LockOptions readOptions, LockOptions writeOptions, int threadCount = 10, int readWriteCount = 50) {
       // delete old data and create 5 docs
-      SetupHelper.DeleteAll(_app);
+      Startup.DeleteAll(_app);
       var session = _app.OpenSession();
       for (int i = 0; i < 5; i++) {
         var iDoc = session.NewEntity<IDoc>();

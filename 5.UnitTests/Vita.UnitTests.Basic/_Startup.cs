@@ -20,7 +20,7 @@ using Vita.Entities.Logging;
 
 namespace Vita.UnitTests.Basic {
 
-  public static class SetupHelper {
+  public static class Startup {
     public static DbServerType ServerType;
     public static DbDriver Driver;
     public static DbOptions DbOptions; 

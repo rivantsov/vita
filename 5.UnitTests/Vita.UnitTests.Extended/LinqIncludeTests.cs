@@ -29,25 +29,25 @@ namespace Vita.UnitTests.Extended {
 
     [TestInitialize]
     public void TestInit() {
-      SetupHelper.InitApp();
+      Startup.InitApp();
     }
 
     [TestCleanup]
     public void TearDown() {
-      SetupHelper.TearDown(); 
+      Startup.TearDown(); 
     }
 
     [TestMethod]
     public void TestLinqInclude() {
       try {
         // DisplayAttribute.Disabled = true;   // just for internal debugging, to disable automatic loading of entities for Display
-        SetupHelper.BooksApp.AppEvents.ExecutedSelect += AppEvents_ExecutedSelect; //to spy after executed selects
+        Startup.BooksApp.AppEvents.ExecutedSelect += AppEvents_ExecutedSelect; //to spy after executed selects
         //using (SetupHelper.BooksApp.LoggingApp.Suspend()) { //to suspend logging activity in debugging
           TestLinqIncludeImpl(); 
         // }
       } finally {
         DisplayAttribute.Disabled = false;
-        SetupHelper.BooksApp.AppEvents.ExecutedSelect -= AppEvents_ExecutedSelect;
+        Startup.BooksApp.AppEvents.ExecutedSelect -= AppEvents_ExecutedSelect;
       }
     }
 
@@ -58,7 +58,7 @@ namespace Vita.UnitTests.Extended {
 
 
     private void TestLinqIncludeImpl() {
-      var app = SetupHelper.BooksApp;
+      var app = Startup.BooksApp;
       var session = app.OpenSession();
       var summary = new List<string>();
 

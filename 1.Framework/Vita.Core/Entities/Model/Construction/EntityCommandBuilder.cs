@@ -35,7 +35,7 @@ namespace Vita.Entities.Model.Construction {
       var procName = entity.Name + "_SelectBy" + key.GetMemberNames(string.Empty, removeUnderscore: true) + nameSuffix;
       var descr = "Selects entity(ies) by key.";
       var cmd = AddCommand(procName, descr, EntityCommandKind.SelectByKey, entity, key);
-      cmd.Filter = filter; 
+      cmd.Filter = filter;
       AddParametersFromKey(cmd, key);
       return cmd;
     }

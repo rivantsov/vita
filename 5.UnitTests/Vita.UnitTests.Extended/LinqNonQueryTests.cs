@@ -19,16 +19,16 @@ namespace Vita.UnitTests.Extended {
 
     [TestInitialize]
     public void TestInit() {
-      SetupHelper.InitApp();
+      Startup.InitApp();
     }
     [TestCleanup]
     public void TearDown() {
-      SetupHelper.TearDown(); 
+      Startup.TearDown(); 
     }
 
     [TestMethod]
     public void TestLinqNonQuery_Update () {
-      var app = SetupHelper.BooksApp;
+      var app = Startup.BooksApp;
       IEntitySession session;
       int updateCount; 
       
@@ -83,7 +83,7 @@ namespace Vita.UnitTests.Extended {
       #region Linq update statement using data from several tables.
       // This results in a bit more complex SQL with FROM clause
       // Only MS SQL and Postgres support this syntax; For MySql there's a workaround (using JOIN), but this is not implemented yet
-      if(SetupHelper.ServerType == DbServerType.MsSql || SetupHelper.ServerType == DbServerType.Postgres) {
+      if(Startup.ServerType == DbServerType.MsSql || Startup.ServerType == DbServerType.Postgres) {
         // Let's update order totals from SUM of order lines
         // First let's reset all totals to zero
         var setZerosQuery = from bo in session.EntitySet<IBookOrder>()
@@ -177,7 +177,7 @@ namespace Vita.UnitTests.Extended {
 
     [TestMethod]
     public void TestLinqNonQuery_Delete() {
-      var app = SetupHelper.BooksApp;
+      var app = Startup.BooksApp;
       var session = app.OpenSession();
       var count0 = session.EntitySet<ICoupon>().Count(); 
       // Simple delete involving a single table
@@ -209,7 +209,7 @@ namespace Vita.UnitTests.Extended {
       //  Base query uses join of IBookReview and IUser tables
       // MySql does not allow this kind of query (https://dev.mysql.com/doc/refman/5.0/en/delete.html) : 
       //     "Currently, you cannot delete from a table and select from the same table in a subquery."
-      if(SetupHelper.ServerType == DbServerType.MySql)
+      if(Startup.ServerType == DbServerType.MySql)
         return;
       // Create 3 test reviews
       var reviewCount0 = session.EntitySet<IBookReview>().Count(); 
@@ -246,9 +246,9 @@ namespace Vita.UnitTests.Extended {
       //   CREATE EXTENSION "uuid-ossp";
       // SQLite: SQLite does not have a function for generating GUID, so inserts that require new GUIDs for PK columns do not work for SQLite
       // SqlCE - does not support using query parameters as output values
-      if(SetupHelper.ServerType == DbServerType.Sqlite || SetupHelper.ServerType == DbServerType.SqlCe)
+      if(Startup.ServerType == DbServerType.Sqlite || Startup.ServerType == DbServerType.SqlCe)
         return; 
-      var app = SetupHelper.BooksApp;
+      var app = Startup.BooksApp;
       var session = app.OpenSession();
       var dora = session.EntitySet<IUser>().First(u => u.UserName == "Dora");
       var dtNow = DateTime.UtcNow;
@@ -281,9 +281,9 @@ namespace Vita.UnitTests.Extended {
     public void TestLinqNonQuery_ScheduledCommands() {
       // with intentional, meaningless {0/1} fragments - to check how the braces are escaped in SQL
       const string NewAbstract = "New abstract: {0} {1}"; 
-      if (SetupHelper.ServerType == DbServerType.SqlCe)
+      if (Startup.ServerType == DbServerType.SqlCe)
         return; //SQL CE is so limited (in supported SQL constructs) - we don't even try
-      var app = SetupHelper.BooksApp;
+      var app = Startup.BooksApp;
       var session = app.OpenSession();
       session.EnableCache(false);
 

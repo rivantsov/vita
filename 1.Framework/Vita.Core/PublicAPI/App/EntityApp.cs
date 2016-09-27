@@ -156,6 +156,63 @@ namespace Vita.Entities {
 
     }
 
+    /// <summary>Initializes the entity app. </summary>
+    /// <remarks>Call this method after you finished composing entity application of modules.
+    /// The method is called automatically when you connect the application to the database
+    /// with <c>ConnectTo()</c> extension method.</remarks>
+    public virtual void Init() {
+      this.AppEvents.OnInitializing(EntityAppInitStep.Initializing);
+      //Check dependencies
+      foreach(var mod in this.Modules) {
+        var depList = mod.GetDependencies();
+        foreach(var dep in depList) {
+          var ok = Modules.Any(m => dep.IsTypeOrSubType(m));
+          if(!ok)
+            this.ActivationLog.Error("Module {0} requires dependent module {1} which is not included in the app.", mod.GetType(), dep);
+        }
+      }
+      this.CheckActivationErrors();
+      //Build model
+      var modelBuilder = new EntityModelBuilder(this);
+      modelBuilder.BuildModel();
+      if(ActivationLog.HasErrors()) {
+        if(!string.IsNullOrEmpty(this.ActivationLogPath))
+          ActivationLog.DumpTo(this.ActivationLogPath);
+        var errors = ActivationLog.GetAllAsText();
+        throw new StartupFailureException("Entity model build failed.", errors);
+      }
+      //Notify modules that entity app is constructed
+      foreach(var module in this.Modules)
+        module.Init();
+      //init services
+      var servList = this.GetAllServices();
+      for(int i = 0; i < servList.Count; i++) {
+        var service = servList[i];
+        var iServiceInit = service as IEntityService;
+        if(iServiceInit != null)
+          iServiceInit.Init(this);
+      }
+
+      // check error log service, register trace log if no real service installed
+      var errLog = GetService<IErrorLogService>();
+      if(errLog == null)
+        RegisterService<IErrorLogService>(new TraceErrorLogService());
+
+      //complete initialization
+      this.AppEvents.OnInitializing(EntityAppInitStep.Initialized);
+      foreach(var module in this.Modules)
+        module.AppInitComplete();
+
+      CheckActivationErrors();
+
+      foreach(var linkedApp in LinkedApps)
+        linkedApp.Init();
+
+      Status = EntityAppStatus.Initialized;
+    }
+
+
+
     /// <summary>Moves entities (types) from their original areas to the target Area. </summary>
     /// <param name="toArea">Target area.</param>
     /// <param name="entityTypes">Entity types.</param>
@@ -214,8 +271,6 @@ namespace Vita.Entities {
     public void ConnectTo(DbSettings dbSettings) {
       if(this.Status == EntityAppStatus.Initializing)
         this.Init();
-      if (dbSettings.DbInfoProvider == null)
-        dbSettings.DbInfoProvider = this.GetService<IDbInfoService>(); 
       var db = new Database(this, dbSettings); //this will construct DbModel for Database
       var ds = new DataSource(dbSettings.DataSourceName, db, this.CacheSettings);
       this.DataAccess.RegisterDataSource(ds);
@@ -338,61 +393,6 @@ namespace Vita.Entities {
         if(iEntService != null)
           iEntService.Shutdown();
       }
-    }
-
-    /// <summary>Initializes the entity app. </summary>
-    /// <remarks>Call this method after you finished composing entity application of modules.
-    /// The method is called automatically when you connect the application to the database
-    /// with <c>ConnectTo()</c> extension method.</remarks>
-    public virtual void Init() {
-      this.AppEvents.OnInitializing(EntityAppInitStep.Initializing);
-      //Check dependencies
-      foreach(var mod in this.Modules) {
-        var depList = mod.GetDependencies();
-        foreach(var dep in depList) {
-          var ok = Modules.Any(m => dep.IsTypeOrSubType(m));
-          if(!ok)
-            this.ActivationLog.Error("Module {0} requires dependent module {1} which is not included in the app.", mod.GetType(), dep);
-        }
-      }
-      this.CheckActivationErrors();
-      //Build model
-      var modelBuilder = new EntityModelBuilder(this);
-      modelBuilder.BuildModel();
-      if(ActivationLog.HasErrors()) {
-        if(!string.IsNullOrEmpty(this.ActivationLogPath))
-          ActivationLog.DumpTo(this.ActivationLogPath);
-        var errors = ActivationLog.GetAllAsText();
-        throw new StartupFailureException("Entity model build failed.", errors);
-      }
-      //Notify modules that entity app is constructed
-      foreach(var module in this.Modules)
-        module.Init();
-      //init services
-      var servList = this.GetAllServices();
-      for(int i = 0; i < servList.Count; i++) {
-        var service = servList[i];
-        var iServiceInit = service as IEntityService;
-        if(iServiceInit != null)
-          iServiceInit.Init(this);
-      }
-
-      // check error log service, register trace log if no real service installed
-      var errLog = GetService<IErrorLogService>(); 
-      if (errLog == null)
-        RegisterService<IErrorLogService>(new TraceErrorLogService()); 
-
-      //complete initialization
-      this.AppEvents.OnInitializing(EntityAppInitStep.Initialized);
-      foreach(var module in this.Modules)
-        module.AppInitComplete();
-
-      CheckActivationErrors();
-
-      foreach(var linkedApp in LinkedApps)
-        linkedApp.Init(); 
-
-      Status = EntityAppStatus.Initialized;
     }
 
     /// <summary>

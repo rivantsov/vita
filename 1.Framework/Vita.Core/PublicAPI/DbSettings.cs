@@ -24,9 +24,6 @@ namespace Vita.Data {
 
     private HashSet<string> _schemas = new StringSet();
 
-
-    public IDbInfoService DbInfoProvider; 
-
     // Connection strings
     public readonly string ConnectionString;
     public readonly string SchemaManagementConnectionString; //optional, admin-privilege conn string
@@ -36,11 +33,10 @@ namespace Vita.Data {
                       string schemaManagementConnectionString = null, 
                       DbUpgradeMode upgradeMode = DbUpgradeMode.NonProductionOnly, 
                       DbUpgradeOptions upgradeOptions = DbUpgradeOptions.Default,
-                      IDbInfoService dbInfoProvider = null,
                       string dataSourceName = null, 
                       DbNamingPolicy namingPolicy = null) 
        : this (new DbModelConfig(driver, options, namingPolicy), connectionString, schemaManagementConnectionString, 
-              upgradeMode, upgradeOptions, dbInfoProvider, dataSourceName)   {  }
+              upgradeMode, upgradeOptions, dataSourceName)   {  }
 
     // Use this constructor for shared db model (multi-tenant app aganst multiple identical databases)
     public DbSettings(DbModelConfig modelConfig, 
@@ -48,14 +44,12 @@ namespace Vita.Data {
                       string schemaManagementConnectionString = null, 
                       DbUpgradeMode upgradeMode = DbUpgradeMode.NonProductionOnly, 
                       DbUpgradeOptions upgradeOptions = DbUpgradeOptions.Default,
-                      IDbInfoService dbInfoProvider = null,
                       string dataSourceName = null) {
       ModelConfig = modelConfig;
       ConnectionString = connectionString;
       SchemaManagementConnectionString = schemaManagementConnectionString ?? connectionString;
       UpgradeMode = upgradeMode;
       UpgradeOptions = upgradeOptions;
-      DbInfoProvider = dbInfoProvider; 
       DataSourceName = dataSourceName ?? DataSource.DefaultName;
     }
 

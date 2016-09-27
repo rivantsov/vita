@@ -23,7 +23,7 @@ namespace Vita.Modules.Logging {
     }
 
     public override void Init() {
-      base.Init();
+      base.Init(); 
       _backgroundSaveService = App.GetService<IBackgroundSaveService>();
       _backgroundSaveService.RegisterObjectHandler(typeof(WebCallContext), this);
     }

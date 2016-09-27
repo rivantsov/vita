@@ -19,16 +19,16 @@ namespace Vita.UnitTests.Extended {
 
     [TestInitialize]
     public void TestInit() {
-      SetupHelper.InitApp();
+      Startup.InitApp();
     }
     [TestCleanup]
     public void TearDown() {
-      SetupHelper.TearDown(); 
+      Startup.TearDown(); 
     }
     //Test sample for locking guide, not a real unit test
     [TestMethod]
     public void TestLockSamples() {
-      var app = SetupHelper.BooksApp; 
+      var app = Startup.BooksApp; 
       var session = app.OpenSystemSession();
       var order = session.EntitySet<IBookOrder>().First(bo => bo.User.UserName == "Dora");
       var oldLineCount = order.Lines.Count; 

@@ -73,6 +73,10 @@
     <Compile Include="Logging\NotificationLog\NotificationLogModule.cs" />
     <Compile Include="Logging\NotificationLog\INotificationLogService.cs" />
     <Compile Include="Logging\UserSession\XmlSerializationHelper.cs" />
+    <Compile Include="Logging\WebClientLog\IWebClientLogService.cs" />
+    <Compile Include="Logging\WebClientLog\WebClientLogEntities.cs" />
+    <Compile Include="HttpHelper.cs" />
+    <Compile Include="Logging\WebClientLog\WebClientLogModule.cs" />
     <Compile Include="Login\LoginModule\LoginModule_Migrations.cs" />
     <Compile Include="Login\LoginModule\LoginModule_Notifications.cs" />
     <Compile Include="Notifications\INotificationService.cs" />

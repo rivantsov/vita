@@ -7,10 +7,19 @@ using System.Threading.Tasks;
 
 namespace Vita.Modules.WebClient {
 
+  public class SerializedContent {
+    public object Object;
+    public HttpContent Content;
+    public string Raw;
+    public override string ToString() {
+      return Raw ?? Object?.ToString(); 
+    }
+  }
+
   public interface IContentSerializer {
     IList<string> MediaTypes { get; }
-    Task<object> DeserializeAsync(Type type, HttpContent content);
-    StreamContent Serialize(object value);
+    Task<SerializedContent> DeserializeAsync(Type type, HttpContent content);
+    Task<SerializedContent> SerializeAsync(object value);
   }
 
   public interface IClientErrorHandler {

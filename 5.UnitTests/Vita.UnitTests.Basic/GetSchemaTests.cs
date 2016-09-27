@@ -18,14 +18,14 @@ namespace Vita.UnitTests.Basic {
     // We do not assert anything, just making sure schema load methods run without errors
     [TestMethod]
     public void TestGetSchema() {
-      if(SetupHelper.Driver == null)
-        SetupHelper.SetupForTestExplorerMode(); 
-      _fileName = "_schemas_" + SetupHelper.ServerType + ".log";
+      if(Startup.Driver == null)
+        Startup.SetupForTestExplorerMode(); 
+      _fileName = "_schemas_" + Startup.ServerType + ".log";
       System.IO.File.Delete(_fileName);
       WriteLine("--------------------------------------------------------------------------------------------------");
-      WriteLine("Server type: " + SetupHelper.ServerType + Environment.NewLine);
-      var dbStt = new DbSettings(SetupHelper.Driver, SetupHelper.DbOptions, SetupHelper.ConnectionString); 
-      var conn = dbStt.ModelConfig.Driver.CreateConnection(SetupHelper.ConnectionString);
+      WriteLine("Server type: " + Startup.ServerType + Environment.NewLine);
+      var dbStt = new DbSettings(Startup.Driver, Startup.DbOptions, Startup.ConnectionString); 
+      var conn = dbStt.ModelConfig.Driver.CreateConnection(Startup.ConnectionString);
 
       //get col list
       var colList = GetCollectionNames(conn);
@@ -41,7 +41,7 @@ namespace Vita.UnitTests.Basic {
     }
 
     private IList<string> GetCollectionNames(IDbConnection conn) {
-      if(SetupHelper.ServerType == DbServerType.Postgres) {
+      if(Startup.ServerType == DbServerType.Postgres) {
         return new string[] { 
                                "Columns", "Databases", "ForeignKeys", "Indexes", "Tables", "IndexColumns", "Views"};
 

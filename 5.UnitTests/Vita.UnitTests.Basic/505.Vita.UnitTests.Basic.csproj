@@ -50,10 +50,6 @@
       <RequiredTargetFramework>3.5</RequiredTargetFramework>
     </Reference>
     <Reference Include="System.Data" />
-    <Reference Include="System.Data.SQLite, Version=1.0.97.0, Culture=neutral, PublicKeyToken=db937bc2d44ff139, processorArchitecture=MSIL">
-      <HintPath>..\..\packages\System.Data.SQLite.Core.1.0.97.0\lib\net45\System.Data.SQLite.dll</HintPath>
-      <Private>True</Private>
-    </Reference>
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
@@ -76,7 +72,7 @@
     <Compile Include="AlgorithmTests.cs" />
     <Compile Include="SchemaUpdateTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="SetupHelper.cs" />
+    <Compile Include="_Startup.cs" />
     <Compile Include="MiscHelpersTests.cs" />
   </ItemGroup>
   <ItemGroup>

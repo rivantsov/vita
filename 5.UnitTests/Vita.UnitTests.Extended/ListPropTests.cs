@@ -16,16 +16,16 @@ namespace Vita.UnitTests.Extended {
 
     [TestInitialize]
     public void TestInit() {
-      SetupHelper.InitApp();
+      Startup.InitApp();
     }
     [TestCleanup]
     public void TearDown() {
-      SetupHelper.TearDown(); 
+      Startup.TearDown(); 
     }
 
     [TestMethod]
     public void TestListProperties() {
-      var app = SetupHelper.BooksApp; 
+      var app = Startup.BooksApp; 
       // Get some IDs
       var session = app.OpenSession(); 
       var csBook = session.EntitySet<IBook>().Single(b => b.Title.StartsWith("c#"));
@@ -94,7 +94,7 @@ namespace Vita.UnitTests.Extended {
 
     [TestMethod] 
     public void TestPersistOrderInAttr() {
-      var app = SetupHelper.BooksApp;
+      var app = Startup.BooksApp;
       var session = app.OpenSession();
       // Find order with 2 lines
       // The following query with Count does not work for SQL CE - it does not support subqueries (of certain kinds)

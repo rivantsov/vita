@@ -433,6 +433,7 @@ namespace Vita.Entities.Model {
     public EntityCommand SelectByKeyArrayCommand;
     public EntityMemberInfo OwnerMember; //for FK, the ref member
     public Delegate CacheSelectMethod; // compiled method to select in cache
+    public IList<EntityKeyMemberInfo> OrderByForSelect;
 
     public EntityKeyInfo(string keyName, KeyType keyType, EntityInfo entity, EntityMemberInfo ownerMember = null) {
       Name = keyName;
@@ -500,7 +501,6 @@ namespace Vita.Entities.Model {
     //for one2many - child entities; many2many - selects link entities
     public EntityCommand SelectDirectChildList;
     public EntityCommand SelectTargetListManyToMany;
-    public IList<EntityKeyMemberInfo> OrderBy;
     public EntityMemberInfo PersistentOrderMember; //set if owner property has [PersistOrderIn] attribute.
     public string Filter; 
 

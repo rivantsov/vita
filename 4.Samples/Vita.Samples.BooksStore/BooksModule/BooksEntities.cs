@@ -95,7 +95,7 @@ namespace Vita.Samples.BookStore {
     [Unlimited, Nullable]
     string Bio { get; set; }
     
-    [ManyToMany(typeof(IBookAuthor))]
+    [ManyToMany(typeof(IBookAuthor)), OrderBy("PublishedOn:DESC")]
     IList<IBook> Books { get; }
     
     [Nullable]
@@ -162,7 +162,7 @@ namespace Vita.Samples.BookStore {
 
   }
 
-  [Entity, OrderBy("LineNumber"), ClusteredIndex("Order,Id")]
+  [Entity, ClusteredIndex("Order,Id")] //, OrderBy("LineNumber")]
   public interface IBookOrderLine {
     [PrimaryKey, Auto]
     Guid Id { get; set; }

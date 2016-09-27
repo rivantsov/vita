@@ -66,9 +66,9 @@ namespace Vita.Entities {
       return query;
     }//method
 
-    public static MethodInfo WithOptionsMethod;
-    public static MethodInfo IncludeMethod1;
-    public static MethodInfo IncludeMethod2;
+    internal static MethodInfo WithOptionsMethod;
+    internal static MethodInfo IncludeMethod1;
+    internal static MethodInfo IncludeMethod2;
     static EntityQueryExtensions() {
       WithOptionsMethod = typeof(EntityQueryExtensions).GetMethod("WithOptions");
       var includes = typeof(EntityQueryExtensions).GetMethods().Where(m => m.Name == "Include");

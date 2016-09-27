@@ -254,5 +254,15 @@ namespace Vita.Entities {
     public static bool IsSet(this EntitySessionOptions options, EntitySessionOptions option) {
       return (options & option) != 0;
     }
+
+    public static DateTime GetUserLocalTime(this OperationContext context, DateTime? utcDateTime = null) {
+      Util.Check(context.UserSession != null, "No user session established, cannot infer user local time.");
+      var utc = utcDateTime == null ? context.App.TimeService.UtcNow : utcDateTime.Value;
+      var shifted = utc.AddMinutes(context.UserSession.TimeZoneOffsetMinutes);
+      var local = new DateTime(shifted.Year, shifted.Month, shifted.Day, shifted.Hour, shifted.Minute, shifted.Second, DateTimeKind.Unspecified);
+      return local;
+    }
+
+
   }//class
 }

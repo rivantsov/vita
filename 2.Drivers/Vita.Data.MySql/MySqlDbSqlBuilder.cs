@@ -32,7 +32,7 @@ SELECT {0} FROM {1}
       //Build column list
       var outColumns = table.Columns.GetSelectable();
       var strColumns = outColumns.GetSqlNameList();
-      var strOrderBy = BuildOrderBy(table.DefaultOrderBy); //might be empty
+      var strOrderBy = BuildOrderBy(table, table.DefaultOrderBy); //might be empty
       var cmdName = ModelConfig.NamingPolicy.ConstructDbCommandName(entCommand, table.TableName, "SelectAllPaged");
       var cmdInfo = CreateDbCommandInfo(entCommand, cmdName, table, DbExecutionType.Reader, string.Empty);
       var skipPrm = cmdInfo.Parameters[0].Name;

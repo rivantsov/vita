@@ -32,12 +32,12 @@ namespace Vita.UnitTests.Web {
       // 1. Changed values in user session are immediately saved in the database and session version is incremented
       // 2. LastUsedOn is being updated (on background thread, with 10 seconds increments)
       // 3. Session version higher than current cached causes session refresh
-      var client = SetupHelper.Client;
-      var timeService = SetupHelper.BooksApp.TimeService;
+      var client = Startup.Client;
+      var timeService = Startup.BooksApp.TimeService;
       //Login as Dora
       var doraLogin = LoginAs("dora");
       var authToken = doraLogin.AuthenticationToken;
-      var serverSession = SetupHelper.BooksApp.OpenSystemSession();
+      var serverSession = Startup.BooksApp.OpenSystemSession();
       var sessionRec = serverSession.EntitySet<IUserSession>().Where(s => s.WebSessionToken == authToken).FirstOrDefault();
       Assert.IsNotNull(sessionRec, "Session record not found.");
       var oldVersion = sessionRec.Version;
@@ -52,6 +52,7 @@ namespace Vita.UnitTests.Web {
       Assert.IsTrue(newVersion > oldVersion, "Expected version increment.");
       //Force updating lastUsedOn value: fast forward time one minute, make a call
       timeService.SetCurrentOffset(TimeSpan.FromMinutes(1));
+      //var varValue = client.ExecuteGet<string>("/api/special/sessionvalue?name=varName");
       var varValue = client.ExecuteGet<string>("/api/special/sessionvalue?name=varName");
       Assert.AreEqual("varValue1", varValue, "Expected 'varValue1' as a value."); 
       // The last API call came a minute later after the first one (according to time service); 
@@ -63,7 +64,7 @@ namespace Vita.UnitTests.Web {
       var newLastUsed = sessionRec.LastUsedOn;
       Assert.IsTrue(oldLastUsed.AddSeconds(50) < newLastUsed, "Expected new last used to be a minute away.");
       //set time back
-      SetupHelper.BooksApp.TimeService.SetCurrentOffset(TimeSpan.FromMilliseconds(0)); //restore time 
+      Startup.BooksApp.TimeService.SetCurrentOffset(TimeSpan.FromMilliseconds(0)); //restore time 
 
       // Test that cached user session is refreshed if incoming session version is higher. 
       // Scenario: we pretend that call goes through another web server and changes foo value in the session;
@@ -106,7 +107,7 @@ namespace Vita.UnitTests.Web {
 
     [TestMethod]
     public void TestSessionInfoApi() {
-      var client = SetupHelper.Client;
+      var client = Startup.Client;
       var resp = LoginAs("dora");
       //set timezone
       var currTimeZoneOffset = TimeZoneInfo.Local.BaseUtcOffset.TotalMinutes;

@@ -32,7 +32,7 @@ SELECT {0}
       if (table.DefaultOrderBy == null) 
           strOrderBy = "ORDER BY " + table.PrimaryKey.KeyColumns.GetSqlNameList() ;
       else 
-        strOrderBy = BuildOrderBy(table.DefaultOrderBy);
+        strOrderBy = BuildOrderBy(table, table.DefaultOrderBy);
       var sql = string.Format(SqlSelectAllPaged, strColumns, table.FullName, strOrderBy);
       var cmdInfo = CreateDbCommandInfo(entityCommand, cmdName, table, DbExecutionType.Reader, sql);
       cmdInfo.EntityMaterializer = CreateEntityMaterializer(table, outColumns);

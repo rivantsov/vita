@@ -35,14 +35,20 @@ namespace Vita.Data.Upgrades {
     public DbUpgradeInfo UpgradeDatabase() {
       //Check db version vs app version
       _upgradeInfo = BuildUpgradeInfo();
-      if(_upgradeInfo.Status != UpgradeStatus.ChangesDetected) 
-        return _upgradeInfo;
-      ApplyUpgrades();
-      _upgradeInfo.Status = UpgradeStatus.Applied;
-      //TODO: review this and refactor
-      var actLogFile = _database.DbModel.EntityApp.ActivationLogPath;
-      if (!string.IsNullOrEmpty(actLogFile))
-        _log.DumpTo(actLogFile);
+      try {
+        if(_upgradeInfo.Status == UpgradeStatus.ChangesDetected) {
+          ApplyUpgrades();
+          _upgradeInfo.Status = UpgradeStatus.Applied;
+        }
+        SaveDbVersionInfo();
+        //TODO: review this and refactor
+        var actLogFile = _database.DbModel.EntityApp.ActivationLogPath;
+        if(!string.IsNullOrEmpty(actLogFile))
+          _log.DumpTo(actLogFile);
+      } catch(Exception ex) {
+        SaveDbVersionInfo(ex);
+        throw; 
+      }
       return _upgradeInfo; 
 
     }
@@ -88,13 +94,21 @@ namespace Vita.Data.Upgrades {
     }
 
     public DbVersionInfo LoadDbVersionInfo(DbModelLoader loader) {
-      var infoProvider = _database.Settings.DbInfoProvider;
+      var infoProvider = _app.GetService<IDbInfoService>();
       if (infoProvider == null)
         return null; 
       var versionInfo = infoProvider.LoadDbInfo(_database.Settings, _app.AppName, loader);
       loader.VersionInfo = versionInfo; 
       return versionInfo;
     }
+    public bool SaveDbVersionInfo(Exception exception = null) {
+      //Save if DbInfo service is available
+      var infoService = _app.GetService<IDbInfoService>();
+      if(infoService == null)
+        return false;
+      return infoService.UpdateDbInfo(_database, exception); //it never throws 
+    }
+
 
     private bool CheckCanUpgrade(DbVersionInfo oldDbVersion) {
       var appVersion = _database.DbModel.EntityApp.Version;
@@ -123,14 +137,13 @@ namespace Vita.Data.Upgrades {
     }
 
     public void ApplyUpgrades() {
-      if (_log != null)
-        _log.Info("Applying DB Upgrade     ================================================================");
+      _log.Info("Applying DB Upgrade     ================================================================");
       OnUpgrading(_timeService.UtcNow);
       var startedOn = _timeService.UtcNow;
       var driver = _database.DbModel.Driver;
       var conn = driver.CreateConnection(_database.Settings.SchemaManagementConnectionString);
       DbUpgradeScript currScript = null;
-      IDbCommand cmd = null; 
+      IDbCommand cmd = null;
       var appliedScripts = new List<DbUpgradeScript>(); 
       try {
         conn.Open();
@@ -147,15 +160,10 @@ namespace Vita.Data.Upgrades {
           cmd.Dispose();
           cmd = null;
         }
-        if (_log != null) {
-          _log.Info(_upgradeInfo.AllScripts.GetAllAsText());
-          _log.Info("End DB Upgrade scripts  ================================================================");
-        }
-        // upgrade version numbers;
-        SaveDbInfo();
+        _log.Info(_upgradeInfo.AllScripts.GetAllAsText());
+        _log.Info("End DB Upgrade scripts  ================================================================");
         OnUpgraded(_upgradeInfo.AllScripts, startedOn, _timeService.UtcNow);
       } catch (Exception ex) {
-        SaveDbInfo(ex);
         OnUpgraded(appliedScripts, startedOn, _timeService.UtcNow, ex, currScript);
         var logStr = ex.ToLogString();
         System.Diagnostics.Debug.WriteLine(logStr);
@@ -169,15 +177,6 @@ namespace Vita.Data.Upgrades {
         conn.Close();
       }
     }//method
-
-
-    public bool SaveDbInfo(Exception exception = null) {
-      //Save if DbInfo service is available
-      var infoService = _database.Settings.DbInfoProvider ?? _app.GetService<IDbInfoService>();
-      if(infoService == null)
-        return false;
-      return infoService.UpdateDbInfo(_database, exception); //it never throws 
-    }
 
     private void OnHigherVersionDetected() {
       var args = new DataSourceEventArgs(_dataSource, DataSourceEventType.HigherVersionDetected);

@@ -28,7 +28,7 @@ using Vita.Entities.Web;
 
 namespace Vita.UnitTests.Web {
 
-  public static class SetupHelper {
+  public static class Startup {
     public static BooksEntityApp BooksApp; 
     public static HttpSelfHostServer Server;
     public static WebApiClient Client;
@@ -79,8 +79,9 @@ namespace Vita.UnitTests.Web {
       SampleDataGenerator.CreateUnitTestData(BooksApp);
       var serviceUrl = ConfigurationManager.AppSettings["ServiceUrl"];
       StartService(serviceUrl);
-      Client = new WebApiClient(serviceUrl, nameMapping: GetNameMapping());
-      Client.InnerHandler.AllowAutoRedirect = false; //we need it for Redirect test
+      var clientContext = new OperationContext(BooksApp);
+      Client = new WebApiClient(clientContext, serviceUrl, nameMapping: GetNameMapping());
+      WebApiClient.SharedHttpClientHandler.AllowAutoRedirect = false; //we need it for Redirect test
     }
 
     public static void StartService(string baseAddress) {
@@ -96,7 +97,7 @@ namespace Vita.UnitTests.Web {
       // Needed for classic API controllers that live in a separate assembly (not in data service host project). Not needed for SlimApi controllers
       var contrTypes = new Type[] { typeof(ClassicWebApiController) };
       WebHelper.ConfigureWebApi(config, BooksApp, LogLevel.Details,
-        WebHandlerOptions.ReturnBadRequestOnAuthenticationRequired | WebHandlerOptions.ReturnExceptionDetails, GetNameMapping());
+         WebHandlerOptions.ReturnBadRequestOnAuthenticationRequired | WebHandlerOptions.ReturnExceptionDetails, GetNameMapping());
       config.MaxReceivedMessageSize = int.MaxValue;
       config.MaxBufferSize = int.MaxValue;
       Server = new HttpSelfHostServer(config); 

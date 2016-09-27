@@ -47,10 +47,6 @@
       <RequiredTargetFramework>3.5</RequiredTargetFramework>
     </Reference>
     <Reference Include="System.Data" />
-    <Reference Include="System.Data.SQLite, Version=1.0.97.0, Culture=neutral, PublicKeyToken=db937bc2d44ff139, processorArchitecture=MSIL">
-      <HintPath>..\..\packages\System.Data.SQLite.Core.1.0.97.0\lib\net45\System.Data.SQLite.dll</HintPath>
-      <Private>True</Private>
-    </Reference>
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
@@ -74,7 +70,7 @@
     <Compile Include="LinqTests.cs" />
     <Compile Include="MiscTests.cs" />
     <Compile Include="AuthorizationTests.cs" />
-    <Compile Include="SetupHelper.cs" />
+    <Compile Include="_Startup.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="DbToEntitiesSourceCodeGenTests.cs" />
   </ItemGroup>
@@ -82,10 +78,6 @@
     <ProjectReference Include="..\..\1.Framework\Vita.Core\100.Vita.csproj">
       <Project>{BEB21724-926E-4FD7-B05C-FCDAB9A47159}</Project>
       <Name>100.Vita</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\2.Drivers\Vita.Data.SQLite\240.Vita.Data.SQLite.csproj">
-      <Project>{54d65ab0-433a-4065-89bd-a6868db93853}</Project>
-      <Name>240.Vita.Data.SQLite</Name>
     </ProjectReference>
     <ProjectReference Include="..\..\3.Modules\Vita.Modules\300.Vita.Modules.csproj">
       <Project>{5F2AD472-63C6-4AA7-955D-103A7FA69613}</Project>

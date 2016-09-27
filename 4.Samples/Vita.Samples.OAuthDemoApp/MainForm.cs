@@ -133,6 +133,8 @@ namespace Vita.Samples.OAuthDemoApp {
         Application.DoEvents();
         System.Threading.Thread.Sleep(100);
       }
+
+      this.BringToFront(); //bring back to front
       if(_processStatus == ProcessStatus.Stopped)
         return;
       // Refresh flow entity and check for error
@@ -143,6 +145,7 @@ namespace Vita.Samples.OAuthDemoApp {
         return;
       }
       Log("=== Redirected; server returned authorization code: {0}", flow.AuthorizationCode);
+      this.BringToTop();
 
       Log("=== Retrieving access token using authorization code...");
       var tokenId = await _service.RetrieveAccessTokenAsync(session.Context, flow.Id);
@@ -194,8 +197,17 @@ namespace Vita.Samples.OAuthDemoApp {
       }
     }//method
 
+    // simple way to bring window/app to top
+    private void BringToTop() {
+      var saveWinState = this.WindowState;
+      this.WindowState = FormWindowState.Minimized;
+      Application.DoEvents();
+      this.WindowState = saveWinState;
+      Application.DoEvents();
+    }
+
     // For FB we test retreiving profile as object
-    class FacebookProfile {
+    public class FacebookProfile {
       [Node("id")]
       public string Id;
       [Node("name")]
@@ -317,8 +329,6 @@ namespace Vita.Samples.OAuthDemoApp {
       foreach(var srv in servers)
         cboServers.Items.Add(srv.Name);
     }
-
-
     #endregion 
 
     #region Exception handling

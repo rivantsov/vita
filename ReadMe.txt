@@ -25,9 +25,12 @@ unit test project. You should also precreate test databases on the servers (exce
   1.MS SQL Server: create databases VitaTest, VitaBooks, VitaBooksLogs
   2. MS SQL Compact and SQLite: these tests use an empty database file included in test project; 
     the file is copied to the bin folder on project compile and the copy is used as a test database
-  3. Local MySql installation: MySql treats schema/database terms interchangeably, so you will see 'schemas' 
-    created by unit tests as databases in local server. If you are running MariaDb, you may need to add ANSI_QUOTES option
-	to SQL_MODE global variable in MySql.ini file (see MariaDb docs).
+  3. Local MySql installation:
+    - Add the following options to sql-mode variable in my.ini file (in C:\ProgramData\MySQL\MySQL Server 5.6) 
+         ANSI_QUOTES
+    - Connection string must have ' Old Guids=true' to properly handle Guids
+    - MySql treats schema/database terms interchangeably, so you will see 'schemas' 
+    created by unit tests as databases in local server.
   4. Postgres: create empty databases: VitaTest, VitaBooks. You need to run the following script in SQL window:
        CREATE EXTENSION "uuid-ossp";
    (it is extension for generating GUIDs in LINQ-insert commands). Also create login: testuser/pass

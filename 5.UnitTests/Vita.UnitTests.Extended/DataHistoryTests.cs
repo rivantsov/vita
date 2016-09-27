@@ -19,16 +19,16 @@ namespace Vita.UnitTests.Extended {
 
     [TestInitialize]
     public void TestInit() {
-      SetupHelper.InitApp();
+      Startup.InitApp();
     }
     [TestCleanup]
     public void TearDown() {
-      SetupHelper.TearDown();
+      Startup.TearDown();
     }
 
     [TestMethod]
     public void TestDataHistory() {
-      var app = SetupHelper.BooksApp;
+      var app = Startup.BooksApp;
       try {
         //Book Review has history tracking enabled; let's create a review, update it a few times, and then delete it
         // we set 'current time' explicitly, to separate events in time, for proper sorting by date

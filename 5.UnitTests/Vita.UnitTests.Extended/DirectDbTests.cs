@@ -18,11 +18,11 @@ namespace Vita.UnitTests.Extended {
 
     [TestInitialize]
     public void TestInit() {
-      SetupHelper.InitApp();
+      Startup.InitApp();
     }
     [TestCleanup]
     public void TearDown() {
-      SetupHelper.TearDown(); 
+      Startup.TearDown(); 
     }
 
 
@@ -32,7 +32,7 @@ namespace Vita.UnitTests.Extended {
       //Note: we need to use entity that is not cached, otherwise test does not work if cache is enabled. 
       // If an entity is cached and we change entity in the database through direct access, 
       // cache does not know about update, so it keeps stale value. We use IBookOrderLine which is not cached. 
-      var app = SetupHelper.BooksApp;
+      var app = Startup.BooksApp;
       var session = app.OpenSystemSession();
 
       var directDb = session.GetDirectDbConnector();
@@ -54,7 +54,7 @@ namespace Vita.UnitTests.Extended {
       var cmd = directDb.DbConnection.CreateCommand();
       cmd.Connection = directDb.DbConnection;
       cmd.Transaction = directDb.DbTransaction;
-      switch(SetupHelper.ServerType) {
+      switch(Startup.ServerType) {
         case DbServerType.SqlCe: case DbServerType.Sqlite:
           // SqlCe, SqlLite does not have schemas
           cmd.CommandText = "UPDATE \"Book\" SET \"Price\" = \"Price\" + 1 WHERE \"Id\" = @P1;";

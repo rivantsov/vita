@@ -71,11 +71,11 @@ namespace Vita.UnitTests.Web {
       return "bars:" + q;
     }
 
-    [ApiPost, ApiRoute("sessionvalue")]
+    [ApiPost, ApiRoute("sessionvalue"), LoggedInOnly]
     public void SetSessionValue(string name, string value) {
       Context.UserSession.SetValue(name, value); 
     }
-    [ApiGet, ApiRoute("sessionvalue")]
+    [ApiGet, ApiRoute("sessionvalue"), LoggedInOnly]
     public string GetSessionValue(string name) {
       return Context.UserSession.GetValue<string>(name);
     }

@@ -12,7 +12,7 @@ namespace Vita.UnitTests.Web {
 
     [TestMethod]
     public void TestCatalogFunctions() {
-      var client = SetupHelper.Client;
+      var client = Startup.Client;
 
       //Get all books
       var allBooks = client.ExecuteGet<SearchResults<Book>>("api/books?take={0}", 10);
@@ -66,7 +66,7 @@ namespace Vita.UnitTests.Web {
 
     [TestMethod]
     public void TestGetImage() {
-      var client = SetupHelper.Client;
+      var client = Startup.Client;
 
       //Get c# book
       var searchBooks = client.ExecuteGet<SearchResults<Book>>("api/books?title=c#");

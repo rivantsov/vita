@@ -59,20 +59,21 @@ namespace Vita.Web.SlimApi {
 
     public override HttpActionDescriptor SelectAction(HttpControllerContext controllerContext) {
       if(controllerContext.ControllerDescriptor.ControllerType == typeof(SlimApiGhostController)) {
-        var httpMethod = controllerContext.Request.Method;
+        var req = controllerContext.Request; 
+        var httpMethod = req.Method;
         var subRoutes = controllerContext.RouteData.GetSubRoutes();
         foreach(var sr in subRoutes) {
           var action = FindAction(sr.Route.RouteTemplate, httpMethod);
           if(action != null)
             return action; 
-        }
+        } 
         // Failed to match - throw BadRequest
         // Note: we cannot throw ClientFaultException here - Web Api will catch it and transform into InternalServerError
         // We have to throw HttpResponseException which Web Api will recongnize and pass it up
-        var fmt = controllerContext.Request.GetResponseFormatter(typeof(ClientFault[]));
         var badRequest = new HttpResponseMessage(HttpStatusCode.BadRequest);
-        var fault = new ClientFault(ClientFaultCodes.InvalidUrlOrMethod, "Failed to match HTTP Method and URL to controller method.");
-        badRequest.Content = new ObjectContent<ClientFault[]>(new [] {fault}, fmt);
+        // We try to imitate here the default message that is thrown when URL does not even match a controller
+        badRequest.Content = new StringContent("No HTTP resource was found that matches the request URI " + req.RequestUri); 
+        badRequest.StatusCode = HttpStatusCode.NotFound;
         throw new HttpResponseException(badRequest);
       } //if ghost controller
       return base.SelectAction(controllerContext);

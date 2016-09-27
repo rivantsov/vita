@@ -20,18 +20,18 @@ namespace Vita.UnitTests.Extended {
 
     [TestInitialize]
     public void TestInit() {
-      SetupHelper.InitApp();
-      _authorizationService = SetupHelper.BooksApp.GetService<IAuthorizationService>(); 
+      Startup.InitApp();
+      _authorizationService = Startup.BooksApp.GetService<IAuthorizationService>(); 
     }
     [TestCleanup]
     public void TearDown() {
-      SetupHelper.TearDown();
+      Startup.TearDown();
     }
 
     [TestMethod]
     public void TestAuthorization() {
       // First let's open non-secure session, load Users and lookup ID's of some existing objects - we will use them in tests
-      var app = SetupHelper.BooksApp;
+      var app = Startup.BooksApp;
       var nonSecureSession = app.OpenSystemSession();
       // Preparation - find specific entities (books, users, etc)
       var allUsers = nonSecureSession.GetEntities<IUser>(take: 20);
@@ -59,7 +59,7 @@ namespace Vita.UnitTests.Extended {
       var charlieTheManager = allUsers.First(u => u.UserName == "Charlie").ToUserInfo();
       var jessyCustSupport = allUsers.First(u => u.UserName == "Jessy").ToUserInfo();
       var johnTheAuthor = allUsers.First(u => u.UserName == "John").ToUserInfo();
-      var booksAuth = SetupHelper.BooksApp.Authorization;
+      var booksAuth = Startup.BooksApp.Authorization;
 
       #region Anonymous User Role =========================================================================================
       EnsurePasses("Anonymous user can browse books, authors, publishers, reviews.", () => {
@@ -481,7 +481,7 @@ namespace Vita.UnitTests.Extended {
     }
 
     private ISecureSession OpenSecureSession(UserInfo user) {
-      var opContext = new OperationContext(SetupHelper.BooksApp, user);
+      var opContext = new OperationContext(Startup.BooksApp, user);
       var session = opContext.OpenSecureSession();
       return session; 
     }

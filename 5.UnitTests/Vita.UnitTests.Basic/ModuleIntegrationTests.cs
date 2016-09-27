@@ -107,7 +107,7 @@ namespace Vita.UnitTests.Basic {
       [TestMethod]
       public void TestModuleIntegration() {
         var schema = "usr";
-        SetupHelper.DropSchemaObjects(schema); //start from scratch
+        Startup.DropSchemaObjects(schema); //start from scratch
 
         // Runs integrated app by Randy
         _app = new EntityApp();
@@ -119,7 +119,7 @@ namespace Vita.UnitTests.Basic {
         _app.ReplaceEntity(typeof(Alice.ILogin), typeof(IAppLogin));
         _app.ReplaceEntity(typeof(Bob.IPerson), typeof(IPersonExt));
         // activate
-        SetupHelper.ActivateApp(_app);
+        Startup.ActivateApp(_app);
 
         //Test the resulting solution
         var session = _app.OpenSession();

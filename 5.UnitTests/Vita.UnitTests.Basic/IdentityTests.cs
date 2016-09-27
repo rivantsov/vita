@@ -49,8 +49,8 @@ namespace Vita.UnitTests.Basic {
     [TestMethod]
     public void TestIdentityColumns() {
       _app = new IdentityTestsEntityApp();
-      SetupHelper.DropSchemaObjects("ident"); 
-      SetupHelper.ActivateApp(_app);
+      Startup.DropSchemaObjects("ident"); 
+      Startup.ActivateApp(_app);
       var session = _app.OpenSession();
       var john = session.NewEntity<IPerson>();
       john.Name = "John S";
@@ -83,10 +83,10 @@ namespace Vita.UnitTests.Basic {
     [TestMethod]
     public void TestIdentityInLargeBatch() {
       _app = new IdentityTestsEntityApp();
-      SetupHelper.DropSchemaObjects("ident");
-      SetupHelper.ActivateApp(_app);
-      var saveParamCount = SetupHelper.Driver.MaxParamCount; 
-      SetupHelper.Driver.MaxParamCount = 20; //to cause update batch split into multiple commands
+      Startup.DropSchemaObjects("ident");
+      Startup.ActivateApp(_app);
+      var saveParamCount = Startup.Driver.MaxParamCount; 
+      Startup.Driver.MaxParamCount = 20; //to cause update batch split into multiple commands
       var session = _app.OpenSession();
       // add 50 owners, then 200 cars with random owners
       // our goal is to create update set with inserts of linked entities with identity pk/fk
@@ -107,7 +107,7 @@ namespace Vita.UnitTests.Basic {
         session.SaveChanges(); //we just test that it succeeds
       } finally {
         //revert max param count back to normal - to avoid disturbing other tests
-        SetupHelper.Driver.MaxParamCount = saveParamCount;
+        Startup.Driver.MaxParamCount = saveParamCount;
       }
     }
   }

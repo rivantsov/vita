@@ -26,17 +26,17 @@ namespace Vita.UnitTests.Web {
     // Testing saving client errors (in java script) on the server, using clienterror POST endpoint
     [TestMethod]
     public void TestClientErrorPost() {
-      var client = SetupHelper.Client;
+      var client = Startup.Client;
       var clientError = new ClientError() {
         Id = Guid.NewGuid(), //optional 
         AppName = "TestApp", Message = "Client Error Message", Details = "Client Error Details",
-        LocalTime = SetupHelper.BooksApp.TimeService.Now.AddMinutes(-5) //pretend it happened 5 minutes ago
+        LocalTime = Startup.BooksApp.TimeService.Now.AddMinutes(-5) //pretend it happened 5 minutes ago
       };
       var serverErrorId = client.ExecutePost<ClientError, Guid>(clientError, "api/clienterrors");
       Assert.AreEqual(clientError.Id, serverErrorId, "Failed to submit client error, IDs do not match");
 
       //Verify record exists in database
-      var serverSession = SetupHelper.BooksApp.OpenSystemSession();
+      var serverSession = Startup.BooksApp.OpenSystemSession();
       var errInfo = serverSession.GetEntity<IErrorLog>(serverErrorId);
       Assert.IsNotNull(errInfo, "Failed to get server error record.");
       Assert.AreEqual(clientError.Message, errInfo.Message, "message does not match");
@@ -46,7 +46,7 @@ namespace Vita.UnitTests.Web {
 
     [TestMethod]
     public void TestClientFaults() {
-      var client = SetupHelper.Client;
+      var client = Startup.Client;
       Logout(); //if we're still logged in from other failed tests
 
       const string booksUrl = "api/books";
@@ -99,9 +99,12 @@ namespace Vita.UnitTests.Web {
       Logout();
 
       // Test invalid URL path, no match to controller method --------------------------------------------------------------------------
-      // nullref method accepts GET only
-      var badUrlExc = TestUtil.ExpectFailWith<ClientFaultException>(() => client.ExecutePost<object, string>(null, "api/special/nullref"));
-      Assert.AreEqual(ClientFaultCodes.InvalidUrlOrMethod, badUrlExc.Faults[0].Code, "Expected InvalidUrlOrMethod code.");
+      //Test non-existing URL
+      var badUrlExc = TestUtil.ExpectFailWith<ApiException>( () => client.ExecuteGet<SearchResults<Book>>("api/non-existing"));
+      Assert.AreEqual(HttpStatusCode.NotFound, badUrlExc.Status, "Expected Not found code.");
+      // There is a URL, but HTTP method is wrong: nullref method accepts GET only
+      var badMethodExc = TestUtil.ExpectFailWith<ApiException>(() => client.ExecutePost<object, string>(null, "api/special/nullref"));
+      Assert.AreEqual(HttpStatusCode.NotFound, badMethodExc.Status, "Expected Not found code.");
 
 
       // test malformed parameters ------------------------------------------------------------------------------------------------------
@@ -113,14 +116,15 @@ namespace Vita.UnitTests.Web {
 
     [TestMethod]
     public void TestErrorHandling() {
+      var client = Startup.Client;
+
       // 1. Run op, check that SQL not logged, call method with server error (NullRefExc), check that 501 returned, 
       //  check that error and SQL in WebCall is logged
       // 2. Test access denied exc - Diego tries to delete Dora's review
       // 3. Post malformed Json
 
-      var client = SetupHelper.Client;
       IWebCallLog logEntry;
-      var webStt = SetupHelper.BooksApp.GetConfig<WebCallContextHandlerSettings>();
+      var webStt = Startup.BooksApp.GetConfig<WebCallContextHandlerSettings>();
       var savedLogLevel = webStt.LogLevel;
       // Set web log level to Basic - details are not logged unless there's error
       webStt.LogLevel = Entities.Services.LogLevel.Basic;
@@ -156,7 +160,7 @@ namespace Vita.UnitTests.Web {
 
       // AuthorizationException on the server: Diego tries to delete Dora's review. ------------------------------------------------------------- 
       // This should result in Unauthorized response from the server, with error details logged on the server and returned in response body
-      var serverSession = SetupHelper.BooksApp.OpenSession();
+      var serverSession = Startup.BooksApp.OpenSession();
       var doraReviewId = serverSession.EntitySet<IBookReview>().First(r => r.User.UserName == "Dora").Id;
 
       LoginAs("Diego");
@@ -183,14 +187,9 @@ namespace Vita.UnitTests.Web {
 
       // Error deserializing object on the server -------------------------------------------------------------------------------
       // Let's send garbage to server method that expects a nice object in the body.
-      // For this, we need to use unwrapped HttpClient 
       LoginAs("Dora");
-      var httpClient = client.Client;
       var badJson = new StringContent("definitely not Json {/,'{", UTF8Encoding.Default, "application/json");
-      var respTask = httpClient.PostAsync(client.Settings.ServiceUrl + "/api/user/reviews", badJson);
-      Task.Run(() => respTask);
-      var respMsg = respTask.Result;
-      Assert.AreEqual(HttpStatusCode.BadRequest, respMsg.StatusCode, "Bad json in request - invalid status code.");
+      var badReqExc = TestUtil.ExpectClientFault(() => client.ExecutePost<HttpContent, HttpResponseMessage>(badJson, "/api/user/reviews"));
       //The HTTP status returned is BadRequest, but in this case the error is logged in details on the server, as a critical error
       logEntry = GetLastWebLogEntry();
       Assert.IsTrue(logEntry.Url.Contains("api/user/reviews"), "Expected review post entry");
@@ -206,9 +205,9 @@ namespace Vita.UnitTests.Web {
 
     //returns latest webLogEntry on the server
     private IWebCallLog GetLastWebLogEntry() {
-      SetupHelper.FlushLogs();
-      var utcNow = SetupHelper.BooksApp.TimeService.UtcNow; 
-      var session = SetupHelper.BooksApp.OpenSession();
+      Startup.FlushLogs();
+      var utcNow = Startup.BooksApp.TimeService.UtcNow; 
+      var session = Startup.BooksApp.OpenSession();
       var qWL = from wl in session.EntitySet<IWebCallLog>()
                 where wl.CreatedOn <= utcNow     // Diagnostics controller test messes up time, so we might have some entries posted in the future - filter them
                   orderby wl.CreatedOn descending

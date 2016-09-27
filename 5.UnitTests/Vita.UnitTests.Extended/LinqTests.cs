@@ -29,12 +29,12 @@ namespace Vita.UnitTests.Extended {
 
     [TestInitialize]
     public void TestInit() {
-      SetupHelper.InitApp();
+      Startup.InitApp();
     }
 
     [TestCleanup]
     public void TearDown() {
-      SetupHelper.TearDown(); 
+      Startup.TearDown(); 
     }
 
     #region Helper objects for LINQ test
@@ -53,8 +53,8 @@ namespace Vita.UnitTests.Extended {
 
     [TestMethod]
     public void TestLinqBasics() {
-      var app = SetupHelper.BooksApp;
-      SetupHelper.InvalidateCache();
+      var app = Startup.BooksApp;
+      Startup.InvalidateCache();
       //Init
       var session = app.OpenSession();
       var books = session.EntitySet<IBook>();
@@ -158,7 +158,7 @@ namespace Vita.UnitTests.Extended {
 
       //Same but with parameter in output 
       //SQL CE does not allow this (query like: SELECT Title, Price, @P3)
-      if (SetupHelper.ServerType != DbServerType.SqlCe) {
+      if (Startup.ServerType != DbServerType.SqlCe) {
         var someKey = "someKey"; //some value to include into results - testing how such field initialized from parameter is handled
         var qryBooksAnon2 = from b in session.EntitySet<IBook>()
                             where b.Category == BookCategory.Programming
@@ -300,7 +300,7 @@ namespace Vita.UnitTests.Extended {
     public void TestLinqWithNew() {
       //test for using new DateTime() in Linq queries; 
       // first with constants
-      var session = SetupHelper.BooksApp.OpenSession();
+      var session = Startup.BooksApp.OpenSession();
       var dateQ = from bo in session.EntitySet<IBookOrder>()
                   where bo.CreatedOn < new DateTime(2020, 1, 1)
                   select bo;
@@ -338,14 +338,14 @@ namespace Vita.UnitTests.Extended {
 
     [TestMethod]
     public void TestLinqWithEntityCache() {
-      if (!SetupHelper.CacheEnabled)
+      if (!Startup.CacheEnabled)
         return;
-      SetupHelper.InvalidateCache(waitForReload: true); //make sure cache is reloaded and fresh
+      Startup.InvalidateCache(waitForReload: true); //make sure cache is reloaded and fresh
       // Some queries (ex: involving many-to-many relations) are not supported by Linq2Sql, 
       // but run OK against full entity cache. 
       // Entity cache is returning clones of entities in cache, and these clones must be attached to the caller session.
       // We test that results of queries are attaced to current session.
-      var app = SetupHelper.BooksApp;
+      var app = Startup.BooksApp;
 
       // Many-to-many relations is NOT supported currently, only queries in cache can handle this. It is on TODO list to support m2m. 
       // We check CloneEntities interceptor injected at the top level, for the final results of the query
@@ -398,7 +398,7 @@ namespace Vita.UnitTests.Extended {
     [TestMethod]
     public void TestLinqLikeOperator() {
       //We test escaping wildcards
-      var app = SetupHelper.BooksApp;
+      var app = Startup.BooksApp;
       var session = app.OpenSession();
       var reviews = session.EntitySet<IBookReview>();
       // Using literal, with underscore and apostrophe
@@ -432,7 +432,7 @@ namespace Vita.UnitTests.Extended {
 
     [TestMethod]
     public void TestLinqJoins() {
-      var app = SetupHelper.BooksApp;
+      var app = Startup.BooksApp;
       var session = app.OpenSession();
       var books = session.EntitySet<IBook>();
       var pubs = session.EntitySet<IPublisher>();
@@ -504,7 +504,7 @@ namespace Vita.UnitTests.Extended {
 
     [TestMethod]
     public void TestLinqPaging() {
-      var app = SetupHelper.BooksApp;
+      var app = Startup.BooksApp;
       var session = app.OpenSession();
       var bookOrders = session.EntitySet<IBookOrder>();
       // Skip and Take arguments are always included into expr tree as constants - see Queryable.Skip,Take definitions
@@ -520,7 +520,7 @@ namespace Vita.UnitTests.Extended {
       Assert.AreEqual(2, cmd.Parameters.Count, "Invalid param count for page query.");
       // We used Skip/Take; this requires specifying OrderBy in MsSql, Postgres. 
       // Linq engine should be adding fake order-by clause: ORDER BY (SELECT 1)
-      if(SetupHelper.ServerType == DbServerType.MsSql || SetupHelper.ServerType == DbServerType.Postgres) {
+      if(Startup.ServerType == DbServerType.MsSql || Startup.ServerType == DbServerType.Postgres) {
         var sql = cmd.CommandText.ToUpperInvariant();
         Assert.IsTrue(sql.IndexOf("ORDER BY (SELECT 1)") > 0, "Expected fake OrderBy clause");
 
@@ -529,7 +529,7 @@ namespace Vita.UnitTests.Extended {
 
     [TestMethod]
     public void TestLinqArrayContains() {
-      var app = SetupHelper.BooksApp;
+      var app = Startup.BooksApp;
       var session = app.OpenSession();
 
 
@@ -582,7 +582,7 @@ namespace Vita.UnitTests.Extended {
 
     [TestMethod]
     public void TestLinqQueryCache() {
-      var app = SetupHelper.BooksApp;
+      var app = Startup.BooksApp;
       var session = app.OpenSession();
       var books = session.EntitySet<IBook>();
       var authors = session.EntitySet<IAuthor>();
@@ -622,12 +622,12 @@ namespace Vita.UnitTests.Extended {
     [TestMethod]
     public void TestLinqBoolBitFields() {
       // We test that LINQ engine correctly handles bit fields
-      var app = SetupHelper.BooksApp;
+      var app = Startup.BooksApp;
       var session = app.OpenSession();
       var users = session.EntitySet<IUser>();
 
       bool boolParam = true;
-      if(SetupHelper.ServerType != DbServerType.SqlCe) { //SQL CE does not support these tricks (no IIF)
+      if(Startup.ServerType != DbServerType.SqlCe) { //SQL CE does not support these tricks (no IIF)
         //Bug fix, handling expressions like 'ent.BoolProp & boolValue == ent.BoolProp'
         var q0 = from u in users
                  where (u.IsActive && boolParam) == u.IsActive
@@ -665,7 +665,7 @@ namespace Vita.UnitTests.Extended {
     [TestMethod]
     public void TestLinqContains() {
       
-      var app = SetupHelper.BooksApp;
+      var app = Startup.BooksApp;
       var session = app.OpenSession();
       var orderLines = session.EntitySet<IBookOrderLine>();
 
@@ -702,14 +702,14 @@ namespace Vita.UnitTests.Extended {
     [TestMethod]
     public void TestLinqSpecialQueries() {
       //Some seemingly simple queries that caused problems for LINQ engine initially
-      var app = SetupHelper.BooksApp;
+      var app = Startup.BooksApp;
       var session = app.OpenSession();
       var books = session.EntitySet<IBook>();
       var pubs = session.EntitySet<IPublisher>();
       IDbCommand cmd;
 
       // Join/Distinct/Count combinations. Encountered error: The column 'Id' was specified multiple times for 'X'. 
-      if (SetupHelper.ServerType != DbServerType.SqlCe) {
+      if (Startup.ServerType != DbServerType.SqlCe) {
         var qJoin = from b in books.WithOptions(QueryOptions.ForceIgnoreCase)
                 join p in pubs on b.Publisher equals p
                 where p.Name == "MS Books"
@@ -786,7 +786,7 @@ namespace Vita.UnitTests.Extended {
 
       // Embedding subquery for max price inside another query. 
       // SQL CE does not allow subqueries
-      if(SetupHelper.ServerType != DbServerType.SqlCe) {
+      if(Startup.ServerType != DbServerType.SqlCe) {
         var qBookWMaxPrice = from b in session.EntitySet<IBook>()
                              where b.Price == session.EntitySet<IBook>().Max(b1 => b1.Price)
                              select b;
@@ -816,9 +816,9 @@ namespace Vita.UnitTests.Extended {
       //SQL CE has some restrictions on expressions you can use in WHERE and in IS NULL; for ex '@P1 IS NULL' is not allowed
       // So handling nullables in SQL CE is switched to simple comparison (no both IS NULL clauses)
       // As a result 'a = b' is false when both values are null. We skip this test for SQL CE
-      if(SetupHelper.ServerType == DbServerType.SqlCe)
+      if(Startup.ServerType == DbServerType.SqlCe)
         return; 
-      var session = SetupHelper.BooksApp.OpenSession();
+      var session = Startup.BooksApp.OpenSession();
       session.EnableCache(false); //We are testing real SQLs
 
       //First query using literal null; this alwasy worked OK, SQL generated is "WHERE b.Abstract IS NULL"
@@ -858,13 +858,13 @@ namespace Vita.UnitTests.Extended {
     [TestMethod]
     public void TestLinqUnionExcept() {
       //Some seemingly simple queries that caused problems for LINQ engine initially
-      var app = SetupHelper.BooksApp;
+      var app = Startup.BooksApp;
       var session = app.OpenSession();
       var books = session.EntitySet<IBook>();
       var pubs = session.EntitySet<IPublisher>();
 
       //simple union
-      if (SetupHelper.ServerType != DbServerType.SqlCe) {
+      if (Startup.ServerType != DbServerType.SqlCe) {
         // SQL CE fails on this query; it requires UNION ALL if you include Text/Memo columns
         var qUnion = books.Where(b => b.Title == "c# Programming").Union(books.Where(b => b.Title == "VB Programming"));
         var lstUnion = qUnion.ToList();
@@ -879,10 +879,10 @@ namespace Vita.UnitTests.Extended {
 
       // Except
       // Only MsSql and Postgres support Except
-      bool supportsExcept = SetupHelper.ServerType == DbServerType.MsSql || SetupHelper.ServerType == DbServerType.Postgres;
+      bool supportsExcept = Startup.ServerType == DbServerType.MsSql || Startup.ServerType == DbServerType.Postgres;
       // for cached entities, the comparisons in filters are performed for CLR AUTO objects (.NET-produced comparison), and they do not work
       // correctly. Smth we have to live with - no way of fixing auto objects comparison
-      if (supportsExcept && !SetupHelper.CacheEnabled) {
+      if (supportsExcept && !Startup.CacheEnabled) {
         var qe1 = books.Where(b => b.Title.Contains("Programming")).Select(b => new { Id = b.Id, Title = b.Title });
         var qe2 = books.Where(b => b.Title.Contains("c#")).Select(b => new { Id = b.Id, Title = b.Title });
         var qe12 = qe1.Except(qe2);
@@ -901,7 +901,7 @@ namespace Vita.UnitTests.Extended {
 
     [TestMethod]
     public void TestLinqGroupBy() {
-      var app = SetupHelper.BooksApp;
+      var app = Startup.BooksApp;
       var session = app.OpenSession();
       session.EnableCache(false); 
 
@@ -932,7 +932,7 @@ namespace Vita.UnitTests.Extended {
       Assert.IsTrue(list3.Count > 0, "overload #3 failed.");
 
       //overload #4 - not supported, throws 'Failed to translate, unsupported...' exception
-      if(!SetupHelper.CacheEnabled) {
+      if(!Startup.CacheEnabled) {
         //These 2 queries run OK if we have entity cache enabled (default for running in Test Explorer in VS)
         // In this case the query is executed as Linq-2-objects query and it succeeds.
         var linqEx = TestUtil.ExpectFailWith<Exception>(() => {
@@ -1005,10 +1005,10 @@ namespace Vita.UnitTests.Extended {
     [TestMethod]
     public void TestLinqEntityListMembers() {
       //SQL CE does not handle subqueries well
-      if(SetupHelper.ServerType == DbServerType.SqlCe) 
+      if(Startup.ServerType == DbServerType.SqlCe) 
         return;
       
-      var app = SetupHelper.BooksApp;
+      var app = Startup.BooksApp;
       var session = app.OpenSession();
 
       // One-to-many relationship. Use publisher.Books member in LINQ query - this should result in sub-query against Book table
@@ -1041,7 +1041,7 @@ namespace Vita.UnitTests.Extended {
 
     [TestMethod]
     public void TestLinqQueryFilter() {
-      var app = SetupHelper.BooksApp;
+      var app = Startup.BooksApp;
       var session = app.OpenSession();
       session.EnableCache(false); 
       var filter = session.Context.QueryFilter;
@@ -1071,7 +1071,7 @@ namespace Vita.UnitTests.Extended {
       Assert.IsTrue(progBooks.Count > 0, "Expected at least 1 progr book.");
       Assert.IsTrue(allAreProgr, "Expected only programming books");
       // With subquery on authors (authors count)
-      if(SetupHelper.ServerType != DbServerType.SqlCe) { //SQL CE does not support sub-queries
+      if(Startup.ServerType != DbServerType.SqlCe) { //SQL CE does not support sub-queries
         filter.Clear();
         filter.Add<IBook>(b => b.Authors.Count > 1);
         var maBooks = session.EntitySet<IBook>().ToList();
@@ -1113,7 +1113,7 @@ namespace Vita.UnitTests.Extended {
 
     [TestMethod]
     public void TestLinqReturnCustomObject() {
-      var session = SetupHelper.BooksApp.OpenSession();
+      var session = Startup.BooksApp.OpenSession();
       var books = session.EntitySet<IBook>(); 
       // query with custom type in output (not anon type)
       var qBkInfos = from b in books
@@ -1150,10 +1150,10 @@ namespace Vita.UnitTests.Extended {
     public void TestLinqDates() {
       //SQL CE and SQLite do not support most of standard Date/time functions
       // SQLite date/time functions return strings, so tests do not work
-      if (SetupHelper.ServerType == DbServerType.SqlCe || SetupHelper.ServerType == DbServerType.Sqlite) 
+      if (Startup.ServerType == DbServerType.SqlCe || Startup.ServerType == DbServerType.Sqlite) 
         return; 
 
-      var session = SetupHelper.BooksApp.OpenSession();
+      var session = Startup.BooksApp.OpenSession();
       var books = session.EntitySet<IBook>();
       var bk1 = books.First();
 
@@ -1166,7 +1166,7 @@ namespace Vita.UnitTests.Extended {
       cmd = session.GetLastCommand();
       Assert.IsTrue(bookList.Count > 0, "Expected some book by CreatedOn.Date");
 
-      switch (SetupHelper.ServerType) {
+      switch (Startup.ServerType) {
         //MySql, Postgres TIME() not supported
         case DbServerType.MySql: case DbServerType.Postgres:
           break; 
@@ -1189,7 +1189,7 @@ namespace Vita.UnitTests.Extended {
     [TestMethod]
     public void TestLinqArrayParameters() {
       // We test MsSql and Postgres here, but it should work for other servers - for these arrays will be converted to literals
-      var session = SetupHelper.BooksApp.OpenSession();
+      var session = Startup.BooksApp.OpenSession();
       session.EnableCache(false);
       // count prog books reviews 
       var progReviewCount = session.EntitySet<IBookReview>().Where(r => r.Book.Category == BookCategory.Programming).Count(); 

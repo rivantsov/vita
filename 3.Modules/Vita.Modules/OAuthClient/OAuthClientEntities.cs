@@ -57,10 +57,7 @@ namespace Vita.Modules.OAuthClient {
     TokenReplaceLocalIpWithLocalHost = 1 << 11,
 
     /// <summary>Use GET method for revoke-token endpoint; by default POST is used.</summary>
-    RevokeUseGet = 1 << 12,
-
-    /// <summary>Revoke token endpoint requires client info (id and secret). </summary>
-    RevokeNeedsClientInfo = 1 << 13, 
+    RevokeUseGetNoClientInfo = 1 << 12,
 
   }
 

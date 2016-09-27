@@ -27,7 +27,7 @@ namespace Vita.Modules.OAuthClient {
       // Google 
       // Specifics: Refresh token is returned only in the first request for access token
       CreateOrUpdateServer(session, "Google",
-          OAuthServerOptions.OpenIdConnect | OAuthServerOptions.RevokeUseGet,
+          OAuthServerOptions.OpenIdConnect | OAuthServerOptions.RevokeUseGetNoClientInfo,
           "http://www.google.com",
           "https://accounts.google.com/o/oauth2/v2/auth",
           "https://www.googleapis.com/oauth2/v4/token",
@@ -71,7 +71,7 @@ namespace Vita.Modules.OAuthClient {
       // Fitbit. 
       //  1. Access token endpoint requries authorization header which is Base64 encoded 'clientid:clientsecret'
       CreateOrUpdateServer(session, "Fitbit", 
-          OAuthServerOptions.ClientInfoInAuthHeader | OAuthServerOptions.RevokeNeedsClientInfo,
+          OAuthServerOptions.ClientInfoInAuthHeader,
           "https://www.fitbit.com",
           "https://www.fitbit.com/oauth2/authorize",
           "https://api.fitbit.com/oauth2/token",

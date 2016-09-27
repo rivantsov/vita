@@ -40,7 +40,7 @@ FROM {1}{2};"; //note: no space between 1 & 2
       //Build column list
       var outColumns = table.Columns.GetSelectable();
       var strColumns = outColumns.GetSqlNameList();
-      var strOrderBy = BuildOrderBy(table.DefaultOrderBy);
+      var strOrderBy = BuildOrderBy(table, table.DefaultOrderBy);
       //Pg SQL is picky about extra spaces - it removes space before ';' when saving stored proc, so let's be careful here
       if(!string.IsNullOrEmpty(strOrderBy))
         strOrderBy = " " + strOrderBy;
@@ -148,10 +148,11 @@ SELECT {0} {1}
       if (!string.IsNullOrWhiteSpace(entityCommand.Filter))
         whereExpr = whereExpr + " AND " + ProcessFilter(entityCommand, table);
       string orderByExpr = null;
-      if (dbKey.KeyType == KeyType.PrimaryKey)
-        orderByExpr = null; 
-      else 
-        orderByExpr = BuildOrderBy(table.DefaultOrderBy);
+      if (dbKey.KeyType != KeyType.PrimaryKey) {
+        var orderBy = dbKey.OrderByForSelect ?? table.DefaultOrderBy; 
+        if (orderBy != null)
+          orderByExpr = BuildOrderBy(table, orderBy);
+      }
       string strTop = string.Empty;
       var sql = string.Format(SqlSelectByFkTemplate, strTop, strColumns, table.FullName, whereExpr, orderByExpr);
       //Damn postgres reformats the SQL in stored proc body and this screws up comparison; so we are careful here
@@ -206,7 +207,7 @@ SELECT {0} {1}
       if (dbKey.KeyType == KeyType.PrimaryKey)
         orderByExpr = null;
       else
-        orderByExpr = BuildOrderBy(table.DefaultOrderBy);
+        orderByExpr = BuildOrderBy(table, table.DefaultOrderBy);
       string strTop = string.Empty;
       var sql = string.Format(SqlSelectByFkTemplate, strTop, strColumns, table.FullName, whereExpr, orderByExpr);
       sql = sql.Trim() + ";";
@@ -252,27 +253,43 @@ SELECT {0}
       var outColumns = targetTable.Columns.GetSelectable();
       var strOutColumns = outColumns.GetSqlNameList("T");
       var whereExpr = BuildWhereClause(cmdInfo.Parameters, "L");
-      var orderByExpr = BuildOrderBy(linkTable.DefaultOrderBy, "L");
+      var orderBy = dbParentRefKey.OrderByForSelect ?? linkTable.DefaultOrderBy ?? targetTable.DefaultOrderBy; 
+      var orderByClause = BuildOrderByManyToMany(orderBy, linkTable, "L", targetTable, "T");
       string joinOnClause = BuildJoinClause(dbTargetRefKey, targetTable.PrimaryKey, "L", "T");
-      cmdInfo.Sql = string.Format(SqlTemplate, strOutColumns, linkTable.FullName, targetTable.FullName, joinOnClause, whereExpr, orderByExpr);
+      cmdInfo.Sql = string.Format(SqlTemplate, strOutColumns, linkTable.FullName, targetTable.FullName, joinOnClause, 
+            whereExpr, orderByClause);
       cmdInfo.EntityMaterializer = CreateEntityMaterializer(targetTable, outColumns);
       return cmdInfo;
     }
 
-    protected virtual string BuildOrderBy(IList<DbKeyColumnInfo> orderByEntries, string tableAlias = null) {
-      if(orderByEntries == null || orderByEntries.Count == 0)
-        return string.Empty; 
-      return "ORDER BY " + orderByEntries.GetSqlNameListWithOrderSpec(tableAlias);
+    //the problem here is that OrderBy may include columns from 2 tables: link table and target table
+    protected virtual string BuildOrderByManyToMany(IList<DbKeyColumnInfo> keyColumns,
+          DbTableInfo linkTable, string linkTableAlias, DbTableInfo targetTable, string targetTableAlias) {
+      if(keyColumns == null || keyColumns.Count == 0)
+        return null;
+      var segments = new List<string>();
+      foreach(var kcol in keyColumns) {
+        var alias = kcol.Column.Table == linkTable ? linkTableAlias : targetTableAlias;
+        var desc = kcol.Desc ? " DESC" : string.Empty;
+        var segm = alias + ".\"" + kcol.Column.ColumnName + '"' + desc;
+        segments.Add(segm); 
+      }
+      return "ORDER BY " + string.Join(", ", segments); 
     }
 
-    protected virtual string BuildOrderByColumns(IList<DbKeyColumnInfo> orderByEntries, string tableAlias = null) {
-      if (orderByEntries == null || orderByEntries.Count == 0)
-        return null;
-      var strEntries = orderByEntries.Select(e => FormatOrderByEntry(e));
-      if (string.IsNullOrEmpty(tableAlias))
-        return string.Join(", ", strEntries);
-      var delim = ", " + tableAlias + ".";
-      return tableAlias + "." + string.Join(delim, strEntries);
+
+
+    protected virtual string BuildOrderBy(DbTableInfo table, IList<DbKeyColumnInfo> orderBy, string tableAlias = null) {
+      if(orderBy == null || orderBy.Count == 0)
+        return string.Empty;
+      //The problem is many-to-many link tables; its Key might have members from both linktable and target table
+      // This happens if we use OrderBy attr on list property based on m2m relation
+      // the entire order-by list is used in SelectManyToMany command; for the simple case of selecting link entity by key
+      // we should filter cols that belong only to link table itself
+      var filtered = orderBy.Where(kc => kc.Column.Table == table).ToList();
+      if(filtered.Count == 0)
+        return string.Empty; 
+      return "ORDER BY " + filtered.GetSqlNameListWithOrderSpec(tableAlias);
     }
 
     protected virtual string FormatOrderByEntry(DbKeyColumnInfo colInfo) {

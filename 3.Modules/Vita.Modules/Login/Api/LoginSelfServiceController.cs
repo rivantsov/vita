@@ -160,7 +160,7 @@ namespace Vita.Modules.Login.Api {
     }
 
     //We could handle PUT and POST in one method, but swagger creates two entries with the same operation_id
-    // and this crushes the API Client generator (AutoRest) - in case somebody wants to use this crap
+    // and this crushes the API Client generator (AutoRest) - in case somebody wants to use this tool
     [ApiPost, ApiRoute("device")]
     public DeviceInfo RegisterDevice(DeviceInfo device) {
       return RegisterOrUpdateDevice(device); 

@@ -50,14 +50,6 @@ namespace Vita.Common {
     }
 
 
-    private static int _hashCount;
-    public static int NewHash() {
-      _hashCount++;
-      var sHash = _hashCount + "_" + _hashCount;
-      var code = sHash.GetHashCode();
-      return code; 
-    }
-
     public static DateTime CheckKind(this DateTime dateTime, DateTimeKind kindIfUndefined = DateTimeKind.Local) {
       if (dateTime.Kind != DateTimeKind.Unspecified)
         return dateTime;

@@ -209,7 +209,6 @@
     <Compile Include="PublicAPI\StaticHelpers\FuncExtensions.cs" />
     <Compile Include="Entities\Authorization\IAuthorizationService.cs" />
     <Compile Include="Entities\Model\HelperClasses\CustomBitArray.cs" />
-    <Compile Include="Common\Externals.cs" />
     <Compile Include="Common\Graphs.cs" />
     <Compile Include="Entities\Model\HelperClasses\HashedObject.cs" />
     <Compile Include="Common\LoggingExtensions.cs" />

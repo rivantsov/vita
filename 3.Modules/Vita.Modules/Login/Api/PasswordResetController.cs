@@ -149,7 +149,7 @@ namespace Vita.Modules.Login.Api {
     }
 
     [ApiPut, ApiRoute("{token}")]
-    public bool ResetPassword(string token, PasswordChangeInfo changeInfo) {
+    public bool SetNewPassword(string token, PasswordChangeInfo changeInfo) {
       Context.WebContext.MarkConfidential();
       var process = GetActiveProcess(token);
       if(process == null)

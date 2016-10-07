@@ -12,11 +12,22 @@ namespace Vita.Entities.Model {
     private int _hashCode;
 
     public HashedObject() {
-      _hashCode = Util.NewHash();
+      _hashCode = NewHash();
     }
     public override int GetHashCode() {
       return _hashCode;
     }
+
+    private static int _hashCount;
+    // artificial randomized hash value
+    public static int NewHash() {
+      _hashCount++;
+      var sHash = _hashCount + "_" + _hashCount;
+      var code = sHash.GetHashCode();
+      return code;
+    }
+
+
   }
 
 

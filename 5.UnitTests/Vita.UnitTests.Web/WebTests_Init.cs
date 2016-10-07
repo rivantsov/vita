@@ -15,6 +15,7 @@ using Vita.Entities;
 using Vita.Modules.Login;
 using Vita.Modules.Login.Api;
 using Vita.Modules.WebClient.Sync;
+using Vita.Entities.Services;
 
 namespace Vita.UnitTests.Web {
 
@@ -31,14 +32,15 @@ namespace Vita.UnitTests.Web {
     }
 
     //Helper methods used by othere tests
-    private LoginResponse LoginAs(string userName, string password = null, bool assertSuccess = true, string deviceToken = null) {
+    private LoginResponse LoginAs(string userName, string password = null, bool assertSuccess = true, string deviceToken = null,
+           UserSessionExpirationType expirationType =  UserSessionExpirationType.Sliding) {
       password = password ?? Samples.BookStore.SampleData.SampleDataGenerator.DefaultPassword;
-      var loginRq = new LoginRequest() { UserName = userName, Password = password , DeviceToken = deviceToken};
+      var loginRq = new LoginRequest() { UserName = userName, Password = password , DeviceToken = deviceToken, ExpirationType = expirationType };
       var resp = Startup.Client.ExecutePost<LoginRequest, LoginResponse>(loginRq, "api/login");
       Assert.IsTrue(resp != null, "Authentication failed.");
       if(resp.Status == LoginAttemptStatus.Success) {
         //We can use AddAuthorizationHeader here as well
-        Startup.Client.AddAuthorizationHeader("Authorization", resp.AuthenticationToken);
+        Startup.Client.AddAuthorizationHeader(resp.AuthenticationToken);
         return resp; 
       }
       if (assertSuccess)

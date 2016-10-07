@@ -21,6 +21,9 @@ using Vita.Modules.Login.Api;
 using Vita.Modules.WebClient.Sync;
 using Vita.Modules.WebClient;
 using System.Threading;
+using Vita.Modules.Logging.Api;
+using Vita.Entities.Services;
+using Vita.Entities.Web;
 
 namespace Vita.UnitTests.Web {
 
@@ -390,29 +393,6 @@ namespace Vita.UnitTests.Web {
       ferbLogin = LoginAs(ferbUserName, deviceToken: deviceToken, assertSuccess: false);
       Assert.AreEqual(LoginAttemptStatus.Success, ferbLogin.Status, "Expected no multi-factor on trusted device");
       Logout();
-    }
-
-    [TestMethod]
-    public void TestSessionExpiration() {
-      // do it several times, there was a bug initially that occurred not consistently
-      for (int i = 0; i < 5; i++)
-        TestSessionExpirationImpl(); 
-    }
-    public void TestSessionExpirationImpl() {
-      var client = Startup.Client;
-      var timeService = Startup.BooksApp.TimeService; //it is shared with LoggingApp
-      var dora = LoginAs("dora");
-      var doraUser = client.ExecuteGet<User>("api/user"); //get current user
-      try {
-        timeService.SetCurrentOffset(TimeSpan.FromHours(1));
-        System.Threading.Thread.Sleep(100); 
-        var faultExc = TestUtil.ExpectClientFault(() => client.ExecuteGet<User>("api/user")); // now it should fail
-        var faultCode = faultExc.Faults[0].Code;
-        Assert.AreEqual(ClientFaultCodes.AuthenticationRequired, faultCode, "Expected AuthenticationRequired fault.");
-      } finally {
-        timeService.SetCurrentOffset(TimeSpan.Zero);
-        Logout(); 
-      }
     }
 
   }//class

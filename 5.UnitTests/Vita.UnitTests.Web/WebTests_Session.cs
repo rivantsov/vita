@@ -21,6 +21,8 @@ using Vita.Samples.BookStore;
 using Vita.Samples.BookStore.Api;
 using Vita.Modules.WebClient.Sync;
 using Vita.Modules.Login.Api;
+using Vita.Modules.Logging.Api;
+using Vita.Entities.Web;
 
 namespace Vita.UnitTests.Web {
 
@@ -111,13 +113,75 @@ namespace Vita.UnitTests.Web {
       var resp = LoginAs("dora");
       //set timezone
       var currTimeZoneOffset = TimeZoneInfo.Local.BaseUtcOffset.TotalMinutes;
-      client.ExecutePut<object, HttpStatusCode>(null, "/api/login/session/timezoneoffset?minutes={0}", currTimeZoneOffset);
+      client.ExecutePut<object, HttpStatusCode>(null, "/api/usersession/client-timezone-offset?minutes={0}", currTimeZoneOffset);
       //get current user info
-      var sessionInfo = client.ExecuteGet<SessionInfo>("/api/login/session/info");
+      var sessionInfo = client.ExecuteGet<UserSessionInfo>("/api/usersession");
       Assert.AreEqual("dora", sessionInfo.UserName, "Expected dora as user name.");
-      Assert.AreEqual(currTimeZoneOffset, sessionInfo.TimeZoneOffsetMinutes, "Timezone offset mismatch");
+      Assert.AreEqual(currTimeZoneOffset, sessionInfo.TimeOffsetMinutes, "Timezone offset mismatch");
       Logout();
     }
+
+    // Test user session with different expiration types
+    [TestMethod]
+    public void TestSessionExpiration() {
+      try {
+        // do it several times, there was a bug initially that occurred not consistently
+        for(int i = 0; i < 5; i++)
+          TestSessionExpirationImpl();
+        //Test login with long and no expiration option (for mobile devices)
+        TestSessionWithLongExpiration();
+      } finally {
+        // make sure time offset in TimeService is set back to zero
+        Startup.BooksApp.TimeService.SetCurrentOffset(TimeSpan.Zero);
+        Logout();
+      }
+
+    }
+
+    private void TestSessionExpirationImpl() {
+      var client = Startup.Client;
+      var timeService = Startup.BooksApp.TimeService; //it is shared with LoggingApp
+      var dora = LoginAs("dora");
+      var doraUser = client.ExecuteGet<User>("api/user"); //get current user
+      //session expires in 20 minutes; move clock forward by 1 hour; the session should expire and any call requiring authentication would fail
+      timeService.SetCurrentOffset(TimeSpan.FromHours(1));
+      System.Threading.Thread.Sleep(100);
+      var faultExc = TestUtil.ExpectClientFault(() => client.ExecuteGet<User>("api/user")); // now it should fail
+      var faultCode = faultExc.Faults[0].Code;
+      Assert.AreEqual(ClientFaultCodes.AuthenticationRequired, faultCode, "Expected AuthenticationRequired fault.");
+      timeService.SetCurrentOffset(TimeSpan.Zero);
+    }//method
+
+    private void TestSessionWithLongExpiration() {
+      var client = Startup.Client;
+      var timeService = Startup.BooksApp.TimeService; //it is shared with LoggingApp
+      var utcNowReal = timeService.UtcNow;
+
+      // 1. Test no-expiration option
+      var dora = LoginAs("dora", expirationType: UserSessionExpirationType.KeepLoggedIn);
+      //try getting current user session, should go ok
+      var doraSession = client.ExecuteGet<UserSessionInfo>("api/usersession"); //get current user session
+      //session does not expire; move clock forward by 5 years; the session should still be ok
+      timeService.SetCurrentOffset(TimeSpan.FromDays(365 * 5));
+      doraSession = client.ExecuteGet<UserSessionInfo>("api/usersession"); //get current user session
+      timeService.SetCurrentOffset(TimeSpan.Zero);
+      Logout();
+
+      // 2. Test long expiration, with token refresh
+      dora = LoginAs("dora", expirationType: UserSessionExpirationType.LongFixedTerm); //fixed expiration in a month
+      //try getting current user, should go ok
+      doraSession = client.ExecuteGet<UserSessionInfo>("api/usersession"); //get current user session
+      Assert.IsTrue(doraSession.Expires > utcNowReal.AddDays(29), "Expected expires in a month");
+      //now move clock forward by 25 days and refersh token; the session should still be ok
+      timeService.SetCurrentOffset(TimeSpan.FromDays(25));
+      //Refresh session token - get new one with new expiration date - a month from 'shifted current'
+      var newTokenBox = client.ExecutePut<object, BoxedValue<string>>(null, "api/usersession/token");
+      client.AddAuthorizationHeader(newTokenBox.Value); //put it into auth header
+      // now get session again and check expiration
+      doraSession = client.ExecuteGet<UserSessionInfo>("api/usersession"); //get current user session
+      Assert.IsTrue(doraSession.Expires > utcNowReal.AddDays(29 + 25), "Expected expires in 25 days + month");
+    }
+
 
 
   }//class

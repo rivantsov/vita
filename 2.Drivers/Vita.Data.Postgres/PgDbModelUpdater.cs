@@ -26,6 +26,10 @@ namespace Vita.Data.Postgres {
         column.Table.FullName, column.ColumnName, nullStr);
     }
 
+    // Another trouble - when deleting routine, you have to provide proc name AND list of parameter types -
+    // even if you have a single proc with this name; reason - proc name overloading.
+    // You might have 2+ procs with the same name but different parameter lists, so you MUST always reference proc
+    // using name and parameter types - even if you have just one defined. Seriously?!!!
     public override void BuildStoredProcDropSql(DbObjectChange change, DbCommandInfo command) {
       if(command.CustomTag == null) { //try to recover it
         var inpParams = command.Parameters.Where(p => p.Direction != ParameterDirection.Output);
@@ -63,7 +67,6 @@ namespace Vita.Data.Postgres {
 "; //notice - no ';' at the end, SQL must have it already
       // For indexed views add 'MATERIALIZED' attribute
       var matz = view.IsMaterializedView ? "MATERIALIZED" : string.Empty;
-      //var escapedSql = view.ViewSql.Replace("'", "''");
       change.AddScript(DbScriptType.ViewAdd, createViewTemplate, matz, view.FullName, view.ViewSql, view.ViewHash);
     }
 
@@ -82,7 +85,8 @@ namespace Vita.Data.Postgres {
       change.AddScript(DbScriptType.SequenceAdd, sqlTemplate, sequence.FullName,  start, sequence.Increment);
     }
     public override void BuildSequenceDropSql(DbObjectChange change, DbSequenceInfo sequence) {
-      // PG creates sequences for identity columns, these should not be dropped explicitly; we do sequence drop after table drop, so we add check for existense
+      // PG creates sequences for identity columns, these should not be dropped explicitly; 
+      // we do sequence drop after table drop, so we add check for existense
       change.AddScript(DbScriptType.SequenceDrop, "DROP SEQUENCE IF EXISTS {0}", sequence.FullName);
     }//method
 

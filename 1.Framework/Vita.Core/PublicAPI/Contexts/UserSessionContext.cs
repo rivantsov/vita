@@ -22,6 +22,7 @@ namespace Vita.Entities {
     public readonly Guid SessionId;
     public UserInfo User;
     public readonly DateTime StartedOn;
+    public DateTime? ExpirationEstimate;
     public string Token; //Unique string token identifying session, placed in session cookie
     public string CsrfToken; //CSRF protection header value
 

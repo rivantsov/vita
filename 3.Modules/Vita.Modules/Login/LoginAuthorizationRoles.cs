@@ -10,14 +10,14 @@ using Vita.Entities.Model;
 namespace Vita.Modules.Login {
   using Api; 
 
-  public class LoginAuthorization {
+  public class LoginAuthorizationRoles {
 
     public readonly Activity LoginEditActivity;
     public readonly Role SelfServiceEditor;  // can edit his/her own login
     public readonly Role LoginAdministrator; //can edit any login
     public readonly ObjectAccessPermission AdministrationControllerPermission;
 
-    internal LoginAuthorization() {
+    internal LoginAuthorizationRoles() {
       AdministrationControllerPermission = new ObjectAccessPermission("LoginAdministrationControllerPermission", AccessType.ApiAll, typeof(LoginAdministrationController));
 
       // entities we need to protect - only user himself (or superadmin) can edit these: 

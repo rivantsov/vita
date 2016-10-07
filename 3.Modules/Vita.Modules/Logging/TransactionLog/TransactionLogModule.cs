@@ -20,7 +20,6 @@ namespace Vita.Modules.Logging {
   public class TransactionLogModule : EntityModule, ITransactionLogService, IObjectSaveHandler {
     public static readonly Version CurrentVersion = new Version("1.0.0.0");
     public TransactionLogSettings Settings;
-    public EntityApp TargetApp;
 
     #region TransactionLogEntry nested class
     //Temp object used to store trans information in the background update queue
@@ -41,30 +40,27 @@ namespace Vita.Modules.Logging {
     #endregion
 
     IBackgroundSaveService _saveService;
+    bool _trackHostApp;
 
-    public TransactionLogModule(EntityArea area, TransactionLogSettings settings = null) : base(area, "TransactionLog", version: CurrentVersion) {
+    public TransactionLogModule(EntityArea area, TransactionLogSettings settings = null, bool trackHostApp = true) : base(area, "TransactionLog", version: CurrentVersion) {
       Settings = settings ?? new TransactionLogSettings();
+      _trackHostApp = trackHostApp; 
       App.RegisterConfig(Settings); 
       RegisterEntities(typeof(ITransactionLog));
-      App.RegisterService<ITransactionLogService>(this); 
+      App.RegisterService<ITransactionLogService>(this);
     }
 
     public override void Init() {
       base.Init();
       _saveService = App.GetService<IBackgroundSaveService>();
       _saveService.RegisterObjectHandler(typeof(TransactionLogEntry), this);
-      SetupUpdateLogging();
+      if(_trackHostApp)
+        SetupUpdateLoggingFor(this.App);
     }
-    private void SetupUpdateLogging() {
-      TargetApp = TargetApp ?? App;
-      TargetApp.AppEvents.SavedChanges += Events_SavedChanges;
-      TargetApp.AppEvents.ExecutedNonQuery += AppEvents_ExecutedNonQuery;
-      // remove entities in ignore areas or with DoNotTrack attribute
-      if(Settings.IgnoreAreas.Count > 0) {
-        foreach(var ent in TargetApp.Model.Entities)
-          if(Settings.IgnoreAreas.Contains(ent.Area))
-            ent.Flags |= EntityFlags.DoNotTrack; 
-      }
+
+    public void SetupUpdateLoggingFor(EntityApp targetApp) {
+      targetApp.AppEvents.SavedChanges += Events_SavedChanges;
+      targetApp.AppEvents.ExecutedNonQuery += AppEvents_ExecutedNonQuery;
     }
 
     #region IObjectSaveHandler members
@@ -91,7 +87,7 @@ namespace Vita.Modules.Logging {
       var recChanged = entSession.RecordsChanged;
       if(recChanged.Count == 0)
         return;
-      var filteredRecs = recChanged.Where(r => !r.EntityInfo.Flags.IsSet(EntityFlags.DoNotTrack)).ToList(); 
+      var filteredRecs = recChanged.Where(r => ShouldTrack(r)).ToList(); 
       if(filteredRecs.Count == 0)
         return; 
       string changes = BuildChangeLog(filteredRecs);
@@ -114,5 +110,14 @@ namespace Vita.Modules.Logging {
       return sb.ToString();
     }
   
+    private bool ShouldTrack(EntityRecord record) {
+      var ent = record.EntityInfo;
+      if(ent.Flags.IsSet(EntityFlags.DoNotTrack))
+        return false;
+      if(Settings.IgnoreAreas.Contains(ent.Area.Name))
+        return false;
+      return true; 
+    }
+
   }
 }

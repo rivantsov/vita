@@ -64,10 +64,10 @@ namespace Vita.UnitTests.Common {
     }
 
     public static void DropSchemaObjects(DbSettings settings) {
-      var driver = settings.ModelConfig.Driver; 
+      var driver = settings.ModelConfig.Driver;
       var loader = driver.CreateDbModelLoader(settings, null);
-      var model = loader.LoadModel();
 
+      var model = loader.LoadModel();
       var upgradeInfo = new DbUpgradeInfo(null, model);
       foreach(var sch in model.Schemas)
         if (sch.Schema != "dbo") //just for MS SQL, can never drop this

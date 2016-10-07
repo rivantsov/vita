@@ -30,7 +30,7 @@ namespace Vita.Modules.Logging {
 
     //Expiration data
     UserSessionExpirationType ExpirationType { get; set; }
-    DateTime FixedExpiration { get; set; }
+    DateTime? FixedExpiration { get; set; }
     int ExpirationWindowSeconds { get; set; }
 
     long Version { get; set; }
@@ -43,6 +43,8 @@ namespace Vita.Modules.Logging {
 
     [Size(100), Nullable]
     string WebSessionToken { get; set; }
+    DateTime WebSessionTokenCreatedOn { get; set; }
+
     [Size(100), Nullable]
     string CsrfToken { get; set; }
 

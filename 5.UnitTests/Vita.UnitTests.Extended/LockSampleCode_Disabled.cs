@@ -13,7 +13,7 @@ using Vita.Data.Driver;
 
 namespace Vita.UnitTests.Extended {
 
-  // Not real tests, sample code for locking guie
+  // Not real tests, sample code for locking guide
   // [TestClass]
   public class LockTests {
 
@@ -49,7 +49,7 @@ namespace Vita.UnitTests.Extended {
       Debug.WriteLine(log); 
     }
 
-    public void AddBookToOrder(IEntitySession session, Guid orderId, Guid bookId, int quantity) {
+    public void AddBookToOrder(IEntitySession session, Guid orderId, Guid bookId, byte quantity) {
       var order = session.GetEntity<IBookOrder>(orderId, LockOptions.ForUpdate);
       var book = session.GetEntity<IBook>(bookId);
       var orderLine = session.NewEntity<IBookOrderLine>();

@@ -9,6 +9,8 @@ using Vita.Entities;
 namespace Vita.Modules.Logging {
   [Entity, DoNotTrack]
   public interface IWebClientLog : ILogEntityBase {
+    [Size(Sizes.Name), Nullable]
+    string ClientName { get; set; }
     int Duration { get; set; }
     [Size(10)]
     string HttpMethod { get; set; }

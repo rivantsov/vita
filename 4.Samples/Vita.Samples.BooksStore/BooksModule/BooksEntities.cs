@@ -169,7 +169,8 @@ namespace Vita.Samples.BookStore {
     [NoUpdate, CascadeDelete] //Delete all lines when order is deleted
     IBookOrder Order { get; set; }
     int LineNumber { get; set; } //automatically maintained line order - see IBookOrder.Lines property
-    int Quantity { get; set; }
+    // Making it byte to test Postgres feature. See comments at the end of the file. 
+    byte Quantity { get; set; }
     IBook Book { get; set; }
     Decimal Price { get; set; } //captures price at the time the order was created
   }
@@ -263,5 +264,10 @@ namespace Vita.Samples.BookStore {
     byte[] Data { get; set; }
   }
 
+  // Notes on IBookOrderLine.Quantity (byte) 
+  // we make it byte to test some behavior in Postgres; Postgres function overloading resolution 
+  // gets into error in batch mode - fails to find overload for a CRUD function call. It assumes 
+  // that literal number in parameter to batched proc call (ex: 5) is Int and fails match to method 
+  // which expects byte. So VITA Postgres driver injects CAST to explicitly cast the number
 
 }

@@ -8,6 +8,7 @@ using System.Net;
 
 using Vita.Common;
 using Vita.Entities;
+using Vita.Entities.Services; 
 using Vita.Entities.Web;
 using Vita.Modules.Logging;
 
@@ -35,7 +36,8 @@ namespace Vita.Modules.Login.Api {
       Context.ThrowIfNull(request, ClientFaultCodes.ContentMissing, "LoginRequest", "Content object missing in API request.");
       Context.WebContext.Flags |= WebCallFlags.Confidential;
       //Login using LoginService
-      var loginResult = _loginService.Login(this.Context, request.UserName, request.Password, request.TenantId, request.DeviceToken);
+      var expType = request.ExpirationType == null ? UserSessionExpirationType.Sliding: request.ExpirationType.Value;
+      var loginResult = _loginService.Login(this.Context, request.UserName, request.Password, request.TenantId, request.DeviceToken, expType);
       var login = loginResult.Login;
       switch(loginResult.Status) {
         case LoginAttemptStatus.PendingMultifactor:
@@ -61,7 +63,7 @@ namespace Vita.Modules.Login.Api {
       }//switch
     }
 
-
+    /// <summary>Logs out the user. </summary>
     [ApiDelete, ApiRoute("")]
     public void Logout() {
       if(Context.User.Kind != UserKind.AuthenticatedUser)
@@ -70,12 +72,19 @@ namespace Vita.Modules.Login.Api {
     } // method
 
     //Duplicate of method in PasswordResetController - that's ok I think
+    /// <summary>Returns login process identified by a token. </summary>
+    /// <param name="token">Token identifying the process.</param>
+    /// <returns>Login process object.</returns>
+    /// <remarks>Login process is a server-side persistent object that tracks user progress through multi-step operations like password reset, multi-factor login, etc.</remarks>
     [ApiGet, ApiRoute("{token}")]
     public LoginProcess GetMultiFactorProcess(string token) {
       var process = GetActiveProcess(token, throwIfNotFound: false);
       return process.ToModel();
     }
 
+    /// <summary>Requests the server to generate and send a pin to user (by email or SMS). </summary>
+    /// <param name="token">Login process token identifying the process.</param>
+    /// <param name="factorType">Type of the factor (email, SMS) to use for sending Pin.</param>
     [ApiPost, ApiRoute("{token}/pin")]
     public void SendPinForMultiFactor(string token, ExtraFactorTypes factorType) {
       var process = GetActiveProcess(token);
@@ -88,6 +97,10 @@ namespace Vita.Modules.Login.Api {
       _processService.SendPin(process, factor); 
     }
 
+    /// <summary>Asks the server to verify the pin entered by the user or extracted from URL in email. </summary>
+    /// <param name="token">The process token.</param>
+    /// <param name="pin">Pin value.</param>
+    /// <returns>True if the pin is verified and is correct; otherwise, false.</returns>
     [ApiPut, ApiRoute("{token}/pin/{pin}")]
     public bool SubmitPinForMultiFactor(string token, string pin) {
       var process = GetActiveProcess(token);
@@ -96,6 +109,10 @@ namespace Vita.Modules.Login.Api {
       return _processService.SubmitPin(process, pin);
     }
 
+    /// <summary>Requests the server to complete the multi-factor login process and to actually login the user. </summary>
+    /// <param name="token">The process token.</param>
+    /// <returns>User login information.</returns>
+    /// <remarks>The process must be completed, all factors specified should be verified by this modment, so PendingFactors property is empty.</remarks>
     [ApiPost, ApiRoute("{token}")]
     public LoginResponse CompleteMultiFactorLogin(string token) {
       var process = GetActiveProcess(token);
@@ -112,6 +129,9 @@ namespace Vita.Modules.Login.Api {
       };
     }//method
 
+    /// <summary>Returns the list of user&quot;s secret questions. </summary>
+    /// <param name="token">The token of login process.</param>
+    /// <returns>The list of secret question objects for the user.</returns>
     [ApiGet, ApiRoute("{token}/userquestions")]
     public IList<SecretQuestion> GetUserSecretQuestions(string token) {
       var process = GetActiveProcess(token);
@@ -119,6 +139,22 @@ namespace Vita.Modules.Login.Api {
       return qs.Select(q => q.ToModel()).ToList();
     }
 
+    /// <summary>Verifies the answers to the secret questions by comparing them to original answers stored in the user account. </summary>
+    /// <param name="token">Login process token.</param>
+    /// <param name="answers">The answers.</param>
+    /// <returns>True if the answers are correct; otherwise, false.</returns>
+    [ApiPut, ApiRoute("{token}/questionanswers")]
+    public bool SubmitQuestionAnswers(string token, List<SecretQuestionAnswer> answers) {
+      Context.WebContext.MarkConfidential();
+      var process = GetActiveProcess(token);
+      var result = _processService.CheckAllSecretQuestionAnswers(process, answers);
+      return result;
+    }
+
+    /// <summary>Verifies a single answer to the secret question. </summary>
+    /// <param name="token">Login process token.</param>
+    /// <param name="answer">The answer.</param>
+    /// <returns>True if the answer is correct; otherwise, false.</returns>
     [ApiPut, ApiRoute("{token}/questionanswer")]
     public bool SubmitQuestionAnswer(string token, SecretQuestionAnswer answer) {
       Context.WebContext.MarkConfidential();
@@ -129,14 +165,6 @@ namespace Vita.Modules.Login.Api {
       return success;
     }
 
-    [ApiPut, ApiRoute("{token}/questionanswers")]
-    public bool SubmitQuestionAnswers(string token, List<SecretQuestionAnswer> answers) {
-      Context.WebContext.MarkConfidential();
-      var process = GetActiveProcess(token);
-      var result = _processService.CheckAllSecretQuestionAnswers(process, answers);
-      return result;
-    }
-
     /* Notes: 
      * 1. GET verb would be more appropriate, but then password will appear in URL (GET does not allow body), 
          and we want to avoid this, so it does not appear in web log. With PUT we set HasSensitiveData flag and 
@@ -145,7 +173,10 @@ namespace Vita.Modules.Login.Api {
           self-service password change or password reset process. To avoid implementing it in several places,
           and considering that password check is light-weight (no db access) and does not need to be secured, 
           we place it here. 
-     */ 
+     */
+    /// <summary>Asks server to evaluate the strength of a password. </summary>
+    /// <param name="changeInfo">The password change information containing the password.</param>
+    /// <returns>The strength of the password.</returns>
     [ApiPut, ApiRoute("passwordcheck")]
     public PasswordStrength EvaluatePasswordStrength(PasswordChangeInfo changeInfo) {
       Context.WebContext.MarkConfidential(); //prevent from logging password
@@ -153,26 +184,6 @@ namespace Vita.Modules.Login.Api {
       var loginMgr =  Context.App.GetService<ILoginManagementService>();
       var strength = loginMgr.EvaluatePasswordStrength(changeInfo.NewPassword);
       return strength; 
-    }
-
-    // Note: have to use double-segment URL, othewise it is confused with "{token}" URL
-    [ApiGet, ApiRoute("session/info")]
-    public SessionInfo GetSessionInfo() {
-      var session = Context.UserSession;
-      if (session == null)
-        return null;
-      var user = Context.User; 
-      var info = new SessionInfo() {UserName = user.UserName, Kind = user.Kind, UserId = user.UserId, Culture = Context.UserCulture, 
-           StartedOn = session.StartedOn, TimeZoneOffsetMinutes = session.TimeZoneOffsetMinutes};
-      return info; 
-    }
-
-    [ApiPut, ApiRoute("session/timezoneoffset")]
-    public void SetTimezoneOffset(int minutes) {
-      var userSession = Context.UserSession;
-      if (userSession != null) {
-        userSession.TimeZoneOffsetMinutes = minutes; //this will mark session as dirty, and it will be saved 
-      }
     }
 
     private ILoginProcess GetActiveProcess(string token, bool throwIfNotFound = true) {

@@ -44,8 +44,7 @@ namespace Vita.Entities {
     public EntityModule(EntityArea area, string name, string description = null, Version version = null) {
       Area = area; 
       App = Area.App;
-      Util.Check(App.Status == EntityAppStatus.Initializing,
-        "Module may not be added to an entity app after it is initialized.");
+      Util.Check(App.Status == EntityAppStatus.Created, "Module may not be added to an entity app after it is initialized.");
       Name = name;
       Description = description;
       Version = version ?? new Version("1.0.0.0");
@@ -125,16 +124,6 @@ namespace Vita.Entities {
 
     /// <summary>Notifies the module that entity app initialization is completed. </summary>
     public virtual void AppInitComplete() {
-
-    }
-
-    /// <summary>
-    /// Notifies that a new service is registered; useful for services that are added after app initialization
-    /// (ex: WebCallNotificationService)
-    /// </summary>
-    /// <param name="serviceType">Service type.</param>
-    /// <param name="service">Service instance</param>
-    public virtual void NotifyServiceRegistered(Type serviceType, object service) {
 
     }
 

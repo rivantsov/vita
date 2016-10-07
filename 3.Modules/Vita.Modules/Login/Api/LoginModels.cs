@@ -5,27 +5,48 @@ using System.Text;
 using System.Threading.Tasks;
 using Vita.Common;
 using Vita.Entities;
+using Vita.Entities.Services;
 
 namespace Vita.Modules.Login.Api {
 
+  /// <summary>A container for login information. </summary>
   public class LoginRequest {
+    /// <summary>User name.</summary>
     public string UserName;
+    /// <summary>User password.</summary>
     public string Password;
+    /// <summary>Requested session expiration type, optional.</summary>
+    public UserSessionExpirationType? ExpirationType; 
+    /// <summary>A token identifying the device (client computer or device). Obtained by registering device with server. 
+    /// Allows implementing optional behavior like [Skip multi-factor authorization] for pinned trusted device. </summary>
     public string DeviceToken;
+    /// <summary>A tenant ID for multi-tenant applications. </summary>
     public Guid? TenantId;
   }
 
+  /// <summary>Login attempt response. </summary>
   public class LoginResponse {
+    /// <summary>Login attempt result status. Indicates if login succeeded or failed. </summary>
     public LoginAttemptStatus Status;
+    /// <summary>User name (if login succeeded).</summary>
     public string UserName;
+    /// <summary>User ID (if login succeeded).</summary>
     public Guid UserId;
+    /// <summary>Alternative user ID, Int63 (if login succeeded).</summary>
     public long AltUserId;
+    /// <summary>Login record ID (if login succeeded).</summary>
     public Guid LoginId;
+    /// <summary>Date-time of previous successful login.</summary>
     public DateTime? LastLoggedInOn;
-    public PostLoginActions Actions; 
+    /// <summary>List of pending actions that user should complete with the account setup (ex: verify email).</summary>
+    public PostLoginActions Actions;
+    /// <summary>Number of days the current password expires.</summary>
     public int PasswordExpiresDays;
-    public string AuthenticationToken; //the client app should put this token into Authorization header on each subsequent request
+    /// <summary>Authentication token, serving as user session ID. Should be added to Authorization header of every call to the server.</summary>
+    public string AuthenticationToken; 
+    /// <summary>User display name</summary>
     public string UserDisplayName;
+    /// <summary>For multi-factor login, the token identifying the server-side process that controls the multi-factor verification.</summary>
     public string MultiFactorProcessToken;
   }
 
@@ -110,15 +131,6 @@ namespace Vita.Modules.Login.Api {
     public string Token;
     public DeviceType Type; 
     public DeviceTrustLevel TrustLevel; 
-  }
-
-  public class SessionInfo {
-    public Guid UserId;
-    public UserKind Kind;
-    public string UserName;
-    public string Culture;
-    public int TimeZoneOffsetMinutes;
-    public DateTime StartedOn;
   }
 
 }

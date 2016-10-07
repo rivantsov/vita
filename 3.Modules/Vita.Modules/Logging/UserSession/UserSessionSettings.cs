@@ -21,16 +21,19 @@ namespace Vita.Modules.Logging {
 
   public class UserSessionSettings {
     public UserSessionOptions Options;
+    /// <summary>Used by default. </summary>
     public TimeSpan SessionTimeout = TimeSpan.FromMinutes(20);
+    /// <summary>Used when client (typically mobile device) requests long sessions. </summary>
+    public TimeSpan LongSessionTimeout = TimeSpan.FromDays(30);
     public int MemoryCacheExpirationSec;
 
     public Func<string> SessionTokenGenerator;
 
-    public UserSessionSettings(UserSessionOptions options = UserSessionOptions.Default, TimeSpan? sessionTimeOut = null,
+    public UserSessionSettings(UserSessionOptions options = UserSessionOptions.Default, int sessionTimeOutMinutes = 20, int longSessionTimeoutDays = 30,
                                      int memoryCacheExpirationSec = 2 * 60) {
       Options = options;
-      if(sessionTimeOut != null)
-        SessionTimeout = sessionTimeOut.Value;
+      SessionTimeout = TimeSpan.FromMinutes(sessionTimeOutMinutes);
+      LongSessionTimeout = TimeSpan.FromDays(longSessionTimeoutDays);
       MemoryCacheExpirationSec = memoryCacheExpirationSec;
       SessionTokenGenerator = UserSessionModule.DefaultSessionTokenGenerator;
     }

@@ -28,7 +28,6 @@ namespace Vita.Data {
     public DataAccessService(EntityApp app, EntityCache sharedCache = null) {
       _app = app;
       _events = new DataSourceEvents(this);
-      app.RegisterService<IDataAccessService>(this); 
     }
 
     #region IEntityService methods

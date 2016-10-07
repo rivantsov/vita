@@ -160,7 +160,7 @@ namespace Vita.Samples.BookStore {
       // This garantees that during adjustment editing we modify only data for the order that we started adjustment for.
       ManagerAdjustOrderGrant = StoreManager.GrantDynamic(adjustOrderFilter, adjustingOrders, AdjustedOrderIdKey); 
       //Add permission to access LoginAdministration API controller
-      StoreManager.ChildRoles.Add(loginModule.Authorization.LoginAdministrator);
+      StoreManager.ChildRoles.Add(loginModule.Roles.LoginAdministrator);
       StoreManager.ChildRoles.Add(Vita.Modules.Logging.LoggingAuthorizationRoles.Instance.LogDataViewerRole);
     }
 

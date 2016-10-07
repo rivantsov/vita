@@ -97,47 +97,5 @@ namespace Vita.Samples.BookStore {
       return GetTimeOffset();
     }
 
-    #region Special test methods - sync/async bridge
-    // these methods test/validate sync/async bridge utitilies (trouble with deadlocks)
-    // it is important that these methods are run from inside IIS host (full ASP.NET host)
-    // so we call these manually when running SampleBooksUI sample web app - by typing 
-    // URL in browser
-    /// <summary>Internal testing only. Test method to play with thread deadlocks.</summary>
-    /// <returns>Does not return, hangs forever - thread deadlock.</returns>
-    [ApiGet, ApiRoute("deadlock")]
-    public async Task<string> TestAsyncWithDeadlock() {
-      await Task.Delay(50);
-      //this should deadlock
-      var result = DoDelaySyncIncorrect();
-      return result;
-    }
-
-    /// <summary>Internal testing only: test sync/async bridge</summary>
-    /// <returns>Current time</returns>
-    [ApiGet, ApiRoute("nodeadlock")]
-    public async Task<string> TestAsyncNoDeadlock() {
-      await Task.Delay(50);
-      return DoDelaySyncCorrect(); 
-    }
-
-    private string DoDelaySyncCorrect() {
-      AsyncHelper.RunSync(() => DoDelayAsync()); //this is our helper method, we test it here under IIS
-      return AsPlainText("Time: " + DateTime.Now.ToString("hh:MM:ss")); 
-    }
-
-    // something made up, what might work in console but not under IIS (SynchronizationContext is special!)
-    private string DoDelaySyncIncorrect() {
-      var task = DoDelayAsync();
-      var aw = task.GetAwaiter();
-      while(!aw.IsCompleted)
-        System.Threading.Thread.Yield();
-      return AsPlainText("OK");
-    }
-
-    private async Task DoDelayAsync() {
-      await Task.Delay(1000);
-    }
-    #endregion
-
   }//class
 }//ns

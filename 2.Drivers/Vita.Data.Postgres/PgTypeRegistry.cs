@@ -22,7 +22,7 @@ namespace Vita.Data.Postgres {
       //integers
       // Note: We have to provide explicit cast for certain int and currency types; otherwise, function overload resolution does not match the intended function 
       // (it works by function name and arg types match). Quite annoying. 
-      AddType("int", DbType.Int32, typeof(int), NpgsqlDbType.Integer, aliases: "integer", clrTypes: new Type[] { typeof(UInt16) });
+      AddType("int", DbType.Int32, typeof(int), NpgsqlDbType.Integer, aliases: "integer,oid", clrTypes: new Type[] { typeof(UInt16) });
       AddType("smallint", DbType.Int16, typeof(Int16), NpgsqlDbType.Smallint, clrTypes: new Type[] { typeof(byte), typeof(sbyte) }, valueToLiteral: NumToLiteralWithCast);
       AddType("bigint", DbType.Int64, typeof(Int64), NpgsqlDbType.Bigint, clrTypes: new Type[] { typeof(UInt32), typeof(UInt64) }, valueToLiteral: NumToLiteralWithCast);
       //AddType("serial", DbType.Int32, typeof(Int32), NpgsqlDbType ??);

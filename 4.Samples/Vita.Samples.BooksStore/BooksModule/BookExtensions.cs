@@ -66,7 +66,7 @@ namespace Vita.Samples.BookStore {
       return order;
     }
 
-    public static IBookOrderLine Add(this IBookOrder order, IBook book, int quantity) {
+    public static IBookOrderLine Add(this IBookOrder order, IBook book, byte quantity) {
       var session = EntityHelper.GetSession(order);
       var line = session.NewEntity<IBookOrderLine>();
       line.Order = order; 

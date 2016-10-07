@@ -58,7 +58,6 @@ namespace Vita.Samples.BookStore {
       loginStt.DefaultEmailFrom = "team@bookstore.com";
 
       var loginModule = new LoginModule(loginArea, loginStt);
-      //var oauthModule = new OAuthClientModule(loginArea);
       //data history - we track history for book review, it is marked with WithHistory attribute
       var histModule = new DataHistoryModule(booksArea);
 
@@ -70,7 +69,7 @@ namespace Vita.Samples.BookStore {
       base.ApiConfiguration.RegisterControllerTypes(
         typeof(LoginController), typeof(PasswordResetController), typeof(LoginSelfServiceController), typeof(LoginAdministrationController),
         typeof(ClientErrorController), typeof(LoggingDataController), typeof(EventsPostController),
-        typeof(DiagnosticsController)
+        typeof(DiagnosticsController), typeof(UserSessionInfoController)
         );
 
       //logging app - linked to main app

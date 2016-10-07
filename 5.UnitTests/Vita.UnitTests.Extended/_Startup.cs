@@ -68,10 +68,6 @@ namespace Vita.UnitTests.Extended {
         //Check if Reset was called; if Driver is null, we are running in Test Explorer mode
         if(Driver == null)
           SetupForTestExplorerMode();
-        //Reset Db and drop schema objects
-        var resetDb = ConfigurationManager.AppSettings["ResetDatabase"] == "true";
-        if(resetDb)
-          Vita.UnitTests.Common.TestUtil.DropSchemaObjects(DbSettings);
         //Setup model, initialize Books module, create database model, update schema -------------------------------------------------
         BooksApp = new BooksEntityApp(LoginCryptoKey);
         BooksApp.LogPath = LogFilePath;
@@ -79,6 +75,12 @@ namespace Vita.UnitTests.Extended {
         BooksApp.CacheSettings.CacheEnabled = CacheEnabled;
         NotificationListener = new NotificationListener(BooksApp, blockAll: true);   //SmtpMock for testing password reset and other processes
         BooksApp.Init();
+        //Reset Db and drop schema objects; first set schema list 
+        var resetDb = ConfigurationManager.AppSettings["ResetDatabase"] == "true";
+        if(resetDb) {
+          DbSettings.SetSchemas(BooksApp.Areas.Select(a => a.Name));
+          Vita.UnitTests.Common.TestUtil.DropSchemaObjects(DbSettings);
+        }
         //Now connect the main app
         BooksApp.ConnectTo(DbSettings);
         //if we have logging app as a separate app - we need to connect it too. 

@@ -31,9 +31,11 @@ namespace Vita.Entities.Model {
   }
 
   public class ServiceEventArgs : EventArgs {
+    public readonly EntityApp App; 
     public readonly Type ServiceType;
     public readonly object ServiceInstance;
-    public ServiceEventArgs(Type serviceType, object serviceInstance) {
+    public ServiceEventArgs(EntityApp app, Type serviceType, object serviceInstance) {
+      App = app; 
       ServiceType = serviceType;
       ServiceInstance = serviceInstance; 
     }
@@ -134,10 +136,10 @@ namespace Vita.Entities.Model {
       if(FlushRequested != null)
         FlushRequested(this, EventArgs.Empty);
     }
-    internal void OnServiceAdded(Type serviceType, object serviceInstance) {
+    internal void OnServiceAdded(EntityApp app, Type serviceType, object serviceInstance) {
       var evt = ServiceAdded;
       if (evt != null)
-        evt(this, new ServiceEventArgs(serviceType, serviceInstance));
+        evt(this, new ServiceEventArgs(app, serviceType, serviceInstance));
     }
 
   }//class

@@ -35,7 +35,6 @@ namespace Vita.Modules.Login {
   public enum DeviceTrustLevel {
     None,
     AllowSingleFactor, // one-factor identification is enough
-    KeepLoggedIn, // Do not expire session
   }
 
   public enum LoginProcessType {
@@ -80,6 +79,7 @@ namespace Vita.Modules.Login {
     LoginDisabled,
     PasswordExpired,
     LoginReactivated,
+    TokenRefreshed,
 
     //management
     LoginCreated,

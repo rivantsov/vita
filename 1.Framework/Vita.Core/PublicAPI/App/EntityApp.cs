@@ -21,6 +21,7 @@ namespace Vita.Entities {
 
   /// <summary> Represents entity application status, from initialization to shutdown. </summary>
   public enum EntityAppStatus {
+    Created,
     /// <summary> Application is initializing. </summary>
     Initializing,
     Initialized,
@@ -35,7 +36,7 @@ namespace Vita.Entities {
     public string AppName;
 
     /// <summary>Entity application status, from initialization to shutdown. </summary>
-    public EntityAppStatus Status { get; internal set; }
+    public EntityAppStatus Status { get; protected set; }
 
     ///<summary>Entity application version, formatted as '1.0.0.0' . </summary>
     public Version Version;
@@ -92,23 +93,19 @@ namespace Vita.Entities {
     /// <summary>Gets or sets a full path of the log file.</summary>
     public string LogPath {
       get {
-        return (_logFileWriter == null) ? null : _logFileWriter.LogPath;
+        return _logFilePath; 
       }
       set {
-        var isEmpty = string.IsNullOrEmpty(value); 
-        if (_logFileWriter == null) {
-          if (isEmpty) return; 
-          _logFileWriter = new LogFileWriter(this, value); 
-        } else {
-          if (isEmpty) {
-            _logFileWriter.Disconnect();
-            _logFileWriter = null;
-          } else {
-            _logFileWriter.LogPath = value; 
-          }
-        }
+        _logFilePath = value;
+        if(this.Status== EntityAppStatus.Created)
+          return; //nothing to do
+        if(_logFileWriter == null)
+          _logFileWriter = new LogFileWriter(this, _logFilePath);
+        else
+          _logFileWriter.LogPath = _logFilePath;
       }
     }
+    string _logFilePath; 
     LogFileWriter _logFileWriter;
 
     /// <summary>Gets the instance of the application time service. </summary>
@@ -116,9 +113,9 @@ namespace Vita.Entities {
     public virtual IErrorLogService ErrorLog { get { return GetService<IErrorLogService>(); } }
 
     /// <summary>Gets the instance of the application authorization service. </summary>
-    public readonly IAuthorizationService AuthorizationService;
+    public IAuthorizationService AuthorizationService { get; protected set; }
     /// <summary>Holds the instance of the data access service. </summary>
-    public readonly IDataAccessService DataAccess; 
+    public IDataAccessService DataAccess { get; protected set; } 
 
     internal readonly List<EntityReplacementInfo> Replacements = new List<EntityReplacementInfo>();
     internal readonly HashSet<Type> CompanionTypes = new HashSet<Type>();
@@ -128,32 +125,18 @@ namespace Vita.Entities {
     private IDictionary<Type, object> _services = new Dictionary<Type, object>();
 
     public readonly IList<EntityApp> LinkedApps = new List<EntityApp>();
-    private object _lock = new object(); 
 
     /// <summary> Constructs a new EntityApp instance. </summary>
     public EntityApp(string appName = null, string version = "1.0.0.0") {
       AppName = appName ?? this.GetType().Name;
       Version = new Version(version); 
-      Status = EntityAppStatus.Initializing;
+      Status = EntityAppStatus.Created;
       var ctx = this.CreateSystemContext(); 
       ActivationLog = new MemoryLog(ctx); 
       AppEvents = new EntityAppEvents(this);
       EntityEvents = new EntityEvents();
       AttributeHandlers = CustomAttributeHandler.GetDefaultHandlers();
       SizeTable = Sizes.GetDefaultSizes();
-      //create default services
-      this.TimeService = new TimeService();
-      this.RegisterService<ITimeService>(this.TimeService);
-      this.AuthorizationService = new AuthorizationService(this);
-      var timerService = new TimerService();
-      this.RegisterService<ITimerService>(timerService);
-      this.RegisterService<ITimerServiceControl>(timerService);
-
-      this.RegisterService<IBackgroundSaveService>(new BackgroundSaveService());
-      // likely is replaced by another implementation writing to database - during modules initialization
-      this.RegisterService<IOperationLogService>(new DefaultOperationLogService(this, LogLevel.Details));
-      DataAccess = new DataAccessService(this); //it will register itself as a service
-
     }
 
     /// <summary>Initializes the entity app. </summary>
@@ -161,6 +144,9 @@ namespace Vita.Entities {
     /// The method is called automatically when you connect the application to the database
     /// with <c>ConnectTo()</c> extension method.</remarks>
     public virtual void Init() {
+      if(Status != EntityAppStatus.Created)
+        return; 
+      Status = EntityAppStatus.Initializing;
       this.AppEvents.OnInitializing(EntityAppInitStep.Initializing);
       //Check dependencies
       foreach(var mod in this.Modules) {
@@ -172,6 +158,12 @@ namespace Vita.Entities {
         }
       }
       this.CheckActivationErrors();
+      // create default services
+      CreateDefaultServices();
+      //create log file writer
+      if (!string.IsNullOrWhiteSpace(_logFilePath))
+        _logFileWriter = new LogFileWriter(this, _logFilePath);
+       
       //Build model
       var modelBuilder = new EntityModelBuilder(this);
       modelBuilder.BuildModel();
@@ -192,26 +184,34 @@ namespace Vita.Entities {
         if(iServiceInit != null)
           iServiceInit.Init(this);
       }
-
-      // check error log service, register trace log if no real service installed
-      var errLog = GetService<IErrorLogService>();
-      if(errLog == null)
-        RegisterService<IErrorLogService>(new TraceErrorLogService());
-
       //complete initialization
       this.AppEvents.OnInitializing(EntityAppInitStep.Initialized);
       foreach(var module in this.Modules)
         module.AppInitComplete();
 
       CheckActivationErrors();
-
+      // Init linked apps 
       foreach(var linkedApp in LinkedApps)
         linkedApp.Init();
 
       Status = EntityAppStatus.Initialized;
     }
 
-
+    protected virtual void CreateDefaultServices() {
+      this.AuthorizationService = new AuthorizationService(this);
+      RegisterService<IAuthorizationService>(this.AuthorizationService);
+      this.DataAccess = new DataAccessService(this);
+      RegisterService<IDataAccessService>(this.DataAccess);
+      // create services only if they do not exist yet, or not imported from LinkedApps
+      RegisterServiceIfNotFound<IErrorLogService>(() => new TraceErrorLogService());
+      this.TimeService = new TimeService();
+      this.TimeService = this.RegisterServiceIfNotFound<ITimeService>(() => new TimeService());
+      var timers = this.RegisterServiceIfNotFound<ITimerService>(() => new TimerService());
+      this.RegisterService<ITimerServiceControl>(timers as ITimerServiceControl);
+      this.RegisterServiceIfNotFound<IBackgroundSaveService>(() => new BackgroundSaveService());
+      // likely is replaced by another implementation writing to database - during modules initialization
+      this.RegisterServiceIfNotFound<IOperationLogService>(() => new DefaultOperationLogService(this, LogLevel.Details));
+    }
 
     /// <summary>Moves entities (types) from their original areas to the target Area. </summary>
     /// <param name="toArea">Target area.</param>
@@ -319,10 +319,19 @@ namespace Vita.Entities {
     /// </remarks>
     public void RegisterService<T>(T service) {
       _services[typeof(T)] = service;
-      this.AppEvents.OnServiceAdded(typeof(T), service);
+      this.AppEvents.OnServiceAdded(this, typeof(T), service);
       //notify child apps
       foreach (var linkedApp in this.LinkedApps)
-        linkedApp.AppEvents.OnServiceAdded(typeof(T), service);
+        linkedApp.AppEvents.OnServiceAdded(this, typeof(T), service);
+    }
+
+    protected T RegisterServiceIfNotFound<T>(Func<T> creator) where T: class {
+      var old = GetService<T>();
+      if(old != null)
+        return old;
+      var service = creator(); 
+      RegisterService(service);
+      return service; 
     }
 
     public void RemoveService(Type serviceType) {
@@ -414,7 +423,8 @@ namespace Vita.Entities {
     #region Config repo access
 
     //Repository of all config/settings objects, indexed by type, for easy access from anywhere
-    Dictionary<Type, object> _configsRepo = new Dictionary<Type, object>(); 
+    Dictionary<Type, object> _configsRepo = new Dictionary<Type, object>();
+    private object _lock = new object();
 
     /// <summary>Registers config/settings object in global repo.</summary>
     /// <typeparam name="T">Type of config object.</typeparam>
@@ -475,6 +485,8 @@ namespace Vita.Entities {
         try {
           foreach(var m in Modules)
             m.WebInitialize(webContext);
+          foreach(var linkedApp in LinkedApps)
+            linkedApp.WebInitilialize(webContext); 
         } finally { _webInitialized = true; }
       }//lock
 

@@ -63,6 +63,10 @@ namespace Vita.Data.Driver {
       return (Features & feature) != 0;
     }
 
+    public virtual bool IsSystemSchema(string schema) {
+      return false; 
+    }
+
     public virtual string GetServerVersion(string connectionString) {
       var conn =  CreateConnection(connectionString) as System.Data.Common.DbConnection;
       if (conn == null) 

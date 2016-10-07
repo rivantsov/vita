@@ -64,6 +64,7 @@
     <Compile Include="DataHistory\DataHistoryModule.cs" />
     <Compile Include="DataHistory\IDataHistoryService.cs" />
     <Compile Include="Logging\Api\EventsPostController.cs" />
+    <Compile Include="Logging\Api\UserSessionInfoController.cs" />
     <Compile Include="Logging\EventLog\EventLogEntities.cs" />
     <Compile Include="Logging\EventLog\EventLogExtensions.cs" />
     <Compile Include="Logging\EventLog\EventLogModule.cs" />
@@ -131,7 +132,7 @@
     <Compile Include="Logging\LoginLog\LoginLogModule.cs" />
     <Compile Include="Logging\TransactionLog\TransactionLogModelExtender.cs" />
     <Compile Include="Login\Api\LoginAdministrationController.cs" />
-    <Compile Include="Login\Authorization\LoginAuthorization.cs" />
+    <Compile Include="Login\LoginAuthorizationRoles.cs" />
     <Compile Include="Login\GoogleAuthenticator\Base32Encoder.cs" />
     <Compile Include="Login\GoogleAuthenticator\GoogleAuthenticatorUtil.cs" />
     <Compile Include="Login\Api\LoginModelExtensions.cs" />
@@ -186,7 +187,6 @@
     <Compile Include="OAuthClient\OAuthClientEntities.cs" />
     <Compile Include="OAuthClient\OAuthClientExtensions.cs" />
     <Compile Include="OAuthClient\OAuthClientModule.cs" />
-    <Compile Include="Logging\UserSession\IUserSessionService.cs" />
     <Compile Include="Logging\UserSession\UserSessionSettings.cs" />
     <Compile Include="Logging\TransactionLog\Attributes.cs" />
     <Compile Include="Logging\UserSession\UserSessionEntities.cs" />

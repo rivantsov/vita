@@ -28,6 +28,7 @@ namespace Vita.Web {
 
     IWebCallLogService _webCallLog;
     IErrorLogService _errorLog;
+    IUserSessionService _sessionService; 
 
     public WebCallContextHandler(EntityApp app, WebCallContextHandlerSettings settings) {
       App = app;
@@ -35,6 +36,7 @@ namespace Vita.Web {
       App.RegisterConfig(Settings);
       _webCallLog = App.GetService<IWebCallLogService>();
       _errorLog = App.GetService<IErrorLogService>();
+      _sessionService = App.GetService<IUserSessionService>();
       App.RegisterService<IWebCallNotificationService>(this); 
     }
 
@@ -79,10 +81,13 @@ namespace Vita.Web {
     }
 
     private void PreprocessRequest(WebCallInfo callInfo) {
+      var webCtx = callInfo.WebContext;
       // call token handlers (to handle headers and cookies)
       foreach (var handler in Settings.TokenHandlers)
         if (handler.Direction.IsSet(WebTokenDirection.Input))
-          handler.HandleRequest(callInfo.WebContext, callInfo.Request);
+          handler.HandleRequest(webCtx, callInfo.Request);
+      if(_sessionService != null && !string.IsNullOrWhiteSpace(webCtx.UserSessionToken))
+        _sessionService.AttachSession(webCtx.OperationContext, webCtx.UserSessionToken, webCtx.MinUserSessionVersion);
     }
 
     private void PostProcessResponse(WebCallInfo callInfo) {
@@ -98,7 +103,14 @@ namespace Vita.Web {
           response.StatusCode = webContext.OutgoingResponseStatus.Value;
         if (webContext.OutgoingResponseContent != null)
           response.Content = UnpackContent(webContext.OutgoingResponseContent);
-        //call token handlers
+        //Update/save session and get current session version
+        var userSession = webContext.OperationContext.UserSession;
+        if(_sessionService != null && userSession != null) {
+          if(userSession.IsModified())
+            _sessionService.UpdateSession(webContext.OperationContext);
+          webContext.MinUserSessionVersion = userSession.Version; 
+        }
+        //call token handlers - to send back session version
         foreach(var handler in Settings.TokenHandlers)
           if (handler.Direction.IsSet(WebTokenDirection.Output))
             handler.HandleResponse(callInfo.WebContext, callInfo.Response);

@@ -94,9 +94,10 @@
     <Compile Include="Entities\Model\Filters\QueryFilter.cs" />
     <Compile Include="Entities\Model\EntityModelExtensions.cs" />
     <Compile Include="Entities\Model\IEntityModelExtender.cs" />
+    <Compile Include="Entities\Services\IUserSessionService.cs" />
     <Compile Include="PublicAPI\Exceptions\AuthenticationRequiredException.cs" />
     <Compile Include="Entities\Services\IDbInfoService.cs" />
-    <Compile Include="PublicAPI\Web\ApiNameMapping.cs" />
+    <Compile Include="PublicAPI\Web\MiscTypes.cs" />
     <Compile Include="PublicAPI\Web\SlimApiAttributes.cs" />
     <Compile Include="Entities\Web.Implementation\ISlimApiControllerInit.cs" />
     <Compile Include="Entities\Web.Implementation\ApiConfiguration.cs" />

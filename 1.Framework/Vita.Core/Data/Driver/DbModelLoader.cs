@@ -36,7 +36,7 @@ namespace Vita.Data.Driver {
 
     //Schemas are initially copied from Settings. But app can reset them to desired list later.  
     //note: if _schemas is empty, it means - load all.
-    private StringSet _schemas = new StringSet(); 
+    private StringSet _schemasSubSet = new StringSet(); 
     private string _schemasListForFilter;
 
 
@@ -44,7 +44,10 @@ namespace Vita.Data.Driver {
       Settings = settings;
       Log = log;
       Driver = Settings.ModelConfig.Driver;
-      SetupSchemas(Settings.GetSchemas());
+      // if Settings.Schemas set is not empty, set these as restriction/filter
+      var schemas = Settings.GetSchemas().ToList();
+      if (schemas.Count > 0)
+        SetSchemasSubSet(schemas);
     }
 
     public virtual DbModel LoadModel() {
@@ -67,31 +70,46 @@ namespace Vita.Data.Driver {
       return Model; 
     }//method
 
-    public void SetupSchemas(IEnumerable<string> schemas) {
-      _schemas.Clear();
-      _schemasListForFilter = null;
-      if (!SupportsSchemas())
-        return;
-      _schemas.UnionWith(schemas);
-      if (_schemas.Count > 0) {
-        _schemasListForFilter = "('" + string.Join("', '", _schemas) + "')";
-      }
-    }
-
     protected void LogError(string message, params object[] args) {
-      if (Log == null) //if no log then throw
-        Util.Throw(message, args); 
+      if(Log == null) //if no log then throw
+        Util.Throw(message, args);
       Log.Error(message, args);
     }
 
+    public void SetSchemasSubSet(IEnumerable<string> schemas) {
+      _schemasSubSet.Clear();
+      _schemasListForFilter = null;
+      if (schemas == null || !SupportsSchemas())
+        return;
+      _schemasSubSet.UnionWith(schemas.Where(s => !Driver.IsSystemSchema(s)));
+      if (_schemasSubSet.Count > 0) {
+        _schemasListForFilter = "('" + string.Join("', '", _schemasSubSet) + "')";
+      }
+    }
+
     protected virtual bool IncludeSchema(string schema) {
-      if (!SupportsSchemas() || _schemas.Count == 0)
-        return true; 
-      return _schemas.Contains(schema);
+      if(Driver.IsSystemSchema(schema))
+        return false; 
+      if (!SupportsSchemas() || _schemasSubSet.Count == 0)
+        return true;
+      return _schemasSubSet.Contains(schema);
     }
 
     protected bool SupportsSchemas() {
       return Driver.Supports(DbFeatures.Schemas);
+    }
+
+    //Loads schemas into dbModel.Setup.Schemas only if it was originally empty
+    protected virtual void LoadSchemas() {
+      Model.Schemas.Clear(); //important - clear schemas that were copied from Setup
+      if(!SupportsSchemas())
+        return;
+      var data = GetSchemas();
+      foreach(DbRow row in data.Rows) {
+        var schema = row.GetAsString("SCHEMA_NAME");
+        if(IncludeSchema(schema)) //add only schemas that are relevant to the model
+          Model.Schemas.Add(new DbSchemaInfo(Model, schema));
+      }
     }
 
     protected virtual void LoadRoutines() {
@@ -131,19 +149,6 @@ namespace Vita.Data.Driver {
       if(tbl != null) {
         command.Table = tbl;
         tbl.CrudCommands.Add(command); 
-      }
-    }
-
-    //Loads schemas into dbModel.Setup.Schemas only if it was originally empty
-    protected virtual void LoadSchemas() {
-      Model.Schemas.Clear(); //important - clear schemas that were copied from Setup
-      if (!SupportsSchemas())
-        return; 
-      var data = GetSchemas();
-      foreach (DbRow row in data.Rows) {
-        var schema = row.GetAsString("SCHEMA_NAME");
-        if (IncludeSchema(schema)) //add only schemas that are relevant to the model
-          Model.Schemas.Add(new DbSchemaInfo(Model, schema));
       }
     }
 

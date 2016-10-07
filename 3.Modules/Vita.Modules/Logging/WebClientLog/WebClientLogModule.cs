@@ -30,6 +30,7 @@ namespace Vita.Modules.Logging {
     #region IWebClientLogService
 
     class ClientLogEntry : IObjectSaveHandler {
+      public string ClientName;
       public DateTime CreatedOn; 
       public string UserName;
       public Guid UserSessionId; 
@@ -49,6 +50,7 @@ namespace Vita.Modules.Logging {
       public void SaveObjects(IEntitySession session, IList<object> items) {
         foreach(ClientLogEntry entry in items) {
           var ent = session.NewEntity<IWebClientLog>();
+          ent.ClientName = entry.ClientName;
           ent.CreatedOn = entry.CreatedOn;
           ent.UserName = entry.UserName;
           ent.UserSessionId = entry.UserSessionId;
@@ -81,11 +83,13 @@ namespace Vita.Modules.Logging {
       }//method
     }//class
 
-    public void Log(OperationContext context, long duration, string urlTemplate, object[] urlArgs,
-         HttpRequestMessage request, HttpResponseMessage response, SerializedContent requestContent, SerializedContent responseContent,
+    public void Log(OperationContext context, string clientName, long duration, string urlTemplate, object[] urlArgs,
+         HttpRequestMessage request, HttpResponseMessage response, 
+         SerializedContent requestContent, SerializedContent responseContent,
          Exception exception) {
       try {
         var entry = new ClientLogEntry() {
+          ClientName = clientName, 
           CreatedOn = context.App.TimeService.UtcNow, UserName = context.User.UserName, Duration = (int)duration, CallTemplate = urlTemplate,
           RequestUri = request?.RequestUri, HttpMethod = request?.Method.Method, RequestHeaders = request?.GetHeadersAsString(), RequestBody = requestContent?.Raw,
           ResponseHeaders = response?.GetHeadersAsString(), HttpStatus = response?.StatusCode, ResponseBody = responseContent?.Raw,

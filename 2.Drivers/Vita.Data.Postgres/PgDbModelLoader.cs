@@ -69,8 +69,8 @@ ORDER BY table_schema, table_name, ordinal_position;
 
     // Postgres does not return materialized views in information_schema.views - they say it's intentional (and stupid!)
     // so we have to use hand-crafted query; another trouble - Postgres reformats the view SQL substantially - 
-    // the SQL returned as View definition differs from original CREATE VIEW sql. One annoying (and stupid!!!!) thing is that it removes all comments 
-    // from View. 
+    // the SQL returned as View definition differs from original CREATE VIEW sql. One annoying (and stupid!!!!) 
+    // thing is that it removes all comments from View. 
     // For other servers we keep view hash in special comment.So for postgres we save hash in view description (special attribute in Postgres),
     // and for loading views construct artificial definition consisting only of hash comment line
     public override DbTable GetViews() {
@@ -129,8 +129,6 @@ ORDER BY n.nspname,t.relname,a.relname;", filter);
       return ExecuteSelect(sql);
     }
 
-    // We use index definition string to get columns and DESC flags for each index. GetIndexes call returns index definition in a separate column.
-    // Just did not find any other way to get columns with IsDescending flag. 
     // Output DbTable expected columns: table_schema, table_name, index_name, column_name, column_ordinal_position, is_descending
     public override DbTable GetIndexColumns() {
       var filter = GetSchemaFilter("n.nspname");
@@ -160,6 +158,8 @@ ORDER BY table_schema, table_name, index_name, column_ordinal_position
       return colData;
     }
 
+
+    /* No longer used, found a way to get asc/desc value 
     class IndexColumn {
       public string ColumnName;
       public bool IsDescending;
@@ -181,6 +181,7 @@ ORDER BY table_schema, table_name, index_name, column_ordinal_position
       }
       return list;
     }
+    */
 
     /* The following query will bring index columns, but there are 2 problems. 1 - column order in index has to be derived from indKey field 
      * (list of numbers which point to attnum values). 2 - it does not bring ASC/DESC info for columns, and I could not find a way to get it. 

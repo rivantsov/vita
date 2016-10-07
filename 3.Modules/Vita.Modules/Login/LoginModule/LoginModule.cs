@@ -30,7 +30,9 @@ namespace Vita.Modules.Login {
     ILoginLogService _loginLog;
     IUserSessionService _sessionService;
     IRecaptchaService _recaptchaService;
-    INotificationService _notificationService; 
+    INotificationService _notificationService;
+    public readonly LoginAuthorizationRoles Roles;
+
 
     #region constructors and init
     public LoginModule(EntityArea area, LoginModuleSettings settings, string name = null) : base(area, name ?? "LoginModule", "Login module", version: CurrentVersion) {
@@ -47,6 +49,7 @@ namespace Vita.Modules.Login {
       Requires<EncryptedDataModule>();
       Requires<TextTemplates.TemplateModule>(); 
       RegisterSize("EventType", 50);
+      Roles = new LoginAuthorizationRoles(); 
       // Create recaptcha service if settings are there
       if (_settings.Recaptcha != null) {
         var recaptcha = new RecaptchaService(_settings.Recaptcha);
@@ -80,14 +83,6 @@ namespace Vita.Modules.Login {
 
     }
     #endregion
-
-    public LoginAuthorization Authorization {
-      get {
-        if(_authorization == null)
-          _authorization = new LoginAuthorization();
-        return _authorization; 
-      }
-    } LoginAuthorization _authorization; 
 
     private string CheckUserName(OperationContext context, string userName) {
       context.ThrowIfEmpty(userName, ClientFaultCodes.ValueMissing, "UserName", userName, "User name may not be empty");

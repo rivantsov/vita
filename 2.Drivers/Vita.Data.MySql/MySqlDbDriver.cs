@@ -39,6 +39,20 @@ namespace Vita.Data.MySql {
       base.DefaultLikeEscapeChar = '/';
     }
 
+    public override bool IsSystemSchema(string schema) {
+      if(string.IsNullOrWhiteSpace(schema))
+        return false;
+      schema = schema.ToLowerInvariant();
+      switch(schema) {
+        case "information_schema":
+        case "performance_schema":
+        case "sys":
+          return true;
+        default:
+          return false;
+      }
+    }
+
 
     // overrides
     protected override DbTypeRegistry CreateTypeRegistry() {

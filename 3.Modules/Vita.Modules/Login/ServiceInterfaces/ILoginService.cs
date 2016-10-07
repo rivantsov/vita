@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Vita.Entities;
+using Vita.Entities.Services;
 
 namespace Vita.Modules.Login {
 
@@ -33,7 +34,7 @@ namespace Vita.Modules.Login {
     //event
     event EventHandler<LoginEventArgs> LoginEvent;
     //high-level methods
-    LoginResult Login(OperationContext context, string userName, string password, Guid? tenantId = null, string deviceToken = null);
+    LoginResult Login(OperationContext context, string userName, string password, Guid? tenantId = null, string deviceToken = null, UserSessionExpirationType expirationType = UserSessionExpirationType.Sliding);
     LoginResult CompleteMultiFactorLogin(OperationContext context, ILogin login);
     void Logout(OperationContext context);
 
@@ -44,7 +45,7 @@ namespace Vita.Modules.Login {
     PostLoginActions GetPostLoginActions(ILogin login);
 
     // used by OAuth
-    LoginResult LoginUser(OperationContext context, Guid userId);
+    LoginResult LoginUser(OperationContext context, Guid userId, UserSessionExpirationType expirationType = UserSessionExpirationType.Sliding);
   }
 
 

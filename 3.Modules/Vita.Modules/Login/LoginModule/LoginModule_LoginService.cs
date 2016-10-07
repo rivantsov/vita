@@ -24,7 +24,7 @@ namespace Vita.Modules.Login {
     public event EventHandler<LoginEventArgs> LoginEvent;
 
     public LoginResult Login(OperationContext context, string userName, string password, Guid? tenantId = null,
-                             string deviceToken = null) {
+                             string deviceToken = null, UserSessionExpirationType expirationType = UserSessionExpirationType.Sliding) {
       context.ThrowIf(password.Length > 100, ClientFaultCodes.InvalidValue, "password", "Password too long, max size: 100.");
       var webCtx = context.WebContext;
       userName = CheckUserName(context, userName);
@@ -46,7 +46,7 @@ namespace Vita.Modules.Login {
             PostLoginActions actions = GetPostLoginActions(login);
             context.User = login.CreateUserInfo();
             if(_sessionService != null)
-              AttachUserSession(context, login, device);
+              AttachUserSession(context, login, device, expirationType);
             App.UserLoggedIn(context);
             var lastLogin = login.LastLoggedInOn; //save prev value
             UpdateLastLoggedInOn(login);
@@ -69,14 +69,14 @@ namespace Vita.Modules.Login {
       }
     }//method
 
-    public LoginResult LoginUser(OperationContext context, Guid userId) {
+    public LoginResult LoginUser(OperationContext context, Guid userId, UserSessionExpirationType expirationType = UserSessionExpirationType.Sliding) {
       var session = context.OpenSystemSession();
       var login = session.EntitySet<ILogin>().Where(lg => lg.UserId == userId).FirstOrDefault();
       if(login == null || login.Flags.IsSet(LoginFlags.Inactive))
         return new LoginResult() { Status = LoginAttemptStatus.Failed };
       context.User = login.CreateUserInfo();
       if(_sessionService != null)
-        AttachUserSession(context, login);
+        AttachUserSession(context, login, null, expirationType);
       App.UserLoggedIn(context);
       var lastLogin = login.LastLoggedInOn; //save prev value
       UpdateLastLoggedInOn(login);
@@ -219,7 +219,7 @@ namespace Vita.Modules.Login {
       return true;
     }
 
-    private void AttachUserSession(OperationContext context, ILogin login, ITrustedDevice device = null) {
+    private void AttachUserSession(OperationContext context, ILogin login, ITrustedDevice device = null, UserSessionExpirationType expirationType = UserSessionExpirationType.Sliding) {
       if(_sessionService == null)
         return; 
       //Start session for logged in user and get session token
@@ -234,10 +234,7 @@ namespace Vita.Modules.Login {
         return; 
       } 
       //New session
-      UserSessionExpiration expir = null; 
-      if (trustLevel == DeviceTrustLevel.KeepLoggedIn)
-        expir = new UserSessionExpiration() { ExpirationType = UserSessionExpirationType.KeepLoggedIn };
-      context.UserSession = _sessionService.StartSession(context, context.User, expir);
+      context.UserSession = _sessionService.StartSession(context, context.User, expirationType);
     }
 
   }//module

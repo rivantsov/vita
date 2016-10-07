@@ -36,6 +36,10 @@ namespace Vita.Modules.Logging {
         loginId = login.Id;
         if(userName == null)
           userName = login.UserName;
+      } else if(context.User.Kind == UserKind.AuthenticatedUser) {
+        loginId = context.User.UserId; //most likely the same
+        if(userName == null)
+          userName = context.User.UserName;
       }
       var logEntry = new LoginLogEntry(context, loginId, eventType.ToString(), notes, userName);
       _backgroundSave.AddObject(logEntry);

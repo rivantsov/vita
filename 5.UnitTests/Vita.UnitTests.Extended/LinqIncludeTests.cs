@@ -90,7 +90,8 @@ namespace Vita.UnitTests.Extended {
       foreach (var order in orders)
         foreach (var ol in order.Lines) {
           var authors = string.Join(", ", ol.Book.Authors.Select(a => a.FullName));
-          summary.Add(string.Format(" User {0} bought {1} books titled '{2}' by {3} from {4}.", order.User.UserName, ol.Quantity, ol.Book.Title, authors, ol.Book.Publisher.Name));
+          summary.Add(string.Format(" User {0} bought {1} books titled '{2}' by {3} from {4}.", 
+               order.User.UserName, ol.Quantity, ol.Book.Title, authors, ol.Book.Publisher.Name));
         }
       txtSummary = string.Join(Environment.NewLine, summary);
       Assert.IsTrue(summary.Count > 0, "Expected non-empty summary");

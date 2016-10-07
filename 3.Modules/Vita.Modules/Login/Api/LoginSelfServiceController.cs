@@ -160,7 +160,7 @@ namespace Vita.Modules.Login.Api {
     }
 
     //We could handle PUT and POST in one method, but swagger creates two entries with the same operation_id
-    // and this crushes the API Client generator (AutoRest)
+    // and this crushes the API Client generator (AutoRest) - in case somebody wants to use this crap
     [ApiPost, ApiRoute("device")]
     public DeviceInfo RegisterDevice(DeviceInfo device) {
       return RegisterOrUpdateDevice(device); 
@@ -172,6 +172,7 @@ namespace Vita.Modules.Login.Api {
 
     private DeviceInfo RegisterOrUpdateDevice(DeviceInfo device) {
       var login = GetCurrentLogin();
+      var session = EntityHelper.GetSession(login);
       ITrustedDevice deviceEnt = null;
       if(!string.IsNullOrWhiteSpace(device.Token))
         deviceEnt = login.GetDevice(device.Token);
@@ -179,9 +180,8 @@ namespace Vita.Modules.Login.Api {
         deviceEnt = _loginManager.RegisterTrustedDevice(login, device.Type, device.TrustLevel);
       else {
         deviceEnt.TrustLevel = device.TrustLevel;
-        var session = EntityHelper.GetSession(login);
-        session.SaveChanges(); 
       }
+      session.SaveChanges();
       return new DeviceInfo() { Token = deviceEnt.Token, TrustLevel = deviceEnt.TrustLevel, Type = deviceEnt.Type };
     }
 

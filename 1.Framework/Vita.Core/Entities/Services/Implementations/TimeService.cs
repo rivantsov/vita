@@ -9,7 +9,7 @@ using Vita.Common;
 namespace Vita.Entities.Services.Implementations {
 
   //implementation
-  internal class TimeService : ITimeService {
+  public  class TimeService : ITimeService {
     private long _millisecondOffset;
 
     public TimeService() {  }

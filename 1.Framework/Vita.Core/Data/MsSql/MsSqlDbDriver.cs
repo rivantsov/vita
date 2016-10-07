@@ -61,6 +61,17 @@ namespace Vita.Data.MsSql {
     }
 
 
+    public override bool IsSystemSchema(string schema) {
+      if(string.IsNullOrWhiteSpace(schema))
+        return false;
+      schema = schema.ToLowerInvariant();
+      switch(schema) {
+        case "sys": case "information_schema":  case "guest":
+          return true;
+        default:
+          return false;
+      }
+    }
 
     // overrides
     protected override DbTypeRegistry CreateTypeRegistry() {

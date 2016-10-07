@@ -25,7 +25,6 @@ namespace Vita.Entities.Authorization {
 
     public AuthorizationService(EntityApp app) {
       _app = app; 
-      _app.RegisterService<IAuthorizationService>(this);
       _builder = new AuthorityBuilder(_app); 
     }
 

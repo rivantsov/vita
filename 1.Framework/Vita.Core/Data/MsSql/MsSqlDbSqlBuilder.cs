@@ -49,10 +49,8 @@ SELECT * FROM NumberedQuery
       //Build column list
       var outColumns = table.Columns.GetSelectable();
       var strColumns = outColumns.GetSqlNameList(); 
-      var strOrderBy = BuildOrderBy(table, table.DefaultOrderBy);
       //In paged version, inside OVER clause we must have some ORDER BY clause. If the table has no ORDER BY, then just use PK
-      if (string.IsNullOrEmpty(strOrderBy))
-        strOrderBy = "ORDER BY " + table.PrimaryKey.KeyColumns.GetSqlNameList();
+      string strOrderBy = (table.DefaultOrderBy == null) ? "ORDER BY (SELECT 1)" : BuildOrderBy(table, table.DefaultOrderBy);
       var sql = string.Format(SqlSelectAllPaged, strColumns, table.FullName, strOrderBy);
       var cmdName = ModelConfig.NamingPolicy.ConstructDbCommandName(entCommand, table.TableName, "SelectAllPaged");
       var cmdInfo = CreateDbCommandInfo(entCommand, cmdName, table, DbExecutionType.Reader, sql);

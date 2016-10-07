@@ -9,6 +9,7 @@ using Vita.Entities.Services;
 using Vita.Entities.Web;
 using Vita.Data.Upgrades;
 using Vita.Modules.DbInfo;
+using Vita.Common;
 
 namespace Vita.Modules.Logging {
 
@@ -35,7 +36,7 @@ namespace Vita.Modules.Logging {
       var errorLog = new ErrorLogModule(area);
       OperationLog = new OperationLogModule(area);
       IncidentLog = new IncidentLogModule(area);
-      TransactionLog = _transactionLogModule = new TransactionLogModule(area);
+      TransactionLog = _transactionLogModule = new TransactionLogModule(area, trackHostApp: false); //do not track changes for LoggingApp itself
       WebCallLog = new WebCallLogModule(area);
       NotificationLog = new NotificationLogModule(area);
       LoginLog = new LoginLogModule(area);
@@ -47,23 +48,20 @@ namespace Vita.Modules.Logging {
     }
 
     public void LinkTo(EntityApp mainApp) {
+      Util.Check(mainApp.Status == EntityAppStatus.Created, "Invalid main app status, should be Created. " + 
+                     "Call LoggingEntityApp.LinkTo(mainApp) immediately after creating the main app instance.");
       mainApp.LinkedApps.Add(this);
-      mainApp.ImportServices(this, typeof(IErrorLogService), typeof(IOperationLogService), typeof(IIncidentLogService),
-                                   typeof(ITransactionLogService), typeof(IWebCallLogService), typeof(INotificationLogService), 
-                                   typeof(ILoginLogService), typeof(IDbUpgradeLogService), typeof(IUserSessionService), 
-                                   typeof(IEventLogService), typeof(IWebClientLogService)
-                                   );
-      _transactionLogModule.TargetApp = mainApp;
-      //Replace time service with the instance from the main app
-      base.TimeService = mainApp.TimeService;
-      if(this.LogPath == null && !string.IsNullOrWhiteSpace(mainApp.LogPath))
-        this.LogPath = mainApp.LogPath; 
-      this.ImportServices(mainApp, typeof(ITimeService));
+      // make sure time service is created, so MainApp imports it on initialization, so 2 apps share the same time service
+      this.RegisterService<ITimeService>(new Vita.Entities.Services.Implementations.TimeService());
+      // We do not import logging services directly into the main app - they will be found automatically; GetService checks for services in linked apps 
+      // Tell transacton log to hookup to the main app
+      _transactionLogModule.SetupUpdateLoggingFor(mainApp);
     }
 
-    public IDisposable Suspend() {
+    public IDisposable SuspendLogging() {
       var saveService = this.GetService<IBackgroundSaveService>();
       return saveService.Suspend(); 
     }
+
   }//class
 }

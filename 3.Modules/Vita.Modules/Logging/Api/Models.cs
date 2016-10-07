@@ -9,6 +9,15 @@ using Vita.Entities.Web;
 
 namespace Vita.Modules.Logging.Api {
 
+
+  public class UserSessionInfo {
+    public Guid UserId;
+    public string UserName;
+    public DateTime Started;
+    public DateTime? Expires;
+    public int TimeOffsetMinutes;
+  }
+
   public class LogData {
     public Guid Id;
     public DateTime CreatedOn;

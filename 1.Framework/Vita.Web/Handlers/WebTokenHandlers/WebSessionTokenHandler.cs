@@ -19,8 +19,7 @@ namespace Vita.Web {
       //Remove scheme prefix
       if(token.StartsWith(BasicPrefix, StringComparison.OrdinalIgnoreCase))
         token = token.Substring(BasicPrefix.Length);
-      else
-      if(token.StartsWith(BearerPrefix, StringComparison.OrdinalIgnoreCase))
+      else if(token.StartsWith(BearerPrefix, StringComparison.OrdinalIgnoreCase))
         token = token.Substring(BearerPrefix.Length);
       context.UserSessionToken = token; 
     }//method

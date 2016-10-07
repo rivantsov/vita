@@ -30,12 +30,18 @@ namespace Vita.Modules.WebClient {
     // So we create WebApiClient singleton and reuse it globally. 
     //  You can use a separate, specially created instance of HttpClient if you use SetHttpClient method. 
     public static readonly HttpClient SharedHttpClient;
-    public static readonly HttpClientHandler SharedHttpClientHandler; 
+    public static readonly HttpClientHandler SharedHttpClientHandler;
+
+    //For staging sites, to allow using https with self-issued certificates - always returns true
+    public void AllowSelfIssuedCertificates() {
+      ServicePointManager.ServerCertificateValidationCallback = DummyValidateCertificate;
+    }
 
     public readonly WebApiClientSettings Settings;
     public readonly Dictionary<string, string> DefaultRequestHeaders;
     public readonly OperationContext Context;
-    IWebClientLogService _log; 
+    IWebClientLogService _log;
+
 
     /// <summary>Internal instance of HttpClient. By default the object is copied from SharedHttpClient.</summary>
     public HttpClient Client { get; private set; }
@@ -49,8 +55,9 @@ namespace Vita.Modules.WebClient {
     }
 
     public WebApiClient(OperationContext context, string baseUrl, ClientOptions options = ClientOptions.Default, 
-           ApiNameMapping nameMapping = ApiNameMapping.Default,  Type badRequestContentType = null)
-      : this(context, new WebApiClientSettings(baseUrl, options, nameMapping, badRequestContentType: badRequestContentType)) { }
+           ApiNameMapping nameMapping = ApiNameMapping.Default, string clientName = null, 
+           Type badRequestContentType = null)
+      : this(context, new WebApiClientSettings(baseUrl, options, nameMapping, clientName, badRequestContentType: badRequestContentType)) { }
 
     public WebApiClient(OperationContext context, WebApiClientSettings settings) {
       Context = context;
@@ -58,9 +65,8 @@ namespace Vita.Modules.WebClient {
       Util.Check(settings != null, "Settings parameter may not be null.");
       Util.Check(settings.ContentSerializer != null, "Settings.Serializer property may not be null.");
       Settings = settings;
-      _log = Context.App.GetService<IWebClientLogService>();
-      if(Settings.Options.IsSet(ClientOptions.AllowSelfIssuedCertificate))
-        ServicePointManager.ServerCertificateValidationCallback = DummyValidateCertificate;
+      if (settings.Options.IsSet(ClientOptions.EnableLog))
+        _log = Settings.Log ?? Context.App.GetService<IWebClientLogService>();
       //Create default headers with content type for deserializers
       DefaultRequestHeaders = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
       var mediaTypes = Settings.ContentSerializer.MediaTypes;
@@ -179,7 +185,8 @@ namespace Vita.Modules.WebClient {
       } finally {
         var endMs = Context.App.TimeService.ElapsedMilliseconds;
         if(_log != null)
-          _log.Log(this.Context, endMs - startMs, urlTemplate, args, request, response, serReqContent, serRespContent, exception);
+          _log.Log(this.Context, Settings.ClientName, endMs - startMs, urlTemplate, args, 
+              request, response, serReqContent, serRespContent, exception);
       }
     }//method
 

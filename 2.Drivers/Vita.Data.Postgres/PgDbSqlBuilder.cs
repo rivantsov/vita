@@ -26,8 +26,6 @@ namespace Vita.Data.Postgres{
     }
 
     public override DbCommandInfo BuildSelectAllPagedCommand(EntityCommand entityCommand) {
-      //Note: PgSql cuts-off some trailing spaces on lines, and the stored proc comparison might fail in 
-      // Db model comparer - identical procs are detected as different. So do not add trailing spaces anywhere
       const string SqlSelectAllPaged = @"
 SELECT {0}
 FROM   {1}
@@ -73,7 +71,6 @@ SELECT {0}
       else
         orderByExpr = BuildOrderBy(table, table.DefaultOrderBy);
       var sql = string.Format(SqlSelectByFkTemplate, strColumns, table.FullName, whereExpr, orderByExpr);
-      //Damn postgres reformats the SQL in stored proc body and this screws up comparison; so we are careful here
       sql = sql.Trim() + ";";
       cmdInfo.Sql = sql;
       cmdInfo.EntityMaterializer = CreateEntityMaterializer(table, outColumns);
@@ -99,7 +96,7 @@ SELECT {0}
       if (lstRetCols.Count == 0)
         return cmd;
       var sql = cmd.Sql.TrimEnd(' ', '\r', '\n', ';'); //trim ending semicolon so that we can append RETURNING clause
-      var strReturning = " RETURNING " + string.Join(", ", lstRetCols); // string.Join(", ", lstSelects) + " AS " + string.Join(", ", lstTargets);
+      var strReturning = " RETURNING " + string.Join(", ", lstRetCols); 
       cmd.Sql = sql + strReturning + ";";
       return cmd;
     }
@@ -207,7 +204,7 @@ LANGUAGE plpgsql;
 ";
       // In Postgres, if function has output parameter(s), it must return scalar or record. If there's no out parameters, you must specify 
       // something as return type - we specify VOID. If we have out param(s), we skip 'returns' clause, and Postgres adds it automatically. 
-      // We have OUT parameter for identity field; we retrieving Identity value for INSERT using ' ... RETURNING "Id" INTO p_id; ' clause.
+      // If we have OUT parameter for identity field; we retrieve Identity value for INSERT using ' ... RETURNING "Id" INTO p_id; ' clause.
       // Insert SQL has already "... RETURNING "Id" ' clause - we add only ' INTO p_Id ' extra.
       command.Schema = table.Schema;
       var listParams = new StringList();

@@ -39,6 +39,18 @@ namespace Vita.Data.Postgres {
       base.BatchCommitTransaction = "COMMIT;";
     }
 
+    public override bool IsSystemSchema(string schema) {
+      if(string.IsNullOrWhiteSpace(schema))
+        return false;
+      schema = schema.ToLowerInvariant();
+      switch(schema) {
+        case "public":
+        case "information_schema": return true;
+        default: return schema.StartsWith("pg_");
+      }
+    }
+
+
     protected override DbTypeRegistry CreateTypeRegistry() {
       return new PgTypeRegistry(this); 
     }

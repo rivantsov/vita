@@ -29,7 +29,7 @@ namespace Vita.Tools.VdbTool {
     static int Main(string[] args) {
       Console.Title = "VITA DB Tool";
       Console.WindowWidth = 120;
-      Console.WriteLine("VITA DB Tool (http://vita.codeplex.com) ");
+      Console.WriteLine("VITA DB Tool (https://github.com/rivantsov/vita) ");
       Console.WriteLine("  use /h switch for help ");
       Console.WriteLine();
       int result = 0;

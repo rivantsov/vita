@@ -150,11 +150,11 @@ namespace Vita.UnitTests.Web {
       //get login info for stan
       var stanLoginInfo = client.ExecuteGet<LoginInfo>("api/logins/{0}", stanLoginId);
       Assert.IsNotNull(stanLoginInfo, "Failed to get stan's login info");
-      Assert.IsTrue(stanLoginInfo.Suspended, "Expected suspended status");
+      Assert.IsTrue(stanLoginInfo.Flags.IsSet(LoginFlags.Suspended), "Expected suspended status");
       //Reactivate
       client.ExecutePut<object, HttpStatusCode>(null, "api/logins/{0}/status?suspend=false", stanLoginId);
       stanLoginInfo = client.ExecuteGet<LoginInfo>("api/logins/{0}", stanLoginId);
-      Assert.IsFalse(stanLoginInfo.Disabled | stanLoginInfo.Suspended, "Expected active login");
+      Assert.IsFalse(stanLoginInfo.Flags.IsSet(LoginFlags.Disabled | LoginFlags.Suspended), "Expected active login");
       Logout();
       resp = LoginAs("stan", assertSuccess: false);
       Assert.AreEqual(LoginAttemptStatus.Success, resp.Status, "Expected account re-enabled.");
@@ -264,7 +264,7 @@ namespace Vita.UnitTests.Web {
       //  He enters email in a text box, solves captcha and clicks Submit. The client code executes a request to start reset process
       //  "Magic" is a magic captcha value (it is set in login module settings) to bypass captcha check in unit tests.
       var request = new PasswordResetStartRequest() { Factor = ferbEmail, Captcha = "Magic" };
-      var processToken = client.ExecutePost<PasswordResetStartRequest, string>(request, "api/passwordreset");
+      var processToken = client.ExecutePost<PasswordResetStartRequest, string>(request, "api/passwordreset/start");
       Assert.IsFalse(string.IsNullOrWhiteSpace(processToken), "Expected process token.");
       // We do not disclose any details, even the fact that actual process started or not;
       // even if ferb's email is not found, the server returns a process token as if everything is ok. 
@@ -274,11 +274,11 @@ namespace Vita.UnitTests.Web {
       // So at this point trying to get process returns null
       // NOTE: in some cases hiding membership is not needed - when we have a business system with employees as users.
       // For this case, you can set a flag DoNotConcealMembership in ILogin record(s), and system would behave accordingly 
-      var process = client.ExecuteGet<LoginProcess>("api/passwordreset/{0}", processToken);
+      var process = client.ExecuteGet<LoginProcess>("api/passwordreset/process?token={0}", processToken);
       Assert.IsNull(process, "Expected server hiding process object");
       // 2. Send pin using email 
-      var sendPinRequest = new SendPinRequest() { Factor = ferbEmail };
-      var httpStatus = client.ExecutePost<SendPinRequest, HttpStatusCode>(sendPinRequest, "api/passwordreset/{0}/pin", processToken);
+      var sendPinRequest = new SendPinRequest() { ProcessToken = processToken, FactorType = ExtraFactorTypes.Email, Factor = ferbEmail };
+      var httpStatus = client.ExecutePost<SendPinRequest, HttpStatusCode>(sendPinRequest, "api/passwordreset/pin/send");
       Assert.AreEqual(HttpStatusCode.NoContent, httpStatus, "Failed to send pin.");
       // 3. Ferb receives email - we check our mock email service, retrieve the message and pin
       pinEmail = Startup.GetLastMessageTo(ferbEmail);
@@ -286,36 +286,37 @@ namespace Vita.UnitTests.Web {
       pin = (string)pinEmail.GetString("Pin");
       Assert.IsTrue(!string.IsNullOrWhiteSpace(pin), "Failed to receive/extract pin.");
       // 4. Ferb copies pin from email and enters it in a page. The UI submits the pin
-      httpStatus = client.ExecutePut<object, HttpStatusCode>(null, "api/passwordreset/{0}/pin/{1}", processToken, pin);
+      var checkPinReq = new VerifyPinRequest() { ProcessToken = processToken, Pin = pin };
+      httpStatus = client.ExecutePut<VerifyPinRequest, HttpStatusCode>(checkPinReq, "api/passwordreset/pin/verify");
       Assert.AreEqual(HttpStatusCode.NoContent, httpStatus, "Failed to submit pin.");
       // 5. UI retrieves the process to see if pin was correct and to see further steps. 
       //    If the pin was correct, the email is confirmed, and now we can retrieve the process object; otherwise the call would return null.
-      process = client.ExecuteGet<LoginProcess>("api/passwordreset/{0}", processToken);
+      process = client.ExecuteGet<LoginProcess>("api/passwordreset/process?token={0}", processToken);
       Assert.IsNotNull(process, "Failed to retrieve process object.");
       Assert.AreEqual(LoginProcessType.PasswordReset, process.ProcessType, "Process type does not match.");
       Assert.AreEqual(ExtraFactorTypes.Email, process.CompletedFactors, "Expected email as completed factor.");
       Assert.AreEqual(ExtraFactorTypes.SecretQuestions, process.PendingFactors, "Expected SecretQuestions as pending factor.");
       // 6. Next step is in process.PendingFactors - it is secret questions; get Ferb's questions and submit answers.
-      var questions = client.ExecuteGet<IList<SecretQuestion>>("api/passwordreset/{0}/userquestions", processToken);
+      var questions = client.ExecuteGet<IList<SecretQuestion>>("api/passwordreset/userquestions?token={0}", processToken);
       Assert.AreEqual(3, questions.Count, "Expected 3 questions");
       //Let's first try incorrect answers
       var ferbAnswers = new List<SecretQuestionAnswer>();
       ferbAnswers.Add(new SecretQuestionAnswer() { QuestionId = questions[0].Id, Answer = "Candice" }); //best childhood friend - incorrect
       ferbAnswers.Add(new SecretQuestionAnswer() { QuestionId = questions[1].Id, Answer = "Potato" });        //favorite food
       ferbAnswers.Add(new SecretQuestionAnswer() { QuestionId = questions[2].Id, Answer = "blue" });       //favorite color
-      var answersOk = client.ExecutePut<List<SecretQuestionAnswer>, bool>(ferbAnswers, "api/passwordreset/{0}/questionanswers", processToken);
+      var answersOk = client.ExecutePut<List<SecretQuestionAnswer>, bool>(ferbAnswers, "api/passwordreset/userquestions/answers?token={0}", processToken);
       Assert.IsFalse(answersOk, "Expected bad answers to fail.");
       //Now correct answers
       ferbAnswers[0].Answer = "Phineas"; //this is correct
-      answersOk = client.ExecutePut<List<SecretQuestionAnswer>, bool>(ferbAnswers, "api/passwordreset/{0}/questionanswers", processToken);
+      answersOk = client.ExecutePut<List<SecretQuestionAnswer>, bool>(ferbAnswers, "api/passwordreset/userquestions/answers?token={0}", processToken);
       Assert.IsTrue(answersOk, "Expected answers to succeed.");
       // 7. Get the process object - there should be no pending factors
-      process = client.ExecuteGet<LoginProcess>("api/passwordreset/{0}", processToken);
+      process = client.ExecuteGet<LoginProcess>("api/passwordreset/process?token={0}", processToken);
       Assert.AreEqual(ExtraFactorTypes.None, process.PendingFactors, "Expected no pending factors");
       // 8. Once all steps are completed, and server cleared all pending factors, the server will allow us to change password
       //   in the context of the process. So let's actually change the password
-      var passwordResetReq = new PasswordChangeInfo() { NewPassword = oldPassword }; //same as the original one
-      var success = client.ExecutePut<PasswordChangeInfo, bool>(passwordResetReq, "api/passwordreset/{0}", processToken);
+      var passwordResetReq = new PasswordChangeInfo() {  NewPassword = oldPassword }; //same as the original one
+      var success = client.ExecutePut<PasswordChangeInfo, bool>(passwordResetReq, "api/passwordreset/new?token={0}", processToken);
       Assert.IsTrue(success, "Failed to change password");
       // 9. Verify that email notification was sent about password change
       var notifEmail = Startup.GetLastMessageTo(ferbEmail);
@@ -341,7 +342,7 @@ namespace Vita.UnitTests.Web {
       // to add an account by scanning the QR pic. It should add "BooksEntityApp:ferb" account, and start showing 6 digit code
       Debug.WriteLine("Ferb's QR URL: " + qrUrl);
       //Enable multi-factor login
-      loginInfo.RequireMultiFactorLogin = true;
+      loginInfo.Flags |= LoginFlags.RequireMultiFactor;
       loginInfo.MultiFactorLoginFactors = ExtraFactorTypes.Email | ExtraFactorTypes.GoogleAuthenticator;
       client.ExecutePut<LoginInfo, HttpStatusCode>(loginInfo, "api/mylogin");
       Logout();
@@ -351,34 +352,39 @@ namespace Vita.UnitTests.Web {
       processToken = ferbLogin.MultiFactorProcessToken; //the process already started
       Assert.IsFalse(string.IsNullOrEmpty(processToken), "Expected process token");
       // We do not need to conceal the existense of the process like we do in password reset, so request for process returns non-null object 
-      process = client.ExecuteGet<LoginProcess>("api/login/{0}", processToken);
+      process = client.ExecuteGet<LoginProcess>("api/login/multifactor/process?token={0}", processToken);
       Assert.IsNotNull(process, "Expected process object.");
       Assert.AreEqual(ExtraFactorTypes.Email | ExtraFactorTypes.GoogleAuthenticator, process.PendingFactors, "Expected email and Google Auth pending factors.");
       // Email: Ask server to send pin by email
-      httpStatus = client.ExecutePost<object, HttpStatusCode>(null, "api/login/{0}/pin?factortype={1}", processToken, ExtraFactorTypes.Email);
+      sendPinRequest = new SendPinRequest() { ProcessToken = processToken, FactorType = ExtraFactorTypes.Email };
+      httpStatus = client.ExecutePost<SendPinRequest, HttpStatusCode>(sendPinRequest, "api/login/multifactor/pin/send");
       Assert.AreEqual(HttpStatusCode.NoContent, httpStatus, "Expected NoContent status");
       //Get message with pin from mock inbox and extract pin
       pinEmail = Startup.GetLastMessageTo(ferbEmail);
       Assert.IsNotNull(pinEmail, "Email with pin not sent.");
       pin = pinEmail.GetString("Pin");
       // Ferb copies pin from email and enters it in UI. UI submits the pin 
-      success = client.ExecutePut<object, bool>(null, "api/login/{0}/pin/{1}", processToken, pin);
+      checkPinReq = new VerifyPinRequest() { ProcessToken = processToken, Pin = pin };
+      success = client.ExecutePut<VerifyPinRequest, bool>(checkPinReq, "api/login/multifactor/pin/verify");
       Assert.IsTrue(success, "Email pin submit failed");
       // Google authenticator. 
-      //Tell server to 'send pin' - it won't send anything, but will set GA as current factor in the process
-      httpStatus = client.ExecutePost<object, HttpStatusCode>(null, "api/login/{0}/pin?factortype={1}", processToken, ExtraFactorTypes.GoogleAuthenticator);
+      //Tell server to 'send pin' - it won't send anything, but will set GoogleAuth as current factor in the process
+      sendPinRequest = new SendPinRequest() { ProcessToken = processToken, FactorType = ExtraFactorTypes.GoogleAuthenticator };
+      httpStatus = client.ExecutePost<SendPinRequest, HttpStatusCode>(sendPinRequest, "api/login/multifactor/pin/send");
       // Pretend Ferb has GA installed on his phone, he opens the app and reads the current value. 
       // In this test we use back door and compute it - we know the secret from the call when we added the factor (Google Authenticator as extra factor)
       var gaPassCode = Vita.Modules.Login.GoogleAuthenticator.GoogleAuthenticatorUtil.GeneratePasscode(gSecret);
       //Submit passcode as pin
-      success = client.ExecutePut<object, bool>(null, "api/login/{0}/pin/{1}", processToken, gaPassCode);
+      checkPinReq = new VerifyPinRequest() { ProcessToken = processToken, Pin = gaPassCode };
+      success = client.ExecutePut<VerifyPinRequest, bool>(checkPinReq, "api/login/multifactor/pin/verify");
       Assert.IsTrue(success, "Google authenticator pin failed.");
 
       //Get process again - now there should be no pending factors
-      process = client.ExecuteGet<LoginProcess>("api/login/{0}", processToken);
+      process = client.ExecuteGet<LoginProcess>("api/login/multifactor/process?token={0}", processToken);
       Assert.AreEqual(ExtraFactorTypes.None, process.PendingFactors, "Expected no pending factors");
       //complete login using process token - returned LoginResponse object represents successful login
-      ferbLogin = client.ExecutePost<object, LoginResponse>(null, "api/login/{0}", processToken);
+      var mfCompleteReq = new MultifactorLoginRequest() { ProcessToken = processToken, Expiration = UserSessionExpirationType.Sliding };
+      ferbLogin = client.ExecutePost<MultifactorLoginRequest, LoginResponse>(mfCompleteReq, "api/login/multifactor/complete");
       Assert.IsNotNull(ferbLogin, "Failed to complete login.");
       Assert.AreEqual(LoginAttemptStatus.Success, ferbLogin.Status, "Expected success status");
       client.AddRequestHeader("Authorization", ferbLogin.AuthenticationToken); //we have to add it explicitly here

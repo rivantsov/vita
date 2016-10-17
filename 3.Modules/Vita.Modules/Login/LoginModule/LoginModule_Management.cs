@@ -74,16 +74,16 @@ namespace Vita.Modules.Login {
       session.Context.ThrowIf(!(emailOrPhone & questions), ClientFaultCodes.InvalidValue, "PasswordResetFactors",
         "Invalid password reset factors: must use email or phone, and secret questions.");
       login.PasswordResetFactors = loginInfo.PasswordResetFactors;
-      login.Flags = login.Flags.SetValue(LoginFlags.DoNotConcealMembership, loginInfo.DoNotConcealMembership);
-      login.Flags = login.Flags.SetValue(LoginFlags.RequireMultiFactor, loginInfo.RequireMultiFactorLogin);
-      if(loginInfo.RequireMultiFactorLogin) {
+      var flagMask = LoginFlags.RequireMultiFactor | LoginFlags.DoNotConcealMembership;
+      login.Flags = loginInfo.Flags.SetMasked(loginInfo.Flags, flagMask);
+      if(loginInfo.Flags.IsSet(LoginFlags.RequireMultiFactor)) {
         session.Context.ThrowIf(loginInfo.MultiFactorLoginFactors == ExtraFactorTypes.None, ClientFaultCodes.InvalidValue, "MultiFactorLoginFactors",
            "Cannot enable multi-factor login - at least one extra factor must be specified.");
         login.MultiFactorLoginFactors = loginInfo.MultiFactorLoginFactors;
       }
-      var notes = StringHelper.SafeFormat("User: {0}, RequireMultifactor: {1}, MultiFactorThru: '{2}', PasswordResetThru: '{3}', DoNotConceal: {4}",
-           loginInfo.UserName, loginInfo.RequireMultiFactorLogin, loginInfo.MultiFactorLoginFactors, 
-           loginInfo.PasswordResetFactors, loginInfo.DoNotConcealMembership);
+      var notes = StringHelper.SafeFormat("User: {0}, Flags: {1}, login multi-factors: '{2}', PasswordResetFactors: '{3}'",
+           loginInfo.UserName, loginInfo.Flags, loginInfo.MultiFactorLoginFactors, 
+           loginInfo.PasswordResetFactors);
       OnLoginEvent(session.Context, LoginEventType.LoginChanged, login, notes: notes);
       session.SaveChanges(); 
     }

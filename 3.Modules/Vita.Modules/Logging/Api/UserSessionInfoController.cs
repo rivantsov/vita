@@ -22,15 +22,16 @@ namespace Vita.Modules.Logging.Api {
     }
 
     /// <summary>Refreshes the user session token (authentication token). </summary>
-    /// <returns>New authentication token.</returns>
+    /// <param name="req">Refresh token.</param>
+    /// <returns>An object with new authentication token and new refresh token.</returns>
     /// <remarks>For long running sessions (weeks/months), the client should regularly refresh authentication token for security reasons.
-    /// Typeical use - mobile applications (phone).</remarks>
+    /// Typeical use - mobile applications (phone). Upon refresh the current session expiration is extended to new long session expiration period in the future.</remarks>
     [ApiPut, ApiRoute("token")]
-    public BoxedValue<string> RefreshSessionToken() {
+    public RefreshResponse RefreshSessionToken(RefreshRequest req) {
       var session = Context.UserSession;
       var serv = Context.App.GetService<IUserSessionService>();
-      var token = serv.RefreshSessionToken(this.Context);
-      return new BoxedValue<string>(token);
+      var newRefreshToken = serv.RefreshSessionToken(this.Context, req.RefreshToken);
+      return new RefreshResponse() { NewSessionToken = Context.UserSession.Token, NewRefreshToken = newRefreshToken };
     }
 
     [ApiPut, ApiRoute("client-timezone-offset")]

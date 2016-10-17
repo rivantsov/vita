@@ -15,13 +15,14 @@ namespace Vita.Entities.Services {
 
   }
 
+
   /// <summary>Service providing user session management. Implemented by user session module.  </summary>
   public interface IUserSessionService {
     UserSessionContext StartSession(OperationContext context, UserInfo user, UserSessionExpirationType expirationType = UserSessionExpirationType.Sliding);
     void AttachSession(OperationContext context, string sessionToken, long sessionVersion = 0, string csrfToken = null);
     void UpdateSession(OperationContext context);
     void EndSession(OperationContext context);
-    string RefreshSessionToken(OperationContext context);
+    string RefreshSessionToken(OperationContext context, string refreshToken);
   }
 
 }

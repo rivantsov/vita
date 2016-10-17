@@ -175,8 +175,9 @@ namespace Vita.UnitTests.Web {
       //now move clock forward by 25 days and refersh token; the session should still be ok
       timeService.SetCurrentOffset(TimeSpan.FromDays(25));
       //Refresh session token - get new one with new expiration date - a month from 'shifted current'
-      var newTokenBox = client.ExecutePut<object, BoxedValue<string>>(null, "api/usersession/token");
-      client.AddAuthorizationHeader(newTokenBox.Value); //put it into auth header
+      var refreshRequest = new RefreshRequest() { RefreshToken = dora.RefreshToken };
+      var refreshResponse = client.ExecutePut<RefreshRequest, RefreshResponse>(refreshRequest, "api/usersession/token");
+      client.AddAuthorizationHeader(refreshResponse.NewSessionToken); //put it into auth header
       // now get session again and check expiration
       doraSession = client.ExecuteGet<UserSessionInfo>("api/usersession"); //get current user session
       Assert.IsTrue(doraSession.Expires > utcNowReal.AddDays(29 + 25), "Expected expires in 25 days + month");

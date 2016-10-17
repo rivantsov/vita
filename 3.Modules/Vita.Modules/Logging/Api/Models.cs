@@ -134,7 +134,21 @@ namespace Vita.Modules.Logging.Api {
     public Guid? SessionId;
 
     public IDictionary<string, string> Parameters;
-
-
   }
+
+  /// <summary>A container for session token request. </summary>
+  public class RefreshRequest {
+    /// <summary>Refresh token returned by initial Login request. </summary>
+    public string RefreshToken;
+  }
+
+  /// <summary>Response to refresh token request.</summary>
+  public class RefreshResponse {
+    /// <summary>A new session token (authentication token). </summary>
+    public string NewSessionToken;
+    /// <summary>A new refresh token, to be used in the future for new refresh request. </summary>
+    public string NewRefreshToken;
+  }
+
+
 }//ns

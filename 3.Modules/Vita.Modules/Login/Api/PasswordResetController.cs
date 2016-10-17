@@ -29,7 +29,7 @@ namespace Vita.Modules.Login.Api {
     }
 
 
-    [ApiPost, ApiRoute("")]
+    [ApiPost, ApiRoute("start")]
     public string Start(PasswordResetStartRequest request) {
       if(_loginSettings.Options.IsSet(LoginModuleOptions.RequireCaptchaOnPasswordReset))
         _processService.CheckCaptcha(Context, request.Captcha);
@@ -71,7 +71,7 @@ namespace Vita.Modules.Login.Api {
     // Hacker then tries to retrieve the process info using GetProcess. If we return a process object, this is an indicator that 
     // email is valid. To avoid this, this method requires that at least one factor (email or phone) is confirmed - meaning the user in fact 
     // controls the factor. Other methods behave in a similar way. 
-    [ApiGet, ApiRoute("{token}")]
+    [ApiGet, ApiRoute("process")]
     public LoginProcess GetProcess(string token) {
       var process = GetActiveProcess(token);
       if(process == null)
@@ -80,14 +80,14 @@ namespace Vita.Modules.Login.Api {
     }
 
 
-    [ApiPost, ApiRoute("{token}/pin")]
-    public void SendPin(string token, SendPinRequest request) {
+    [ApiPost, ApiRoute("pin/send")]
+    public void SendPin(SendPinRequest request) {
       Context.WebContext.MarkConfidential();
       Context.ThrowIfNull(request, ClientFaultCodes.ContentMissing, "SendPinRequest", "Pin request object must be provided.");
-      Context.ValidateNotEmpty(token, "ProcessToken", "Process token should be provided.");
+      Context.ValidateNotEmpty(request.ProcessToken, "ProcessToken", "Process token should be provided.");
       Context.ValidateNotEmpty(request.Factor, "Factor", "Factor (email or phone) should be provided.");
       Context.ThrowValidation(); 
-      var process = GetActiveProcess(token, confirmedOnly: false);
+      var process = GetActiveProcess(request.ProcessToken, confirmedOnly: false);
       if(process == null)
         return; //no indication process exist or not
       Context.ThrowIf(process.CurrentFactor != null, ClientFaultCodes.InvalidAction, "token", "The previous process step is not completed."); 
@@ -100,23 +100,23 @@ namespace Vita.Modules.Login.Api {
       _processService.SendPin(process, iFactor, request.Factor); //we use factor from request, to avoid unencrypting twice
     }
 
-    [ApiPut, ApiRoute("{token}/pin/{pin}")]
-    public void SubmitPin(string token, string pin) {
-      var process = GetActiveProcess(token, confirmedOnly: false);
-      Context.ThrowIfEmpty(pin, ClientFaultCodes.ValueMissing, "pin", "Pin value missing");
+    [ApiPut, ApiRoute("pin/verify")]
+    public void VerifyPin(VerifyPinRequest request) {
+      var process = GetActiveProcess(request.ProcessToken, confirmedOnly: false);
+      Context.ThrowIfEmpty(request.Pin, ClientFaultCodes.ValueMissing, "pin", "Pin value missing");
       if(process != null) 
-        _processService.SubmitPin(process, pin);
+        _processService.SubmitPin(process, request.Pin);
     }
 
     // Should be used in 'this is not me!' URL in email to user, to abort the process and signal that this is an attack. 
-    [ApiDelete, ApiRoute("{token}")]
+    [ApiDelete, ApiRoute("abort")]
     public void AbortProcess(string token) {
       var process = GetActiveProcess(token, confirmedOnly: false); 
       if(process != null) 
         _processService.AbortPasswordReset(process);
     }
 
-    [ApiGet, ApiRoute("{token}/userquestions")]
+    [ApiGet, ApiRoute("userquestions")]
     public IList<SecretQuestion> GetUserQuestions(string token) {
       var process = GetActiveProcess(token);
       if(process == null)
@@ -126,8 +126,8 @@ namespace Vita.Modules.Login.Api {
       return list; 
     }
 
-    [ApiPut, ApiRoute("{token}/questionanswer")]
-    public bool SubmitSecretQuestionAnswer(string token, SecretQuestionAnswer answer) {
+    [ApiPut, ApiRoute("userquestions/answer")]
+    public bool SubmitSecretQuestionAnswer([FromUrl] string token, SecretQuestionAnswer answer) {
       Context.WebContext.MarkConfidential();
       var process = GetActiveProcess(token);
       if(process == null)
@@ -138,7 +138,7 @@ namespace Vita.Modules.Login.Api {
       return success; 
     }
 
-    [ApiPut, ApiRoute("{token}/questionanswers")]
+    [ApiPut, ApiRoute("userquestions/answers")]
     public bool SubmitAllQuestionAnswers(string token, List<SecretQuestionAnswer> answers) {
       Context.WebContext.MarkConfidential();
       var process = GetActiveProcess(token);
@@ -148,7 +148,7 @@ namespace Vita.Modules.Login.Api {
       return result; 
     }
 
-    [ApiPut, ApiRoute("{token}")]
+    [ApiPut, ApiRoute("new")]
     public bool SetNewPassword(string token, PasswordChangeInfo changeInfo) {
       Context.WebContext.MarkConfidential();
       var process = GetActiveProcess(token);

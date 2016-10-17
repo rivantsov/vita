@@ -51,8 +51,8 @@ namespace Vita.Modules.Login {
             var lastLogin = login.LastLoggedInOn; //save prev value
             UpdateLastLoggedInOn(login);
             OnLoginEvent(context, LoginEventType.Login, login, userName: userName);
-            var sessionToken = context.UserSession == null ? null : context.UserSession.Token;
-            return new LoginResult() { Status = status, Login = login, Actions = actions, User = context.User, SessionToken = sessionToken, LastLoggedInOn = lastLogin };
+            return new LoginResult() { Status = status, Login = login, Actions = actions, User = context.User,
+              SessionToken = context.UserSession?.Token, RefreshToken = context.UserSession?.RefreshToken, LastLoggedInOn = lastLogin};
           case LoginAttemptStatus.PendingMultifactor:
             OnLoginEvent(context, LoginEventType.LoginPendingMultiFactor, login, userName: userName);
             return new LoginResult() { Status = status, Login = login };
@@ -86,16 +86,17 @@ namespace Vita.Modules.Login {
     }
 
 
-    public LoginResult CompleteMultiFactorLogin(OperationContext context, ILogin login) {
+    public LoginResult CompleteMultiFactorLogin(OperationContext context, ILogin login, UserSessionExpirationType expirationType = UserSessionExpirationType.Sliding) {
       PostLoginActions actions = GetPostLoginActions(login);
       context.User = login.CreateUserInfo();
       var lastLogin = login.LastLoggedInOn;
       UpdateLastLoggedInOn(login);
-      AttachUserSession(context, login);
+      AttachUserSession(context, login, null, expirationType);
       OnLoginEvent(context, LoginEventType.MultiFactorLoginCompleted, login);
       App.UserLoggedIn(context);
       return new LoginResult() {
-        Status = LoginAttemptStatus.Success, Login = login, Actions = actions, User = context.User, SessionToken = context.UserSession.Token, LastLoggedInOn = lastLogin };
+        Status = LoginAttemptStatus.Success, Login = login, Actions = actions, User = context.User, SessionToken = context.UserSession?.Token,
+           RefreshToken = context.UserSession?.RefreshToken, LastLoggedInOn = lastLogin };
     }
 
     public void Logout(OperationContext context) {
@@ -234,7 +235,7 @@ namespace Vita.Modules.Login {
         return; 
       } 
       //New session
-      context.UserSession = _sessionService.StartSession(context, context.User, expirationType);
+      context.UserSession = _sessionService.StartSession(context, context.User, expirationType); 
     }
 
   }//module

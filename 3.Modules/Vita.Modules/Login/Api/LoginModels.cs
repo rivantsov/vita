@@ -43,7 +43,9 @@ namespace Vita.Modules.Login.Api {
     /// <summary>Number of days the current password expires.</summary>
     public int PasswordExpiresDays;
     /// <summary>Authentication token, serving as user session ID. Should be added to Authorization header of every call to the server.</summary>
-    public string AuthenticationToken; 
+    public string AuthenticationToken;
+    /// <summary>RefreshToken, used for refreshing user session token.</summary>
+    public string RefreshToken;
     /// <summary>User display name</summary>
     public string UserDisplayName;
     /// <summary>For multi-factor login, the token identifying the server-side process that controls the multi-factor verification.</summary>
@@ -71,13 +73,6 @@ namespace Vita.Modules.Login.Api {
     public ExtraFactorTypes MultiFactorLoginFactors;
     public ExtraFactorTypes IncompleteFactors;
     public LoginFlags Flags; 
-    //Deprecated, use Flags enumeration instead
-    public bool OneTimePassword;
-    public bool RequireMultiFactorLogin;
-    public bool Disabled;
-    public bool Suspended;
-    // Value of 'do not conceal membership' flag in login. User is business user and his membership is not a secret
-    public bool DoNotConcealMembership;
   }
 
   public class LoginExtraFactor {
@@ -94,11 +89,18 @@ namespace Vita.Modules.Login.Api {
   }
 
   public class SendPinRequest {
-    public string Factor; 
+    public string ProcessToken;
+    public ExtraFactorTypes FactorType;
+    public string Factor;
+  }
+
+  public class VerifyPinRequest {
+    public string ProcessToken;
+    public string Pin;
   }
 
   public class PasswordChangeInfo {
-    public string OldPassword;
+    public string OldPassword; //used only when changing password directly
     public string NewPassword;
   }
 
@@ -131,6 +133,11 @@ namespace Vita.Modules.Login.Api {
     public string Token;
     public DeviceType Type; 
     public DeviceTrustLevel TrustLevel; 
+  }
+
+  public class MultifactorLoginRequest {
+    public string ProcessToken { get; set; }
+    public UserSessionExpirationType Expiration { get; set; }
   }
 
 }

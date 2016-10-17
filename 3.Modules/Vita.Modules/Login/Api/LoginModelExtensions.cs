@@ -33,18 +33,13 @@ namespace Vita.Modules.Login.Api {
         Flags = login.Flags,
         MultiFactorLoginFactors = login.MultiFactorLoginFactors,
         PasswordResetFactors = login.PasswordResetFactors, IncompleteFactors = login.IncompleteFactors,
-        //Deprecated, use Flags property
-        DoNotConcealMembership = flags.IsSet(LoginFlags.DoNotConcealMembership),
-        RequireMultiFactorLogin = flags.IsSet(LoginFlags.RequireMultiFactor), 
-        OneTimePassword = flags.IsSet(LoginFlags.OneTimePassword), 
-        Disabled = flags.IsSet(LoginFlags.Disabled), Suspended = flags.IsSet(LoginFlags.Suspended), 
       };
       //If suspension expired, fix the result; we do not fix login entity - it will be cleared when user logs in; 
       // the trouble here is that we might not have permissions to update login at this moment, only read it
-      if(result.Suspended) {
+      if(login.Flags.IsSet(LoginFlags.Suspended)) {
         var utcNow = EntityHelper.GetSession(login).Context.App.TimeService.UtcNow;
         if(login.SuspendedUntil < utcNow) {
-          result.Suspended = false;
+          result.Flags &= ~LoginFlags.Suspended;
           result.SuspendedUntil = null; 
         }
       }

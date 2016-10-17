@@ -125,15 +125,20 @@ namespace Vita.Modules.Logging {
       SaveUserSessionEntity(context, context.UserSession);
     }
 
-    public string RefreshSessionToken(OperationContext context) {
+    public string RefreshSessionToken(OperationContext context, string refreshToken) {
       var oldToken = context.UserSession.Token;
       //remove from cache
       _userSessionCache.Remove(oldToken);
       var iEnt = LoadUserSessionEntity(context, oldToken);
       context.ThrowIfNull(iEnt, ClientFaultCodes.ObjectNotFound, "Token", "User session does not exist.");
+      context.ThrowIfEmpty(iEnt.RefreshToken, ClientFaultCodes.InvalidAction, "RefreshToken", "User session does not allow refresh, refresh token not found in session.");
+      var refreshMatches = string.Equals(iEnt.RefreshToken, refreshToken, StringComparison.OrdinalIgnoreCase);
+      context.ThrowIf(!refreshMatches, ClientFaultCodes.InvalidValue, "RefreshToken", "Invalid refresh token.");
       var newToken = Settings.SessionTokenGenerator();
+      var newRefreshToken = Settings.SessionTokenGenerator();
       iEnt.WebSessionToken = newToken;
       iEnt.WebSessionTokenCreatedOn = context.App.TimeService.UtcNow;
+      iEnt.RefreshToken = newRefreshToken; 
       UpdateFixedExpiration(iEnt); 
       var entSession = EntityHelper.GetSession(iEnt);
       entSession.SaveChanges();
@@ -144,7 +149,7 @@ namespace Vita.Modules.Logging {
       var loginLog = App.GetService<ILoginLogService>();
       if (loginLog != null)
         loginLog.LogEvent(context, Login.LoginEventType.TokenRefreshed, notes: StringHelper.SafeFormat("Token refreshed, new expiration: {0}.", iEnt.FixedExpiration));
-      return newToken; 
+      return newRefreshToken; 
     }
 
     #endregion
@@ -242,6 +247,8 @@ namespace Vita.Modules.Logging {
       UpdateFixedExpiration(ent); 
       ent.ExpirationWindowSeconds = (int)Settings.SessionTimeout.TotalSeconds;
       var token = ent.WebSessionToken = Settings.SessionTokenGenerator();
+      if(expirationType == UserSessionExpirationType.LongFixedTerm)
+        ent.RefreshToken = Settings.SessionTokenGenerator(); 
       ent.WebSessionTokenCreatedOn = now;
       ent.CsrfToken = RandomHelper.GenerateRandomString(10);
       session.SaveChanges();
@@ -309,6 +316,7 @@ namespace Vita.Modules.Logging {
       var userSession = new UserSessionContext(
          ent.Id, userInfo, ent.StartedOn, ent.WebSessionToken, ent.CsrfToken, ent.Status, ent.LogLevel, 
          ent.Version, ent.TimeZoneOffsetMinutes,ent.UserAgent, valuesDict);
+      userSession.RefreshToken = ent.RefreshToken; 
       var cacheItem = new CachedSessionItem(userSession, ent);
       _userSessionCache.Add(token, cacheItem);
       return cacheItem;

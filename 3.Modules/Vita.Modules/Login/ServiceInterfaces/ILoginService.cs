@@ -13,6 +13,7 @@ namespace Vita.Modules.Login {
     public ILogin Login;
     public PostLoginActions Actions;
     public string SessionToken;
+    public string RefreshToken; 
     public UserInfo User;
     public DateTime? LastLoggedInOn;
   }
@@ -35,7 +36,7 @@ namespace Vita.Modules.Login {
     event EventHandler<LoginEventArgs> LoginEvent;
     //high-level methods
     LoginResult Login(OperationContext context, string userName, string password, Guid? tenantId = null, string deviceToken = null, UserSessionExpirationType expirationType = UserSessionExpirationType.Sliding);
-    LoginResult CompleteMultiFactorLogin(OperationContext context, ILogin login);
+    LoginResult CompleteMultiFactorLogin(OperationContext context, ILogin login, UserSessionExpirationType expirationType = UserSessionExpirationType.Sliding);
     void Logout(OperationContext context);
 
     //Low-level methods

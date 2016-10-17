@@ -4,13 +4,13 @@ using System.Threading;
 using System.Diagnostics;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System.Collections.Generic;
+using System.IO;
 
+using Vita.Common;
 using Vita.Entities;
-using Vita.Samples.BookStore;
 using Vita.Data.Driver;
 using Vita.UnitTests.Common;
-using System.IO;
-using Vita.Common;
+using Vita.Samples.BookStore;
 
 namespace Vita.UnitTests.Extended {
 

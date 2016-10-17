@@ -21,6 +21,9 @@ namespace Vita.Modules.Login {
     public static bool IsSet(this LoginFlags flags, LoginFlags flag) {
       return (flags & flag) != 0;
     }
+    public static LoginFlags SetMasked(this LoginFlags flags, LoginFlags newFlags, LoginFlags mask) {
+      return (flags & ~mask) | (newFlags & mask); 
+    }
     public static bool IsSet(this CharOptions flags, CharOptions flag) {
       return (flags & flag) != 0;
     }

@@ -44,6 +44,8 @@ namespace Vita.Modules.Logging {
     [Size(100), Nullable]
     string WebSessionToken { get; set; }
     DateTime WebSessionTokenCreatedOn { get; set; }
+    [Size(100), Nullable]
+    string RefreshToken { get; set; }
 
     [Size(100), Nullable]
     string CsrfToken { get; set; }

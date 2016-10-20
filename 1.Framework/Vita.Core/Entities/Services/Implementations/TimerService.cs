@@ -12,11 +12,20 @@ using Vita.Entities.Runtime;
 namespace Vita.Entities.Services.Implementations {
 
   public class TimerService : ITimerService, ITimerServiceControl {
-    OperationContext _timerContext;
+    // We need to have a single global instance of TimerService
+    public static TimerService Instance {
+      get {
+        _instance = _instance ?? new TimerService();
+        return _instance; 
+      }
+    } static TimerService _instance;
+    private TimerService() { }
+
     private Timer _timer;
-    private bool _activated; 
-    private IOperationLogService _logService; 
-    int _elapseCount;
+    private ITimeService _timeService;
+    private bool _enabled; 
+    private IErrorLogService _errorLog; 
+    int _lastSeconds;
     object _lock = new object();
 
     public event EventHandler Elapsed100Ms;
@@ -28,50 +37,58 @@ namespace Vita.Entities.Services.Implementations {
     public event EventHandler Elapsed1Minute;
     public event EventHandler Elapsed5Minutes;
 
-    public TimerService() {
-
-    }
-
+    bool _initialized; 
     public void Init(EntityApp app) {
-      _timerContext = app.CreateSystemContext(); 
-      _logService = app.GetService<IOperationLogService>(); 
+      if(_initialized)
+        return; 
+      _errorLog = app.GetService<IErrorLogService>();
+      _timeService = TimeService.Instance;
       _timer = new Timer(Timer_Elapsed, null, 100, 100);
       app.AppEvents.Initializing += Events_Initializing;
+      _initialized = true; 
     }
 
     void Events_Initializing(object sender, AppInitEventArgs e) {
       if(e.Step == EntityAppInitStep.Initialized) {
-        _activated = true; 
+        _enabled = true; 
       }
     }
 
     void Timer_Elapsed(object state) {
-      if(!_activated)
+      if(!_enabled)
         return; 
-      unchecked {
-        _elapseCount++;
-      }
       lock(_lock) {
+        if(Elapsed100Ms != null)
+          SafeInvoke(Elapsed100Ms.GetInvocationList());
+        var utcNow = _timeService.UtcNow;
+        var seconds = (int) utcNow.TimeOfDay.TotalSeconds;
+        if(seconds == _lastSeconds) 
+          return; 
+        _lastSeconds = seconds;
+        if(Elapsed1Second != null)
+          SafeInvoke(Elapsed1Second.GetInvocationList());
+        if(seconds % 10 == 0 && Elapsed10Seconds != null)
+          SafeInvoke(Elapsed10Seconds.GetInvocationList());
+        if(seconds % 60 == 0 && Elapsed1Minute != null)
+          SafeInvoke(Elapsed1Minute.GetInvocationList());
+        if(seconds % 300 == 0 && Elapsed5Minutes != null)
+          SafeInvoke(Elapsed5Minutes.GetInvocationList());
+      }
+    }
+
+    private void SafeInvoke(Delegate[] delegates) {
+      foreach(var d in delegates) {
+        var evh = (EventHandler)d;
         try {
-          if(Elapsed100Ms != null)
-            Elapsed100Ms(this, EventArgs.Empty);
-          if (_elapseCount % 10 == 0 && Elapsed1Second != null)
-            Elapsed1Second(this, EventArgs.Empty);
-          if(_elapseCount % 100 == 0 && Elapsed10Seconds != null)
-            Elapsed10Seconds(this, EventArgs.Empty);
-          if(_elapseCount % 600 == 0 && Elapsed1Minute != null)
-            Elapsed1Minute(this, EventArgs.Empty);
-          if(_elapseCount % 3000 == 0 && Elapsed5Minutes != null)
-            Elapsed5Minutes(this, EventArgs.Empty);
+          evh(this, EventArgs.Empty);
         } catch(Exception ex) {
-          if(_logService != null)
-            _logService.Log(new ErrorLogEntry(_timerContext, ex));
+          _errorLog.LogError(ex);
         }
       }
     }
 
     public void Shutdown() {
-      _activated = false;      
+      _enabled = false;      
     }
 
     //ITimerServiceControl
@@ -89,8 +106,8 @@ namespace Vita.Entities.Services.Implementations {
           if(Elapsed5Minutes != null)
             Elapsed5Minutes(this, EventArgs.Empty);
         } catch(Exception ex) {
-          if(_logService != null)
-            _logService.Log(new ErrorLogEntry(_timerContext, ex));
+          if(_errorLog != null)
+            _errorLog.LogError(ex);
         }
       }
 

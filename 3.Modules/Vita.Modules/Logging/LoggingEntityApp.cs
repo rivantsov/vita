@@ -51,8 +51,6 @@ namespace Vita.Modules.Logging {
       Util.Check(mainApp.Status == EntityAppStatus.Created, "Invalid main app status, should be Created. " + 
                      "Call LoggingEntityApp.LinkTo(mainApp) immediately after creating the main app instance.");
       mainApp.LinkedApps.Add(this);
-      // make sure time service is created, so MainApp imports it on initialization, so 2 apps share the same time service
-      this.RegisterService<ITimeService>(new Vita.Entities.Services.Implementations.TimeService());
       // We do not import logging services directly into the main app - they will be found automatically; GetService checks for services in linked apps 
       // Tell transacton log to hookup to the main app
       _transactionLogModule.SetupUpdateLoggingFor(mainApp);

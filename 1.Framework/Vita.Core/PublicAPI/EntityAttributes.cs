@@ -18,9 +18,7 @@ namespace Vita.Entities {
     public string TableName { get; set; }
   }
 
-  /// <summary>
-  /// Provides information (column name) about underlying database column for an entity property. Optional.
-  /// </summary>
+  /// <summary>Provides information (column name) about underlying database column for an entity property. Optional.</summary>
   [AttributeUsage(AttributeTargets.Property)]
   public partial class ColumnAttribute {
     public string ColumnName { get; set; }
@@ -42,35 +40,23 @@ namespace Vita.Entities {
     }
   }
 
-  /// <summary>
-  /// Identifies a member (which must be an entity list) as referencing other entity set through many-to-many relationship.
-  /// Specifies the "link" entity that implements many-to-many linking.
-  /// </summary>
+  /// <summary>Identifies a member (which must be an entity list) as referencing other entity set through many-to-many relationship.
+  /// Specifies the "link" entity that implements many-to-many linking. </summary>
   [AttributeUsage(AttributeTargets.Property)]
   public partial class ManyToManyAttribute {
     public ManyToManyAttribute(Type linkEntity) { LinkEntity = linkEntity; }
     
-    /// <summary>
-    /// The type of "link" entity (table) that implements many-to-many linking. Required.
-    /// </summary>
+    /// <summary>The type of "link" entity (table) that implements many-to-many linking. Required.</summary>
     public Type LinkEntity { get; set; }
     
-    /// <summary>
-    /// Specifies the property name on the link entity that references "this" entity. Optional. 
-    /// </summary>
-    /// <remarks>
-    /// If this attribute is not present, the system automatically finds the member by its type. 
-    /// Use this attribute if there is more than one member on the target entity that points to the "other" entity.
-    /// </remarks>
+    /// <summary>Specifies the property name on the link entity that references "this" entity. Optional. </summary>
+    /// <remarks>If this attribute is not present, the system automatically finds the member by its type. 
+    /// Use this attribute if there is more than one member on the target entity that points to the "other" entity.</remarks>
     public string ThisEntityRef { get; set; }
 
-    /// <summary>
-    /// Specifies the property name on the link entity that references the "other" entity in many-to-many relationship. Optional. 
-    /// </summary>
-    /// <remarks>
-    /// If this attribute is not present, the system automatically finds the member by its type. 
-    /// Use this attribute if there is more than one member on the target entity that points back to this entity.
-    /// </remarks>
+    /// <summary>Specifies the property name on the link entity that references the "other" entity in many-to-many relationship. Optional. </summary>
+    /// <remarks>If this attribute is not present, the system automatically finds the member by its type. 
+    /// Use this attribute if there is more than one member on the target entity that points back to this entity.</remarks>
     public string OtherEntityRef { get; set; }
 
   }
@@ -88,10 +74,8 @@ namespace Vita.Entities {
     }
   }
 
-  /// <summary>
-  /// Identifies an entity-type property as derived from one-to-one relation. The relation itself is 
-  /// defined by a reference property on child entity that is also a primary key.  
-  /// </summary>
+  /// <summary>Identifies an entity-type property as derived from one-to-one relation. The relation itself is 
+  /// defined by a reference property on child entity that is also a primary key.  </summary>
   /// <remarks>
   /// <para>Put this attribute on parent's property referencing a child entity 
   /// that has a primary key based on back reference to this parent. </para>
@@ -120,8 +104,8 @@ namespace Vita.Entities {
       ThisEntityRef = thisEntityRef; 
     }
     
-    /// <summary>The name of the property on the target (list member) entity that points back to "this" property in one-to-many relationships.
-    /// </summary>
+    /// <summary>The name of the property on the target (list member) entity that points back to "this" property 
+    /// in one-to-many relationships.</summary>
     public string ThisEntityRef { get; set; }
   }
 
@@ -310,7 +294,15 @@ namespace Vita.Entities {
     }
   }
 
-  /// <summary>Signals that int property contains hash value for other property.</summary>
+  /// <summary>Should be used on properties that are entity references.
+  /// Specifies that with any update of the child (this) entity the value of the column tracking the update datetime of the parent
+  /// (marked with [Auto(AutoType.UpdatedOn)] attribute) must be automatically updated as well. 
+  /// </summary>
+  [AttributeUsage(AttributeTargets.Property)]
+  public partial class PropagageUpdatedOnAttribute {}
+
+    /// <summary>Signals that int property contains a hash value for other property. The hash value will be automatically 
+    /// set by the system when target property is modified and record is saved.</summary>
   [AttributeUsage(AttributeTargets.Property)]
   public partial class HashForAttribute {
     public readonly string PropertyName; 

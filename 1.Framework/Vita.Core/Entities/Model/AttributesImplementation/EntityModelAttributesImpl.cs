@@ -531,6 +531,45 @@ namespace Vita.Entities {
 
   }// class
 
+  public partial class PropagageUpdatedOnAttribute : EntityModelAttributeBase {
+    EntityMemberInfo _member;
+    Action<EntityRecord, EntityMemberInfo, object> _defaultValueSetter;
+
+    public override void Apply(AttributeContext context, Attribute attribute, EntityMemberInfo member) {
+      base.Apply(context, attribute, member);
+      if(member.Kind != MemberKind.EntityRef) {
+        context.Log.Error(
+          "PropagateUpdatedOn attribute may be used only on properties that are references to other entities. Property: {0}.{1}",
+            member.Entity.Name, member.MemberName);
+        return;
+      }
+      _member = member;
+      //Set interceptors
+      member.Entity.Events.Modified += Events_ModifyingDeleting;
+      member.Entity.Events.Deleting += Events_ModifyingDeleting; 
+      _defaultValueSetter = member.SetValueRef;
+      member.SetValueRef = SetMemberValue; 
+    }
+
+    private void SetMemberValue(EntityRecord record, EntityMemberInfo member, object value) {
+      _defaultValueSetter(record, member, value);
+      MarkTargetAsModified(record); 
+    }
+    private void Events_ModifyingDeleting(EntityRecord record, EventArgs args) {
+      MarkTargetAsModified(record); 
+    }
+
+    private void MarkTargetAsModified(EntityRecord record) {
+      var target = record.GetValue(_member);
+      if(target == null)
+        return; 
+      var targetRec =  (target as EntityBase).Record;
+      if (targetRec.Status == EntityStatus.Loaded) 
+        targetRec.Status = EntityStatus.Modified;
+    }
+  }
+
+
   public partial class HashForAttribute : EntityModelAttributeBase {
     EntityMemberInfo _member;
     EntityMemberInfo _hashedMember;

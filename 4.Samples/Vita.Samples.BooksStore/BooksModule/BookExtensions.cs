@@ -3,9 +3,10 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using Vita.Common;
+
 using Vita.Entities;
 using Vita.Entities.Linq;
-using Vita.Entities.Runtime; 
+using Vita.Modules.Calendar; 
 
 namespace Vita.Samples.BookStore {
   //Helper methods to create entities
@@ -88,7 +89,22 @@ namespace Vita.Samples.BookStore {
           order.Total = (decimal) (((double)order.Total) * ((100 - entCoupon.DiscountPerc) / 100.0));
         }
       }
-      order.Status = OrderStatus.Completed; 
+      order.Status = OrderStatus.Completed;
+      order.SetupPostPurchaseEvents(); 
+    }
+
+    // Demo/test of individual calendar
+    // Schedule 2 calendar events, system will fire them in due time. We handle events in  
+    public static void SetupPostPurchaseEvents(this IBookOrder order) {
+      var user = order.User;
+      var session = EntityHelper.GetSession(order);
+      var utcNow = session.Context.App.TimeService.UtcNow;
+      // Schedule sending email asking for feedback about purchase process experience
+      var feedbackEmail = session.CreateCalendarEventForUser(user.Id, BooksModule.EventCodeAskFeedback, 
+          "Purchase Experience Feedback", "Send user email asking to leave feedback about his purchase experience", utcNow.AddMinutes(2), customItemId: order.Id);
+      // Schedule sending email asking to review purchased books 
+      var reviewEmail = session.CreateCalendarEventForUser(user.Id, BooksModule.EventCodeAskReview,
+          "Book review request", "Send user email asking to review the books he bought.", utcNow.AddMonths(1), customItemId: order.Id);
     }
 
     //Schedules update LINQ-based command that will recalculate totals at the end of SaveChanges transaction

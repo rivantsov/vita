@@ -62,11 +62,14 @@
     <Compile Include="Calendar\CalendarEntityModule.cs" />
     <Compile Include="Calendar\CalendarEnums.cs" />
     <Compile Include="Calendar\CalendarEntities.cs" />
+    <Compile Include="Calendar\CalendarExtensions.cs" />
+    <Compile Include="Calendar\CalendarUserRoles.cs" />
     <Compile Include="Calendar\Cron\CronSpecParser.cs" />
     <Compile Include="Calendar\Cron\CronSchedule.cs" />
     <Compile Include="Calendar\Cron\CronFields.cs" />
     <Compile Include="Calendar\Cron\DateFields.cs" />
     <Compile Include="Calendar\Cron\DateValue.cs" />
+    <Compile Include="Calendar\ICalendarService.cs" />
     <Compile Include="DataHistory\KeepHistoryAttributes.cs" />
     <Compile Include="DataHistory\DataHistoryExtensions.cs" />
     <Compile Include="DataHistory\DataHistoryModule.cs" />

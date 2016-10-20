@@ -29,6 +29,9 @@ namespace Vita.Modules.Login.Api {
     }
 
 
+    /// <summary>Starts password reset process. </summary>
+    /// <param name="request">The data object with Captcha value (if used) and authentication factor (email).</param>
+    /// <returns>Process token identifying the started process. </returns>
     [ApiPost, ApiRoute("start")]
     public string Start(PasswordResetStartRequest request) {
       if(_loginSettings.Options.IsSet(LoginModuleOptions.RequireCaptchaOnPasswordReset))
@@ -71,6 +74,14 @@ namespace Vita.Modules.Login.Api {
     // Hacker then tries to retrieve the process info using GetProcess. If we return a process object, this is an indicator that 
     // email is valid. To avoid this, this method requires that at least one factor (email or phone) is confirmed - meaning the user in fact 
     // controls the factor. Other methods behave in a similar way. 
+
+    /// <summary>Returns the information about password reset (login) process in progress.</summary>
+    /// <param name="token">Process token.</param>
+    /// <returns>Process information object. Client </returns>
+    /// <remarks>Client can use this method to inquire list of extra factors that must be confirmed before password 
+    /// is actually changed. Returns null if the process just started and no factors (email pins) were confirmed.
+    /// This is a protection from disclosing membership to random users.
+    /// User must confirm at least one factor (access to email) to get information using this method.</remarks>
     [ApiGet, ApiRoute("process")]
     public LoginProcess GetProcess(string token) {
       var process = GetActiveProcess(token);
@@ -80,6 +91,9 @@ namespace Vita.Modules.Login.Api {
     }
 
 
+    /// <summary>Sends secret pin through specified channel (email or phone) to confirm access to target inbox or phone. </summary>
+    /// <param name="request">Parameters object.</param>
+    /// <remarks>Factor parameter (email itself) should be provided in input object. FactorType is ignored.</remarks>
     [ApiPost, ApiRoute("pin/send")]
     public void SendPin(SendPinRequest request) {
       Context.WebContext.MarkConfidential();
@@ -100,6 +114,8 @@ namespace Vita.Modules.Login.Api {
       _processService.SendPin(process, iFactor, request.Factor); //we use factor from request, to avoid unencrypting twice
     }
 
+    /// <summary>Verifies pin received by user in email or SMS. </summary>
+    /// <param name="request">Pin data.</param>
     [ApiPut, ApiRoute("pin/verify")]
     public void VerifyPin(VerifyPinRequest request) {
       var process = GetActiveProcess(request.ProcessToken, confirmedOnly: false);
@@ -108,7 +124,10 @@ namespace Vita.Modules.Login.Api {
         _processService.SubmitPin(process, request.Pin);
     }
 
-    // Should be used in 'this is not me!' URL in email to user, to abort the process and signal that this is an attack. 
+    /// <summary>Aborts the password reset process.</summary>
+    /// <param name="token">Process token.</param>
+    /// <remarks>Should be linked to negative response/link in email with PIN sent to the user (No, it is not me!) 
+    /// - to abort the process.</remarks>
     [ApiDelete, ApiRoute("abort")]
     public void AbortProcess(string token) {
       var process = GetActiveProcess(token, confirmedOnly: false); 
@@ -116,6 +135,9 @@ namespace Vita.Modules.Login.Api {
         _processService.AbortPasswordReset(process);
     }
 
+    /// <summary>Returns a list of secret questions for a user. </summary>
+    /// <param name="token">Process token.</param>
+    /// <returns>A list of secret questions previously setup by the user.</returns>
     [ApiGet, ApiRoute("userquestions")]
     public IList<SecretQuestion> GetUserQuestions(string token) {
       var process = GetActiveProcess(token);
@@ -126,6 +148,10 @@ namespace Vita.Modules.Login.Api {
       return list; 
     }
 
+    /// <summary>Submits an answer to one secret question from the user. </summary>
+    /// <param name="token">Process token.</param>
+    /// <param name="answer">An object containing question ID and the answer. </param>
+    /// <returns>True if the answer is correct; otherwise, false.</returns>
     [ApiPut, ApiRoute("userquestions/answer")]
     public bool SubmitSecretQuestionAnswer([FromUrl] string token, SecretQuestionAnswer answer) {
       Context.WebContext.MarkConfidential();
@@ -138,6 +164,10 @@ namespace Vita.Modules.Login.Api {
       return success; 
     }
 
+    /// <summary>Submits answers to secret questions from the user. </summary>
+    /// <param name="token">Process token.</param>
+    /// <param name="answers">A list of answer objects with question IDs and answers.</param>
+    /// <returns>True if answers are correct; otherwise, false.</returns>
     [ApiPut, ApiRoute("userquestions/answers")]
     public bool SubmitAllQuestionAnswers(string token, List<SecretQuestionAnswer> answers) {
       Context.WebContext.MarkConfidential();
@@ -148,6 +178,10 @@ namespace Vita.Modules.Login.Api {
       return result; 
     }
 
+    /// <summary>Sets new password. </summary>
+    /// <param name="token">Process token.</param>
+    /// <param name="changeInfo">An object containing new password.</param>
+    /// <returns>True if password was successfully changed; otherwise, false.</returns>
     [ApiPut, ApiRoute("new")]
     public bool SetNewPassword(string token, PasswordChangeInfo changeInfo) {
       Context.WebContext.MarkConfidential();
@@ -157,7 +191,6 @@ namespace Vita.Modules.Login.Api {
       _processService.ResetPassword(process, changeInfo.NewPassword);
       return true;
     }
-
 
     //Private utilities
     private ILoginProcess GetActiveProcess(string token, bool confirmedOnly = true) {

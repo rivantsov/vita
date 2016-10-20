@@ -52,7 +52,9 @@ namespace Vita.UnitTests.Extended {
 
       // Using '/', ex: '/5' - days dividing by 5 
       // Schedule: midnight on 1st every 6 months, in years divisible by 20; notice using two variants: '*/6' and '/20'
-      TestCronNext("0 0 1 */6 * /20", "2016-10-12" /*Wed*/, "2020-06-01");
+      nextDt = TestCronNext("0 0 1 */6 * /20", "2016-10-12", "2020-06-01");
+      nextDt = TestCronNext("0 0 1 */6 * /20", nextDt, "2020-12-01");
+      nextDt = TestCronNext("0 0 1 */6 * /20", nextDt, "2040-06-01");
       //Every 2 hours
       nextDt = TestCronNext("0 /2 * * * *", "2016-10-12", "2016-10-12 02:00");
       nextDt = TestCronNext("0 /2 * * * *", nextDt, "2016-10-12 04:00");

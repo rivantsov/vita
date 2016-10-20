@@ -71,7 +71,7 @@ namespace Vita.Modules.Logging {
         }//foreach
         session.SaveChanges();
         _pendingBatches.Clear(); 
-      }
+      }//lock
     }
 
   }//class

@@ -20,6 +20,10 @@ namespace Vita.Entities.Services.Implementations {
     bool _suspended; 
     object _lock = new object();
 
+    public BackgroundSaveService() {
+
+    }
+
     #region IBackgroundSaveService members
     public void RegisterObjectHandler(Type objectType, IObjectSaveHandler saver) {
       lock (_lock) {
@@ -56,7 +60,8 @@ namespace Vita.Entities.Services.Implementations {
         return; 
       if(_buffer.Count == 0  || _flushing)
         return;
-      FlushAsync();
+      // do the job asynchronously, to avoid blocking timer
+      Task.Run(() => Flush());
     }
 
     void Events_FlushRequested(object sender, EventArgs e) {
@@ -77,11 +82,6 @@ namespace Vita.Entities.Services.Implementations {
       Flush(); 
     }
     #endregion
-
-    private void FlushAsync() {
-      var task = new Task(Flush);
-      task.Start();
-    }
 
     bool _flushing;
     private void Flush() {

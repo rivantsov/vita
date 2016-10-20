@@ -158,7 +158,10 @@ namespace Vita.Entities {
         }
       }
       this.CheckActivationErrors();
-      // create default services
+      // Init linked apps 
+      foreach(var linkedApp in LinkedApps)
+        linkedApp.Init();
+      // create default services, possibly importing from LinkedApps
       CreateDefaultServices();
       //create log file writer
       if (!string.IsNullOrWhiteSpace(_logFilePath))
@@ -190,10 +193,6 @@ namespace Vita.Entities {
         module.AppInitComplete();
 
       CheckActivationErrors();
-      // Init linked apps 
-      foreach(var linkedApp in LinkedApps)
-        linkedApp.Init();
-
       Status = EntityAppStatus.Initialized;
     }
 
@@ -202,15 +201,15 @@ namespace Vita.Entities {
       RegisterService<IAuthorizationService>(this.AuthorizationService);
       this.DataAccess = new DataAccessService(this);
       RegisterService<IDataAccessService>(this.DataAccess);
-      // create services only if they do not exist yet, or not imported from LinkedApps
-      RegisterServiceIfNotFound<IErrorLogService>(() => new TraceErrorLogService());
-      this.TimeService = new TimeService();
-      this.TimeService = this.RegisterServiceIfNotFound<ITimeService>(() => new TimeService());
-      var timers = this.RegisterServiceIfNotFound<ITimerService>(() => new TimerService());
+      // Time service and Timers service  are global singletons
+      this.TimeService = this.RegisterService<ITimeService>(Services.Implementations.TimeService.Instance);
+      var timers = this.RegisterService<ITimerService>(TimerService.Instance);
       this.RegisterService<ITimerServiceControl>(timers as ITimerServiceControl);
-      this.RegisterServiceIfNotFound<IBackgroundSaveService>(() => new BackgroundSaveService());
+      this.RegisterService<IBackgroundSaveService>(new BackgroundSaveService());
+      // create the following default services only if they do not exist yet, or not imported from LinkedApps
       // likely is replaced by another implementation writing to database - during modules initialization
-      this.RegisterServiceIfNotFound<IOperationLogService>(() => new DefaultOperationLogService(this, LogLevel.Details));
+      RegisterServiceIfNotFound<IErrorLogService>(() => new TraceErrorLogService());
+      RegisterServiceIfNotFound<IOperationLogService>(() => new DefaultOperationLogService(this, LogLevel.Details));
     }
 
     /// <summary>Moves entities (types) from their original areas to the target Area. </summary>
@@ -314,15 +313,17 @@ namespace Vita.Entities {
     /// <summary>Registers a service with an application. </summary>
     /// <typeparam name="T">Service type used as a key in internal servcies dictionary. Usually it is an interface type.</typeparam>
     /// <param name="service">Service implementation.</param>
+    /// <returns>Service instance.</returns>
     /// <remarks>The most common use for the services is entity module registering itself as a service for the application.
     /// For example, ErrorLogModule registers IErrorLogService that application code and other modules can use to log errors.
     /// </remarks>
-    public void RegisterService<T>(T service) {
+    public T RegisterService<T>(T service) {
       _services[typeof(T)] = service;
       this.AppEvents.OnServiceAdded(this, typeof(T), service);
       //notify child apps
       foreach (var linkedApp in this.LinkedApps)
         linkedApp.AppEvents.OnServiceAdded(this, typeof(T), service);
+      return service; 
     }
 
     protected T RegisterServiceIfNotFound<T>(Func<T> creator) where T: class {

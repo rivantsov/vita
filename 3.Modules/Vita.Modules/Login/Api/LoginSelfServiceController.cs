@@ -18,12 +18,18 @@ namespace Vita.Modules.Login.Api {
       _loginManager = Context.App.GetService<ILoginManagementService>(); 
     }
 
+    /// <summary>Returns login information for the current user. </summary>
+    /// <returns>An object with information about login.</returns>
     [ApiGet, ApiRoute("")]
     public LoginInfo GetLoginInfo() {
       var login = GetCurrentLogin();
       return login.ToModel(); 
     }
 
+    /// <summary>Updates login information for the user.</summary>
+    /// <param name="loginInfo">Login information.</param>
+    /// <returns>Login info object with updated information.</returns>
+    /// <remarks>Not all information may be updated with this call.</remarks>
     [ApiPut, ApiRoute("")]
     public LoginInfo UpdateLoginInfo(LoginInfo loginInfo) {
       var login = GetCurrentLogin();
@@ -33,6 +39,8 @@ namespace Vita.Modules.Login.Api {
       return login.ToModel(); 
     }
 
+    /// <summary>Returns the list of all standard secret questions. </summary>
+    /// <returns>Full list of secret questions.</returns>
     [ApiGet, ApiRoute("allquestions")]
     public List<SecretQuestion> GetStandardSecretQuestions() {
       var session = Context.OpenSystemSession(); //opening system session, no need for authorization
@@ -40,12 +48,17 @@ namespace Vita.Modules.Login.Api {
       return questions.Select(q => q.ToModel()).ToList();
     }
 
+    /// <summary>Get the list of secret questions for the current user. </summary>
+    /// <returns>The list of questions previously selected by the user.</returns>
     [ApiGet, ApiRoute("questions")]
     public List<SecretQuestion> GetMySecretQuestions() {
       var login = GetCurrentLogin();
       var questions = _loginManager.GetUserSecretQuestions(login);
       return questions.Select(q => q.ToModel()).ToList();
     }
+
+    /// <summary>Sets the answers for the secret questions for the user. </summary>
+    /// <param name="answers">A list of answers paired with question ID.</param>
     [ApiPut, ApiRoute("answers")]
     public void SetUserSecretQuestionAnswers(List<SecretQuestionAnswer> answers) {
       var login = GetCurrentLogin();
@@ -53,18 +66,25 @@ namespace Vita.Modules.Login.Api {
       _loginManager.CheckLoginFactorsSetupCompleted(login);
     }
 
+    /// <summary>Changes the order of secret questions for the users.</summary>
+    /// <param name="ids">A list of question IDs in desired order.</param>
     [ApiPut, ApiRoute("answers/order")]
     public void ReorderUserQuestionAnswers(IList<Guid> ids) {
       var login = GetCurrentLogin();
       _loginManager.ReorderUserQuestionAnswers(login, ids);
     }
 
+    /// <summary>Returns the list of user extra factors. </summary>
+    /// <returns>The list of factor objects.</returns>
     [ApiGet, ApiRoute("factors")]
     public IList<LoginExtraFactor> GetUserFactors() {
       var login = GetCurrentLogin();
       return _loginManager.GetUserFactors(login); 
     }
 
+    /// <summary>Returns an information on user extra factor identified by ID.</summary>
+    /// <param name="factorId">Factor ID.</param>
+    /// <returns>Factor information.</returns>
     [ApiGet, ApiRoute("factors/{id}")]
     public LoginExtraFactor GetUserFactor(Guid factorId) {
       var login = GetCurrentLogin();
@@ -73,6 +93,9 @@ namespace Vita.Modules.Login.Api {
 
 
     //For GoogleAutenticator, value is ignored and secret is generated
+    /// <summary>Adds a new login extra factor (email, SMS) for the user login. </summary>
+    /// <param name="factor">Factor information.</param>
+    /// <returns>The created factor info object.</returns>
     [ApiPost, ApiRoute("factors")]
     public LoginExtraFactor AddUserFactor(LoginExtraFactor factor) {
       var login = GetCurrentLogin();
@@ -83,6 +106,9 @@ namespace Vita.Modules.Login.Api {
       return newFactor; 
     }
 
+    /// <summary>Updates user extra factor. </summary>
+    /// <param name="factor">Factor information.</param>
+    /// <returns>The updated factor info object.</returns>
     [ApiPut, ApiRoute("factors")]
     public LoginExtraFactor UpdateFactor(LoginExtraFactor factor) {
       var login = GetCurrentLogin();
@@ -97,6 +123,11 @@ namespace Vita.Modules.Login.Api {
       return updFactor;
     }
 
+    /// <summary>Returns the URL for Google Authenticator QR page.</summary>
+    /// <param name="id">Factor ID.</param>
+    /// <returns>The URL of the QR page.</returns>
+    /// <remarks>The QR page shows the secret code as a bar code image
+    /// that can be scanned by the phone when setting up Google Authenticator app on the phone.</remarks>
     [ApiGet, ApiRoute("factors/{id}/qr")]
     public string GetGoogleAuthenticatorQrUrl(Guid id) {
       var login = GetCurrentLogin();
@@ -110,6 +141,8 @@ namespace Vita.Modules.Login.Api {
       return _loginManager.GetGoogleAuthenticatorQRUrl(iFactor); 
     }
 
+    /// <summary>Deletes user extra factor. </summary>
+    /// <param name="id">Factor ID.</param>
     [ApiDelete, ApiRoute("factors/{id}")]
     public void DeleteFactor(Guid id) {
       var login = GetCurrentLogin();
@@ -122,6 +155,8 @@ namespace Vita.Modules.Login.Api {
     }
 
     //Email/phone verification
+    /// <summary>Tells server to send the PIN to verify the extra factor.</summary>
+    /// <param name="factorId">Factor ID.</param>
     [ApiPost, ApiRoute("factors/{factorId}/pin")]
     public void SendPin(Guid factorId) {
       var login = GetCurrentLogin();
@@ -134,6 +169,10 @@ namespace Vita.Modules.Login.Api {
       processService.SendPin(process, factor);
     }
 
+    /// <summary>Submits the PIN received by user (in email) to verify it. </summary>
+    /// <param name="factorId">Factor ID.</param>
+    /// <param name="pin">The PIN value.</param>
+    /// <returns>True if PIN value matches; otherwise, false.</returns>
     [ApiPut, ApiRoute("factors/{factorid}/pin/{pin}")]
     public bool SubmitPin(Guid factorId, string pin) {
       Context.ThrowIfEmpty(pin, ClientFaultCodes.ValueMissing, "pin", "Pin value missing");
@@ -149,6 +188,8 @@ namespace Vita.Modules.Login.Api {
       return false;
     }
 
+    /// <summary>Changes user password. </summary>
+    /// <param name="changeInfo">Change information containing old and new passwords.</param>
     [ApiPut, ApiRoute("password")]
     public void ChangePassword(PasswordChangeInfo changeInfo) {
       Context.WebContext.MarkConfidential();
@@ -161,10 +202,22 @@ namespace Vita.Modules.Login.Api {
 
     //We could handle PUT and POST in one method, but swagger creates two entries with the same operation_id
     // and this crushes the API Client generator (AutoRest) - in case somebody wants to use this tool
+    /// <summary>Registers a user device. </summary>
+    /// <param name="device">Devie information.</param>
+    /// <returns>The device info object.</returns>
+    /// <remarks>Registering device allows special login modes when logged in from this device. 
+    /// For example, user might enable multi-factor login, but for his home computer would 
+    /// set to skip multi-factor process. In this case the home computer should be registered on the server, 
+    /// the device token should be saved in the browser, and then sent along with username and password
+    /// when user logs in. </remarks>
     [ApiPost, ApiRoute("device")]
     public DeviceInfo RegisterDevice(DeviceInfo device) {
       return RegisterOrUpdateDevice(device); 
     }
+
+    /// <summary>Updates user (client) device information. </summary>
+    /// <param name="device">The device information.</param>
+    /// <returns>The updated device information.</returns>
     [ApiPut, ApiRoute("device")]
     public DeviceInfo UpdateDevice(DeviceInfo device) {
       return RegisterOrUpdateDevice(device);
@@ -200,7 +253,7 @@ namespace Vita.Modules.Login.Api {
     private ILogin GetCurrentLogin() {
       var session = OpenSession();
       var login = _loginManager.GetLogin(session);
-      Context.ThrowIfNull(login, ClientFaultCodes.ObjectNotFound, "Login", "Login not found for user: {0}.", Context.User);
+      Context.ThrowIfNull(login, ClientFaultCodes.ObjectNotFound, "Login", "Login not found for user: {0}.", Context.User.UserName);
       return login; 
     }
 

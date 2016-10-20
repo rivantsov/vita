@@ -4,7 +4,8 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-using Vita.Entities; 
+using Vita.Entities;
+using Vita.Modules.Calendar;
 
 namespace Vita.Samples.BookStore {
   public partial class BooksModule {
@@ -38,5 +39,6 @@ ALTER DATABASE {0} SET MULTI_USER;
       dbConn.ExecuteDbCommand(cmd, Data.DbExecutionType.NonQuery);
       dbConn.CloseConnection(); 
     }
+
   }//class
 }

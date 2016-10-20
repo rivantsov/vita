@@ -4,6 +4,7 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Text;
 using Vita.Entities;
+using Vita.Modules.Calendar;
 using Vita.Modules.Logging;
 using Vita.Samples.BookStore.Api;
 
@@ -13,9 +14,18 @@ namespace Vita.Samples.BookStore {
   // a data module that handles all book-related functionality - including entity registration, stored procedures, etc.
   // We also define a small static extension class to add handy entity-creation methods.
   public partial class BooksModule : EntityModule {
-    public static readonly Version CurrentVersion = new Version("1.3.0.0");
+    public static readonly Version CurrentVersion = new Version("1.4.0.0");
+    // Event codes for scheduled events
+    public const string EventCodeRestock = "Restock";
+    public const string EventCodeAskFeedback = "AskPurchaseFeedback";
+    public const string EventCodeAskReview = "AskBookReview";
+
+    //Services
+    ICalendarService _calendarService;
 
     public BooksModule(EntityArea area) : base(area, "Books", "Books module", version: CurrentVersion) {
+      Requires<CalendarEntityModule>(); 
+
       RegisterEntities(typeof(IBook), typeof(IPublisher), typeof(IAuthor), typeof(IBookAuthor), typeof(IBookReview),
                        typeof(IUser), typeof(IBookOrder), typeof(IBookOrderLine),  typeof(ICoupon), typeof(IImage));
       
@@ -75,6 +85,23 @@ namespace Vita.Samples.BookStore {
       var authQuery = from a in ViewHelper.EntitySet<IAuthor>()
                       select new { FirstName = a.FirstName, LastName = a.LastName, UserName = a.User.UserName, UserType = (UserType?)a.User.Type };
       RegisterView<IAuthorUser>(authQuery); 
+    }
+
+    public override void Init() {
+      base.Init();
+      _calendarService = App.GetService<ICalendarService>();
+      _calendarService.EventFired += CalendarService_EventFired;
+    }
+
+    // A simple facility to test how calendars work. We schedule restocking event using CRON spec in SampleDataGenerator, 
+    // so it should be fired every 5 minutes. We pretend to do the operation and add notes to the event. 
+    private void CalendarService_EventFired(object sender, CalendarEventArgs e) {
+      if (e.CalendarType == CalendarType.System && e.Code == EventCodeRestock) 
+        e.ExecutionNotes += "Restocking operation executed at " + App.TimeService.UtcNow.ToString("o"); 
+      if (e.CalendarType == CalendarType.Individual && e.Code == EventCodeAskFeedback)
+        e.ExecutionNotes += "Sent email to user asking for experience feedback, orderID: " + e.CustomItemId;
+      if(e.CalendarType == CalendarType.Individual && e.Code == EventCodeAskReview)
+        e.ExecutionNotes += "Sent email to user asking for review of the books he bought, orderID: " + e.CustomItemId;
     }
 
     // Static method computing FullName computed property for an Author

@@ -10,6 +10,7 @@ using Vita.Entities.Authorization;
 using Vita.Entities.Runtime;
 using Vita.Entities.Services;
 using Vita.Entities.Web;
+using Vita.Modules.Calendar;
 using Vita.Modules.DataHistory;
 using Vita.Modules.DbInfo;
 using Vita.Modules.EncryptedData;
@@ -52,19 +53,22 @@ namespace Vita.Samples.BookStore {
       var dbInfoModule = new DbInfoModule(infoArea);
       var cryptModule = new EncryptedDataModule(loginArea); //EncryptedData is used by login module
       var templateModule = new TemplateModule(booksArea);
+      //data history - we track history for book review, it is marked with WithHistory attribute
+      var histModule = new DataHistoryModule(booksArea);
+      //Calendar module
+      var calModule = new CalendarEntityModule(booksArea);
+
       // LoginModule
       var loginStt = new LoginModuleSettings(passwordExpirationPeriod: TimeSpan.FromDays(180));
       loginStt.RequiredPasswordStrength = PasswordStrength.Medium;
       loginStt.DefaultEmailFrom = "team@bookstore.com";
 
       var loginModule = new LoginModule(loginArea, loginStt);
-      //data history - we track history for book review, it is marked with WithHistory attribute
-      var histModule = new DataHistoryModule(booksArea);
 
       //Notification service
       var notificationService = new Vita.Modules.Notifications.NotificationService(this);
-      // Authorization object - uses LoginModule's authorization objects
-      Authorization = new BooksAuthorization(this, loginModule);
+      // Authorization object
+      Authorization = new BooksAuthorization(this);
       //api config - register controllers defined in Vita.Modules assembly; books controllers are registered by BooksModule
       base.ApiConfiguration.RegisterControllerTypes(
         typeof(LoginController), typeof(PasswordResetController), typeof(LoginSelfServiceController), typeof(LoginAdministrationController),

@@ -84,7 +84,8 @@ namespace Vita.Modules.Login.Api {
     }
 
     /// <summary>Requests the server to generate and send a pin to user (by email or SMS). </summary>
-    /// <param name="pinRequest">Pin request information. Should contain process token and factor type (email, phone).</param>
+    /// <param name="pinRequest">Pin request information. 
+    /// Should contain process token and factor type (email, phone).</param>
     [ApiPost, ApiRoute("multifactor/pin/send")]
     public void SendPinForMultiFactor(SendPinRequest pinRequest) {
       var process = GetActiveProcess(pinRequest.ProcessToken);
@@ -111,7 +112,8 @@ namespace Vita.Modules.Login.Api {
     /// <summary>Requests the server to complete the multi-factor login process and to actually login the user. </summary>
     /// <param name="request">The request data: process token and expiration type.</param>
     /// <returns>User login information.</returns>
-    /// <remarks>The process must be completed, all factors specified should be verified by this time, so PendingFactors property is empty.</remarks>
+    /// <remarks>The process must be completed, all factors specified should be verified by this time, 
+    /// so PendingFactors property is empty.</remarks>
     [ApiPost, ApiRoute("multifactor/complete")]
     public LoginResponse CompleteMultiFactorLogin(MultifactorLoginRequest request) {
       var process = GetActiveProcess(request.ProcessToken);

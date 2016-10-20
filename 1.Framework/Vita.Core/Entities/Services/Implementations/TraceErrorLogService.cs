@@ -13,6 +13,10 @@ namespace Vita.Entities.Services.Implementations {
   /// <summary>Default implementation of error log service - saves errors to Trace and Windows Event Log. </summary>
   public class TraceErrorLogService : IErrorLogService {
 
+    public TraceErrorLogService() {
+
+    }
+
     #region IErrorLogService Members
 
     public Guid LogError(Exception exception, OperationContext context = null) {

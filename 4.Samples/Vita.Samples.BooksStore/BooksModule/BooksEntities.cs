@@ -147,6 +147,9 @@ namespace Vita.Samples.BookStore {
     [Auto(AutoType.CreatedOn), Utc]
     DateTime CreatedOn { get; }
 
+    [Auto(AutoType.UpdatedOn), Utc]
+    DateTime UpdatedOn { get; }
+
     [NoUpdate]
     IUser User { get; set; }
 
@@ -167,6 +170,7 @@ namespace Vita.Samples.BookStore {
     [PrimaryKey, Auto]
     Guid Id { get; set; }
     [NoUpdate, CascadeDelete] //Delete all lines when order is deleted
+    [PropagageUpdatedOn] //update Order.UpdatedOn whenever order line is updated/deleted
     IBookOrder Order { get; set; }
     int LineNumber { get; set; } //automatically maintained line order - see IBookOrder.Lines property
     // Making it byte to test Postgres feature. See comments at the end of the file. 

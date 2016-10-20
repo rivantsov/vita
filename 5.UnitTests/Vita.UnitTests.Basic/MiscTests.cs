@@ -33,6 +33,7 @@ namespace Vita.UnitTests.Basic.MiscTests {
 
     int Year { get; set; }
 
+    [PropagageUpdatedOn]
     IDriver Owner { get; set; }
     [Nullable]
     IDriver Driver { get; set; }
@@ -42,6 +43,8 @@ namespace Vita.UnitTests.Basic.MiscTests {
   public interface IDriver {
     [PrimaryKey, Auto]
     Guid Id { get; set; }
+    [Utc, Auto(AutoType.UpdatedOn)]
+    DateTime UpdatedOn { get; }
 
     [Size(30), Unique(Alias = "LicenseNumber")]
     string LicenseNumber { get; set; }
@@ -195,6 +198,18 @@ namespace Vita.UnitTests.Basic.MiscTests {
       var rec = EntityHelper.GetRecord(car1driver);
       Assert.AreEqual(EntityStatus.Stub, rec.Status, "Entity reference is not loaded as stub.");
 
+      //Test [PropagateUpdatedOn] attribute. We have this attribute on IVehicle.Owner. Whenever we update a vehicle, 
+      // it's owner's UpdatedOn value should change as if the owner entity was updated. 
+      session = _app.OpenSession();
+      jane = session.GetEntity<IDriver>(jane.Id);
+      var janeUpdatedOn = jane.UpdatedOn;
+      Thread.Sleep(100); //let clock tick
+      veh1 = jane.Vehicles[0];
+      veh1.Year--; //this should cause new value of jane.UpdatedOn
+      session.SaveChanges();
+      var janeUpdatedOn2 = jane.UpdatedOn;
+      Assert.IsTrue(janeUpdatedOn2 > janeUpdatedOn.AddMilliseconds(50), "PropagateUpdatedOn: expected UpdatedOn of parent entity to change.");
+
       //Bug fix: GetEntity with Stub option and invalid pk value - should throw error
       session = _app.OpenSession();
       TestUtil.ExpectFailWith<Exception>(() => {
@@ -340,15 +355,15 @@ namespace Vita.UnitTests.Basic.MiscTests {
       // FullName has DependsOn attribute with FirstName, LastName as targets. 
       // So when we change the FirstName, we get two events fired -
       // first for FirstName, then for FullName
-      var iNpc = dr1 as INotifyPropertyChanged;
+      var iNpc = dr1 as INotifyPropertyChanged; 
       var changedProps = new List<string>();
       iNpc.PropertyChanged += (ent, args) => { changedProps.Add(args.PropertyName); };
       dr1.FirstName = "NewFirst";
       //We should have 3 properties in the stack - FistName, FullName, LastFirst
       Assert.AreEqual(3, changedProps.Count, "Invalid number of properties in events stack.");
-      Assert.AreEqual("FirstName", changedProps[0], "Expected property changed on FirstName");
-      Assert.AreEqual("FullName", changedProps[1], "Expected property changed on FullName");
-      Assert.AreEqual("LastFirst", changedProps[2], "Expected property changed on LastFirst");
+      Assert.IsTrue(changedProps.Contains("FirstName"), "Expected property changed on FirstName");
+      Assert.IsTrue(changedProps.Contains("FullName"), "Expected property changed on FullName");
+      Assert.IsTrue(changedProps.Contains("LastFirst"), "Expected property changed on LastFirst");
       //Try cancel changes
       changedProps.Clear();
       session.CancelChanges();

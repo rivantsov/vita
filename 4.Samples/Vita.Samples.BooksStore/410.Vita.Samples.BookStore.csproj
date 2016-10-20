@@ -56,7 +56,7 @@
     <Compile Include="BooksModule\Api\Models\SearchParams.cs" />
     <Compile Include="BooksModule\Api\SignupController.cs" />
     <Compile Include="BooksModule\Api\UserAccountController.cs" />
-    <Compile Include="BooksModule\BooksModule_EnableSnapshot.cs" />
+    <Compile Include="BooksModule\BooksModule_Migrations.cs" />
     <Compile Include="BooksModule\Enums.cs" />
     <Compile Include="BooksEntityApp.cs" />
     <Compile Include="BooksModule\BooksAuthorization.cs" />

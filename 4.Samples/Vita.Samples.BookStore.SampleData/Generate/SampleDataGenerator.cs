@@ -7,6 +7,7 @@ using System.Diagnostics;
 using Vita.Entities;
 using Vita.Modules.Login;
 using Vita.Modules.TextTemplates;
+using Vita.Modules.Calendar;
 
 namespace Vita.Samples.BookStore.SampleData {
 
@@ -16,6 +17,7 @@ namespace Vita.Samples.BookStore.SampleData {
     public const string DefaultPassword = "TestPass34%"; 
 
     public static void CreateUnitTestData(EntityApp app) {
+      CheckCreateSystemCalendar(app); 
       CreateBasicTestData(app);
       CreateSampleBooks(app);
     }
@@ -43,6 +45,22 @@ namespace Vita.Samples.BookStore.SampleData {
       var doraLogin = session.EntitySet<ILogin>().First(lg => lg.UserName == "dora"); //logins are lower-case, important for Postgres
       SetupSampleSecretQuestions(doraLogin);
       session.SaveChanges(); 
+    }
+
+    // Creates system calendar and schedules regular job to restock the inventory
+    public static void CheckCreateSystemCalendar(EntityApp app) {
+      var session = app.OpenSystemSession(); 
+      var sysCal = session.EntitySet<ICalendar>().FirstOrDefault(c => c.Type == CalendarType.System);
+      if(sysCal == null)
+        sysCal = session.NewCalendar(CalendarType.System, "System");
+      // find existing or create new scheduled process
+      var sched = session.EntitySet<ICalendarEventSeries>().Where(s => s.Calendar.Id == sysCal.Id && s.Code == BooksModule.EventCodeRestock).FirstOrDefault();
+      if(sched == null)
+        sched = sysCal.NewCalendarEventSeries(BooksModule.EventCodeRestock, "Restocking", "Fake event firing every five minutes, to run restock operation");
+      //In real life would happen like once a day or a week; here we set it to 5 minutes to observe how events are fired while we browse the sample UI app.
+      //  You can see the events appearing in the database in the CalendarEvent table, with ExecutionNotes 
+      sched.CronSpec = "*/5 * * * *"; //every 5 minutes
+      session.SaveChanges();
     }
 
     public static void CreateSampleBooks(EntityApp app) {

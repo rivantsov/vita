@@ -33,6 +33,7 @@ namespace Vita.Samples.BookStore.UI {
       var session = app.OpenSystemSession();
       if (session.EntitySet<IUser>().Count() == 0)
         SampleDataGenerator.CreateBasicTestData(app);
+      SampleDataGenerator.CheckCreateSystemCalendar(app); 
       if (session.EntitySet<IBook>().Count() < 100) {
         var import = new GoogleBooksImport();
         import.ImportBooks(app, 200); 

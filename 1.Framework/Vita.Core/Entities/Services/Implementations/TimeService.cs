@@ -8,11 +8,21 @@ using Vita.Common;
 
 namespace Vita.Entities.Services.Implementations {
 
-  //implementation
   public  class TimeService : ITimeService {
+    // We need to have a single global instance of TimeService
+    public static TimeService Instance {
+      get {
+        _instance = _instance ?? new TimeService();
+        return _instance; 
+      }
+      set { _instance = value;  }
+
+    } static TimeService _instance; 
+
+
     private long _millisecondOffset;
 
-    public TimeService() {  }
+    private TimeService() { }
 
     #region ITimeService Members
 

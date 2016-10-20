@@ -10,6 +10,7 @@ using Vita.Entities.Authorization;
 using Vita.Modules.Login;
 using Vita.Entities.Linq;
 using Vita.Common;
+using Vita.Modules.Calendar;
 
 namespace Vita.Samples.BookStore {
 
@@ -43,8 +44,11 @@ namespace Vita.Samples.BookStore {
 
     BooksEntityApp _app; 
     //LoginModule is used to retrieve some authorization roles of login module and add them to book store role(s)
-    public BooksAuthorization(BooksEntityApp app, LoginModule loginModule) {
-      _app = app; 
+    public BooksAuthorization(BooksEntityApp app) {
+      _app = app;
+      var loginRoles = app.GetModule<LoginModule>().Roles;
+      var calendarRoles = app.GetModule<CalendarEntityModule>().Roles;
+
       // Data filters
       // 'userid' value will be automatically injected by runtime when evaluating lambdas
       var userDataFilter = new AuthorizationFilter("UserData");
@@ -140,14 +144,16 @@ namespace Vita.Samples.BookStore {
 
       // Customer -  view/edit orders only for current user; edit reviews only created by current user 
       Customer = new Role("Customer");
-      Customer.ChildRoles.Add(AnonymousUser);
+      Customer.AddChildRoles(AnonymousUser, loginRoles.SelfServiceEditor, calendarRoles.RegularUser);
       Customer.Grant(CallUserAccountController);
       Customer.Grant(userDataFilter, shopping, writingReviews, editingUserInfo); 
+
       BookEditor = new Role("BookEditor", browsing, bookEditing);
       Author = new Role("Author"); 
       Author.ChildRoles.Add(Customer); //author can act as a customer and buy a book
       //We save the grant in static field, to explicitly enable the activity at runtime for limited scope  
       AuthorEditGrant = Author.GrantDynamic(authorDataFilter, editingByAuthor);
+      
       //Customer support can view orders and users (only users that are customers!)
       CustomerSupport = new Role("CustomerSupport", viewingOrders);
       CustomerSupport.Grant(custSupportUserFilter, viewingUserInfo);
@@ -158,9 +164,9 @@ namespace Vita.Samples.BookStore {
       // When adjusting activity starts, it saves order Id in user context under AdjustedOrderIdKey. 
       // All records being edited are then verified against this order Id.
       // This garantees that during adjustment editing we modify only data for the order that we started adjustment for.
-      ManagerAdjustOrderGrant = StoreManager.GrantDynamic(adjustOrderFilter, adjustingOrders, AdjustedOrderIdKey); 
-      //Add permission to access LoginAdministration API controller
-      StoreManager.ChildRoles.Add(loginModule.Roles.LoginAdministrator);
+      ManagerAdjustOrderGrant = StoreManager.GrantDynamic(adjustOrderFilter, adjustingOrders, AdjustedOrderIdKey);
+      //Add permission to access LoginAdministration functions, calendar entities
+      StoreManager.AddChildRoles(loginRoles.LoginAdministrator, calendarRoles.Administrator);
       StoreManager.ChildRoles.Add(Vita.Modules.Logging.LoggingAuthorizationRoles.Instance.LogDataViewerRole);
     }
 

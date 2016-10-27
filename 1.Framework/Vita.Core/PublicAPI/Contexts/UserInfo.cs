@@ -16,7 +16,7 @@ namespace Vita.Entities {
     /// <summary>Authenticated user. </summary>
     AuthenticatedUser = 1,
     
-    /// <summary>Virtual account, all-powerful user with no restrictions on data access. </summary>
+    /// <summary>Virtual system account, all-powerful user with no restrictions on data access. </summary>
     System = 2,
   }
 

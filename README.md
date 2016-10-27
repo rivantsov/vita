@@ -28,7 +28,7 @@ Note: The project was recently migrated from Codeplex. The documentation pages a
 * **Entities support INotifyPropertyChanged interface** - readily usable in data binding and MVVM solutions.
 
 ### System Requirements
-* .NET 4.5, Visual Studio 2015. 
+* .NET 4.6.1, Visual Studio 2015. 
 * MS SQL Server 2008/2012/2014; MS SQL CE 4.0; MySql 5.5, PostgreSQL 9.2, SQLite
 
 

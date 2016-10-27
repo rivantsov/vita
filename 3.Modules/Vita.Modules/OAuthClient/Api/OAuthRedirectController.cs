@@ -22,11 +22,16 @@ namespace Vita.Modules.OAuthClient.Api {
       public string State { get; set; } //passed from AuthURL, flowId
     }
 
+    /// <summary>A target for redirect callback from OAuth server, performed when the user authorizes the access on the target server authorization page.</summary>
+    /// <param name="parameters">Redirect parameters.</param>
+    /// <remarks>The method saves the information returned in parameters (Code, Error) in the OAuth flow record. 
+    /// The State parameter contains the ID of the flow record representing the active OAuth process in the database.
+    /// The Code parameter can be used immediately to retrieve the authorization token from the target server.</remarks>
     [ApiGet, ApiRoute("oauth_redirect")]
     // using [FromUrl] parameter to make routing match the method regardless of particular parameters present or missing
-    public void OAuthRedirect([FromUrl] OAuthRedirectParams prms) {
+    public void OAuthRedirect([FromUrl] OAuthRedirectParams parameters) {
       var service = Context.App.GetService<IOAuthClientService>();
-      service.OnRedirected(Context, prms.State, prms.Code, prms.Error);
+      service.OnRedirected(Context, parameters.State, parameters.Code, parameters.Error);
       var webctx = Context.WebContext;
       var stt = Context.App.GetConfig<OAuthClientSettings>();
       if (!string.IsNullOrEmpty(stt.RedirectResponseRedirectsTo)) {

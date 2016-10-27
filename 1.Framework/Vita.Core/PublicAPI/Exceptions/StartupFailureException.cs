@@ -5,7 +5,7 @@ using System.Text;
 
 namespace Vita.Entities {
 
-  /// <summary> Setup/activation failure exception. </summary>
+  /// <summary> Startup/activation failure exception. </summary>
   public class StartupFailureException : Exception {
     public readonly string Log; //activation log
 

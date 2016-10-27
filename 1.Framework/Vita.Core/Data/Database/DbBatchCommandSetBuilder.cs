@@ -144,7 +144,7 @@ namespace Vita.Data {
           var linqParam = transCmd.Parameters[prmIndex];
           var value = linqParam.ReadValue(linqCmd.ParameterValues) ?? DBNull.Value;
           var dbParam = dbCmd.CreateParameter();
-          _db.DbModel.LinqSqlProvider.SetDbParameterValue(dbParam, value);
+          _db.DbModel.LinqSqlProvider.SetDbParameterValue(dbParam, linqParam.Type, value);
           var globalParamIndex = dbCmd.Parameters.Count;
           dbParam.ParameterName = _driver.DynamicSqlParameterPrefix + "P" + globalParamIndex;
           fmtArgs[prmIndex + 2] = dbParam.ParameterName;

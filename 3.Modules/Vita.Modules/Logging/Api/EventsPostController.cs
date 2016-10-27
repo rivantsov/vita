@@ -7,7 +7,7 @@ using Vita.Entities.Web;
 
 namespace Vita.Modules.Logging.Api {
 
-  //Publicly open constroller for posting events, does not require authentication; useful for recording events
+  // Publicly open constroller for posting events, does not require authentication; useful for recording events
   // (clicks, browse) for not logged in users. 
   // Must be registed explicitly in AppConfig; BookStore sample app does this
   public class EventsPostController : SlimApiController {

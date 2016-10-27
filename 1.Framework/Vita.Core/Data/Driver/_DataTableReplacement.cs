@@ -111,7 +111,7 @@ namespace Vita.Data.Driver {
       var value = this[name];
       if(value == DBNull.Value)
         return null;
-      return (string)value; 
+      return value + string.Empty; //safe ToString method 
     }
 
     public long GetAsLong(string name) {

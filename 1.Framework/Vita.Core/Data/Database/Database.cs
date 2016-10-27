@@ -94,10 +94,12 @@ namespace Vita.Data {
           SetCommandParameterValues(dbCommandInfo, cmd, args);
         var records = new List<EntityRecord>();
         var result = ExecuteDbCommand(cmd, conn, DbExecutionType.Reader,
-          (reader) => {
-            while(reader.Read())
-              records.Add(dbCommandInfo.EntityMaterializer.ReadRecord(reader, session));
-            return records.Count;
+              (reader) => {
+                while(reader.Read()) {
+                  var rec = dbCommandInfo.EntityMaterializer.ReadRecord(reader, session);
+                  records.Add(rec);
+                }
+                return records.Count;
             });
         ReleaseConnection(conn);
         return records;

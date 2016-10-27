@@ -110,7 +110,7 @@ namespace Vita.Data {
         var dbParam = cmd.CreateParameter(); //DbModel.Driver.AddParameter(cmd,  // 
         dbParam.ParameterName = qParam.Name;
         //Value and parameter may need some tweaking, depending on server type
-        DbModel.LinqSqlProvider.SetDbParameterValue(dbParam, value);
+        DbModel.LinqSqlProvider.SetDbParameterValue(dbParam, qParam.Type, value);
         cmd.Parameters.Add(dbParam);
       }
       return cmd;

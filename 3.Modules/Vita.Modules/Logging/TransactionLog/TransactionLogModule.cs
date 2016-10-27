@@ -14,16 +14,16 @@ using Vita.Entities.Services;
 namespace Vita.Modules.Logging {
 
   public interface ITransactionLogService {
-    // TODO: fill out TransactionLogService methods
+    void SetupLoggingFor(EntityApp app);
   }
 
-  public class TransactionLogModule : EntityModule, ITransactionLogService, IObjectSaveHandler {
-    public static readonly Version CurrentVersion = new Version("1.0.0.0");
+  public class TransactionLogModule : EntityModule, ITransactionLogService {
+    public static readonly Version CurrentVersion = new Version("1.1.0.0");
     public TransactionLogSettings Settings;
 
     #region TransactionLogEntry nested class
     //Temp object used to store trans information in the background update queue
-    public class TransactionLogEntry : LogEntry {
+    public class TransactionLogEntry : LogEntry, IObjectSaveHandler {
       public int Duration;
 
       public int RecordCount;
@@ -36,45 +36,39 @@ namespace Vita.Modules.Logging {
         Changes = changes; 
       }
 
+      public void SaveObjects(IEntitySession session, IList<object> items) {
+        foreach(TransactionLogEntry entry in items) {
+          var entTrans = session.NewLogEntity<ITransactionLog>(entry);
+          entTrans.Duration = entry.Duration;
+          entTrans.RecordCount = entry.RecordCount;
+          entTrans.Changes = entry.Changes;
+        }
+      }
     }//class
     #endregion
 
     IBackgroundSaveService _saveService;
-    bool _trackHostApp;
 
     public TransactionLogModule(EntityArea area, TransactionLogSettings settings = null, bool trackHostApp = true) : base(area, "TransactionLog", version: CurrentVersion) {
       Settings = settings ?? new TransactionLogSettings();
-      _trackHostApp = trackHostApp; 
       App.RegisterConfig(Settings); 
       RegisterEntities(typeof(ITransactionLog));
       App.RegisterService<ITransactionLogService>(this);
+      if(trackHostApp)
+        SetupLoggingFor(this.App);
     }
 
     public override void Init() {
       base.Init();
       _saveService = App.GetService<IBackgroundSaveService>();
-      _saveService.RegisterObjectHandler(typeof(TransactionLogEntry), this);
-      if(_trackHostApp)
-        SetupUpdateLoggingFor(this.App);
     }
 
-    public void SetupUpdateLoggingFor(EntityApp targetApp) {
+    #region ITransactionLogService members
+    public void SetupLoggingFor(EntityApp targetApp) {
       targetApp.AppEvents.SavedChanges += Events_SavedChanges;
       targetApp.AppEvents.ExecutedNonQuery += AppEvents_ExecutedNonQuery;
     }
-
-    #region IObjectSaveHandler members
-    //Called on background thread to persist the transaction data
-    public void SaveObjects(IEntitySession session, IList<object> items) {
-      foreach (TransactionLogEntry entry in items) {
-        var entTrans = session.NewLogEntity<ITransactionLog>(entry);
-        entTrans.Duration = entry.Duration;
-        entTrans.RecordCount = entry.RecordCount;
-        entTrans.Changes = entry.Changes;
-      }
-    }
-    #endregion
-
+    #endregion 
 
     void AppEvents_ExecutedNonQuery(object sender, EntitySessionEventArgs e) {
       // TODO: finish this, for now not sure what and how to do logging here

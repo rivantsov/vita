@@ -53,15 +53,15 @@ namespace Vita.Data.SqlCe {
         private DateTime MinDateTime = new DateTime(1753, 1, 1); //minimum value for SQL DateTime type
         private DateTime MaxDateTime = new DateTime(9999, 12, 31); //minimum value for SQL DateTime type
 
-        public override void SetDbParameterValue(IDbDataParameter parameter, object value) {
-          if (value is DateTime) {
+        public override void SetDbParameterValue(IDbDataParameter parameter, Type type, object value) {
+          if (type == typeof(DateTime)) {
             var dtValue = (DateTime)value;
             if (dtValue < MinDateTime)
               value = MinDateTime;
             if (dtValue > MaxDateTime)
               value = MaxDateTime;
           } 
-          base.SetDbParameterValue(parameter, value);
+          base.SetDbParameterValue(parameter, type, value);
         }
 
         /// <summary>

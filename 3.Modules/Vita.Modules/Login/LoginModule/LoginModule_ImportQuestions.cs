@@ -42,7 +42,9 @@ namespace Vita.Modules.Login {
       var reader = new StreamReader(stream);
       var text = reader.ReadToEnd(); // File.ReadAllLines(filePath);
       var lines = text.Split(new [] {'\r', '\n'}, StringSplitOptions.RemoveEmptyEntries); 
-      var oldList = session.GetEntities<ISecretQuestion>();
+      // Postgres blows up here, trying with LINQ
+      //var oldList = session.GetEntities<ISecretQuestion>();
+      var oldList = session.EntitySet<ISecretQuestion>().ToList();
       var count = 0;
       foreach(var line in lines) {
         if(string.IsNullOrWhiteSpace(line) || line.StartsWith("//"))

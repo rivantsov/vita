@@ -78,10 +78,9 @@ namespace Vita.Data.Postgres {
       return string.Format("{0} = ANY({1})", a, b);
     }
 
-    public override void SetDbParameterValue(System.Data.IDbDataParameter parameter, object value) {
+    public override void SetDbParameterValue(System.Data.IDbDataParameter parameter, Type type, object value) {
       if (value == null)
         return;
-      var type = value.GetType();
       //Check for array of enums - should be converted to array of ints
       Type elemType;
       // quick check for array or gen type, then deeper check for list of db primitives
@@ -89,8 +88,16 @@ namespace Vita.Data.Postgres {
         parameter.Value = ConvertToInts(value as ICollection);
         return;
       }
-      base.SetDbParameterValue(parameter, value);
+      base.SetDbParameterValue(parameter, type, value);
+      // ngpsql v 3.1 - assigns TimestampTZ as NpgsqlDbType, and the value is interpreted incorrectly
+      // set it to Timestamp
+      if (type == typeof(DateTime)) {
+        var npgParam = parameter as Npgsql.NpgsqlParameter;
+        if(npgParam.NpgsqlDbType == NpgsqlTypes.NpgsqlDbType.TimestampTZ)
+          npgParam.NpgsqlDbType = NpgsqlTypes.NpgsqlDbType.Timestamp;
+      }
     }
+
     private IList<int> ConvertToInts(ICollection list) {
       var result = new List<int>();;
       foreach(var v in list)

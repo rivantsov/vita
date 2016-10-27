@@ -341,10 +341,9 @@ namespace Vita.Data.MsSql {
       return base.IsSqlTier(expression, queryUse);
     }
 
-    public override void SetDbParameterValue(IDbDataParameter parameter, object value) {
+    public override void SetDbParameterValue(IDbDataParameter parameter, Type type, object value) {
       if (value == null)
         return;
-      var type = value.GetType();
       //Check for array
       Type elemType;
       // quick check for array or gen type, then deeper check for list of db primitives
@@ -355,7 +354,7 @@ namespace Vita.Data.MsSql {
         sqlParam.Value = MsSqlDbDriver.ConvertListToRecordList(value as IEnumerable);
         return;
       }
-      base.SetDbParameterValue(parameter, value);
+      base.SetDbParameterValue(parameter, type, value);
       if (parameter.DbType == DbType.DateTime)
         parameter.DbType = DbType.DateTime2;
     }

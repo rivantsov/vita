@@ -29,7 +29,6 @@ namespace Vita.Modules.Login {
       if(loginId != null)
         login.Id = loginId.Value;
       login.UserName = userName;
-      login.UserNameHash = Util.StableHash(userName);
       login.PasswordHash = HashPassword(password, login.Id);
       login.TenantId = (tenantId == null) ? Guid.Empty : tenantId.Value;
       login.Flags = flags;

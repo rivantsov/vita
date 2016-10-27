@@ -251,10 +251,6 @@ namespace Vita.Entities {
       return (T) ConvertHelper.ChangeType(v, typeof(T));
     }
 
-    public static bool IsSet(this EntitySessionOptions options, EntitySessionOptions option) {
-      return (options & option) != 0;
-    }
-
     public static DateTime GetUserLocalTime(this OperationContext context, DateTime? utcDateTime = null) {
       Util.Check(context.UserSession != null, "No user session established, cannot infer user local time.");
       var utc = utcDateTime == null ? context.App.TimeService.UtcNow : utcDateTime.Value;
@@ -263,6 +259,9 @@ namespace Vita.Entities {
       return local;
     }
 
+    public static bool IsSet(this EntitySessionOptions options, EntitySessionOptions option) {
+      return (options & option) != 0;
+    }
 
   }//class
 }

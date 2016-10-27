@@ -42,8 +42,8 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="Microsoft.CSharp" />
-    <Reference Include="Newtonsoft.Json, Version=7.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
-      <HintPath>..\..\packages\Newtonsoft.Json.7.0.1\lib\net45\Newtonsoft.Json.dll</HintPath>
+    <Reference Include="Newtonsoft.Json, Version=9.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
+      <HintPath>..\..\packages\Newtonsoft.Json.9.0.1\lib\net45\Newtonsoft.Json.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="System" />
@@ -80,6 +80,7 @@
     <Compile Include="Logging\EventLog\EventLogExtensions.cs" />
     <Compile Include="Logging\EventLog\EventLogModule.cs" />
     <Compile Include="Logging\EventLog\IEventLogService.cs" />
+    <Compile Include="Logging\LogModules.cs" />
     <Compile Include="Logging\NotificationLog\NotificationLogEntities.cs" />
     <Compile Include="Logging\NotificationLog\NotificationLogEntry.cs" />
     <Compile Include="Logging\NotificationLog\NotificationLogModule.cs" />

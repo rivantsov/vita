@@ -171,7 +171,7 @@ Covers c# 4.0.";
     private static void SetupSampleSecretQuestions(ILogin login) {
       var session = EntityHelper.GetSession(login); 
       var loginMgr = session.Context.App.GetService<ILoginManagementService>(); 
-      var allQuestions = session.GetEntities<ISecretQuestion>(take: 100); 
+      var allQuestions = session.GetEntities<ISecretQuestion>();
       var qFriend = allQuestions.First(q => q.Question.Contains("friend"));
       var qFood = allQuestions.First(q => q.Question.Contains("favorite food"));
       var qColor = allQuestions.First(q => q.Question.Contains("favorite color"));

@@ -62,11 +62,11 @@ namespace Vita.Data.SQLite {
     }
 
     //Datetime is a special case - we need to convert to string properly
-    public override void SetDbParameterValue(IDbDataParameter parameter, object value) {
-      if (value != null && value is DateTime) 
+    public override void SetDbParameterValue(IDbDataParameter parameter, Type type, object value) {
+      if (type == typeof(DateTime) && value != null) 
         parameter.Value = SQLiteTypeRegistry.DateTimeToString(value);
       else 
-        base.SetDbParameterValue(parameter, value);
+        base.SetDbParameterValue(parameter, type, value);
     }
   }
 }

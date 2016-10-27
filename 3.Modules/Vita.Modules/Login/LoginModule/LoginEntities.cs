@@ -1,13 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+
 using Vita.Entities;
+using Vita.Modules.EncryptedData;
+using Vita.Modules.Logging;
 
 namespace Vita.Modules.Login {
-  using Vita.Modules.EncryptedData;
-  using Vita.Modules.Logging;
-  using Binary = Vita.Common.Binary;
 
 
   [Entity]
@@ -21,10 +19,11 @@ namespace Vita.Modules.Login {
     //should be nullable, but using Guid.Empty for null is a bit more efficient
     Guid TenantId { get; set; }
 
-    //Plain-text userName; might be null if user names are confidential (ex: emails are used as user names)
-    [Nullable]
+    //Plain-text userName; 
     string UserName { get; set; }
-    int UserNameHash { get; set; } //simple hash to speed-up lookup
+    [HashFor("UserName"), Index]
+    int UserNameHash { get; } //simple hash to speed-up lookup
+
     [Index]
     Guid UserId { get; set; }
     [Index]

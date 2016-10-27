@@ -37,7 +37,9 @@ namespace Vita.Modules.Login {
     #region constructors and init
     public LoginModule(EntityArea area, LoginModuleSettings settings, string name = null) : base(area, name ?? "LoginModule", "Login module", version: CurrentVersion) {
       _settings = settings;
-      App.RegisterConfig(_settings); 
+      App.RegisterConfig(_settings);
+      Requires<EncryptedDataModule>();
+      Requires<TextTemplates.TemplateModule>();
       //Register entities
       RegisterEntities(typeof(ILogin), typeof(ISecretQuestion), typeof(ISecretQuestionAnswer),  typeof(ITrustedDevice),
           typeof(ILoginExtraFactor), typeof(IPasswordHistory), typeof(ILoginProcess));
@@ -46,8 +48,6 @@ namespace Vita.Modules.Login {
       App.RegisterService<ILoginProcessService>(this);
       App.RegisterService<ILoginManagementService>(this);
       App.RegisterService<ILoginAdministrationService>(this);
-      Requires<EncryptedDataModule>();
-      Requires<TextTemplates.TemplateModule>(); 
       RegisterSize("EventType", 50);
       Roles = new LoginAuthorizationRoles(); 
       // Create recaptcha service if settings are there
@@ -135,7 +135,6 @@ namespace Vita.Modules.Login {
       else 
         CheckPasswordStrength(session.Context, password);
       login.UserName = userName;
-      login.UserNameHash = Util.StableHash(userName);
       login.PasswordHash = HashPassword(password, login.Id);
       login.WeakPasswordHash = GetWeakPasswordHash(password);
       login.HashWorkFactor = _settings.PasswordHasher.WorkFactor;

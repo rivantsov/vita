@@ -7,11 +7,7 @@ using System.Diagnostics;
 
 using Vita.Common;
 using Vita.Entities;
-using Vita.Entities.Services;
-using Vita.Entities.Runtime;
 using Vita.Data;
-using Vita.Data.Model;
-using Vita.Modules.DbInfo;
 using Vita.Data.Upgrades;
 
 namespace Vita.Modules.Logging {

@@ -124,17 +124,37 @@ namespace Vita.Modules.OAuthClient {
       var session = EntityHelper.GetSession(account);
       var stt = session.GetOAuthSettings(); 
       var flow = account.NewOAuthFlow();
-      var redirectUrl = stt.RedirectUrl;
-      if(account.Server.Options.IsSet(OAuthServerOptions.TokenReplaceLocalIpWithLocalHost))
-        redirectUrl = redirectUrl.Replace("127.0.0.1", "localhost"); 
+      CheckRedirectUrl(stt, session.Context, account.Server.Options); 
       flow.UserId = userId;
       flow.Scopes = scopes ?? account.Server.Scopes; //all scopes
-      flow.RedirectUrl = redirectUrl;
+      flow.RedirectUrl = stt.RedirectUrl;
       var clientId = account.ClientIdentifier;
       flow.AuthorizationUrl = account.Server.AuthorizationUrl + 
-            StringHelper.FormatUri(OAuthClientModule.AuthorizationUrlQuery, clientId, redirectUrl,
-            flow.Scopes, flow.Id.ToString());
+            StringHelper.FormatUri(OAuthClientModule.AuthorizationUrlQuery, clientId, stt.RedirectUrl, flow.Scopes, flow.Id.ToString());
       return flow;
+    }
+
+    // If RedirectURL is missing, derive it automatically - convenient for testing
+    public static void CheckRedirectUrl(OAuthClientSettings settings, OperationContext context, OAuthServerOptions serverOptions) {
+      if(!string.IsNullOrWhiteSpace(settings.RedirectUrl))
+        return;
+      var webCtx = context.WebContext;
+      //try to set redirect URL using current call's base URL and default path. First check we have web context. 
+      Util.Check(webCtx != null, "RedirectURL is not set in OAuthClientSettings; failed to derive it from current Web request - WebContext is missing.");
+      // We are in web app; use current web context to derive this server URL.
+      var uri = new Uri(webCtx.RequestUrl);
+      var uriComps = UriComponents.Scheme | UriComponents.Host;
+      // Check if we need port#
+      var needPort = (uri.Scheme == "http" && uri.Port != 80 || uri.Scheme == "https" && uri.Port != 443);
+      if (needPort)
+        uriComps |= UriComponents.Port;
+      var baseAddress = uri.GetComponents(uriComps, UriFormat.Unescaped);
+      //Use either local IP or localhost if it is local server
+      if(serverOptions.IsSet(OAuthServerOptions.TokenReplaceLocalIpWithLocalHost))
+        baseAddress = baseAddress.Replace("127.0.0.1", "localhost");
+      else
+        baseAddress = baseAddress.Replace("localhost", "127.0.0.1");
+      settings.RedirectUrl = baseAddress + "/api/oauth_redirect";
     }
 
     private static OAuthClientSettings GetOAuthSettings(this IEntitySession session) {

@@ -203,7 +203,7 @@ namespace Vita.UnitTests.Basic.MiscTests {
       session = _app.OpenSession();
       jane = session.GetEntity<IDriver>(jane.Id);
       var janeUpdatedOn = jane.UpdatedOn;
-      Thread.Sleep(100); //let clock tick
+      Thread.Sleep(200); //let clock tick
       veh1 = jane.Vehicles[0];
       veh1.Year--; //this should cause new value of jane.UpdatedOn
       session.SaveChanges();

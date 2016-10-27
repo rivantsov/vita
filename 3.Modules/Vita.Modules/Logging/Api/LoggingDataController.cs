@@ -8,6 +8,7 @@ using Vita.Entities;
 using Vita.Entities.Web;
 
 namespace Vita.Modules.Logging.Api {
+
   [ApiRoutePrefix("logs"), LoggedInOnly, Secured]
   public class LoggingDataController : SlimApiController {
 

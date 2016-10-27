@@ -34,8 +34,8 @@ namespace Vita.Entities.Web {
   /// status on the response. It allows setting response HTTP headers and cookies right from the middle-tier code. 
   /// WebCallContext also serves as a container for log information which can be saved in the database upon completion 
   /// of the request processing. 
-  /// Classic (non-Slim version) Web Api controllers can retrieve an instance of the WebCallContext from the request properties 
-  /// using <c>WebCallContextKey.</c>
+  /// Classic (non-Slim version) Web Api controllers can retrieve an instance of the WebCallContext from the Request object properties 
+  /// using <c>WebCallContextKey</c> as a key.
   /// </remarks>
   public class WebCallContext {
     // Used as key to save in Request properties. 

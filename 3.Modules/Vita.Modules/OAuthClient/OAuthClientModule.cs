@@ -30,18 +30,6 @@ namespace Vita.Modules.OAuthClient {
           session => OAuthServers.CreateUpdatePopularServers(session));
     }
 
-    public override void WebInitialize(WebCallContext webContext) {
-      base.WebInitialize(webContext);
-      if (string.IsNullOrWhiteSpace(Settings.RedirectUrl)) {
-        // Initialize RedirectUrl; get service base address and set proper redirect URL
-        // It is convenient to do it automatically here - so that it works automatically in real world apps, in any environment - test, staging or production. 
-        var uri = new Uri(webContext.RequestUrl);
-        var baseAddress = uri.GetComponents(UriComponents.Scheme | UriComponents.HostAndPort, UriFormat.Unescaped);
-        var baseAddressR = baseAddress.Replace("localhost", "127.0.0.1"); //By default we use IP address for local testing, this is required for most oauth servers
-        Settings.RedirectUrl = baseAddressR + "/api/oauth_redirect";
-      }
-    }//method
-
   }
 
 }

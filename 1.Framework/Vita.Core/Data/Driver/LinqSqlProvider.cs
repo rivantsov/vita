@@ -1629,7 +1629,7 @@ namespace Vita.Data.Driver {
             return namePart[0] == SafeNameStartQuote && namePart[l - 1] == SafeNameEndQuote;
         }
 
-        public virtual void SetDbParameterValue(IDbDataParameter parameter, object value) {
+        public virtual void SetDbParameterValue(IDbDataParameter parameter, Type type, object value) {
           parameter.Value = value;           
         }
         /// <summary>

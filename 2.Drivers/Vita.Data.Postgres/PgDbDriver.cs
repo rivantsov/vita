@@ -78,14 +78,15 @@ namespace Vita.Data.Postgres {
       return schema + ".\"" +  name + "\"";
     }
 
+
     public override void ClassifyDatabaseException(DataAccessException dataException, IDbCommand command = null) {
       var npExc = dataException.InnerException as NpgsqlException;
       if (npExc == null) //should never happen
         return;
       //npExc.ErrorCode is a strange large number; we use Code (string) instead, converting it to int
       int iCode;
-      int.TryParse(npExc.Code, out iCode);
-      dataException.ProviderErrorNumber = iCode; // npExc.ErrorCode; 
+      if (int.TryParse(npExc.Code, out iCode))
+        dataException.ProviderErrorNumber = iCode;  
       switch (iCode) {
         case 23505: //unique index violation
           dataException.SubType = DataAccessException.SubTypeUniqueIndexViolation;
@@ -98,6 +99,28 @@ namespace Vita.Data.Postgres {
 
       }
     }
+
+    /* For Npgsql version 3.0+
+         public override void ClassifyDatabaseException(DataAccessException dataException, IDbCommand command = null) {
+          var npExc = dataException.InnerException as PostgresException
+          if (npExc == null) //should never happen
+            return;
+          //npExc.ErrorCode is a strange large number; we use Code (string) instead, converting it to int
+          int iCode;
+          if (int.TryParse(npExc.SqlState, out iCode))
+            dataException.ProviderErrorNumber = iCode;  
+          switch (npExc.SqlState) {
+            case "23505": //unique index violation
+              dataException.SubType = DataAccessException.SubTypeUniqueIndexViolation;
+              var indexName = ExtractIndexName(npExc.Message);
+              dataException.Data[DataAccessException.KeyDbKeyName] = indexName;
+              break;
+            case "23503": //integrity violation
+              dataException.SubType = DataAccessException.SubTypeIntegrityViolation;
+              break; 
+          }
+        }
+           */
 
     private string ExtractIndexName(string message) {
       try {

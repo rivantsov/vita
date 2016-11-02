@@ -264,7 +264,8 @@ namespace Vita.UnitTests.Web {
       //  He enters email in a text box, solves captcha and clicks Submit. The client code executes a request to start reset process
       //  "Magic" is a magic captcha value (it is set in login module settings) to bypass captcha check in unit tests.
       var request = new PasswordResetStartRequest() { Factor = ferbEmail, Captcha = "Magic" };
-      var processToken = client.ExecutePost<PasswordResetStartRequest, string>(request, "api/passwordreset/start");
+      var processTokenBox = client.ExecutePost<PasswordResetStartRequest, BoxedValue<string>>(request, "api/passwordreset/start");
+      var processToken = processTokenBox.Value;
       Assert.IsFalse(string.IsNullOrWhiteSpace(processToken), "Expected process token.");
       // We do not disclose any details, even the fact that actual process started or not;
       // even if ferb's email is not found, the server returns a process token as if everything is ok. 

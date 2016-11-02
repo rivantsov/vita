@@ -74,6 +74,11 @@
     <Compile Include="DataHistory\DataHistoryExtensions.cs" />
     <Compile Include="DataHistory\DataHistoryModule.cs" />
     <Compile Include="DataHistory\IDataHistoryService.cs" />
+    <Compile Include="JobExecution\Entities.cs" />
+    <Compile Include="JobExecution\IJobExecutionService.cs" />
+    <Compile Include="JobExecution\JobExecutionModule.cs" />
+    <Compile Include="JobExecution\JobHelper.cs" />
+    <Compile Include="JobExecution\JobHelperTypes.cs" />
     <Compile Include="Logging\Api\EventsPostController.cs" />
     <Compile Include="Logging\Api\UserSessionInfoController.cs" />
     <Compile Include="Logging\EventLog\EventLogEntities.cs" />

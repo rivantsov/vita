@@ -33,7 +33,7 @@ namespace Vita.Modules.Login.Api {
     /// <param name="request">The data object with Captcha value (if used) and authentication factor (email).</param>
     /// <returns>Process token identifying the started process. </returns>
     [ApiPost, ApiRoute("start")]
-    public string Start(PasswordResetStartRequest request) {
+    public BoxedValue<string> Start(PasswordResetStartRequest request) {
       if(_loginSettings.Options.IsSet(LoginModuleOptions.RequireCaptchaOnPasswordReset))
         _processService.CheckCaptcha(Context, request.Captcha);
       var obscured = _loginSettings.Options.IsSet(LoginModuleOptions.ConcealMembership);
@@ -45,7 +45,7 @@ namespace Vita.Modules.Login.Api {
         // If we need to conceal membership (we are a public porn site), we have to pretend it went ok, and return processToken
         // so that we do not disclose if user's email is/is not in our database
         if(obscured)
-          return processToken;
+          return new BoxedValue<string>(processToken);
         else
           //if we are a specialized site and do not need to conceal membership (this might be annoying in a business system) -
           // we return error
@@ -59,14 +59,14 @@ namespace Vita.Modules.Login.Api {
       bool accountBlocked = login.Flags.IsSet(LoginFlags.Disabled) || (login.Flags.IsSet(LoginFlags.Suspended) && !_loginSettings.Options.IsSet(LoginModuleOptions.AllowPasswordResetOnSuspended)); 
       if(accountBlocked) {
         if(obscured)
-          return processToken;
+          return new BoxedValue<string>(processToken);
         else
           Context.ThrowIf(true, LoginFaultCodes.LoginDisabled, "Login", "Login is disabled.");
       }
       //A flag in login entity may override default conceal settings - to allow more convenient disclosure for 
       // special members (stuff members or partners)
       var process = _processService.StartProcess(login, LoginProcessType.PasswordReset, processToken);
-      return processToken; 
+      return new BoxedValue<string>(processToken); 
     }
 
     // Returns process ONLY if at least one factor was confirmed; otherwise hacker can figure out if user/email is in our database.

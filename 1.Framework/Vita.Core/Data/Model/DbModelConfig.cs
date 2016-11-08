@@ -22,6 +22,7 @@ namespace Vita.Data.Model {
 
     public DbModelConfig(DbDriver driver, DbOptions options = DbOptions.Default, 
          DbNamingPolicy namingPolicy = null, IDictionary<string, string> schemaMappings = null) {
+      Util.Check(driver != null, "Driver parameter may not be null.");
       Driver = driver;
       Options = options;
       NamingPolicy = namingPolicy ?? new DbNamingPolicy();

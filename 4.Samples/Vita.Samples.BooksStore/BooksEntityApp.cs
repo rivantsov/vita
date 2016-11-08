@@ -55,7 +55,9 @@ namespace Vita.Samples.BookStore {
       var templateModule = new TemplateModule(booksArea);
       //data history - we track history for book review, it is marked with WithHistory attribute
       var histModule = new DataHistoryModule(booksArea);
-      //Calendar module
+
+      //Calendar module; it requires job execution module
+      var jobExecModule = new Modules.JobExecution.JobExecutionModule(booksArea);
       var calModule = new CalendarEntityModule(booksArea);
 
       // LoginModule

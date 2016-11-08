@@ -192,7 +192,7 @@ namespace Vita.Data {
 
     private void ApplyUpdate(DataConnection connection, EntityRecord record) {
       var cmdInfo = GetDbCommandForSave(record);
-      Util.Check(cmdInfo != null, "Failed to find update/insert/delete command for entity {0}, status {1).", 
+      Util.Check(cmdInfo != null, "Failed to find update/insert/delete command for entity {0}, status {1}.", 
                        record.EntityInfo.Name, record.Status);
       try {
         var cmd = CreateDbCommand(cmdInfo, connection);

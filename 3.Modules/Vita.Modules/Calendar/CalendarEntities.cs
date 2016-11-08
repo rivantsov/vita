@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 
 using Vita.Entities;
+using Vita.Modules.JobExecution;
 
 namespace Vita.Modules.Calendar {
 
@@ -45,6 +46,9 @@ namespace Vita.Modules.Calendar {
     string ExecutionNotes { get; set; }
 
     [Nullable]
+    IJob JobToRun { get; set; }
+
+    [Nullable]
     ICalendarEventSeries Series { get; set; }
     // originally scheduled to run on from series schedule
     DateTime? ScheduledRunOn { get; set; }
@@ -75,6 +79,9 @@ namespace Vita.Modules.Calendar {
     DateTime? NextRunOn { get; set; }
     [Index]
     DateTime? NextLeadTime { get; set; }
+
+    [Nullable]
+    IJob JobToRun { get; set; }
   }
 
 

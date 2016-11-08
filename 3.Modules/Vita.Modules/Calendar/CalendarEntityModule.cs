@@ -7,6 +7,7 @@ using Vita.Common;
 using Vita.Entities;
 using Vita.Entities.Runtime;
 using Vita.Entities.Services;
+using Vita.Modules.JobExecution;
 
 namespace Vita.Modules.Calendar {
   public class CalendarEntityModule : EntityModule, ICalendarService {
@@ -16,10 +17,12 @@ namespace Vita.Modules.Calendar {
 
     //services
     ITimerService _timerService;
+    IJobExecutionService _jobService; 
     IErrorLogService _errorLog; 
     DateTime _lastExecuted; 
 
     public CalendarEntityModule(EntityArea area) : base(area, "Calendar", version: CurrentVersion) {
+      Requires<JobExecution.JobExecutionModule>();
       RegisterEntities(typeof(ICalendar), typeof(ICalendarEvent), typeof(ICalendarEventSeries));
       App.RegisterService<ICalendarService>(this);
       Roles = new CalendarUserRoles(); 
@@ -30,6 +33,7 @@ namespace Vita.Modules.Calendar {
       _errorLog = App.GetService<IErrorLogService>(); 
       _timerService = App.GetService<ITimerService>();
       _timerService.Elapsed1Minute += TimerService_Elapsed1Minute;
+      _jobService = App.GetService<IJobExecutionService>(); 
       var serEnt = App.Model.GetEntityInfo(typeof(ICalendarEventSeries));
       serEnt.SaveEvents.SavingChanges += EventSerier_SavingChanges;
     }
@@ -46,6 +50,7 @@ namespace Vita.Modules.Calendar {
       if(!string.IsNullOrEmpty(cron))
         iSer.RecalcNextRunOn(App.TimeService.UtcNow);
     }
+
     private void TimerService_Elapsed1Minute(object sender, EventArgs args) {
       var utcNow = App.TimeService.UtcNow;
       var utcNowRounded = new DateTime(utcNow.Year, utcNow.Month, utcNow.Day, utcNow.Hour, utcNow.Minute, 0);
@@ -126,8 +131,12 @@ namespace Vita.Modules.Calendar {
         OnEventFired(context, evt, EventTrigger.Event);
         if(evt.Series != null)
           evt.Series.LastRunOn = utcNow; //this will fire CRON scheduler and set next run on date
+        //Start job if there's a job specified
+        if(evt.JobToRun != null)
+          _jobService.StartJob(context, evt.JobToRun.Id, evt.Id);
       }
       session.SaveChanges();
+      //Start jobs
     }
 
     private void OnEventFired(OperationContext context, ICalendarEvent evt, EventTrigger trigger) {

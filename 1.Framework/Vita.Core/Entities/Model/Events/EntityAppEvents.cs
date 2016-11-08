@@ -89,15 +89,22 @@ namespace Vita.Entities.Model {
     public event EventHandler<EntitySessionEventArgs> ExecutedNonQuery;
     public event EventHandler<EntitySessionEventArgs> SaveChangesAborted;
     public event EventHandler<AppErrorEventArgs> Error;
+    public event EventHandler Shutdown;
 
 
     public EntityAppEvents(EntityApp app) {
-      _app = app; 
+      _app = app;
     }
+
 
     internal void OnInitializing(EntityAppInitStep step) {
       if (Initializing != null)
         Initializing(_app, new AppInitEventArgs(_app, _app.ActivationLog, step)); 
+    }
+
+    internal void OnShutdown() {
+      if(Shutdown != null)
+        Shutdown(_app, EventArgs.Empty);
     }
 
     internal void OnNewSession(EntitySession session) {

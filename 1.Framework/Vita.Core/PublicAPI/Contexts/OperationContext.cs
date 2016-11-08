@@ -14,6 +14,7 @@ using Vita.Entities.Linq;
 using Vita.Entities.Logging;
 using Vita.Entities.Web;
 using System.Linq.Expressions;
+using System.Threading;
 
 namespace Vita.Entities {
 
@@ -36,7 +37,6 @@ namespace Vita.Entities {
     // are disposed (closed). 
     internal DisposableWeakRefSet Disposables;
 
-    private object _lock = new object(); 
 
     // Name of data source when more than one is registered; null if single data source (db)
     public string DataSourceName {
@@ -128,15 +128,49 @@ namespace Vita.Entities {
       DisposeAll();
     }
 
+    #region CancellationToken
+    // We combine here 2 cancellation tokens. External token comes from Web/ASP.NET handler 
+    // (see WebCallContextHandler.SendAsync). We want also to be able to cancel internally, 
+    // so we create internal token source and token (on first read). We use internal token 
+    // in code (WebApiClient uses this token). We propagate external cancelation to internal
+    // token.  
+    CancellationToken _externalCancellationToken;
+    public void SetExternalCancellationToken(CancellationToken token) {
+      _externalCancellationToken = token;
+      _externalCancellationToken.Register(() => SignalCancellation());
+    }
+
+    public CancellationToken CancellationToken {
+      get {
+        _cancellationTokenSource = _cancellationTokenSource ?? new CancellationTokenSource();
+        return _cancellationTokenSource.Token;
+      }
+    }  CancellationTokenSource _cancellationTokenSource;
+
+    public void SignalCancellation() {
+      if(_cancellationTokenSource == null)
+        return;
+      _cancellationTokenSource.Cancel();
+    }
+
+    public void ThrowIfCancelled() {
+      if(_cancellationTokenSource != null && _cancellationTokenSource.IsCancellationRequested)
+        throw new OperationAbortException("Operation cancelled.", "Cancelled.");
+    }
+    #endregion 
+
+
     #region Includes
-    List<LambdaExpression> _includes; 
+    List<LambdaExpression> _includes;
+    private object _includesLock = new object();
+
 
     /// <summary>Adds Include expression for all LINQ queries executed through sessions attached to this context. </summary>
     /// <param name="include">Include expression.</param>
     public OperationContext AddInclude<TEntity>(Expression<Func<TEntity, object>> include) {
       Util.Check(include != null, "'include' parameter may not be null.");
       //validate
-      lock (_lock) {
+      lock (_includesLock) {
         if (_includes == null)
           _includes = new List<LambdaExpression>();
         _includes.Add(include); 
@@ -150,7 +184,7 @@ namespace Vita.Entities {
     /// <remarks>Tries to match expressions first as object, then by ToString() representation.</remarks>
     public bool RemoveInclude<TEntity>(Expression<Func<TEntity, object>> include) {
       Util.Check(include != null, "'include' parameter may not be null.");
-      lock (_lock) {
+      lock (_includesLock) {
           var found = _includes.IndexOf(include); //try match as objects
           if (found >= 0) {
             _includes.RemoveAt(found);
@@ -175,7 +209,7 @@ namespace Vita.Entities {
       var result = new List<LambdaExpression>();
       if (_includes == null)
         return result; 
-      lock (_lock) {
+      lock (_includesLock) {
           result.AddRange(_includes);
       }
       return result; 
@@ -185,7 +219,7 @@ namespace Vita.Entities {
     internal IList<LambdaExpression> GetMergedIncludes(IList<LambdaExpression> includes) {
       if (_includes == null)
         return includes;
-      lock (_lock) {
+      lock (_includesLock) {
         if (_includes.Count == 0)
           return includes;
         var copy = new List<LambdaExpression>(includes); //create copy

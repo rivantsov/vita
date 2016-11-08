@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Vita.Modules.Calendar.Cron;
 
-namespace Vita.UnitTests.Extended {
+namespace Vita.UnitTests.Basic {
 
   [TestClass]
   public class CronTests {

@@ -17,6 +17,7 @@ namespace Vita.Entities.Services {
   }
 
   public interface ITimerServiceControl {
+    void EnableAutoFire(bool enable); 
     void FireAll(); 
   }
 

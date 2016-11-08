@@ -88,7 +88,11 @@ namespace Vita.Entities.Services.Implementations {
     }
 
     public void Shutdown() {
-      _enabled = false;      
+      _enabled = false;  
+    }
+
+    public void EnableAutoFire(bool enable) {
+      _enabled = enable; 
     }
 
     //ITimerServiceControl

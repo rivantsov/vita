@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Vita.Common;
 using Vita.Entities;
+using Vita.Modules.JobExecution;
 
 namespace Vita.Modules.Calendar {
   public static class CalendarExtensions {
@@ -17,7 +18,8 @@ namespace Vita.Modules.Calendar {
       return cal; 
     }
 
-    public static ICalendarEventSeries NewCalendarEventSeries(this ICalendar cal, string code, string title, string description, string cron = null) {
+    public static ICalendarEventSeries NewCalendarEventSeries(this ICalendar cal, 
+         string code, string title, string description, string cron = null, IJob jobToRun = null) {
       var session = EntityHelper.GetSession(cal);
       var ser = session.NewEntity<ICalendarEventSeries>();
       ser.Calendar = cal;
@@ -25,12 +27,13 @@ namespace Vita.Modules.Calendar {
       ser.Title = title;
       ser.Description = description;
       ser.CronSpec = cron;
+      ser.JobToRun = jobToRun; 
       return ser; 
     }
 
     public static ICalendarEvent NewEvent(this ICalendar calendar, string code, string title, string description, DateTime runOn, 
                ICalendarEventSeries series = null, CalendarEventFlags flags = CalendarEventFlags.None, 
-               Guid? customItemId = null, string customData = null) {
+               Guid? customItemId = null, string customData = null, IJob jobToRun = null) {
       var session = EntityHelper.GetSession(calendar);
       var evt = session.NewEntity<ICalendarEvent>();
       evt.Calendar = calendar;
@@ -43,6 +46,7 @@ namespace Vita.Modules.Calendar {
       evt.Series = series;
       evt.CustomItemId = customItemId;
       evt.CustomData = customData;
+      evt.JobToRun = jobToRun; 
       return evt; 
     }
 
@@ -51,8 +55,10 @@ namespace Vita.Modules.Calendar {
       return cal; 
     }
 
-    public static ICalendarEvent CreateCalendarEventForUser(this IEntitySession session, Guid userId, string code, string title, string description, DateTime runOn,
-                                Guid? customItemId = null, string customData = null, CalendarEventFlags flags = CalendarEventFlags.None) {
+    public static ICalendarEvent CreateCalendarEventForUser(this IEntitySession session, 
+           Guid userId, string code, string title, string description, DateTime runOn,
+           Guid? customItemId = null, string customData = null, 
+           CalendarEventFlags flags = CalendarEventFlags.None, IJob jobToRun = null) {
       var cal = session.GetDefaultUserCalendar(userId);
       if(cal == null)
         cal = session.NewCalendar(CalendarType.Individual, "UserCalendar", userId);
@@ -66,6 +72,7 @@ namespace Vita.Modules.Calendar {
       evt.CustomItemId = customItemId;
       evt.CustomData = customData;
       evt.Flags = flags;
+      evt.JobToRun = jobToRun; 
       return evt;
     }
 
@@ -83,6 +90,7 @@ namespace Vita.Modules.Calendar {
       evt.LeadTime = series.NextLeadTime == null ? evt.RunOn : series.NextLeadTime.Value;
       evt.Status = CalendarEventStatus.NotStarted;
       evt.Flags = flags;
+      evt.JobToRun = series.JobToRun; 
       return evt;
     }
 

@@ -137,7 +137,19 @@ namespace Vita.Entities {
       EntityEvents = new EntityEvents();
       AttributeHandlers = CustomAttributeHandler.GetDefaultHandlers();
       SizeTable = Sizes.GetDefaultSizes();
+      AppDomain.CurrentDomain.DomainUnload += CurrentDomain_DomainUnload;
+      // Time service and Timers service  are global singletons, we register these here, as early as possible
+      this.TimeService = this.RegisterService<ITimeService>(Services.Implementations.TimeService.Instance);
+      var timers = this.RegisterService<ITimerService>(TimerService.Instance);
+      this.RegisterService<ITimerServiceControl>(timers as ITimerServiceControl);
     }
+
+    private void CurrentDomain_DomainUnload(object sender, EventArgs e) {
+      AppEvents.OnShutdown();
+      foreach(var m in this.Modules)
+        m.Shutdown(); 
+    }
+
 
     /// <summary>Initializes the entity app. </summary>
     /// <remarks>Call this method after you finished composing entity application of modules.
@@ -201,10 +213,6 @@ namespace Vita.Entities {
       RegisterService<IAuthorizationService>(this.AuthorizationService);
       this.DataAccess = new DataAccessService(this);
       RegisterService<IDataAccessService>(this.DataAccess);
-      // Time service and Timers service  are global singletons
-      this.TimeService = this.RegisterService<ITimeService>(Services.Implementations.TimeService.Instance);
-      var timers = this.RegisterService<ITimerService>(TimerService.Instance);
-      this.RegisterService<ITimerServiceControl>(timers as ITimerServiceControl);
       this.RegisterService<IBackgroundSaveService>(new BackgroundSaveService());
       // create the following default services only if they do not exist yet, or not imported from LinkedApps
       // likely is replaced by another implementation writing to database - during modules initialization
@@ -403,6 +411,7 @@ namespace Vita.Entities {
         if(iEntService != null)
           iEntService.Shutdown();
       }
+      AppEvents.OnShutdown();
     }
 
     /// <summary>

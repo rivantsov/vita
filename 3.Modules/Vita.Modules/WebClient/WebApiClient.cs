@@ -166,7 +166,9 @@ namespace Vita.Modules.WebClient {
           request.Headers.Add(AcceptHeaderName, explicitMediaType);
         }
         //actually make a call
-        response = await Client.SendAsync(request);
+        response = await Client.SendAsync(request, this.Context.CancellationToken);
+        //check cancellation
+        this.Context.ThrowIfCancelled(); 
         //invoke spy
         Settings.ResponseSpy?.Invoke(response);
         //check error

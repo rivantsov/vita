@@ -6,6 +6,7 @@ using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Web.Http;
 
@@ -40,13 +41,13 @@ namespace Vita.Web {
       App.RegisterService<IWebCallNotificationService>(this); 
     }
 
-    protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, System.Threading.CancellationToken cancellationToken) {
+    protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken) {
       if(IgnoreUri(request.RequestUri))
         return await base.SendAsync(request, cancellationToken);
       WebCallInfo callInfo = null;
       WebCallContext webContext = null; 
       try {
-        callInfo = InitWebCallInfo(request);
+        callInfo = new WebCallInfo(this.App, this.Settings, request, cancellationToken);
         webContext = callInfo.WebContext;
         PreprocessRequest(callInfo);
         OnWebCallStarting(callInfo); // Fire WebCallStarting event - UserSession service will handle it and attach user session and setup UserInfo in OperationContext
@@ -73,11 +74,6 @@ namespace Vita.Web {
           return true; 
       }
       return false;
-    }
-
-    private WebCallInfo InitWebCallInfo(HttpRequestMessage request) {
-      var callInfo = new WebCallInfo(this.App, this.Settings, request);
-      return callInfo; 
     }
 
     private void PreprocessRequest(WebCallInfo callInfo) {
@@ -329,11 +325,13 @@ namespace Vita.Web {
       public HttpResponseMessage Response;
       public WebCallContext WebContext;
 
-      public WebCallInfo(EntityApp app, WebCallContextHandlerSettings settings, HttpRequestMessage request) {
+      public WebCallInfo(EntityApp app, WebCallContextHandlerSettings settings, 
+             HttpRequestMessage request, CancellationToken cancellationToken) {
         Request = request;
         WebContext = new WebCallContext(request, app.TimeService.UtcNow, app.TimeService.ElapsedMilliseconds, 
             GetIncomingCookies, GetIncomingHeaderValues);
         WebContext.OperationContext = new OperationContext(app, UserInfo.Anonymous, WebContext, settings.ConnectionReuseMode);
+        WebContext.OperationContext.SetExternalCancellationToken(cancellationToken); 
         Request.Properties[WebCallContext.WebCallContextKey] = WebContext;
         WebContext.RequestUrl = request.RequestUri.ToString();
         WebContext.HttpMethod = request.Method.ToString().ToUpperInvariant();

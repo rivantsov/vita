@@ -10,19 +10,20 @@ using Vita.Entities;
 using Vita.Entities.Services;
 using Vita.Modules.Logging;
 using Vita.Common;
+using System.Collections.Concurrent;
+using Vita.Entities.Runtime;
 
 namespace Vita.Modules.JobExecution {
 
-  public class JobExecutionModule : EntityModule, IJobExecutionService {
+  public partial class JobExecutionModule : EntityModule, IJobExecutionService {
     public static readonly Version CurrentVersion = new Version("1.0.0.0");
     JsonSerializer _serializer;
     ITimerService _timers;
     IErrorLogService _errorLog;
     IIncidentLogService _incidentLog;
-    DateTime? _nextJobOn; // null means 'reload jobs' to figure out next
 
     public JobExecutionModule(EntityArea area) : base(area, "JobRunner", version: CurrentVersion) {
-      RegisterEntities(typeof(IJob));
+      RegisterEntities(typeof(IJob), typeof(IJobRun));
       App.RegisterService<IJobExecutionService>(this); 
     } //constructor
 
@@ -33,110 +34,128 @@ namespace Vita.Modules.JobExecution {
       _incidentLog = App.GetService<IIncidentLogService>();
       _serializer = new JsonSerializer();
       //hook to events
-      _timers.Elapsed1Minute += Timers_Elapsed1Minute;
+      _timers.Elapsed10Seconds += Timers_Elapsed10Seconds;
       var ent = App.Model.GetEntityInfo(typeof(IJob));
       ent.SaveEvents.SavedChanges += SaveEvents_SavedChanges;
+      ent.SaveEvents.SavingChanges += SaveEvents_SavingChanges;
+    }
+
+    public override void Shutdown() {
+      base.Shutdown();
+      ShutdownJobs();
+      Thread.Sleep(50); //let jobs shutdown gracefully
+    }
+
+    #region IJobExecutionService members
+
+    public async Task<JobRunContext> RunLightTaskAsync(OperationContext context, Expression<Func<JobRunContext, Task>> func, string jobCode = "None", Guid? sourceId = null) {
+      return await RunLightTaskAsyncImpl(context, func, jobCode, sourceId); 
+    }
+
+    public IJob CreateJob(IEntitySession session, JobDefinition job) {
+      var ent = session.NewJob(job, _serializer);
+      return ent;
+    }
+
+    public void StartJob(OperationContext context, Guid jobId, Guid? sourceId = null) {
+      var runningJob = GetRunningJob(jobId);
+      if(runningJob != null)
+        return; 
+      var session = context.OpenSystemSession();
+      var job = session.GetEntity<IJob>(jobId);
+      Util.Check(job != null, "Job not found, ID: " + jobId);
+      StartJob(job, sourceId); 
+    }
+
+    public void CancelJob(Guid jobId) {
+      var jobCtx = GetRunningJob(jobId);
+      if(jobCtx != null) {
+        jobCtx.TryCancel();
+      }
+    }
+
+    public IList<JobRunContext> GetRunningJobs() {
+      return _runningJobs.Values.ToList();
+    }
+
+    public event EventHandler<JobNotificationEventArgs> Notify;
+
+    private void OnJobNotify(JobRunContext jobContext, JobNotificationType notificationType) {
+      Notify?.Invoke(this, new JobNotificationEventArgs() { Job = jobContext, NotificationType = notificationType });
+    }
+    #endregion
+
+    #region Running jobs dictionary
+    ConcurrentDictionary<Guid, JobRunContext> _runningJobs = new ConcurrentDictionary<Guid, JobRunContext>();
+
+    private bool RegisterRunningJob(JobRunContext job) {
+      return _runningJobs.TryAdd(job.JobId, job); 
+    }
+
+    private JobRunContext GetRunningJob(Guid jobId) {
+      JobRunContext result;
+      if(_runningJobs.TryGetValue(jobId, out result))
+        return result;
+      return null; 
+    }
+    private bool UnregisterRunningJob(Guid jobId) {
+      JobRunContext dummy;
+      return _runningJobs.TryRemove(jobId, out dummy);
+    }
+
+    #endregion
+
+    #region Event handlers
+    // Automatically set HasChildJobs flag on parent job
+    private void SaveEvents_SavingChanges(Entities.Runtime.EntityRecord record, EventArgs args) {
+      switch(record.Status) {
+        case EntityStatus.New:
+        case EntityStatus.Modified: break;
+        default: return; 
+      }
+      var job = (IJob)record.EntityInstance;
+      var parent = job.ParentJob; 
+      if(parent == null || parent.Flags.IsSet(JobFlags.HasChildJobs))
+        return;
+      // set the flag 
+      parent.Flags |= JobFlags.HasChildJobs; 
     }
 
     private void SaveEvents_SavedChanges(Entities.Runtime.EntityRecord record, EventArgs args) {
-      // nullify NextJobOn to force job runner to reload all active jobs
-      _nextJobOn = null; 
       if(record.StatusBeforeSave != Vita.Entities.Runtime.EntityStatus.New)
         return;
       var job = record.EntityInstance as IJob;
       if(!job.Flags.IsSet(JobFlags.StartOnSave))
         return;
-      ExecuteJob(record.Session, job);
+      //We need to start new session here; if we use IJob's session, it will fail - 
+      // StartJob will try to save more changes, but we are already inside SaveChanges
+      var ctx = record.Session.Context;
+      StartJob(ctx, job.Id);
     }
 
-    private void Timers_Elapsed1Minute(object sender, EventArgs e) {
-      var utcNow = App.TimeService.UtcNow;
-      var nextRun = _nextJobOn == null ? utcNow : _nextJobOn.Value;
-      if(nextRun > utcNow)
+    // if false, we just started up
+    bool _isRunning;
+    bool _isRestarting; 
+
+    private void Timers_Elapsed10Seconds(object sender, EventArgs e) {
+      if(App.Status != EntityAppStatus.Connected)
         return;
-      _nextJobOn = utcNow.AddSeconds(59); 
-      //Load jobs due at this time
-      var session = App.OpenSystemSession();
-      var activeJobs = session.EntitySet<IJob>().Where(j => j.Status == JobStatus.Pending && j.NextRunOn <= utcNow && j.RetryCount > 0).ToList();
-      foreach(var job in activeJobs)
-        ExecuteJob(session, job);
-      //update next job start; we assigned already _nextJobRun in this method, but new job could be created and set _nextJobOn = null
-      // if _nextJobOn is still not null, query the database for earliest job 
-      var next = _nextJobOn; 
-      if (next != null) {
-        var newNextRun = session.EntitySet<IJob>().Where(j => j.Status == JobStatus.Pending && j.RetryCount > 0).Min(j => j.NextRunOn);
-        if(newNextRun > utcNow && _nextJobOn != null) //if it is in the future, set it as new next
-          _nextJobOn = newNextRun;
-      }          
-    }
-
-    private void ExecuteJob(IEntitySession session, IJob job) {
-      //update job status
-      var utcNow = App.TimeService.UtcNow; 
-      var updateQuery = session.EntitySet<IJob>().Where(j => j.Id == job.Id).Select(j => 
-                new { Status = JobStatus.Executing, RetryCount = j.RetryCount - 1, LastRunOn = utcNow });
-      updateQuery.ExecuteUpdate<IJob>();
-      if (job.Flags.IsSet(JobFlags.NonPoolThread)) {
-        var thread = new Thread(JobThreadStart);
-        thread.Start(job.Id);
-      } else {
-        Task.Run(() => JobThreadStart(job.Id));  
+      if(!_isRunning) {
+        RestartJobRunsAfterRestart();
+        _isRunning = true; 
       }
-    }
-
-    private void JobThreadStart(object data) {
-      var jobId = (Guid)data;
-      var session = App.OpenSystemSession();
-      var job = session.GetEntity<IJob>(jobId);
-      // Start execution
+      // avoid entering twice; we don't use lock here, to avoid deadlock here. Simply do not enter if already entered
+      if(_isRestarting)
+        return; 
       try {
-        var jobCtx = new JobContext() { Session = session, Job = job };
-        var jobRun = JobHelper.GetJobInfo(job, _serializer, jobCtx);
-        object obj = null;
-        //if method is not static, it is a module
-        if(!jobRun.Method.IsStatic)
-          obj = App.Modules.First(m => m.GetType() == jobRun.TargetType);
-        jobRun.Method.Invoke(obj, jobRun.Arguments);
-        //update job status
-        var utcNow = App.TimeService.UtcNow; 
-        var updateQuery = session.EntitySet<IJob>().Where(j => j.Id == job.Id).Select(j => 
-                      new { Status = JobStatus.Completed, CompletedOn = utcNow });
-        updateQuery.ExecuteUpdate<IJob>();
-      } catch(Exception ex) {
-        JobAttemptFailed(job.Id, ex); 
-        //do not rethrow exc here
+        _isRestarting = true; 
+        RestartJobRunsDueForRetry();
+      } finally {
+        _isRestarting = false; 
       }
     }
 
-    private void JobAttemptFailed(Guid jobId, Exception exception) {
-      // Open new fresh session, just in case there are invalid objects in old session
-      var session = App.OpenSystemSession();
-      var job = session.GetEntity<IJob>(jobId); 
-      var errHeader = string.Format("=========================== Error {0} ======================================" + Environment.NewLine, App.TimeService.UtcNow);
-      var errInfo = errHeader + exception.ToLogString();
-      // If it is not final run, log it as an incident
-      if(job.RetryCount > 0 && _incidentLog != null) 
-        _incidentLog.LogIncident("JobFailed", message: exception.Message, key1: job.Code, keyId1: job.Id, notes: errInfo);
-      else
-        _errorLog.LogError(exception, session.Context);
-      //Update job status 
-      job.Errors += errInfo;
-      job.CompletedOn = App.TimeService.UtcNow; 
-      if (job.RetryCount > 0) {
-        job.Status = JobStatus.Pending;
-        job.NextRunOn = job.LastRunOn.Value.AddMinutes(job.RetryIntervalMinutes);
-      } else 
-        job.Status = JobStatus.Error;
-      session.SaveChanges(); 
-    }
-
-    #region IJobExecutionService members
-    public Guid CreateJob (IEntitySession session, string code, Expression<Action> lambda, JobFlags flags, int retryCount = 5, int retryIntervalMinutes = 5, Guid? ownerId = null) {
-      var jobInfo = JobHelper.ParseCallExpression(lambda, _serializer);
-      var ent = session.NewJob(code, jobInfo, retryCount, retryIntervalMinutes, ownerId);
-      return ent.Id; 
-    }
-    #endregion 
+    #endregion
 
   }//module
 }

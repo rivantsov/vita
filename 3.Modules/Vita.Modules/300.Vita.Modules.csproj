@@ -75,10 +75,14 @@
     <Compile Include="DataHistory\DataHistoryModule.cs" />
     <Compile Include="DataHistory\IDataHistoryService.cs" />
     <Compile Include="JobExecution\Entities.cs" />
-    <Compile Include="JobExecution\IJobExecutionService.cs" />
+    <Compile Include="JobExecution\Enums.cs" />
+    <Compile Include="JobExecution\_IJobExecutionService.cs" />
+    <Compile Include="JobExecution\JobDefinition.cs" />
     <Compile Include="JobExecution\JobExecutionModule.cs" />
+    <Compile Include="JobExecution\JobExecutionModule_Execution.cs" />
     <Compile Include="JobExecution\JobHelper.cs" />
-    <Compile Include="JobExecution\JobHelperTypes.cs" />
+    <Compile Include="JobExecution\JobUtil.cs" />
+    <Compile Include="JobExecution\JobRunContext.cs" />
     <Compile Include="Logging\Api\EventsPostController.cs" />
     <Compile Include="Logging\Api\UserSessionInfoController.cs" />
     <Compile Include="Logging\EventLog\EventLogEntities.cs" />
@@ -226,6 +230,7 @@
     <None Include="EncryptedData\_about_encr_data.txt" />
     <Content Include="Calendar\Cron\AboutCron.txt" />
     <Content Include="DataHistory\about_data_history.txt" />
+    <Content Include="JobExecution\about_job_engine.txt" />
     <Content Include="Login\PasswordHashing\BCrypt.Net\LICENSE_bcrypt.txt" />
     <Content Include="Logging\_about_logging.txt" />
     <EmbeddedResource Include="Login\DefaultSecretQuestions.txt" />

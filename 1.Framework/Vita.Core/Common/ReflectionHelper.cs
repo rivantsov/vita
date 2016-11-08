@@ -28,18 +28,18 @@ namespace Vita.Common {
       var type = Type.GetType(fullName);
       if (type != null)
         return type;
-      lock(_lockObject)
-        if (_typesCache.TryGetValue(fullName, out type))
-          return type; 
-      var assemblies = AppDomain.CurrentDomain.GetAssemblies();
-      foreach (var asm in assemblies) {
-        type = asm.GetType(fullName);
-        if (type != null) {
-          lock(_lockObject)
+      lock(_lockObject) {
+        if(_typesCache.TryGetValue(fullName, out type))
+          return type;
+        var assemblies = AppDomain.CurrentDomain.GetAssemblies();
+        foreach(var asm in assemblies) {
+          type = asm.GetType(fullName);
+          if(type != null) {
             _typesCache.Add(fullName, type);
-          return type; 
-        }
-      }
+            return type;
+          }
+        }// foreach asm
+      }// lock
       if (!throwIfNotFound)
         Util.Throw("Type {0} not found or not loaded.", fullName);
       return null; 

@@ -23,7 +23,7 @@ namespace Vita.Modules.Logging {
     [PrimaryKey, Auto]
     Guid Id { get; set; }
 
-    [Auto(AutoType.CreatedOn)]
+    [Utc, Auto(AutoType.CreatedOn)]
 
     DateTime StartedOn { get; set; }
     
@@ -59,7 +59,7 @@ namespace Vita.Modules.Logging {
     [OldNames("ChangeBatch,Batch")]
     IDbUpgradeBatch Batch { get; set; }
 
-    [Auto(AutoType.CreatedOn)]
+    [Auto(AutoType.CreatedOn), Utc]
     DateTime? StartedOn { get; }
 
     DbObjectChangeType ChangeType { get; set; }

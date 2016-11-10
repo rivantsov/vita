@@ -60,7 +60,7 @@ namespace Vita.Entities.Model.Construction {
       if (value == null)
         return string.Empty;
       var dt = (DateTime)value;
-      return dt.ToString("O"); //round-trip specifier
+      return ConvertHelper.DateTimeToUniString(dt); 
     }
     public static object DateTimeFromString(EntityMemberInfo member, string value) {
       if (string.IsNullOrEmpty(value))

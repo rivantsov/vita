@@ -22,9 +22,16 @@ namespace Vita.Common {
       if(type == typeof(string))
         return (string)value;
       if(type == typeof(DateTime))
-        return ((DateTime)value).ToString("o");
+        return DateTimeToUniString((DateTime)value);
       return value.ToString();
     }
+
+    public static string DateTimeToUniString(DateTime value) {
+      var uniFmt = "yyyy'-'MM'-'dd'T'HH':'mm':'ss.fffff";
+      var result = value.ToString(uniFmt); 
+      return result;
+    }
+
 
     public static object ChangeType(object value, Type type) {
       if(value == null)

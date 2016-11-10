@@ -228,6 +228,7 @@
   <ItemGroup>
     <None Include="OAuthClient\_about_oauthclient.txt" />
     <None Include="EncryptedData\_about_encr_data.txt" />
+    <Content Include="Calendar\AboutCalendar.txt" />
     <Content Include="Calendar\Cron\AboutCron.txt" />
     <Content Include="DataHistory\about_data_history.txt" />
     <Content Include="JobExecution\about_job_engine.txt" />

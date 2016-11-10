@@ -49,24 +49,23 @@ namespace Vita.UnitTests.Basic {
     [TestMethod]
     public void TestJobService() {
       try {
-        TestJobServiceImpl();
-        /*
-        TestJobServiceImpl();
-
+        TestPoolJobs();
+        /* To fix - fails when try to run multiple times
+        TestPoolJobs();
         TestCleanup();
         TestInit();
-        TestJobServiceImpl();
+        TestPoolJobs();
         TestCleanup();
         TestInit();
-        TestJobServiceImpl();
-        TestJobServiceImpl();
-        */
+        TestPoolJobs();
+        TestPoolJobs();
+        */ 
       } finally {
         _jobApp.TimeService.SetCurrentOffset(TimeSpan.Zero);
       }
     }
 
-    public void TestJobServiceImpl () {
+    public void TestPoolJobs () {
       _jobApp.TimeService.SetCurrentOffset(TimeSpan.Zero);
       _syncCallCount = 0;
       _asyncCallCount = 0; 
@@ -79,14 +78,12 @@ namespace Vita.UnitTests.Basic {
       // c# compiler gives a warning here about calling async function (SampleJobAsync); however, we do not actually call it here, 
       // we just grab the calling expression to 'save it' in the database and invoke it properly later.
       var retryPolicy = new JobRetryPolicy(30, 5, 1, 0);
-      var asyncJobDef = new JobDefinition("TestAsyncJob", (ctx) => DoSampleJobAsync(ctx, listParam1, "Hello async world!", 5),
+      var asyncJob = _jobApp.JobService.CreatePoolJob(session, "TestAsyncJob", (ctx) => DoSampleJobAsync(ctx, listParam1, "Hello async world!", 5),
           flags: JobFlags.PersistArguments | JobFlags.StartOnSave, retryPolicy: retryPolicy);
-      var syncJobDef = new JobDefinition("TestSyncJob", (ctx) => DoSampleJob(ctx, listParam2, "Hello sync world!", 5),
+      // normally pool job should async, but sync method returning fake task is OK too
+      var syncJob = _jobApp.JobService.CreatePoolJob(session, "TestSyncJob", (ctx) => DoSampleJob(ctx, listParam2, "Hello sync world!", 5),
           flags: JobFlags.PersistArguments | JobFlags.StartOnSave,  retryPolicy: retryPolicy);
 #pragma warning restore 4014
-      //Create jobs in the database; saving automatically starts them
-      _jobApp.JobService.CreateJob(session, asyncJobDef);
-      _jobApp.JobService.CreateJob(session, syncJobDef);
       session.SaveChanges();
 
       // the job starts immediately for the first run when we call SaveChanges
@@ -103,16 +100,18 @@ namespace Vita.UnitTests.Basic {
       // open fresh session, to see changes
       session = _jobApp.OpenSystemSession(); 
       // Async job
-      var job = session.EntitySet<IJobRun>().Where(jr => jr.Job.Id == asyncJobDef.Id).First();
-      Assert.AreEqual(JobRunStatus.Completed, job.Status, "Async job: expected completed status");
-      Assert.IsTrue(job.Log != null && job.Log.Contains(_successMessage), "Expected success message at the end.");
+      var asyncJobRun = session.EntitySet<IJobRun>().First(jr => jr.Job.Id == asyncJob.Id);
+      Assert.AreEqual(JobRunStatus.Completed, asyncJobRun.Status, "Async job: expected completed status");
+      Assert.IsTrue(asyncJobRun.Log.Contains(_successMessage), "Expected success message at the end.");
       // Sync job
-      job = session.EntitySet<IJobRun>().Where(jr => jr.Job.Id == syncJobDef.Id).First();
-      Assert.AreEqual(JobRunStatus.Completed, job.Status, "Sync job: expected completed status");
-      Assert.IsTrue(job.Log != null && job.Log.Contains(_successMessage), "Expected success message at the end.");
+      var syncJobRun = session.EntitySet<IJobRun>().First(jr => jr.Job.Id == syncJob.Id);
+      Assert.AreEqual(JobRunStatus.Completed, syncJobRun.Status, "Sync job: expected completed status");
+      Assert.IsTrue(syncJobRun.Log.Contains(_successMessage), "Expected success message at the end.");
+
       _jobApp.TimeService.SetCurrentOffset(TimeSpan.Zero);
 
     } //method
+
 
     // Job methods --------------------------------------------------------------------------------------
     static int _syncCallCount = 0; 
@@ -148,12 +147,9 @@ namespace Vita.UnitTests.Basic {
     public void TestJobServiceLightAsyncTask() {
       try {
         AsyncHelper.RunSync(() => TestLightTaskAsync());
-        AsyncHelper.RunSync(() => TestLightTaskAsync());
-        AsyncHelper.RunSync(() => TestLightTaskAsync());
       } finally {
         _jobApp.TimeService.SetCurrentOffset(TimeSpan.Zero);
       }
-
     }
 
     private async Task TestLightTaskAsync() {
@@ -162,7 +158,6 @@ namespace Vita.UnitTests.Basic {
       var allJobs = _jobApp.JobService.GetRunningJobs();
       Assert.IsTrue(allJobs.Count == 0, "Expected no jobs running");
       */
-      var timersControl = _jobApp.GetService<Entities.Services.ITimerServiceControl>();
       var ctx = _jobApp.CreateSystemContext();
       _lightCallCount = 0;
       _lightJobFailed = false; 
@@ -173,7 +168,7 @@ namespace Vita.UnitTests.Basic {
 
       for(int i = 0; i < 40; i++) {
         _jobApp.TimeService.SetCurrentOffset(TimeSpan.FromMinutes(i));
-        timersControl.FireAll();
+        _timersControl.FireAll();
         Thread.Sleep(20); //let tasks run
       }
 
@@ -182,7 +177,7 @@ namespace Vita.UnitTests.Basic {
 
       //Now run without failures
        _lightCallCount = 0; 
-       jobContext = await _jobApp.JobService.RunLightTaskAsync(ctx, (jobCtx) => LightJob("abc", 0)); //do not fail at all
+       jobContext = await _jobApp.JobService.RunLightTaskAsync(ctx, (jobCtx) => LightJob("abc", 0), "SampleLightTask"); //do not fail at all
       Thread.Sleep(20); //let tasks run
       Assert.IsFalse(_lightJobFailed, "Expected light job succeed without retries.");
       _jobApp.TimeService.SetCurrentOffset(TimeSpan.Zero);
@@ -206,6 +201,51 @@ namespace Vita.UnitTests.Basic {
       await Task.Delay(10);
     }
 
+
+    [TestMethod]
+    public void TestJobServiceBackgroundJob() {
+      try {
+        TestBackgroundJob();
+      } finally {
+        _jobApp.TimeService.SetCurrentOffset(TimeSpan.Zero);
+      }
+    }
+
+    static int _bkJobCallCount;
+    static bool _bkJobFailed;
+
+    //Note: this test fails when you use breakpoints
+    private void TestBackgroundJob() {
+      _bkJobCallCount = 0;
+      _bkJobFailed = false;
+      var session = _jobApp.OpenSystemSession();
+      var job = _jobApp.JobService.CreateBackgroundJob(session, "LongJob", (jobCtx) => BackgroundJob(jobCtx, "abc", 10));
+      session.SaveChanges(); //this will start the job because we have flag StartOnSave (it is default)
+      Thread.Sleep(10);
+      Assert.IsTrue(_bkJobFailed, "Expected background job to fail initially");
+      // Push time forward and imitate firing timer events
+      for(int i = 0; i < 100; i++) {
+        _jobApp.TimeService.SetCurrentOffset(TimeSpan.FromMinutes(i));
+        _timersControl.FireAll();
+        Thread.Sleep(20); //let tasks run
+      }
+      Assert.IsFalse(_bkJobFailed, "Expected background job to succeed at the end.");
+    }
+
+    private static void BackgroundJob(JobRunContext context, string arg0, int arg1) {
+      _bkJobCallCount++;
+      if(_bkJobCallCount < 3) {
+        _bkJobFailed = true;
+        var msg = "Background job failed, callCount: " + _bkJobCallCount;
+        context.UpdateProgress(0, msg);
+        throw new Exception(msg);
+      }
+      for(int i = 0; i < 100; i++) {
+        context.UpdateProgress(i, "Processing, i= " + i);
+        Thread.Sleep(10);
+      }
+      _bkJobFailed = false; 
+    }
 
   }//class
 }//ns

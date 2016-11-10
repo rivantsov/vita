@@ -61,18 +61,18 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="DataHistoryTests.cs" />
-    <Compile Include="LinqIncludeTests.cs" />
+    <Compile Include="LinqTests\LinqIncludeTests.cs" />
     <Compile Include="MiscTests2.cs" />
     <Compile Include="LockSampleCode_Disabled.cs" />
     <Compile Include="HashCryptTests.cs" />
-    <Compile Include="LinqSearchTests.cs" />
+    <Compile Include="LinqTests\LinqSearchTests.cs" />
     <Compile Include="MultiTenantTests.cs" />
     <Compile Include="LoginTests.cs" />
     <Compile Include="DirectDbTests.cs" />
     <Compile Include="ListPropTests.cs" />
-    <Compile Include="LinqNonQueryTests.cs" />
+    <Compile Include="LinqTests\LinqNonQueryTests.cs" />
     <Compile Include="_Program.cs" />
-    <Compile Include="LinqTests.cs" />
+    <Compile Include="LinqTests\LinqTests.cs" />
     <Compile Include="MiscTests.cs" />
     <Compile Include="AuthorizationTests.cs" />
     <Compile Include="_Startup.cs" />

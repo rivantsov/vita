@@ -23,6 +23,22 @@ namespace Vita.UnitTests.Extended {
       var session = app.OpenSession();
       session.EnableCache(false);
 
+      // bug: SQLite does not format properly Datetime parameters in LINQ
+      var bk1 = session.EntitySet<IBook>().First(); //get random book 
+      var bkId = bk1.Id;
+      var createdOn1 = bk1.CreatedOn.AddSeconds(-1);
+      var createdOn2 = bk1.CreatedOn.AddSeconds(1);
+      var bk2 = session.EntitySet<IBook>()
+        .Where(b => b.Id == bkId && b.CreatedOn > createdOn1 && b.CreatedOn < createdOn2)
+        .FirstOrDefault();
+      var cmd = session.GetLastCommand(); 
+      //Obviously it should bring the same book 
+      Assert.IsNotNull(bk2, "Expected book");
+      Assert.IsTrue(bk2 == bk1, "Expected the same book");
+
+
+
+
       //Bug ConvertHelper.ChangeType fails to convert string->enum, null-> double?
       var bkEd = BookEdition.Paperback | BookEdition.EBook;
       var strBkEd = bkEd.ToString();

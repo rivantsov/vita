@@ -14,6 +14,7 @@ namespace Vita.Modules.JobExecution {
 
   public class JobRunContext {
     public readonly OperationContext OperationContext;
+    public readonly DateTime StartedOn;
     public readonly string JobCode;
     public readonly Guid? SourceId; 
     public readonly Guid JobRunId;
@@ -28,11 +29,12 @@ namespace Vita.Modules.JobExecution {
     internal JobStartInfo StartInfo;
     internal Thread Thread; //background thread for long-running jobs 
     internal Task Task; // task for short tasks
-    private JsonSerializer _serializer;
+    internal JsonSerializer Serializer;
 
     internal JobRunContext(EntityApp app, IJobRun jobRun, JsonSerializer serializer) {
-      OperationContext = app.CreateSystemContext(); 
-      _serializer = serializer;
+      OperationContext = app.CreateSystemContext();
+      StartedOn = app.TimeService.UtcNow; 
+      Serializer = serializer;
       JobCode = jobRun.Job.Code;
       SourceId = jobRun.SourceId; 
       JobRunId = jobRun.Id;
@@ -46,7 +48,7 @@ namespace Vita.Modules.JobExecution {
     // Used for creating 'light' jobs
     internal JobRunContext(EntityApp app, JsonSerializer serializer, string jobCode, Guid? sourceId) {
       OperationContext = app.CreateSystemContext();
-      _serializer = serializer;
+      Serializer = serializer;
       JobCode = jobCode;
       SourceId = sourceId; 
       JobRunId = Guid.NewGuid();
@@ -89,7 +91,7 @@ namespace Vita.Modules.JobExecution {
     public bool TrySaveArguments() {
       if(!CanSaveArguments) //it is a light task, not persisted yet.
         return false; 
-      var serArgs = JobUtil.SerializeArguments(StartInfo.Arguments, _serializer);
+      var serArgs = JobUtil.SerializeArguments(StartInfo.Arguments, Serializer);
       var session = OperationContext.OpenSystemSession();
       var updQuery = session.EntitySet<IJobRun>().Where(jr => jr.Id == JobRunId)
           .Select(jr => new { CurrentArguments = serArgs});

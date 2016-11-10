@@ -72,6 +72,17 @@ namespace Vita.Common {
       return null; 
     }
 
+    public static MethodInfo FindMethod(this Type type, string methodName, int paramCount, BindingFlags? bindingFlags = null) {
+      var flags = bindingFlags == null ? BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static : bindingFlags.Value;
+      var method = type.GetMethod(methodName, flags);
+      if(method != null)
+        return method;
+      var methods = type.GetMethods(flags).Where(m => m.Name == methodName && m.GetParameters().Length == paramCount).ToArray();
+      Util.Check(methods.Length > 0, "Method {0} not found on type {1}.", methodName, type);
+      Util.Check(methods.Length < 2, "Found more than one method {0} on type {1}.", methodName, type);
+      return methods[0];
+    }
+
     public static PropertyInfo FindProperty(this Type interfaceType, string propertyName) {
       return interfaceType.GetAllProperties().FirstOrDefault(p => p.Name == propertyName); 
     }

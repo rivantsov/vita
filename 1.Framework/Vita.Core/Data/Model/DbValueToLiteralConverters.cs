@@ -48,12 +48,12 @@ namespace Vita.Data.Model {
     public static string DateTimeToLiteralWithMs(DbTypeInfo typeDef, object value) {
       var dt = (DateTime)value;
       // o: roundtrip date/time pattern, includes milliseconds after dot; used by MS SQL, Postgress
-      var result = "'" + dt.ToString("o") + "'";
+      var result = "'" + ConvertHelper.DateTimeToUniString(dt) + "'";
       return result; 
     }
     public static string TimeSpanToLiteralWithMs(DbTypeInfo typeDef, object value) {
       var ts = (TimeSpan)value;
-      var s = ts.ToString(@"hh\:mm\:ss\.FFFFFF"); 
+      var s = ts.ToString(@"hh\:mm\:ss\.FFFFF"); 
       //special case - if milliseconds is 0, we have an ending dot, and SQL does not like it
       if(s.EndsWith("."))
         s = s + "0"; 

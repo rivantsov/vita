@@ -48,14 +48,61 @@ namespace Vita.Modules.JobExecution {
 
     #region IJobExecutionService members
 
-    public async Task<JobRunContext> RunLightTaskAsync(OperationContext context, Expression<Func<JobRunContext, Task>> func, string jobCode = "None", Guid? sourceId = null) {
-      return await RunLightTaskAsyncImpl(context, func, jobCode, sourceId); 
+    public async Task<JobRunContext> RunLightTaskAsync(OperationContext context, Expression<Func<JobRunContext, Task>> func, 
+                     string jobCode, Guid? sourceId = null, JobRetryPolicy retryPolicy = null) {
+      JobRunContext jobCtx = null;
+      try {
+        jobCtx = new JobRunContext(this.App, _serializer, jobCode, sourceId);
+        RegisterRunningJob(jobCtx);
+        OnJobNotify(jobCtx, JobNotificationType.Starting);
+        var compiledFunc = func.Compile();
+        jobCtx.Task = Task.Run(() => (Task)compiledFunc.Invoke(jobCtx), jobCtx.CancellationToken);
+        await jobCtx.Task;
+        UnregisterRunningJob(jobCtx.JobId);
+        jobCtx.Status = JobRunStatus.Completed;
+        OnJobNotify(jobCtx, JobNotificationType.Completed);
+        return jobCtx;
+      } catch(Exception ex) {
+        if(jobCtx == null)
+          throw new Exception("Failed to create JobRunContext for light task: " + ex.Message, ex);
+        //Failure is ok for now, it is expected eventually; just save the job for retries
+        SaveFailedLightTask(context, jobCtx, func, jobCode, sourceId, ex, retryPolicy ?? JobRetryPolicy.DefaultLightTask);
+        return jobCtx;
+      }
     }
 
     public IJob CreateJob(IEntitySession session, JobDefinition job) {
       var ent = session.NewJob(job, _serializer);
       return ent;
     }
+
+    public IJob CreateBackgroundJob(IEntitySession session, string code, Expression<Action<JobRunContext>> expression, JobFlags flags = JobFlags.Default, 
+                                     JobRetryPolicy retryPolicy = null, IJob parentJob = null) {
+      var jobDef = JobDefinition.CreateBackgroundJob(code, expression, flags, retryPolicy);
+      var job = JobUtil.NewJob(session, jobDef, _serializer);
+      job.ParentJob = parentJob;
+      ValidateNewJob(job);
+      return job; 
+    }
+
+    public IJob CreatePoolJob(IEntitySession session, string code, Expression<Func<JobRunContext, Task>> expression, JobFlags flags = JobFlags.Default, JobRetryPolicy retryPolicy = null,
+              IJob parentJob = null) {
+      var jobDef = JobDefinition.CreatePoolJob(code, expression, flags, retryPolicy);
+      var job = JobUtil.NewJob(session, jobDef, _serializer);
+      job.ParentJob = parentJob;
+      ValidateNewJob(job);
+      return job;
+    }
+
+    private void ValidateNewJob(IJob job) {
+      if(job.ParentJob != null) {
+        job.Flags |= JobFlags.HasChildJobs;
+        Util.Check(!job.Flags.IsSet(JobFlags.StartOnSave),
+              "Invalid job definition: the flag StartOnSave may not be set on a job with a parent job. Job code: {0}", job.Code);
+      }
+    } //method
+
+
 
     public void StartJob(OperationContext context, Guid jobId, Guid? sourceId = null) {
       var runningJob = GetRunningJob(jobId);

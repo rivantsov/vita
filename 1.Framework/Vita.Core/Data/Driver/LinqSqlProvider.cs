@@ -127,7 +127,7 @@ namespace Vita.Data.Driver {
 
         public virtual SqlStatement GetLiteral(DateTime literal)
         {
-          return "'" + literal.ToString("o").Substring(0, 23) + "'";
+          return "'" + ConvertHelper.DateTimeToUniString(literal) + "'";
         }
 
         public virtual SqlStatement GetLiteral(bool literal)

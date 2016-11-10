@@ -18,7 +18,7 @@ namespace Vita.Modules.JobExecution {
     public int RoundsCount = 4;
 
     public static JobRetryPolicy Default = new JobRetryPolicy();
-    public static JobRetryPolicy LightJobDefault = new JobRetryPolicy(intervalSeconds: 10, retryCount: 3, pauseMinutes: 30, roundsCount: 5);
+    public static JobRetryPolicy DefaultLightTask = new JobRetryPolicy(intervalSeconds: 10, retryCount: 3, pauseMinutes: 30, roundsCount: 5);
 
     public JobRetryPolicy() { } 
     public JobRetryPolicy(int intervalSeconds, int retryCount, int pauseMinutes, int roundsCount) {
@@ -33,15 +33,15 @@ namespace Vita.Modules.JobExecution {
   public class JobDefinition {
     public Guid Id { get; internal set; }
     public string Code;
-    internal Expression<Func<JobRunContext, Task>> Expression;
+    internal LambdaExpression Expression;
     public JobFlags Flags; 
     public ThreadType ThreadType;
     public JobRetryPolicy RetryPolicy;
     public JobDefinition ParentJob; 
     internal JobStartInfo StartInfo; 
 
-
-    public JobDefinition(string code, Expression<Func<JobRunContext, Task>> expression, JobFlags flags = JobFlags.Default, JobRetryPolicy retryPolicy = null,
+    //constructor is private, we allow only 
+    private JobDefinition(string code, LambdaExpression expression, JobFlags flags = JobFlags.Default, JobRetryPolicy retryPolicy = null,
           ThreadType threadType = ThreadType.Pool, JobDefinition parentJob = null) {
       Id = Guid.NewGuid(); 
       Code = code;
@@ -49,13 +49,34 @@ namespace Vita.Modules.JobExecution {
       Flags = flags;
       RetryPolicy = retryPolicy ?? JobRetryPolicy.Default;
       ThreadType = threadType;
-      ParentJob = parentJob; 
-      StartInfo = JobUtil.GetJobStartInfo(expression);
-      var returnType = StartInfo.Method.ReturnType; 
-      if (ThreadType == ThreadType.Background && typeof(Task).IsAssignableFrom(returnType)) {
-        Util.Check(false, "Background (non-pool thread) job must not return Task; it must be synchronous.");
+      ParentJob = parentJob;
+      if(ParentJob != null) {
+        Util.Check(!Flags.IsSet(JobFlags.StartOnSave), 
+              "Invalid job definition: the flag StartOnSave may not be set on a job with a parent job. Job code: {0}", code);
+        ParentJob.Flags |= JobFlags.HasChildJobs;
       }
-    }//constructor
+      StartInfo = JobUtil.GetJobStartInfo(expression);
+      var returnType = StartInfo.Method.ReturnType;
+      switch(ThreadType) {
+        case ThreadType.Pool:
+          Util.Check(returnType == typeof(Task), "Async pool job method must return Task. Job code: {0}.", code);
+          break;
+        case ThreadType.Background:
+          Util.Check(returnType == typeof(void), "Background job method must be void. Job code: {0}.", code);
+          break;
+      }
+    }
+
+    public static JobDefinition CreatePoolJob(string code, Expression<Func<JobRunContext, Task>> expression, JobFlags flags = JobFlags.Default, JobRetryPolicy retryPolicy = null,
+          JobDefinition parentJob = null) {
+        return new JobDefinition(code, expression, flags, retryPolicy, ThreadType.Pool, parentJob);
+    }
+
+    public static JobDefinition CreateBackgroundJob(string code, Expression<Action<JobRunContext>> expression, JobFlags flags = JobFlags.Default, JobRetryPolicy retryPolicy = null,
+          JobDefinition parentJob = null) {
+        return new JobDefinition(code, expression, flags, retryPolicy, ThreadType.Background, parentJob);
+    }
+
   }
 
 }//ns

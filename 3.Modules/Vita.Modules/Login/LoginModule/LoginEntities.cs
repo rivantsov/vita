@@ -20,6 +20,7 @@ namespace Vita.Modules.Login {
     Guid TenantId { get; set; }
 
     //Plain-text userName; 
+    [Size(Sizes.UserName)]
     string UserName { get; set; }
     [HashFor("UserName"), Index]
     int UserNameHash { get; } //simple hash to speed-up lookup

@@ -63,7 +63,7 @@ namespace Vita.Data.SQLite {
       if(x == null || x == DBNull.Value)
         return DBNull.Value; 
       var dt = (DateTime)x;
-      var result = dt.ToString("o"); //("yyyy-MM-DDTHH-mm-ss.SSSSSSZ");
+      var result = ConvertHelper.DateTimeToUniString(dt);
       return result;
     }
 

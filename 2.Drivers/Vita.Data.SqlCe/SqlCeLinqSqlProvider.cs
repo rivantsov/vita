@@ -35,6 +35,7 @@ using Vita.Entities;
 using Vita.Data.Model;
 using Vita.Data.Driver;
 using System.Linq.Expressions;
+using Vita.Common;
 
 namespace Vita.Data.SqlCe {
     
@@ -93,11 +94,6 @@ namespace Vita.Data.SqlCe {
             if (literal)
                 return "1";
             return "0";
-        }
-
-        public override SqlStatement GetLiteral(DateTime literal)
-        {
-            return "'" + literal.ToString("o").Substring(0,23) + "'";
         }
 
         public override string GetParameterName(string nameBase)

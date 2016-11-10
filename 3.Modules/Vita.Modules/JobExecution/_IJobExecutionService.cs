@@ -21,12 +21,14 @@ namespace Vita.Modules.JobExecution {
     /// <param name="func">The implementation function. </param>
     /// <param name="jobCode">Optional, job code (name).</param>
     /// <param name="sourceId">Optional, source object ID, for example Calendar event ID.</param>
+    /// <param name="retryPolicy">Optiona, job retry policy. If not specified, JobRetryPolicy.DefaultLightTask is used.</param>
     /// <returns>The run context of the job.</returns>
     /// <remarks>
     /// <para> The implementation function <c>func</c> must be a call to static method (or instance method of EntityModule), for ex: </para>
     /// <para> (jobRunContext) => SomeClass.DoTheWork(jobRunContext, "StringValue", 123, someObject) </para>
     /// </remarks>
-    Task<JobRunContext> RunLightTaskAsync(OperationContext context, Expression<Func<JobRunContext, Task>> func, string jobCode = "None", Guid? sourceId = null);
+    Task<JobRunContext> RunLightTaskAsync(OperationContext context, Expression<Func<JobRunContext, Task>> func,
+                     string jobCode, Guid? sourceId = null, JobRetryPolicy retryPolicy = null);
     
     /// <summary>Creates a job record in the database. If the job has a flag StartOnSave set, the job will be started immediately after 
     /// session changes are saved. </summary>
@@ -34,6 +36,11 @@ namespace Vita.Modules.JobExecution {
     /// <param name="job">Job definition.</param>
     /// <returns>Created IJob instance.</returns>
     IJob CreateJob(IEntitySession session, JobDefinition job);
+
+    IJob CreateBackgroundJob(IEntitySession session, string code, Expression<Action<JobRunContext>> expression, JobFlags flags = JobFlags.Default, JobRetryPolicy retryPolicy = null,
+          IJob parentJob = null);
+    IJob CreatePoolJob(IEntitySession session, string code, Expression<Func<JobRunContext, Task>> expression, JobFlags flags = JobFlags.Default, JobRetryPolicy retryPolicy = null,
+              IJob parentJob = null);
 
     /// <summary>Starts a job identified by ID. </summary>
     /// <param name="context">Operation context.</param>
@@ -47,6 +54,7 @@ namespace Vita.Modules.JobExecution {
 
     /// <summary>Returns a list of currently running jobs. </summary>
     /// <returns>A list of running context objects for all jobs currently executing.</returns>
+    /// <remarks>Includes only jobs that are currently in memory and executing. Does not include jobs that failed and waiting for retries.</remarks>
     IList<JobRunContext> GetRunningJobs();
 
     /// <summary>A notification event, fired when jobs are started, completed or failed. </summary>

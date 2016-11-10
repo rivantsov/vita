@@ -14,7 +14,7 @@ namespace Vita.Modules.Calendar {
     [PrimaryKey, Auto]
     Guid Id { get; }
 
-    [Auto(AutoType.CreatedOn)]
+    [Utc, Auto(AutoType.CreatedOn)]
     DateTime CreatedOn { get; }
 
     CalendarType Type { get; set; }

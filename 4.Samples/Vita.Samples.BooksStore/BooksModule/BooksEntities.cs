@@ -19,7 +19,7 @@ namespace Vita.Samples.BookStore {
     [PrimaryKey, Auto]
     Guid Id { get; set; }
 
-    [Auto(AutoType.CreatedOn)]
+    [Utc, Auto(AutoType.CreatedOn)]
     DateTime CreatedOn { get; }
 
     [Description("Book publisher.")] // We add some decriptions to book properties - they will appear on Web service help page.

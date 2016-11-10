@@ -12,10 +12,10 @@ namespace Vita.Modules.JobExecution {
 
   public partial class JobExecutionModule {
 
-    private async Task<JobRunContext> RunLightTaskAsyncImpl(OperationContext context, Expression<Func<JobRunContext, Task>> func, string code, Guid? sourceId) {
-      var jobCtx = new JobRunContext(this.App, _serializer, code, sourceId);
-      var startedOn = context.App.TimeService.UtcNow;
+    private async Task<JobRunContext> RunLightTaskAsyncImpl(OperationContext context, Expression<Func<JobRunContext, Task>> func, string code, Guid? sourceId, JobRetryPolicy retryPolicy) {
+      JobRunContext jobCtx = null;
       try {
+        jobCtx = new JobRunContext(this.App, _serializer, code, sourceId);
         RegisterRunningJob(jobCtx);
         OnJobNotify(jobCtx, JobNotificationType.Starting);
         var compiledFunc = func.Compile();
@@ -26,19 +26,32 @@ namespace Vita.Modules.JobExecution {
         OnJobNotify(jobCtx, JobNotificationType.Completed);
         return jobCtx;
       } catch(Exception ex) {
-        var jobDef = new JobDefinition(code, func, jobCtx.Flags, retryPolicy: JobRetryPolicy.LightJobDefault);
-        var session = context.OpenSystemSession();
+        if(jobCtx == null)
+          throw new Exception("Failed to create JobRunContext for light task: " + ex.Message, ex);
+        //Failure is ok for now, it is expected eventually; just save the job for retries
+        SaveFailedLightTask(context, jobCtx, func, code, sourceId, ex, retryPolicy ?? JobRetryPolicy.DefaultLightTask); 
+        return jobCtx;
+      }
+    }
+
+    private void SaveFailedLightTask(OperationContext originalOpContext, JobRunContext jobContext, Expression<Func<JobRunContext, Task>> func, 
+             string code, Guid? sourceId, Exception exception, JobRetryPolicy retryPolicy) {
+      try {
+        var jobDef = JobDefinition.CreatePoolJob(code, func, jobContext.Flags, retryPolicy);
+        var session = originalOpContext.OpenSystemSession();
         var job = session.NewJob(jobDef, _serializer);
         var jobRun = job.NewJobRun(sourceId);
-        jobRun.Id = jobCtx.JobRunId;
-        jobRun.LastStartedOn = startedOn;
-        jobRun.Progress = jobCtx.Progress;
-        jobRun.ProgressMessage = jobCtx.ProgressMessage;
-        jobCtx.IsPersisted = true;
+        jobRun.Id = jobContext.JobRunId;
+        jobRun.LastStartedOn = jobContext.StartedOn;
+        jobRun.Progress = jobContext.Progress;
+        jobRun.ProgressMessage = jobContext.ProgressMessage;
+        jobContext.IsPersisted = true;
         session.SaveChanges();
         //This will save exception info, update remaining counts, etc
-        UpdateFinishedJobRun(jobCtx, ex);
-        return jobCtx;
+        UpdateFinishedJobRun(jobContext, exception);
+      } catch(Exception fatalExc) {
+        _errorLog.LogError(fatalExc, originalOpContext);
+        throw; 
       }
     }
 
@@ -49,6 +62,8 @@ namespace Vita.Modules.JobExecution {
         return; 
       var session = EntityHelper.GetSession(job);
       var jobRun = job.NewJobRun(sourceId);
+      jobRun.LastStartedOn = session.Context.App.TimeService.UtcNow;
+      jobRun.RunCount = 1; 
       session.SaveChanges();
       StartJobRun(jobRun); 
     }
@@ -83,7 +98,7 @@ namespace Vita.Modules.JobExecution {
       //update job run start time, status
       var ids = jobRuns.Select(jr => jr.Id).ToArray();
       var updateQuery = session.EntitySet<IJobRun>().Where(jr => ids.Contains(jr.Id))
-               .Select(jr => new {Status = JobRunStatus.Executing, LastStartedOn = utcNow});
+               .Select(jr => new {Status = JobRunStatus.Executing, RunCount = jr.RunCount + 1, LastStartedOn = utcNow});
       updateQuery.ExecuteUpdate<IJobRun>();
       foreach(var jobRun in jobRuns)
         StartJobRun(jobRun);
@@ -113,11 +128,10 @@ namespace Vita.Modules.JobExecution {
 
     private void StartJobRun(IJobRun jobRun) {
       //create job context 
-      var session = EntityHelper.GetSession(jobRun);
       var jobCtx = new JobRunContext(this.App, jobRun, _serializer);
       RegisterRunningJob(jobCtx);
       OnJobNotify(jobCtx, JobNotificationType.Starting);
-      jobCtx.StartInfo = JobUtil.GetJobStartInfo(jobRun, jobCtx, _serializer);
+      jobCtx.StartInfo = JobUtil.GetJobStartInfo(jobRun, jobCtx);
       if(jobRun.Job.ThreadType == ThreadType.Background) {
         jobCtx.Thread = new Thread(RunBackgroundJob);
         jobCtx.Thread.Start(jobCtx); 
@@ -170,8 +184,9 @@ namespace Vita.Modules.JobExecution {
       try {
         UpdateFinishedJobRunImpl(jobContext, exception); 
       } catch(Exception newExc) {
-        _errorLog.LogError(exception, jobContext.OperationContext);
-        _errorLog.LogError(newExc, jobContext.OperationContext); 
+        _errorLog.LogError(newExc, jobContext.OperationContext);
+        if(exception != null)
+          _errorLog.LogError(exception, jobContext.OperationContext);
       }
     }
 
@@ -206,15 +221,14 @@ namespace Vita.Modules.JobExecution {
       }
       // current run failed, but we have retries
       jobRun.Status = jobContext.Status = JobRunStatus.Failed;
-      if (jobRun.RemainingRetries == 0) {
+      if (jobRun.RemainingRetries > 0) {
+        jobRun.NextStartOn = utcNow.AddSeconds(jobRun.Job.RetryIntervalSec);
+        jobRun.RemainingRetries--;
+      } else {
         jobRun.RemainingRounds--;
-        jobRun.RemainingRetries = jobRun.Job.RetryCount;
+        jobRun.RemainingRetries = jobRun.Job.RetryCount - 1;
         jobRun.NextStartOn = utcNow.AddMinutes(jobRun.Job.RetryPauseMinutes);
-        return; 
       }
-      // we have job.RemainingRetries
-      jobRun.RemainingRetries--;
-      jobRun.NextStartOn = utcNow.AddSeconds(jobRun.Job.RetryIntervalSec);
       session.SaveChanges(); 
     }//method
 
@@ -222,16 +236,16 @@ namespace Vita.Modules.JobExecution {
       var session = EntityHelper.GetSession(jobRun); 
       var errHeader = string.Format("=========================== Error {0} ======================================" 
              + Environment.NewLine, App.TimeService.UtcNow);
-      var errInfo = errHeader + exception.ToLogString();
+      var errMsg = errHeader + exception.ToLogString();
       // If it is not final run, log it as an incident
       var job = jobRun.Job;
       bool hasRetries = jobRun.RemainingRetries > 0 || jobRun.RemainingRounds > 0; 
       if(hasRetries && _incidentLog != null)
-        _incidentLog.LogIncident("JobRunFailed", message: exception.Message, key1: job.Code, keyId1: job.Id, notes: errInfo);
+        _incidentLog.LogIncident("JobRunFailed", message: exception.Message, key1: job.Code, keyId1: job.Id, notes: errMsg);
       else
         _errorLog.LogError(exception, session.Context);
       //Update job status 
-      jobRun.Errors += errInfo + Environment.NewLine;
+      jobRun.Errors += errMsg + Environment.NewLine;
     }
 
     private void StartChildJobs(IJob job, Guid? sourceId) {

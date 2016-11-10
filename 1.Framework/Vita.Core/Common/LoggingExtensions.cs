@@ -40,7 +40,7 @@ namespace Vita.Common {
           strValue = ex.ToLogString();
         } else if (value is DateTime) {
           var dt = (DateTime)value;
-          strValue = "[" + dt.ToString("o") + ", Kind=" + dt.Kind + "]";
+          strValue = "[" + ConvertHelper.DateTimeToUniString(dt) + ", Kind=" + dt.Kind + "]";
         } else if (value is Guid) {
           strValue = "{" + value.ToString() + "}";
         } else if(value is IDbCommand) {

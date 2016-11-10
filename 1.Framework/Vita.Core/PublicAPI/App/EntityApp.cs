@@ -258,7 +258,8 @@ namespace Vita.Entities {
     /// <param name="module">A module to add.</param>
     internal void AddModule(EntityModule module) {
       if (!_modules.Contains(module)) //prevent duplicates
-        _modules.Add(module); 
+        _modules.Add(module);
+      RegisterGlobalObject(module); 
     }
 
     public TModule GetModule<TModule>() where TModule : EntityModule {
@@ -283,6 +284,11 @@ namespace Vita.Entities {
       this.DataAccess.RegisterDataSource(ds);
       this.Status = EntityAppStatus.Connected; 
     }
+
+    public bool IsConnected() {
+      return Status == EntityAppStatus.Connected || Status == EntityAppStatus.Shutdown;
+    }
+
 
     /// <summary> Replaces one registered entity with extended version. </summary>
     /// <param name="replacedType">The entity type to be replaced.</param>
@@ -331,6 +337,7 @@ namespace Vita.Entities {
       //notify child apps
       foreach (var linkedApp in this.LinkedApps)
         linkedApp.AppEvents.OnServiceAdded(this, typeof(T), service);
+      RegisterGlobalObject(service); 
       return service; 
     }
 
@@ -430,6 +437,33 @@ namespace Vita.Entities {
       return _services.Values.ToList();
     }
 
+    #region Global objects: modules, services, configs
+    // We do not use locking or concurrency protection here. We assume all objects are added at app startup, and 
+    // the dict becomes readonly
+    Dictionary<Type, object> _globalObjects = new Dictionary<Type, object>();
+    /// <summary>Returns a registered global object of a given type. Entity modules, services, configs are automatically registered as global objects.</summary>
+    /// <param name="type">Object type.</param>
+    /// <param name="throwIfNotFound">Optional. If true, throw exception if object is not found.</param>
+    /// <returns>A registered global object.</returns>
+    /// <remarks> Global objects are used when rehydrating Func objects from the database in JobExecutionModule:
+    /// if a target method is an instance method, the instance is retrieved from global object list. 
+    /// </remarks>
+    public object GetGlobalObject(Type type, bool throwIfNotFound = true) {
+      object obj;
+      if(_globalObjects.TryGetValue(type, out obj))
+        return obj;
+      return null; 
+    }
+
+    /// <summary>Registers an instance as a global object. </summary>
+    /// <param name="obj"></param>
+    public void RegisterGlobalObject(object obj) {
+      Util.Check(obj != null, "Parameter (object) cannot be null.");
+      _globalObjects[obj.GetType()] = obj; 
+    }
+
+    #endregion
+
     #region Config repo access
 
     //Repository of all config/settings objects, indexed by type, for easy access from anywhere
@@ -443,7 +477,9 @@ namespace Vita.Entities {
       lock(_lock) {
         _configsRepo[typeof(T)] = config;
       }
+      RegisterGlobalObject(config); 
     }
+
     /// <summary>Retrieves config object based on type. </summary>
     /// <typeparam name="T">Config object type.</typeparam>
     /// <returns>Config object.</returns>
@@ -483,10 +519,7 @@ namespace Vita.Entities {
     }
     #endregion
 
-    public bool IsConnected() {
-      return Status == EntityAppStatus.Connected || Status == EntityAppStatus.Shutdown; 
-    }
-
+    #region WebInitialize
     private bool _webInitialized;
     public virtual void WebInitilialize(WebCallContext webContext) {
       if(_webInitialized) return; 
@@ -499,8 +532,9 @@ namespace Vita.Entities {
             linkedApp.WebInitilialize(webContext); 
         } finally { _webInitialized = true; }
       }//lock
-
     }
+    #endregion 
+
   }//class
 
 }//ns

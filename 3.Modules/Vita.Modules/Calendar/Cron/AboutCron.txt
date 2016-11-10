@@ -2,7 +2,8 @@
 https://en.wikipedia.org/wiki/Cron
 
 There are a few extensions implemented here: 
-1. Additional shift direction specifier for W (workday) symbol. Standard behavior with W specifier - if result date falls on weekend, it is shifted to nearest date (Sat -> Fri, Sun -> Mon), but without crossing month boundary. 
+1. Additional shift direction specifier for W (workday) symbol. Standard behavior with W specifier - if result date falls on weekend,
+   it is shifted to nearest date (Sat -> Fri, Sun -> Mon), but without crossing month boundary. 
   We add the following additional specifiers: 
     W< - always shift to earlier day (Fri) and allow crossing month boundary
     W> - always shift to Mon and allow crossing month boundary
@@ -10,7 +11,8 @@ There are a few extensions implemented here:
 2. # symbol in Day-of-week field allows specifying occurrence number: Fri#3 - run every third Fri of the month. 
   We extend it by stating that Fri#5 matches the LAST occurrence, #4 if there are only 4 Fri in a month. 
 3. Similarly to the previous section, 31 in day field matches the last day of the month if the month has less than 31 days
-4. Standard implementation does not allow specifying both Day and DayOfWeek fields. We allow both, so you can schedule to run only on Fri 13, in a months with day 13 being Friday; see CronTests in Extended Unit Tests project. 
+4. Standard implementation does not allow specifying both Day and DayOfWeek fields. We allow both, so you can schedule to run only on Fri 13, 
+   in a months with day 13 being Friday; see CronTests in Extended Unit Tests project. 
 
 Usage: 
   var sched = new CronSchedule("13 13 13 * 5 *"); // run on Fri 13 at 13:13

@@ -17,11 +17,8 @@ namespace Vita.Modules.JobExecution {
   internal static class JobUtil {
     public static readonly string ArgsDelimiter = Environment.NewLine + new string('"', 4) + Environment.NewLine;
 
-    public static bool IsSet(this JobFlags flags, JobFlags flag) {
-      return (flags & flag) != 0;
-    }
-
     public static IJob NewJob(this IEntitySession session, JobDefinition job, JsonSerializer serializer) {
+      ValidateJobMethod(session.Context.App, job); 
       var ent = session.NewEntity<IJob>();
       ent.Code = job.Code;
       ent.ThreadType = job.ThreadType;
@@ -38,10 +35,25 @@ namespace Vita.Modules.JobExecution {
       ent.RetryPauseMinutes = rp.PauseMinutes;
       ent.RetryRoundsCount = rp.RoundsCount;
       if(job.ParentJob != null) {
-        ent.ParentJob = session.GetEntity<IJob>(ent.ParentJob.Id, LoadFlags.Stub);
+        Util.Check(!ent.Flags.IsSet(JobFlags.StartOnSave),
+              "Invalid job definition: the flag StartOnSave may not be set on a job with a parent job. Job code: {0}", job.Code);
+        ent.ParentJob = session.GetEntity<IJob>(ent.ParentJob.Id);
+        Util.Check(ent.ParentJob != null, "Parent job not found: {0}.", job.ParentJob.Id);
+        ent.ParentJob.Flags |= JobFlags.HasChildJobs; 
       }
-      job.Id = ent.Id;
       return ent;
+    }
+
+    internal static void ValidateJobMethod(EntityApp app, JobDefinition job) {
+      // We already check return type (Task or Void) in JobDefinition constructor
+      // We need to check for instance methods that they are defined on global objects - that can be 'found' easily when it's time to invoke the method.
+      var method = job.StartInfo.Method; 
+      if (!method.IsStatic) {
+        // it is instance method; check that it is defined on one of global objects - module, service, or custom global object
+        var obj = app.GetGlobalObject(method.DeclaringType);
+        Util.Check(obj != null, "Job/task method {0}.{1} is an instance method, but is defined on object that is not EntityModule, service or any registered global object.", 
+          method.DeclaringType, method.Name);
+      }
     }
 
     public static IJobRun NewJobRun(this IJob job, Guid? sourceId) {
@@ -60,20 +72,12 @@ namespace Vita.Modules.JobExecution {
       return jobRun;
     }
 
-
-    public static JobStartInfo GetJobStartInfo(Expression<Func<JobRunContext, Task>> expression) {
+    internal static JobStartInfo GetJobStartInfo(LambdaExpression expression) {
       var callExpr = expression.Body as MethodCallExpression;
       Util.Check(callExpr != null, "Invalid Job definition expression - must be a method call: {0}", expression);
       var job = new JobStartInfo(); 
       job.Method = callExpr.Method;
-      if(job.Method.IsStatic)
-        job.DeclaringType = job.Method.DeclaringType; 
-      else {
-        job.DeclaringType = callExpr.Object.Type; //Object may not be null
-        Util.Check(job.DeclaringType.IsSubclassOf(typeof(EntityModule)),
-          "Invalid Job definition expression - instance method must be defined on entity module subclass: {0}",
-            expression);
-      }
+      job.DeclaringType = job.Method.DeclaringType;
       // parameters
       job.Arguments = new object[callExpr.Arguments.Count];
       for(int i = 0; i < callExpr.Arguments.Count; i++) {
@@ -97,23 +101,17 @@ namespace Vita.Modules.JobExecution {
       return result;
     }
 
-    public static JobStartInfo GetJobStartInfo(IJobRun jobRun, JobRunContext jobContext, JsonSerializer serializer) {
+    public static JobStartInfo GetJobStartInfo(IJobRun jobRun, JobRunContext jobContext) {
       var app = jobContext.App; 
       var jobData = new JobStartInfo();
       var job = jobRun.Job; 
-      jobData.DeclaringType = ReflectionHelper.GetLoadedType(job.TargetType);
+      jobData.DeclaringType = ReflectionHelper.GetLoadedType(job.TargetType, throwIfNotFound: true); //it will throw if cannot find it
       var methName = job.TargetMethod;
       var argCount = job.TargetParameterCount;
-      var bindingFlagsGetAll = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static;
-      var methods = jobData.DeclaringType.GetMethods(bindingFlagsGetAll)
-            .Where(m => m.Name == methName && m.GetParameters().Count() == argCount).ToList();
-      Util.Check(methods.Count > 0, "Method {0} not found on type {1}.", methName, jobData.DeclaringType);
-      Util.Check(methods.Count < 2, "Found more than one method {0} on type {1}.", methName, jobData.DeclaringType);
-      jobData.Method = methods[0];
+      jobData.Method = ReflectionHelper.FindMethod(jobData.DeclaringType, job.TargetMethod, job.TargetParameterCount); 
       // if Method is not static, it must be Module instance - this is a convention
       if(!jobData.Method.IsStatic)
-        jobData.Object = app.Modules.First(m => m.GetType() == jobData.DeclaringType);
-
+        jobData.Object = app.GetGlobalObject(jobData.DeclaringType); //throws if not found. 
       //arguments
       var prms = jobData.Method.GetParameters();
       if (prms.Length == 0) {
@@ -127,7 +125,6 @@ namespace Vita.Modules.JobExecution {
       Util.Check(prms.Length == arrStrArgs.Length, "Serialized arg count ({0}) in job entity " +
            "does not match the number of target method parameters ({1}); target method: {2}.", 
            arrStrArgs.Length, prms.Length, jobData.Method.Name);
-
       // Deserialize arguments
       jobData.Arguments = new object[arrStrArgs.Length]; 
       for(int i = 0; i < arrStrArgs.Length; i++) {
@@ -135,7 +132,7 @@ namespace Vita.Modules.JobExecution {
         if(paramType == typeof(JobRunContext))
           jobData.Arguments[i] = jobContext;
         else 
-          jobData.Arguments[i] = Deserialize(serializer, paramType, arrStrArgs[i]);
+          jobData.Arguments[i] = Deserialize(jobContext.Serializer, paramType, arrStrArgs[i]);
       }
       return jobData; 
     }

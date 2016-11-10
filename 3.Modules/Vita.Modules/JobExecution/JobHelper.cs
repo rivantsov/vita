@@ -19,9 +19,13 @@ namespace Vita.Modules.JobExecution {
     /// <returns>JobRunContext object for the executed/executing job.</returns>
     public static async Task<JobRunContext> ExecuteWithRetries(OperationContext context, Expression<Func<JobRunContext, Task>> func, string code = "None", Guid? sourceId = null) {
       var jobService = context.App.GetService<IJobExecutionService>();
-      Util.Check(jobService != null, "IJobExecutionService not registered with the entity app.");
+      Util.Check(jobService != null, "IJobExecutionService not registered with the entity app; add JobExecutionModule.");
       return await jobService.RunLightTaskAsync(context, func, code, sourceId);
-    } 
+    }
+
+    public static bool IsSet(this JobFlags flags, JobFlags flag) {
+      return (flags & flag) != 0;
+    }
 
   }//class 
 } //namespace

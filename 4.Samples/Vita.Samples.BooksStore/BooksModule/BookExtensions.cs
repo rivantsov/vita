@@ -2,11 +2,14 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
 using Vita.Common;
 
 using Vita.Entities;
 using Vita.Entities.Linq;
-using Vita.Modules.Calendar; 
+using Vita.Modules.Calendar;
+using Vita.Modules.JobExecution;
 
 namespace Vita.Samples.BookStore {
   //Helper methods to create entities
@@ -79,9 +82,9 @@ namespace Vita.Samples.BookStore {
     }
 
     public static void CompleteOrder(this IBookOrder order, string couponCode = null) {
+      var session = EntityHelper.GetSession(order);
       order.Total = order.Lines.Sum(line => line.Price * line.Quantity);
       if (!string.IsNullOrWhiteSpace(couponCode)) {
-        var session = EntityHelper.GetSession(order); 
         var entCoupon = LookupCoupon(session, couponCode);
         session.Context.ThrowIfNull(entCoupon, ClientFaultCodes.ObjectNotFound, "Coupon", "Coupon with code '{0}' not found.", couponCode);
         if (entCoupon != null && entCoupon.ExpiresOn >= DateTime.Now && entCoupon.AppliedOn == null) {
@@ -89,22 +92,22 @@ namespace Vita.Samples.BookStore {
           order.Total = (decimal) (((double)order.Total) * ((100 - entCoupon.DiscountPerc) / 100.0));
         }
       }
+      // send email confirming purchase, using reliable with-retries method
       order.Status = OrderStatus.Completed;
-      order.SetupPostPurchaseEvents(); 
+      JobHelper.ExecuteWithRetriesNoWait(session.Context, (jobCtx) => SendPurchaseConfirmationEmail(jobCtx, order.Id), 
+          code: "SendOrderConfirmation");
+/*
+      var reviewEmail = session.CreateUserEvent(user.Id, BooksModule.EventCodeAskReview,
+          "Book review request", "Send user email asking to review the books he bought.", utcNow.AddMonths(1), customId: order.Id);
+*/
     }
 
-    // Demo/test of individual calendar
-    // Schedule 2 calendar events, system will fire them in due time. We handle events in  
-    public static void SetupPostPurchaseEvents(this IBookOrder order) {
-      var user = order.User;
-      var session = EntityHelper.GetSession(order);
-      var utcNow = session.Context.App.TimeService.UtcNow;
-      // Schedule sending email asking for feedback about purchase process experience
-      var feedbackEmail = session.CreateCalendarEventForUser(user.Id, BooksModule.EventCodeAskFeedback, 
-          "Purchase Experience Feedback", "Send user email asking to leave feedback about his purchase experience", utcNow.AddMinutes(2), customItemId: order.Id);
-      // Schedule sending email asking to review purchased books 
-      var reviewEmail = session.CreateCalendarEventForUser(user.Id, BooksModule.EventCodeAskReview,
-          "Book review request", "Send user email asking to review the books he bought.", utcNow.AddMonths(1), customItemId: order.Id);
+    private static async Task SendPurchaseConfirmationEmail(JobRunContext jobContext, Guid orderId) {
+      //Pretend we are sending email here
+      await Task.Delay(100);
+      // the progress will not be saved because we are running successfully
+      jobContext.UpdateProgress(100, "Confirmation email sent!");
+      //IBookOrder order; order.Summary
     }
 
     //Schedules update LINQ-based command that will recalculate totals at the end of SaveChanges transaction
@@ -114,7 +117,7 @@ namespace Vita.Samples.BookStore {
                               where bol.Order.Id == order.Id 
                               group bol by bol.Order.Id into orderUpdate
                               select new { Id = orderUpdate.Key, Total = orderUpdate.Sum(line => line.Price * line.Quantity) };
-      session.ScheduleNonQuery<IBookOrder>(orderTotalQuery, LinqCommandType.Update);
+      session.ScheduleNonQuery<IBookOrder>(orderTotalQuery, LinqCommandType.Update, CommandSchedule.TransactionEnd);
     }
 
     public static IBookReview NewReview(this IEntitySession session, IUser user, IBook book, int rating, string caption, string text) {

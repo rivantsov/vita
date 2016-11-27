@@ -8,6 +8,7 @@ using Vita.Entities;
 using Vita.Entities.Web;
 using System.IO;
 using Vita.Common;
+using Vita.Modules.JobExecution;
 
 namespace Vita.Samples.BookStore {
 
@@ -96,6 +97,30 @@ namespace Vita.Samples.BookStore {
       Context.App.TimeService.SetCurrentOffset(TimeSpan.FromMinutes(minutes));
       return GetTimeOffset();
     }
+
+
+    #region 
+    // Test JobHelper.ExecuteWithRetriesNoWait. Should be done in browser under IIS, to check 
+    // how it works with ASP.NET synchonization context, and thread pool scheduling under ASP.NET
+    static int _noWaitCallCount;
+    [ApiGet, ApiRoute("nowaittest")]
+    public int GetCallCount() {
+      return _noWaitCallCount;
+    }
+
+    [ApiGet, ApiRoute("nowaittest-inc")]
+    public string IncCallCountNoWait() {
+      JobHelper.ExecuteWithRetriesNoWait(this.Context, (jobCtx) => IncrementCallCount(jobCtx), "JobNoWait");
+      return "OK";
+    }
+
+    private async Task IncrementCallCount(JobRunContext jobCtx) {
+      await Task.Delay(100);
+      _noWaitCallCount++;
+    }
+
+    #endregion
+
 
   }//class
 }//ns

@@ -160,7 +160,8 @@ namespace Vita.Samples.BookStore {
     [PersistOrderIn("LineNumber")]
     IList<IBookOrderLine> Lines { get; }
 
-    [Computed(typeof(BooksModule), "GetOrderSummary"), DependsOn("User,Total,CreatedOn")] //DependsOn is optional, used for auto PropertyChanged firing
+    //DependsOn is optional, used for auto PropertyChanged firing
+    [Computed(typeof(BooksModule), "GetOrderSummary"), DependsOn("User,Total,CreatedOn")] 
     string Summary { get; }
 
   }

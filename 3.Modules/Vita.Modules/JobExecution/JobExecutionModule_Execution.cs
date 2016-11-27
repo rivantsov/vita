@@ -12,28 +12,6 @@ namespace Vita.Modules.JobExecution {
 
   public partial class JobExecutionModule {
 
-    private async Task<JobRunContext> RunLightTaskAsyncImpl(OperationContext context, Expression<Func<JobRunContext, Task>> func, string code, Guid? sourceId, JobRetryPolicy retryPolicy) {
-      JobRunContext jobCtx = null;
-      try {
-        jobCtx = new JobRunContext(this.App, _serializer, code, sourceId);
-        RegisterRunningJob(jobCtx);
-        OnJobNotify(jobCtx, JobNotificationType.Starting);
-        var compiledFunc = func.Compile();
-        jobCtx.Task = Task.Run(() => (Task) compiledFunc.Invoke(jobCtx), jobCtx.CancellationToken);
-        await jobCtx.Task;
-        UnregisterRunningJob(jobCtx.JobId);
-        jobCtx.Status = JobRunStatus.Completed;
-        OnJobNotify(jobCtx, JobNotificationType.Completed);
-        return jobCtx;
-      } catch(Exception ex) {
-        if(jobCtx == null)
-          throw new Exception("Failed to create JobRunContext for light task: " + ex.Message, ex);
-        //Failure is ok for now, it is expected eventually; just save the job for retries
-        SaveFailedLightTask(context, jobCtx, func, code, sourceId, ex, retryPolicy ?? JobRetryPolicy.DefaultLightTask); 
-        return jobCtx;
-      }
-    }
-
     private void SaveFailedLightTask(OperationContext originalOpContext, JobRunContext jobContext, Expression<Func<JobRunContext, Task>> func, 
              string code, Guid? sourceId, Exception exception, JobRetryPolicy retryPolicy) {
       try {
@@ -131,7 +109,7 @@ namespace Vita.Modules.JobExecution {
       var jobCtx = new JobRunContext(this.App, jobRun, _serializer);
       RegisterRunningJob(jobCtx);
       OnJobNotify(jobCtx, JobNotificationType.Starting);
-      jobCtx.StartInfo = JobUtil.GetJobStartInfo(jobRun, jobCtx);
+      jobCtx.StartInfo = JobExtensions.GetJobStartInfo(jobRun, jobCtx);
       if(jobRun.Job.ThreadType == ThreadType.Background) {
         jobCtx.Thread = new Thread(RunBackgroundJob);
         jobCtx.Thread.Start(jobCtx); 
@@ -198,7 +176,7 @@ namespace Vita.Modules.JobExecution {
       var utcNow = session.Context.App.TimeService.UtcNow;
       jobRun.LastEndedOn = utcNow;
       if(jobContext.Flags.IsSet(JobFlags.PersistArguments))
-        jobRun.CurrentArguments = JobUtil.SerializeArguments(jobContext.StartInfo.Arguments, _serializer);
+        jobRun.CurrentArguments = JobExtensions.SerializeArguments(jobContext.StartInfo.Arguments, _serializer);
       if(exception == null) {
         jobRun.NextStartOn = null;
         jobRun.Status = jobContext.Status = JobRunStatus.Completed;

@@ -65,18 +65,21 @@ namespace Vita.Data {
     }
     // Creates new connection or gets previously used from the session
     public DataConnection GetConnection(EntitySession session, 
-                  ConnectionLifetime minLifetime = ConnectionLifetime.Operation, bool admin = false) {
+                  ConnectionLifetime connLifetime = ConnectionLifetime.Operation, bool admin = false) {
       if (admin)
-        return new DataConnection(session, this, minLifetime, true);
+        return new DataConnection(session, this, connLifetime, true);
       var conn = session.CurrentConnection;
       if(conn != null) {
-        if (conn.Lifetime < minLifetime)
-          conn.Lifetime = minLifetime;
+        if (conn.Lifetime < connLifetime)
+          conn.Lifetime = connLifetime;
         return conn;
       }
+      // if we have KeepOpen mode (recommended in Web app), then make Lifetime explicit -
+      // i.e. until explicitly called to close; web call context handler will do it after completing 
+      // processing requests
       if (session.Context.DbConnectionMode == DbConnectionReuseMode.KeepOpen)
-        minLifetime = ConnectionLifetime.Explicit;
-      conn = new DataConnection(session, this, minLifetime, admin: admin);
+        connLifetime = ConnectionLifetime.Explicit;
+      conn = new DataConnection(session, this, connLifetime, admin: admin);
       session.CurrentConnection = conn; //it will register it in disposables
       return conn; 
     }

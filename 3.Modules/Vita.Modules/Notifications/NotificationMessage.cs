@@ -17,6 +17,7 @@ namespace Vita.Modules.Notifications {
 
   public class NotificationMessage {
     public MessageStatus Status;
+    public string Body; 
     public string Recipients;
     public string From; 
     public Guid? MainRecipientUserId;

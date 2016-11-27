@@ -53,6 +53,10 @@ namespace Vita.Entities.Locking {
       var eq = Expression.Equal(pkRead, Expression.Constant(primaryKey, pkMember.DataType));
       var filter = Expression.Lambda<Func<TEntity, bool>>(eq, prmEnt);
       var query = session.EntitySet<TEntity>(options).Where(filter);
+      // We use ToList() on entire query instead of First() because we have already filter on PK value, 
+      // and we want to avoid adding any paging (skip/take) clauses to the SQL.
+      // We use First on entire list, not FirstOrDefault, to ensure it blows up if entity does not exist
+      // (so no lock was actually established
       var ent = query.ToList().First();
       return ent;
       /*

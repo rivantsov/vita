@@ -37,6 +37,7 @@ namespace Vita.Modules.Logging {
         var msg = entry.Message; 
         ent.Type = msg.Type;
         ent.MediaType = msg.MediaType;
+        ent.Body = msg.Body; 
         ent.Error = msg.Error;
         ent.AttemptCount = msg.AttemptCount;
         ent.Status = msg.Status.ToString(); 

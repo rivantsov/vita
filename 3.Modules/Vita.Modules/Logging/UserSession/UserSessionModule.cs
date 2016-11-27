@@ -24,6 +24,7 @@ namespace Vita.Modules.Logging {
   public class UserSessionModule<TUserSession> : EntityModule, IUserSessionService
     where TUserSession: class, IUserSession {
     public readonly UserSessionSettings Settings;
+    OperationContext _opContext; 
     ITimerService _timers;
     IBackgroundSaveService _saveService;
     //private IWebCallNotificationService _webCallNotificationService;
@@ -39,10 +40,15 @@ namespace Vita.Modules.Logging {
 
     public override void Init() {
       base.Init();
+      _opContext = App.CreateSystemContext();
       _userSessionCache = new ObjectCache<CachedSessionItem>("UserSessonCache", Settings.MemoryCacheExpirationSec);
       _saveService = App.GetService<IBackgroundSaveService>();
       _timers = App.GetService<ITimerService>();
       _timers.Elapsed1Second += Timers_Elapsed1Second;
+    }
+
+    private IEntitySession OpenEntitySession() {
+      return _opContext.OpenSession(); 
     }
 
     #region nested classes CachedSessionItem
@@ -52,7 +58,7 @@ namespace Vita.Modules.Logging {
       public UserSessionExpirationType ExpirationType;
       public DateTime? ExpiresOn; 
       public DateTime LastUsedOn;
-      public CachedSessionItem(UserSessionContext userSession, IUserSession sessionEntity) {
+      public CachedSessionItem(UserSessionContext userSession, TUserSession sessionEntity) {
         UserSession = userSession;
         ExpirationType = sessionEntity.ExpirationType;
         ExpiresOn = sessionEntity.FixedExpiration;
@@ -72,7 +78,7 @@ namespace Vita.Modules.Logging {
     public UserSessionContext StartSession(OperationContext context, UserInfo user, UserSessionExpirationType expirationType = UserSessionExpirationType.Sliding) {
       var utcNow = App.TimeService.UtcNow;
       //create session entity
-      var entUserSession = NewUserSessionEntity(context, user, expirationType);
+      var entUserSession = CreateUserSessionInDb(user, context.WebContext, expirationType);
       var cacheItem = CacheUserSession(entUserSession);
       return cacheItem.UserSession;
     }
@@ -85,14 +91,14 @@ namespace Vita.Modules.Logging {
       var cachedOk = cacheItem != null && CheckVersion(context, cacheItem, sessionVersion);
       if (!cachedOk) {
         //Read from database
-        var iEnt = LoadUserSessionEntity(context, sessionToken);
+        var iEnt = LoadUserSessionEntity(sessionToken);
         if(iEnt == null || iEnt.Status != UserSessionStatus.Active)
           return;
         cacheItem = CacheUserSession(iEnt);
       }
       var utcNow = App.TimeService.UtcNow;
       var cachedSession = cacheItem.UserSession; 
-      CheckExpiration(context, cacheItem, utcNow);
+      CheckExpiration(cacheItem, utcNow);
       switch(cacheItem.UserSession.Status) {
         case UserSessionStatus.Active:
           context.UserSession = cachedSession;
@@ -104,14 +110,14 @@ namespace Vita.Modules.Logging {
           break; 
         default:
           DeleteSessionCacheItem(cacheItem);
-          SaveUserSessionEntity(context, cacheItem.UserSession);
+          SaveUserSessionEntity(cacheItem.UserSession);
           break; 
       } //switch
     }
 
     public void UpdateSession(OperationContext context) {
       if (context.UserSession != null)
-        SaveUserSessionEntity(context, context.UserSession);
+        SaveUserSessionEntity(context.UserSession);
     }
 
     public void EndSession(OperationContext context) {
@@ -122,14 +128,15 @@ namespace Vita.Modules.Logging {
 
       userSession.Status = UserSessionStatus.LoggedOut;
       //save entity session
-      SaveUserSessionEntity(context, context.UserSession);
+      SaveUserSessionEntity(context.UserSession);
     }
 
     public string RefreshSessionToken(OperationContext context, string refreshToken) {
       var oldToken = context.UserSession.Token;
       //remove from cache
       _userSessionCache.Remove(oldToken);
-      var iEnt = LoadUserSessionEntity(context, oldToken);
+      // Note that iEnt is attached to different session (hooked to LoggingApp), not connected to 'context' we have here
+      var iEnt = LoadUserSessionEntity(oldToken);
       context.ThrowIfNull(iEnt, ClientFaultCodes.ObjectNotFound, "Token", "User session does not exist.");
       context.ThrowIfEmpty(iEnt.RefreshToken, ClientFaultCodes.InvalidAction, "RefreshToken", "User session does not allow refresh, refresh token not found in session.");
       var refreshMatches = string.Equals(iEnt.RefreshToken, refreshToken, StringComparison.OrdinalIgnoreCase);
@@ -154,7 +161,7 @@ namespace Vita.Modules.Logging {
 
     #endregion
 
-    private void UpdateFixedExpiration(IUserSession sessionEntity) {
+    private void UpdateFixedExpiration(TUserSession sessionEntity) {
       var utcNow = App.TimeService.UtcNow; 
       switch(sessionEntity.ExpirationType) {
         case UserSessionExpirationType.FixedTerm:
@@ -167,14 +174,13 @@ namespace Vita.Modules.Logging {
 
     }
 
-    private void SaveSessionValues(OperationContext context) {
-      var userSession = context.UserSession;
+    private void SaveSessionValues(UserSessionContext userSession) {
       userSession.Version++;
-      var entSession = context.OpenSystemSession();
+      var entSession = OpenEntitySession();
       var serValues = SerializeSessionValues(userSession);
-      var updateQuery = entSession.EntitySet<IUserSession>().Where(s => s.Id == userSession.SessionId)
+      var updateQuery = entSession.EntitySet<TUserSession>().Where(s => s.Id == userSession.SessionId)
         .Select(s => new { Id = s.Id, Values = serValues, Version = userSession.Version });
-      updateQuery.ExecuteUpdate<IUserSession>();
+      updateQuery.ExecuteUpdate<TUserSession>();
       userSession.ResetModified(); 
     }
 
@@ -182,7 +188,7 @@ namespace Vita.Modules.Logging {
       return (requestedVersion <= item.UserSession.Version);
     }
 
-    private void CheckExpiration(OperationContext context, CachedSessionItem item, DateTime utcNow) {
+    private void CheckExpiration(CachedSessionItem item, DateTime utcNow) {
       var userSession = item.UserSession; 
       if(userSession.Status != UserSessionStatus.Active)
         return; 
@@ -190,7 +196,7 @@ namespace Vita.Modules.Logging {
         case UserSessionExpirationType.Sliding:
           var expires = item.LastUsedOn.Add(Settings.SessionTimeout);
           if(expires < utcNow) { //expired? first refresh LastActiveOn value, maybe it is stale, and check again
-            RefreshLastActive(context, item);
+            RefreshLastActive(item);
             expires = item.LastUsedOn.Add(Settings.SessionTimeout);
           }
           if(expires < utcNow) {
@@ -212,17 +218,18 @@ namespace Vita.Modules.Logging {
       }
     }
 
-    private void RefreshLastActive(OperationContext context, CachedSessionItem item) {
-      var session = context.OpenSystemSession();
-      var lastActive = session.EntitySet<IUserSession>().Where(s => s.Id == item.UserSession.SessionId).Select(s => s.LastUsedOn).FirstOrDefault();
+    private void RefreshLastActive(CachedSessionItem item) {
+      var session = OpenEntitySession();
+      var lastActive = session.EntitySet<TUserSession>().Where(s => s.Id == item.UserSession.SessionId)
+          .Select(s => s.LastUsedOn).FirstOrDefault();
       if (lastActive != default(DateTime))
         item.LastUsedOn = lastActive;
     }
 
-    private IUserSession NewUserSessionEntity(OperationContext context, UserInfo user, UserSessionExpirationType expirationType) {
+    private TUserSession CreateUserSessionInDb(UserInfo user, WebCallContext webContext, UserSessionExpirationType expirationType) {
       var now = App.TimeService.UtcNow;
-      var session = context.OpenSystemSession(); 
-      var ent = session.NewEntity<IUserSession>();
+      var session = OpenEntitySession(); 
+      var ent = session.NewEntity<TUserSession>();
       ent.StartedOn = now;
       ent.LastUsedOn = now; 
       ent.UserId = user.UserId;
@@ -230,11 +237,10 @@ namespace Vita.Modules.Logging {
       ent.UserName = user.UserName;
       ent.UserKind = user.Kind;
       ent.Status = UserSessionStatus.Active;
-      var webCtx = context.WebContext; 
-      if (webCtx != null) {
-        ent.CreatedByWebCallId = webCtx.Id;
-        ent.IPAddress = webCtx.IPAddress;
-        var agentData = webCtx.GetIncomingHeader("User-Agent");
+      if (webContext != null) {
+        ent.CreatedByWebCallId = webContext.Id;
+        ent.IPAddress = webContext.IPAddress;
+        var agentData = webContext.GetIncomingHeader("User-Agent");
         if (agentData != null && agentData.Count > 0) {
           var agent = string.Join(",", agentData);
           ent.UserOS = GetUserOS(agent);
@@ -266,10 +272,10 @@ namespace Vita.Modules.Logging {
 
     }
 
-    private IUserSession SaveUserSessionEntity(OperationContext context, UserSessionContext userSession) {
+    private TUserSession SaveUserSessionEntity(UserSessionContext userSession) {
       userSession.Version++;
-      var session = context.OpenSystemSession();
-      var ent = session.GetEntity<IUserSession>(userSession.SessionId);
+      var session = OpenEntitySession();
+      var ent = session.GetEntity<TUserSession>(userSession.SessionId);
 
       if(ent.Status == UserSessionStatus.Active && userSession.Status != UserSessionStatus.Active)
         ent.EndedOn = App.TimeService.UtcNow;
@@ -291,17 +297,17 @@ namespace Vita.Modules.Logging {
 
     }
 
-    private IUserSession LoadUserSessionEntity(OperationContext context, string token) {
-      var session = context.OpenSystemSession();
+    private TUserSession LoadUserSessionEntity(string token) {
+      var session = OpenEntitySession();
       var hash = Util.StableHash(token);
-      var query = from uss in session.EntitySet<IUserSession>()
+      var query = from uss in session.EntitySet<TUserSession>()
                   where uss.WebSessionTokenHash == hash && uss.WebSessionToken == token
                   select uss;
       var ent = query.FirstOrDefault();
       return ent; 
     }
 
-    private CachedSessionItem CacheUserSession(IUserSession ent) {
+    private CachedSessionItem CacheUserSession(TUserSession ent) {
       if(ent == null)
         return null; 
       var token = ent.WebSessionToken; 
@@ -341,9 +347,9 @@ namespace Vita.Modules.Logging {
         //We could use DateTime.Now as value for LastUsedOn for all sessions, it is within few seconds, but... 
         // this causes problems for unit tests for session expiration, when we try to shift current time and see if session is expired;
         // (with current sessions would be updated to shifted time). So we keep actual time (latest) while we accumulate sessions for update
-        var query = session.EntitySet<IUserSession>().Where(s => _sessionIds.Contains(s.Id))
+        var query = session.EntitySet<TUserSession>().Where(s => _sessionIds.Contains(s.Id))
           .Select(s => new { Id = s.Id, LastUsedOn = _lastUsed });
-        session.ScheduleNonQuery<IUserSession>(query, Vita.Entities.Linq.LinqCommandType.Update);      
+        session.ScheduleNonQuery<TUserSession>(query, Vita.Entities.Linq.LinqCommandType.Update);      
       }
     }//class
 

@@ -17,8 +17,7 @@ namespace Vita.Samples.BookStore {
     public static readonly Version CurrentVersion = new Version("1.4.0.0");
     // Event codes for scheduled events
     public const string EventCodeRestock = "Restock";
-    public const string EventCodeAskFeedback = "AskPurchaseFeedback";
-    public const string EventCodeAskReview = "AskBookReview";
+    public const string EventCodeAskBookReview = "AskBookReview";
 
     //Services
     ICalendarService _calendarService;
@@ -97,11 +96,7 @@ namespace Vita.Samples.BookStore {
     // so it should be fired every 5 minutes. We pretend to do the operation and add notes to the event. 
     private void CalendarService_EventFired(object sender, CalendarEventArgs e) {
       if (e.CalendarType == CalendarType.System && e.Code == EventCodeRestock) 
-        e.ExecutionNotes += "Restocking operation executed at " + App.TimeService.UtcNow.ToString("s"); 
-      if (e.CalendarType == CalendarType.Individual && e.Code == EventCodeAskFeedback)
-        e.ExecutionNotes += "Sent email to user asking for experience feedback, orderID: " + e.CustomItemId;
-      if(e.CalendarType == CalendarType.Individual && e.Code == EventCodeAskReview)
-        e.ExecutionNotes += "Sent email to user asking for review of the books he bought, orderID: " + e.CustomItemId;
+        e.Log += "Restocking operation executed at " + App.TimeService.UtcNow.ToString("s"); 
     }
 
     // Static method computing FullName computed property for an Author

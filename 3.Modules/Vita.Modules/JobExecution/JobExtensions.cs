@@ -13,8 +13,8 @@ using Vita.Entities;
 
 namespace Vita.Modules.JobExecution {
 
-
-  internal static class JobUtil {
+  internal static class JobExtensions {
+    // delimiter for parameters serialized as json in one text file. 
     public static readonly string ArgsDelimiter = Environment.NewLine + new string('"', 4) + Environment.NewLine;
 
     public static IJob NewJob(this IEntitySession session, JobDefinition job, JsonSerializer serializer) {

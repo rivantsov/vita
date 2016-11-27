@@ -52,7 +52,7 @@ namespace Vita.Modules.JobExecution {
                      string jobCode, Guid? sourceId = null, JobRetryPolicy retryPolicy = null) {
       JobRunContext jobCtx = null;
       try {
-        jobCtx = new JobRunContext(this.App, _serializer, jobCode, sourceId);
+        jobCtx = new JobRunContext(this.App, _serializer, jobCode, JobFlags.IsLightJob, sourceId);
         RegisterRunningJob(jobCtx);
         OnJobNotify(jobCtx, JobNotificationType.Starting);
         var compiledFunc = func.Compile();
@@ -79,7 +79,7 @@ namespace Vita.Modules.JobExecution {
     public IJob CreateBackgroundJob(IEntitySession session, string code, Expression<Action<JobRunContext>> expression, JobFlags flags = JobFlags.Default, 
                                      JobRetryPolicy retryPolicy = null, IJob parentJob = null) {
       var jobDef = JobDefinition.CreateBackgroundJob(code, expression, flags, retryPolicy);
-      var job = JobUtil.NewJob(session, jobDef, _serializer);
+      var job = JobExtensions.NewJob(session, jobDef, _serializer);
       job.ParentJob = parentJob;
       ValidateNewJob(job);
       return job; 
@@ -88,7 +88,7 @@ namespace Vita.Modules.JobExecution {
     public IJob CreatePoolJob(IEntitySession session, string code, Expression<Func<JobRunContext, Task>> expression, JobFlags flags = JobFlags.Default, JobRetryPolicy retryPolicy = null,
               IJob parentJob = null) {
       var jobDef = JobDefinition.CreatePoolJob(code, expression, flags, retryPolicy);
-      var job = JobUtil.NewJob(session, jobDef, _serializer);
+      var job = JobExtensions.NewJob(session, jobDef, _serializer);
       job.ParentJob = parentJob;
       ValidateNewJob(job);
       return job;
@@ -125,10 +125,19 @@ namespace Vita.Modules.JobExecution {
       return _runningJobs.Values.ToList();
     }
 
+    public IList<IJobRun> GetActiveJobs(IEntitySession session, int maxJobs = 20) {
+      maxJobs = Math.Max(20, 100);
+      var query = session.EntitySet<IJobRun>().Include(jr => jr.Job).Where(jr => jr.Status == JobRunStatus.Executing || jr.Status == JobRunStatus.Failed)
+        .Take(maxJobs).OrderBy(jr => jr.LastStartedOn);
+      var result = query.ToList();
+      return result; 
+    }
+
+
     public event EventHandler<JobNotificationEventArgs> Notify;
 
     private void OnJobNotify(JobRunContext jobContext, JobNotificationType notificationType) {
-      Notify?.Invoke(this, new JobNotificationEventArgs() { Job = jobContext, NotificationType = notificationType });
+      Notify?.Invoke(this, new JobNotificationEventArgs() { JobRunContext = jobContext, NotificationType = notificationType });
     }
     #endregion
 

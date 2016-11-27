@@ -15,8 +15,8 @@ namespace Vita.Modules.JobExecution {
   /// </remarks>
   public interface IJobExecutionService {
     
-    /// <summary> Starts a light job/task. The light job is a short-running task which is not initially persisted to database. It is saved to the database 
-    /// only if it fails initially and needs to be retried later. </summary>
+    /// <summary> Starts a light job/task. The light job is a short-running task which is not initially persisted to database and the service tries 
+    /// to execute it immediately. It is saved to the database only if it fails initially and needs to be retried later. </summary>
     /// <param name="context">Operation context.</param>
     /// <param name="func">The implementation function. </param>
     /// <param name="jobCode">Optional, job code (name).</param>
@@ -25,21 +25,53 @@ namespace Vita.Modules.JobExecution {
     /// <returns>The run context of the job.</returns>
     /// <remarks>
     /// <para> The implementation function <c>func</c> must be a call to static method (or instance method of EntityModule), for ex: </para>
-    /// <para> (jobRunContext) => SomeClass.DoTheWork(jobRunContext, "StringValue", 123, someObject) </para>
+    /// <para>   (jobRunContext) => SomeClass.DoTheWork(jobRunContext, "StringValue", 123, someObject) </para>
+    /// <para> Alternatively, you can use JobHelper.ExecuteWithRetries helper method. </para>
     /// </remarks>
     Task<JobRunContext> RunLightTaskAsync(OperationContext context, Expression<Func<JobRunContext, Task>> func,
                      string jobCode, Guid? sourceId = null, JobRetryPolicy retryPolicy = null);
-    
-    /// <summary>Creates a job record in the database. If the job has a flag StartOnSave set, the job will be started immediately after 
-    /// session changes are saved. </summary>
+
+    /// <summary>Creates a new job entity from Job definition object. </summary>
     /// <param name="session">Entity session.</param>
     /// <param name="job">Job definition.</param>
     /// <returns>Created IJob instance.</returns>
+    /// <remarks>The database record is created when the caller invokes session.SaveChanges() method.
+    /// If the job has a flag StartOnSave set, the job will be started immediately after the session changes are saved. 
+    /// </remarks>
     IJob CreateJob(IEntitySession session, JobDefinition job);
 
-    IJob CreateBackgroundJob(IEntitySession session, string code, Expression<Action<JobRunContext>> expression, JobFlags flags = JobFlags.Default, JobRetryPolicy retryPolicy = null,
+    /// <summary>Creates a job that will be executed on a background (not pool) thread, likely long-running job. </summary>
+    /// <param name="session">Entity session.</param>
+    /// <param name="code">Name or code that identifies the job.</param>
+    /// <param name="jobMethod">The expression representing a call to the worker method. </param>
+    /// <param name="flags">Job flags.</param>
+    /// <param name="retryPolicy">Retry policy.</param>
+    /// <param name="parentJob">Optiona, a parent job. If specified, the created job will start immediately after the parent job completes successfully.</param>
+    /// <returns>The created job entity.</returns>
+    /// <remarks>The job implementation method must be a call to a static or instance method returning void. 
+    /// If an instance method is used, it must be defined on one of the global objects registered with the system - entity module, service, or object 
+    /// registered with the EntityApp.RegisterGlobalObject call. 
+    /// The only parameter of the delegate is a JobRunContext object that provides the context information about the running job to the implementation method. 
+    /// If the job has a flag StartOnSave set, the job will be started immediately after the session changes are saved (parentJob parameter must be null in this case). 
+    /// </remarks>
+    IJob CreateBackgroundJob(IEntitySession session, string code, Expression<Action<JobRunContext>> jobMethod, JobFlags flags = JobFlags.Default, JobRetryPolicy retryPolicy = null,
           IJob parentJob = null);
-    IJob CreatePoolJob(IEntitySession session, string code, Expression<Func<JobRunContext, Task>> expression, JobFlags flags = JobFlags.Default, JobRetryPolicy retryPolicy = null,
+
+    /// <summary>Creates a job that will be executed on a pool thread.</summary>
+    /// <param name="session">Entity session.</param>
+    /// <param name="code">Name or code that identifies the job.</param>
+    /// <param name="jobMethod">The expression representing a call to the worker method. Must be a sync or async method returning Task. </param>
+    /// <param name="flags">Job flags.</param>
+    /// <param name="retryPolicy">Retry policy.</param>
+    /// <param name="parentJob">Optiona, a parent job. If specified, the created job will start immediately after the parent job completes successfully.</param>
+    /// <returns>The created job entity.</returns>
+    /// <remarks>The job implementation method must be a call to a static or instance method returning Task. The method can be synchronuous or async. 
+    /// If an instance method is used, it must be defined on one of the global objects registered with the system - entity module, service, or object 
+    /// registered with the EntityApp.RegisterGlobalObject call. 
+    /// The only parameter of the delegate is a JobRunContext object that provides the context information about the running job to the implementation method. 
+    /// If the job has a flag StartOnSave set, the job will be started immediately after the session changes are saved (parentJob parameter must be null in this case). 
+    /// </remarks>
+    IJob CreatePoolJob(IEntitySession session, string code, Expression<Func<JobRunContext, Task>> jobMethod, JobFlags flags = JobFlags.Default, JobRetryPolicy retryPolicy = null,
               IJob parentJob = null);
 
     /// <summary>Starts a job identified by ID. </summary>
@@ -57,13 +89,19 @@ namespace Vita.Modules.JobExecution {
     /// <remarks>Includes only jobs that are currently in memory and executing. Does not include jobs that failed and waiting for retries.</remarks>
     IList<JobRunContext> GetRunningJobs();
 
+    /// <summary>Returns a list of jobs that are currently executing or pending for restart in the future.</summary>
+    /// <param name="session">Entity session.</param>
+    /// <param name="maxJobs">Maximum jobs to return. If greater than 100, set to 100.</param>
+    /// <returns>A list of active jobs.</returns>
+    IList<IJobRun> GetActiveJobs(IEntitySession session, int maxJobs = 20);
+
     /// <summary>A notification event, fired when jobs are started, completed or failed. </summary>
     event EventHandler<JobNotificationEventArgs> Notify;
   }
 
   /// <summary>Job notification event arguments. </summary>
   public class JobNotificationEventArgs : EventArgs {
-    public JobRunContext Job;
+    public JobRunContext JobRunContext;
     public JobNotificationType NotificationType;
   }
 

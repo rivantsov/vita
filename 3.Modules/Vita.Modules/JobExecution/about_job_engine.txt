@@ -1,1 +1,59 @@
-﻿
+﻿ ====================== Job Execution Module  ====================== 
+
+The module defines database entities and implements code that allows you to create 'persistent' jobs - activities that can be executed, and in case of failure can be retried later. 
+Two basic scenarios: 
+  1. Relatively short tasks that are expected to fail eventually and need to be retried later.
+  2. Long-running jobs that execute on background threads and not associated with particular user operation (web request). 
+Both types of jobs can be created and executed by user request, or can be scheduled to execute at certain date/time using the Calendar module (including repeated execution like daily at 3am).
+
+ ====================== Short async task with retries - a typical case ====================== 
+A typical use case is to wrap non-essential not reliable external services. For example, when user submits a purchase order on your e-commerce web site, you need to process the payment using credit card processing service, and then send a confirmation email to the user using email service like MailChimp. There is an important difference between the two external services. Payment processing MUST be completed before you complete the transaction, so you include it into the workflow. If payment fails, you cancel the operation and show error message to the user. In constrast, immediate sending of confirmation email is not critical. If MailChimp service is not available at the moment, you can still complete the purchase transaction, and send confirmation email later. In this case, you can code the email sending action as a job (light task) in job execution engine. The engine will try to execute it immediately, but if it fails, it will persist all parameters of the operation, and will retry it later. A typical retry pattern: retry 2 more times with 30 seconds interval. If fails, wait for 30 minutes and do 3 attempts with 30 seconds interval. Repeat total 5 rounds of 5 attempts, 30 minutes between rounds, 30 seconds between attempts. If failed after all attempts, log error into error log. 
+Each error on each attempt is logged into IncidentLog, except the last one which goes to error log. The errors are accumulated in the IJobRun.Errors text field. 
+You can use JobHelper.ExecuteWithRetries(...) method to define and execute an async task, with later retries if it fails. 
+
+ ====================== Long-running jobs ====================== 
+The job 'definition' is saved to the database and then started  -immediately or later, by calendar event. The job is rehyndrated from the database and the target delegate is invoked on background thread (not pool thread). The job can run for a long time - minutes or hours. If the system is shutdown/restarted, the job is stopped (with a signal to executing code through cancellation token), and then restarted immediately when the app is up again. 
+
+ ====================== Defining a job implementation method ====================== 
+To define a job, you need to implement a method that actually does the work, and provide a delegate that calls it to the job definition methods. The signature is different for short and long tasks. The short tasks expected to be async (but does not have to be), so it must be a function returning Task. For long-running tasks it must be a 'void' procedure. 
+The method can be static or instance method. Instance methods must be defined on a globally-known object (entity module, service implementation) so that the engine can find the instance to use when it tries to invoke the method. If your method is declared in a class that is not service or module, it still must be a single-instance object that you register using EntityApp.RegisterGlobalObject(obj) method. The objects are registered by type, so there can be only instance of any type. 
+The implementat method can have arbitrary parameters, the first one is typically a JobRunContext instance - the system will provide it. You provide a reference to implementation method using a call expression. 
+
+Long running jobs: 
+      var job = _jobApp.JobService.CreateBackgroundJob(session, "MyDocJob", (jobCtx) => ProcessDocuments(jobCtx, "MyStringParam", myIntParam, docIds), 
+                            JobFlags.PersistArguments | JobFlags.StartOnSave);
+      session.SaveChanges(); //this will start the job because we have flag StartOnSave (it is default)
+
+Short async tasks:
+      var asyncJob = _jobApp.JobService.CreatePoolJob(session, "MyEmailTask", (jobCtx) => SendEmailAsync(jobCtx, emailList, emailSubject, emailBody));
+      session.SaveChanges(); 
+
+Implementation methods: 
+   public void ProcessDocuments(JobContext jobCtx, string prm1, int prm2, IList<Guid> docIDs) { 
+     ... 
+   }
+   public async Task SendEmailAsync(JobContext jobCtx, List<string> emails, string subject, string body) { 
+     ... 
+   }
+
+The expression that encodes the call to implementation method MUST have a single call to the implementation method. The method itself can have any parameters you want; the values are serialized to the database and deserialized back when it's time to execute the job. The arguments are serialized as Json - so be careful, all values must be light and 'isolated' objects that do not reference any big global things like entity app, entities, sessions, etc.
+The PersistArguments flag in long job definition means 'save current state of arguments' on failure, so list of doc IDs will be persisted as it was at point of failure. See section below. 
+
+ ====================== Starting a job/task  ====================== 
+ Note that creating a job does not necessarily mean it is started immediately. There are several methods of starting a job
+ 1. If you use 'light task' (JobHelper.ExecuteWithRetries or IJobExecutionService.RunLightTaskAsync) the system start executing the async task immediately, without first persisting it. It the task succeeds, it will not be persisted at all, and no data will appear in job tables. If the task fails, it will be persisted and retried later, according to retry policy.
+ 2. If you create a job and specify a flag JobFlags.StartOnSave, the job will be launched immediately when the job entity is saved in the database (session.SaveChanges is called). 
+ 3. If you create a job without StartOnSave flag, the job is created and saved in the database. It just sits there waiting to be activated by an explicit call to jobService.StartJob(jobId) to start it. The calendar service allows you to schedule an event in the future (or series of regular events) that will start the job at certain date/time
+
+ ====================== Reporting progress and saving the current state ====================== 
+Both types of jobs (short and long running) can use the JobRunContext parameter to report the progress back to the app - it is saved to the database and can be queried by an app. 
+Just use jobContext.UpdateProgress method:  
+  jobContext.UpdateProgress(currPercDone, "Processing import records, " + currPercDone + "% completed.");
+
+The execution method can receive a number of parameters that are initially persisted to the database when job is created, and then deserialized back and provided to the target method when it starts executing. If job run fails, on next attempt the arguments will be deserialized from the original copy. However, you can instruct the engine to serialize the 'current' values in case of failure by setting job flag JobFlags.PersistArguments. Obviously, it works only for ref-type of arguments (objects/classes), not value types or strings. 
+
+Example. Let's look at long job definition above. The job-creation code create a list of document IDs to process and passes it to the job delegate as List<Guid>. Inside the job implementaion code, when you finished processing a doc, you remove its ID from the list. If the job suddenly fails and throws an exception, the engine will serialize the current list of IDs, and next restart will get the list of remaining documents to process. You can explicitly tell the system to save the arguments at certain point using jobContext.TrySaveArguments() method. 
+    
+ ====================== Data model: IJob and IJobRun entities ====================== 
+ IJob entity stores job definition. IJobRun represents a job run, cumulatively with all retry attempts. If create and run a job, there will be a single IJobRun entity, even if it fails a few times and restarts after some interval. If you create a job and then call jobService.StartJob(jobId) multiple times at different times, for each call a new JobRun record will be created. 
+ If you use a Calendar to schedule a regular event, like run a job every day at midnight, you create a job to run, and associate it with calendar event series that defines an event that occurs every day at midnight. So at midnight the calendar service will create a new event and call jobService.StartJob, which will create a new IJobRun entry. So for every run happenning at midnight there will be an instance of IJobRun record, all connected to the same job. If midnight job run fails, it will be retried against the same JobRun instance.      

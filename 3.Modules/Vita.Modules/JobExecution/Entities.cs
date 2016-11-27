@@ -21,8 +21,9 @@ namespace Vita.Modules.JobExecution {
     JobFlags Flags { get; set; }
     [Nullable]
     IJob ParentJob { get; set; }
-
+    [Size(250)]
     string TargetType { get; set; }
+    [Size(100)]
     string TargetMethod { get; set; }
     int TargetParameterCount { get; set; }
     [Nullable, Unlimited]

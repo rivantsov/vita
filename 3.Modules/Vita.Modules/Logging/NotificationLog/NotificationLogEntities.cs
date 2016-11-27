@@ -18,6 +18,9 @@ namespace Vita.Modules.Logging {
     [Size(50)]
     string Status { get; set; }
 
+    [Nullable, Unlimited]
+    string Body { get; set; }
+
     int AttemptCount { get; set; }
 
     [Size(100)]

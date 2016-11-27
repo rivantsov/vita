@@ -5,30 +5,34 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace Vita.Modules.Calendar {
+
   public enum CalendarType {
     System,
     Group,
     Individual,
   }
 
-  public enum CalendarEventStatus {
-    NotStarted = 0,
-    LeadFired = 1, 
-    Fired = 2,
-    Canceled = 3,
-    Error = 4, 
+  public enum EventStatus {
+    Pending = 0,
+    Firing = 1,
+    Completed = 3,
+    Error = 5, 
+    Canceled = 6,
   }
 
-  public enum CalendarEventSeriesStatus {
+  public enum ScheduleStatus {
     Active,
-    Suspended, 
+    Stopped, 
   }
 
   [Flags]
-  public enum CalendarEventFlags {
+  public enum EventFlags {
     None = 0,
+    /// <summary>Indicates that IEventInfo is a customized version, for specific occurrence, 
+    /// of a repeated generic event with a schedule.</summary>
+    IsCustomizedVersion = 1, 
     // For personal calendars indicates if event is visible to the user (it might be system-scheduled, hidden event)
-    UserVisible = 1, 
+    UserVisible = 4, 
   }
 
 }

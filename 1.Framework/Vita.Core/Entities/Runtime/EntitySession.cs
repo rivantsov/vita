@@ -429,24 +429,28 @@ namespace Vita.Entities.Runtime {
     // We need to make sure that for all added records we fire the Entity's OnSaving event. (All Auto attributes are processed in this event). 
     // That's the reason for tracking 'done-Counts' and calling the invoke loop twice
     protected virtual void OnSaving() {
-      int startListIndex = 0;
-      int startRecordIndex = 0;
-      InvokeOnSaving(ref startListIndex, ref startRecordIndex);
       _appEvents.OnSavingChanges(this);
-      InvokeOnSaving(ref startListIndex, ref startRecordIndex);
-    }
-
-    private void InvokeOnSaving(ref int startListIndex, ref int startRecordIndex) {
-      //Notify all changed lists - these may add/delete records (many-to-many link records)
-      for (int i = startListIndex; i < ListsChanged.Count; i++)
-        ListsChanged[i].Notify(BoundListEventType.SavingChanges);
-      startListIndex = ListsChanged.Count;
-      //Saving event handlers may add/remove changed records, so we need to use 'for-i' loop here
-      for (int i = startRecordIndex; i < this.RecordsChanged.Count; i++) {
-        var rec = RecordsChanged[i];
-        rec.EntityInfo.SaveEvents.OnSavingChanges(rec);
+      // We need to invoke OnSaving event for each record and Notify each changed entity list. The event handlers may add extra records, 
+      // so we may need to repeat the process for extra records.
+      int startListChangedIndex = 0;
+      int startRecordsChangedIndex = 0;
+      while(true) {
+        var oldListsChangedCount = ListsChanged.Count;
+        var oldRecordsChangedCount = RecordsChanged.Count;
+        //Notify all changed lists - these may add/delete records (many-to-many link records)
+        for(int i = startListChangedIndex; i < oldListsChangedCount; i++)
+          ListsChanged[i].Notify(BoundListEventType.SavingChanges);
+        //Saving event handlers may add/remove changed records, so we need to use 'for-i' loop here
+        for(int i = startRecordsChangedIndex; i < oldRecordsChangedCount; i++) {
+          var rec = RecordsChanged[i];
+          rec.EntityInfo.SaveEvents.OnSavingChanges(rec);
+        }
+        //Check if we are done, or we need to do it again
+        if(oldListsChangedCount == ListsChanged.Count && oldRecordsChangedCount == RecordsChanged.Count)
+          return;
+        startListChangedIndex = oldListsChangedCount;
+        startRecordsChangedIndex = oldRecordsChangedCount;
       }
-      startRecordIndex = RecordsChanged.Count; 
     }
 
     protected void OnSaved() {

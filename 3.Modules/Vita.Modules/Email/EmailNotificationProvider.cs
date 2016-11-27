@@ -44,6 +44,7 @@ namespace Vita.Modules.Email {
         Util.CheckNotEmpty(message.From, "Email From address not specified in message.");
         Util.CheckNotEmpty(subject, "Subject not specified or Subject template '{0}.Subject' not found.", message.Type);
         Util.CheckNotEmpty(body, "Email body not specified or Body template '{0}.Body' not found.", message.Type);
+        message.Body = body; 
         message.Status = MessageStatus.Sending;
         var mail = new MailMessage(message.From, message.Recipients, subject, body);
         await _emailService.SendAsync(context, mail);

@@ -60,8 +60,9 @@
     <Compile Include="ApiClients\Recaptcha\RecaptchaSettings.cs" />
     <Compile Include="ApiClients\Recaptcha\RecaptchaUtil.cs" />
     <Compile Include="Calendar\CalendarEntityModule.cs" />
-    <Compile Include="Calendar\CalendarEnums.cs" />
-    <Compile Include="Calendar\CalendarEntities.cs" />
+    <Compile Include="Calendar\CalendarEntityModule_CalendarService.cs" />
+    <Compile Include="Calendar\Enums.cs" />
+    <Compile Include="Calendar\Entities.cs" />
     <Compile Include="Calendar\CalendarExtensions.cs" />
     <Compile Include="Calendar\CalendarUserRoles.cs" />
     <Compile Include="Calendar\Cron\CronSpecParser.cs" />
@@ -69,7 +70,7 @@
     <Compile Include="Calendar\Cron\CronFields.cs" />
     <Compile Include="Calendar\Cron\DateFields.cs" />
     <Compile Include="Calendar\Cron\DateValue.cs" />
-    <Compile Include="Calendar\ICalendarService.cs" />
+    <Compile Include="Calendar\_ICalendarServices.cs" />
     <Compile Include="DataHistory\KeepHistoryAttributes.cs" />
     <Compile Include="DataHistory\DataHistoryExtensions.cs" />
     <Compile Include="DataHistory\DataHistoryModule.cs" />
@@ -80,8 +81,8 @@
     <Compile Include="JobExecution\JobDefinition.cs" />
     <Compile Include="JobExecution\JobExecutionModule.cs" />
     <Compile Include="JobExecution\JobExecutionModule_Execution.cs" />
-    <Compile Include="JobExecution\JobHelper.cs" />
-    <Compile Include="JobExecution\JobUtil.cs" />
+    <Compile Include="JobExecution\_JobHelper.cs" />
+    <Compile Include="JobExecution\JobExtensions.cs" />
     <Compile Include="JobExecution\JobRunContext.cs" />
     <Compile Include="Logging\Api\EventsPostController.cs" />
     <Compile Include="Logging\Api\UserSessionInfoController.cs" />

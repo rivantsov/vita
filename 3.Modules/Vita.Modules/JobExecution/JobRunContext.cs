@@ -46,14 +46,14 @@ namespace Vita.Modules.JobExecution {
     }
 
     // Used for creating 'light' jobs
-    internal JobRunContext(EntityApp app, JsonSerializer serializer, string jobCode, Guid? sourceId) {
+    internal JobRunContext(EntityApp app, JsonSerializer serializer, string jobCode, JobFlags flags, Guid? sourceId) {
       OperationContext = app.CreateSystemContext();
       Serializer = serializer;
       JobCode = jobCode;
       SourceId = sourceId; 
       JobRunId = Guid.NewGuid();
       JobId = Guid.NewGuid();
-      Flags = JobFlags.IsLightJob;
+      Flags = flags;
       _progress = 0;
       Status = JobRunStatus.Executing;
       IsPersisted = false; 
@@ -91,7 +91,7 @@ namespace Vita.Modules.JobExecution {
     public bool TrySaveArguments() {
       if(!CanSaveArguments) //it is a light task, not persisted yet.
         return false; 
-      var serArgs = JobUtil.SerializeArguments(StartInfo.Arguments, Serializer);
+      var serArgs = JobExtensions.SerializeArguments(StartInfo.Arguments, Serializer);
       var session = OperationContext.OpenSystemSession();
       var updQuery = session.EntitySet<IJobRun>().Where(jr => jr.Id == JobRunId)
           .Select(jr => new { CurrentArguments = serArgs});

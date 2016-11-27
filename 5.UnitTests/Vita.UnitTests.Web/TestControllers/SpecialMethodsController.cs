@@ -13,6 +13,7 @@ using Vita.Samples.BookStore.Api;
 using System.Data.SqlClient;
 using System.Data;
 using System.Diagnostics;
+using Vita.Modules.JobExecution;
 
 namespace Vita.UnitTests.Web {
 
@@ -85,10 +86,11 @@ namespace Vita.UnitTests.Web {
     static string _connectionCloseReport;
     [ApiGet, ApiRoute("connectiontest")]
     public string TestConnectionHandling() {
+      // connection mode should be set in WebCallContextHandlerSettings, and it is reuse by default
       if(Context.DbConnectionMode != DbConnectionReuseMode.KeepOpen)
         return "Error: Connection mode is not KeepOpen. Mode: " + Context.DbConnectionMode;
       _connectionCloseReport = "(empty)"; 
-      var session = Context.OpenSystemSession();
+      var session = Context.OpenSession();
       session.EnableCache(false);
       var bk = session.EntitySet<IBook>().OrderBy(b => b.Title).First(); 
       //this should creaet connection and attach to session
@@ -138,21 +140,24 @@ namespace Vita.UnitTests.Web {
       return dt == null ? string.Empty : dt.Value.ToString("u");
     }
 
-    // This method tests that when task is delayed, the thread is actually 'rolled-up' correctly and SendAsync method already returned the task (which is hanging in delay)
+    // This method tests that when task is delayed, the thread is actually 'rolled-up' correctly 
+    // and SendAsync method already returned the task (which is hanging in delay)
     // This test ensures that async execution is handled correctly throughout SlimApi  
     [ApiGet, ApiRoute("getdateasync")]
     public async Task<string> GetDateAsync() {
       var webCtx = Context.WebContext;
-      Util.Check(TopHttpHandler.CallStatus == "Started", "Expected Started call status");
+      Util.Check(DiagnosticsHttpHandler.CallStatus == "Started", "Expected Started call status");
       var dt = this.Context.App.TimeService.UtcNow;
       var dtStr = dt.ToString("u");
       await Task.Delay(2000);
-      //We now check that thread had been 'rolled up' when we hit Delay, and TopHttpHandler.SendAsync already returned!
-      Util.Check(TopHttpHandler.CallStatus == "Returned", "Expected Started call status");
+      //We now check that thread had been 'rolled up' when we hit Delay, and DiagnosticsHttpHandler.SendAsync already returned
+      // We check it postfactum, when delay is over, the following line starts executing, and at this time
+      // the variable in the diagnostics (top) handler had been already set. 
+      Util.Check(DiagnosticsHttpHandler.CallStatus == "Returned", "Expected Started call status");
       return await Task.FromResult(dtStr);
     }
 
-    //Testing fix - calling method with redirect was failing in attempt to deserialize response
+    //Testing the bug fix - calling method with redirect was failing in attempt to deserialize response
     [ApiGet, ApiRoute("redirect")]
     public void RedirectToSearch() {
       var webCtx = Context.WebContext;
@@ -206,7 +211,6 @@ namespace Vita.UnitTests.Web {
       return value;
     }
     #endregion
-
 
   }//class
 }

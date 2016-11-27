@@ -117,13 +117,12 @@ namespace Vita.UnitTests.Basic {
     static int _syncCallCount = 0; 
     //sync version
     public static Task DoSampleJob(JobRunContext jobContext, List<string> listPrm, string arg0, int arg1) {
-      // Debug.WriteLine("Sync job called!");
       _syncCallCount++;
       //this updates immediately in the database
       jobContext.UpdateProgress( _syncCallCount, "Processing, count: " + _syncCallCount); 
       listPrm.RemoveAt(0);
       if(_syncCallCount < 3)
-        throw new Exception("Ooopsss... Job failed, call count: " + _syncCallCount);
+        throw new Exception("Sync task failed, call count: " + _syncCallCount);
       //success on 3d run
       jobContext.UpdateProgress(100, _successMessage);
       return Task.CompletedTask; 
@@ -138,7 +137,7 @@ namespace Vita.UnitTests.Basic {
       //this updates immediately in the database
       jobContext.UpdateProgress(_syncCallCount, "Processing, count: " + _syncCallCount);
       if(_asyncCallCount < 3 ) 
-        throw new Exception("Ooopsss... Job failed, call count: " + _syncCallCount);
+        throw new Exception("Async task failed, call count: " + _syncCallCount);
       jobContext.UpdateProgress(100, _successMessage);
       await Task.Delay(10);
     }
@@ -163,7 +162,7 @@ namespace Vita.UnitTests.Basic {
       _lightJobFailed = false; 
       //Run with 2 initial failures; on first failure the task will be persisted; second run will be done after delay, from data saved in DB
       // the third run will succeed. 
-      var jobContext = await JobHelper.ExecuteWithRetries(ctx, (jobCtx) => LightJob("abc", 2));
+      var jobContext = await JobHelper.ExecuteWithRetriesAsync(ctx, (jobCtx) => LightJob("abc", 2));
       Assert.IsTrue(_lightJobFailed, "Expected light job to fail.");
 
       for(int i = 0; i < 40; i++) {

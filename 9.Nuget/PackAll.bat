@@ -1,4 +1,4 @@
-SET pver=1.9.0.9
+SET pver=1.9.0.10
 Echo Version: "%pver%"
 del /q Nupkg\*.*
 :: Need to delete some MSBuild-generated temp files (with .cs extension)

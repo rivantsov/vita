@@ -10,26 +10,10 @@ using Vita.Modules.JobExecution;
 namespace Vita.Modules.Calendar {
 
   [Entity]
-  public interface IEventCalendar {
-    [PrimaryKey, Auto]
-    Guid Id { get; }
-
-    [Utc, Auto(AutoType.CreatedOn)]
-    DateTime CreatedOn { get; }
-
-    CalendarType Type { get; set; }
-
-    [Size(Sizes.Name)]
-    string Name { get; set; }
-
-    Guid? OwnerId { get; set; } //org, group or user
-  }
-
-  [Entity]
   public interface IEvent {
     [PrimaryKey, Auto]
     Guid Id { get; }
-    IEventCalendar Calendar { get; set; }
+    Guid? OwnerId { get; set; }
     [GrantAccess]
     IEventTemplate Template { get; set; }
     EventStatus Status { get; set; }
@@ -44,7 +28,7 @@ namespace Vita.Modules.Calendar {
     string Log { get; set; }
   }
 
-  [Entity, Unique("Code,Calendar")]
+  [Entity, Unique("Code,OwnerId")]
   public interface IEventTemplate {
     [PrimaryKey, Auto]
     Guid Id { get; }
@@ -57,8 +41,7 @@ namespace Vita.Modules.Calendar {
     string Description { get; set; }
     // for events with duration, like meetings
     int DurationMinutes { get; set; }
-    [Nullable]
-    IEventCalendar Calendar { get; set; }
+    Guid? OwnerId { get; set; }
 
     [Nullable]
     IJob JobToRun { get; set; }
@@ -77,7 +60,6 @@ namespace Vita.Modules.Calendar {
     DateTime ActiveFrom { get; set; }
     DateTime? ActiveUntil { get; set; }
     ScheduleStatus Status { get; set; }
-    IEventCalendar Calendar { get; set; }
     [GrantAccess]
     IEventTemplate Template { get; set; }
     // Schedule

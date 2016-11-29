@@ -16,29 +16,14 @@ namespace Vita.Modules.Calendar {
       return (flags & flag) != 0; 
     }
 
-    public static IEventCalendar FindCalendar(this IEntitySession session, CalendarType type, Guid ownerId) {
-      var cal = session.EntitySet<IEventCalendar>()
-          .Where(c => c.Type == type && c.OwnerId == ownerId).FirstOrDefault();
-      return cal;
-    }
-
-    public static IEventCalendar NewCalendar(this IEntitySession session, CalendarType type, string name, Guid? ownerId = null) {
-      var cal = session.NewEntity<IEventCalendar>();
-      cal.Type = type;
-      cal.Name = name;
-      cal.OwnerId = ownerId;
-      return cal; 
-    }
-
-    public static IEventTemplate NewEventTemplate(this IEventCalendar calendar, 
-               string code, string title, string description, EventFlags flags = EventFlags.None,  
+    public static IEventTemplate NewEventTemplate(this IEntitySession session, 
+               string code, string title, string description, Guid? ownerId = null, EventFlags flags = EventFlags.None,  
                Guid? customId = null, string customData = null, IJob jobToRun = null) {
-      var session = EntityHelper.GetSession(calendar);
       var template = session.NewEntity<IEventTemplate>();
-      template.Calendar = calendar; 
       template.Code = code;
       template.Title = title;
       template.Description = description;
+      template.OwnerId = ownerId; 
       template.Flags = flags;
       template.CustomId = customId;
       template.CustomData = customData;
@@ -59,12 +44,11 @@ namespace Vita.Modules.Calendar {
       return le; 
     }
 
-    public static IEventSchedule NewSchedule(this IEventCalendar calendar, IEventTemplate eventTemplate, 
+    public static IEventSchedule NewSchedule(this IEventTemplate eventTemplate, 
               string cronSpec, DateTime? activeFrom = null, DateTime? activeUntil = null) {
-      var session = EntityHelper.GetSession(calendar);
+      var session = EntityHelper.GetSession(eventTemplate);
       var utcNow = session.Context.App.TimeService.UtcNow;
       var sched = session.NewEntity<IEventSchedule>();
-      sched.Calendar = calendar;
       sched.Template = eventTemplate;
       sched.Status = ScheduleStatus.Active;
       sched.ActiveFrom = activeFrom != null ? activeFrom.Value : utcNow;
@@ -73,10 +57,9 @@ namespace Vita.Modules.Calendar {
       return sched; 
     }
 
-    public static IEvent NewEvent(this IEventCalendar calendar, IEventTemplate template, DateTime startOn) {
-      var session = EntityHelper.GetSession(calendar);
+    public static IEvent NewEvent(this IEventTemplate template, DateTime startOn) {
+      var session = EntityHelper.GetSession(template);
       var evt = session.NewEntity<IEvent>();
-      evt.Calendar = calendar;
       evt.Template = template;
       evt.StartOn = startOn;
       var leadTime = template.GetFirstSubEventLeadTime(); //zero or negative
@@ -91,7 +74,6 @@ namespace Vita.Modules.Calendar {
       Util.Check(schedule.NextStartOn != null, "CalendarSeries.NextRunOn may not be null, cannot create new event.");
       var session = EntityHelper.GetSession(schedule);
       var evt = session.NewEntity<IEvent>();
-      evt.Calendar = schedule.Calendar; 
       evt.Template = schedule.Template;
       evt.StartOn = evt.OriginalStartOn = startOn;
       evt.NextActivateOn = schedule.NextActivateOn;

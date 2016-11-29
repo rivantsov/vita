@@ -126,14 +126,18 @@ namespace Vita.Data.MsSql {
     protected override SqlStatement GetConvertBoolToBit(SqlStatement arg0) {
       return string.Format("IIF({0}, 1, 0)", arg0);
     }
- 
+
     public override SqlStatement GetLiteralLimit(SqlStatement select, SqlStatement limit, SqlStatement offset, SqlStatement offsetAndLimit) {
-      var strOffset = string.Empty + offset;
-      if(string.IsNullOrWhiteSpace(strOffset))
-        strOffset = "0";
-      if (ServerVersion != MsSqlVersion.V2008) {
-        return SqlStatement.Format("{0} \r\n OFFSET {1} ROWS FETCH NEXT {2} ROWS ONLY", select, strOffset, limit);
-      }
+      if(ServerVersion == MsSqlVersion.V2008)
+        return GetLiteralLimit2008(select, limit, offset, offsetAndLimit);
+      // 2012 and up
+      var strOffset = offset == null ? "0" : offset.ToString();
+      var strLimit = limit == null ? "1000000" : limit.ToString(); 
+      return SqlStatement.Format("{0} \r\n OFFSET {1} ROWS FETCH NEXT {2} ROWS ONLY", select, strOffset, strLimit);
+    }
+
+
+    public SqlStatement GetLiteralLimit2008(SqlStatement select, SqlStatement limit, SqlStatement offset, SqlStatement offsetAndLimit) {
 
       //V2008
       //TODO: fix this, get rid of all this string matching

@@ -17,34 +17,29 @@ namespace Vita.Data.Linq.Translation {
   partial class LinqEngine {
     private TranslatedLinqCommand TranslateNonQuery(LinqCommand command) {
       LinqCommandPreprocessor.PreprocessCommand(_dbModel.EntityApp.Model, command);
-      var rewriterContext = new TranslationContext(_dbModel, command);
+      var translCtx = new TranslationContext(_dbModel, command);
       var cmdInfo = command.Info;
       // convert lambda params into an initial set of ExternalValueExpression objects; 
       foreach(var prm in cmdInfo.Lambda.Parameters) {
         var inpParam = new ExternalValueExpression(prm);
-        rewriterContext.ExternalValues.Add(inpParam);
+        translCtx.ExternalValues.Add(inpParam);
       }
       //Analyze/transform base select query
       var exprChain = ExpressionChain.Build(cmdInfo.Lambda.Body);
-      var selectExpr = BuildSelectExpression(exprChain, rewriterContext);
+      var selectExpr = BuildSelectExpression(exprChain, translCtx);
       // Analyze external values (parameters?), create DbParameters
-      var cmdParams = BuildParameters(command, rewriterContext);
+      var cmdParams = BuildParameters(command, translCtx);
       var flags = command.Info.Flags; 
       // If there's at least one parameter that must be converted to literal (ex: value list), we cannot cache the query
-      bool canCache = !rewriterContext.ExternalValues.Any(v => v.SqlUse == ExternalValueSqlUse.Literal);
+      bool canCache = !translCtx.ExternalValues.Any(v => v.SqlUse == ExternalValueSqlUse.Literal);
       if (!canCache)
         flags |= LinqCommandFlags.NoQueryCache; 
 
       // !!! Before that, everyting is the same as in TranslateSelect
       var targetEnt = command.TargetEntity;
-      var targetTableInfo = _dbModel.GetTable(targetEnt.EntityType);
-      TableExpression targetTable;
-      bool isSingleTable = selectExpr.Tables.Count == 1 && selectExpr.Tables[0].TableInfo == targetTableInfo;
-      if(isSingleTable) {
-        targetTable = selectExpr.Tables[0];
-      } else
-        targetTable = _translator.CreateTable(targetEnt.EntityType, rewriterContext);
-      var commandData = new NonQueryLinqCommandData(command, selectExpr, targetTable, isSingleTable);
+      var targetTable = _dbModel.GetTable(targetEnt.EntityType);
+      var targetTableExpr = new TableExpression(targetTable);
+      var commandData = new NonQueryLinqCommandData(command, selectExpr, targetTableExpr);
       // Analyze base query output expression
       var readerBody = selectExpr.Reader.Body;
       switch(command.CommandType) {
@@ -59,7 +54,7 @@ namespace Vita.Data.Linq.Translation {
             Util.Check(memberInfo != null, "Member {0} not found in entity {1}.", memberName, targetEnt, targetEnt.EntityType);
             switch(memberInfo.Kind) {
               case MemberKind.Column: 
-                var col = _translator.CreateColumn(targetTable, memberName, rewriterContext);
+                var col = _translator.CreateColumn(targetTableExpr, memberName, translCtx);
                 commandData.TargetColumns.Add(col);
                 commandData.SelectOutputValues.Add(outValues[i]);
                 break; 
@@ -68,7 +63,7 @@ namespace Vita.Data.Linq.Translation {
                 Util.Check(fromKey.ExpandedKeyMembers.Count == 1,
                   "References with composite keys are not supported in LINQ non-query operations. Reference: ", memberName);
                 var pkMember = fromKey.ExpandedKeyMembers[0].Member; 
-                var col2 = _translator.CreateColumn(targetTable, pkMember.MemberName, rewriterContext);
+                var col2 = _translator.CreateColumn(targetTableExpr, pkMember.MemberName, translCtx);
                 commandData.TargetColumns.Add(col2);
                 commandData.SelectOutputValues.Add(outValues[i]);
                 break; 

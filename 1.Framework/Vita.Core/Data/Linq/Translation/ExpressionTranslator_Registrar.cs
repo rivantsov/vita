@@ -188,7 +188,7 @@ namespace Vita.Data.Linq.Translation {
 
     public virtual TableExpression CreateTable(Type tableType, TranslationContext context, LockOptions lockOptions = LockOptions.None) {
       var tableInfo = _dbModel.GetTable(tableType);
-      var tableExpr = new TableExpression(tableType, tableInfo.FullName, tableInfo, lockOptions);
+      var tableExpr = new TableExpression(tableInfo, lockOptions: lockOptions);
       return tableExpr; 
     }
 

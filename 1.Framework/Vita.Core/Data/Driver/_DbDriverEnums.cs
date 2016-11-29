@@ -53,6 +53,7 @@ namespace Vita.Data.Driver {
     SkipTakeRequireOrderBy = 1 << 23,  //MS SQL, SqlCe, Postgres
     AllowsFakeOrderBy = 1 << 24, // 'ORDER BY (SELECT 1)' - MS SQL, Postrgres; SQL CE does not allow this
 
+    UpdateFromSubQuery = 1 << 25, // supports UPDATE statement with FROM clause with SELECT subquery (MS SQL and Postgres)
   }
 
 

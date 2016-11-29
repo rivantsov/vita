@@ -30,10 +30,11 @@ namespace Vita.UnitTests.Extended {
     public void TestLinqNonQuery_Update () {
       var app = Startup.BooksApp;
       IEntitySession session;
-      int updateCount; 
-      
+      int updateCount;
+
       // LINQ update query should return auto object containting PK (Id) value and Properties to update (matched by name).
-      // If Update does not involve other tables, Id might be skipped in the output of the query - it will be ignored anyway
+      // If Update does not involve other tables, the Id might be skipped in the output of the query - it will be ignored anyway
+
       #region Simple update involving 1 table (the table being updated) ----------------------------------
       session = app.OpenSession();
       //Pre-load old values, to compare them with new updated values
@@ -117,6 +118,42 @@ namespace Vita.UnitTests.Extended {
                ) AS _from
           WHERE "Id" = _from."Id_";
         */
+
+        // Special case - update query against 1 table with OrderBy and Skip/take. 
+        // For ex, 2 queries to do the following: for the cheapest book in order give 10% discount; give 5% discound to other books
+        // Because the query involves order-by and skip/take, the engine should use update SQL with FROM clause, not simplified update statement
+        // (bug fix)
+        session = app.OpenSession();
+        //There is Diego's order with 3 books
+        var diegoOrder = session.EntitySet<IBookOrder>().First(ord => ord.User.UserName == "Diego");
+        Assert.AreEqual(3, diegoOrder.Lines.Count, "Expected 3 books in order.");
+        var vbBkLine = diegoOrder.Lines[0]; //$25
+        var csBkLine = diegoOrder.Lines[1]; //$20
+        var winBkLine = diegoOrder.Lines[2];  //$30
+                                              // query to update the most expensive item - add 1 cent to price
+        var qUpdMostExp = session.EntitySet<IBookOrderLine>().Where(bol => bol.Order == diegoOrder)
+                                                       .OrderByDescending(bol => bol.Price)
+                                                       .Take(1)
+                                                       .Select(bol => new { Id = bol.Id, Price = bol.Price + 0.01m });
+        qUpdMostExp.ExecuteUpdate<IBookOrderLine>();
+        //var cmd0 = session.GetLastCommand();
+        // query to update the rest - reduce by 1 cent
+        var qUpdNotMostExp = session.EntitySet<IBookOrderLine>().Where(bol => bol.Order == diegoOrder)
+                                                       .OrderByDescending(bol => bol.Price)
+                                                       .Skip(1)
+                                                       .Select(bol => new { Id = bol.Id, Price = bol.Price - 0.01m });
+        qUpdNotMostExp.ExecuteUpdate<IBookOrderLine>();
+        //cmd0 = session.GetLastCommand();
+        //Verify prices changed
+        EntityHelper.RefreshEntity(vbBkLine);
+        EntityHelper.RefreshEntity(csBkLine);
+        EntityHelper.RefreshEntity(winBkLine);
+        Assert.AreEqual(24.99, (double)vbBkLine.Price, 0.001, "Expected price 24.99 for vbBook");
+        Assert.AreEqual(19.99, (double)csBkLine.Price, 0.001, "Expected price 19.99 for csBook");
+        Assert.AreEqual(30.01, (double)winBkLine.Price, 0.001, "Expected price 30.01 for winbook");
+        //end special case
+
+
       } // if ServerType = MsSql or Postgres
       #endregion
 
@@ -172,6 +209,7 @@ namespace Vita.UnitTests.Extended {
       }
        */
       #endregion
+
 
     }
 

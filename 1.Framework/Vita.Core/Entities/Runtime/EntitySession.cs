@@ -58,7 +58,6 @@ namespace Vita.Entities.Runtime {
       }
     } DataConnection _currentConnection; 
 
-
     //last executed LINQ query; can be retrieved using EntityHelper.GetLastQuery(this session)
     public LinqCommand LastLinqCommand { get; private set; }
     // last executed DbCommand, use EntityHelper.GetLastCommand(this session) to retrieve it.
@@ -209,6 +208,7 @@ namespace Vita.Entities.Runtime {
       if(!_validationDisabled)
         ValidateChanges();
       try {
+        TransactionRecordCount = RecordsChanged.Count;
         SubmitChanges();
         OnSaved();
         RecordsChanged.Clear();
@@ -219,6 +219,7 @@ namespace Vita.Entities.Runtime {
         throw;
       }
       NextTransactionId = Guid.NewGuid();
+      _transationTags = null; 
     }//method
 
     protected virtual void SubmitChanges() {
@@ -540,7 +541,6 @@ namespace Vita.Entities.Runtime {
     }
     #endregion
 
-
     #region Dynamic query execution: ExecuteDynamicQuery
     public virtual object ExecuteLinqCommand(LinqCommand command) {
       this.LastLinqCommand = command;
@@ -572,7 +572,6 @@ namespace Vita.Entities.Runtime {
     }
 
     #endregion
-
 
     #region Validation
     public virtual void ValidateChanges() {
@@ -707,6 +706,17 @@ namespace Vita.Entities.Runtime {
         _operationLog.Log(entry); 
     }
     #endregion
+
+    #region TransactionTags
+    // free-form strings associated with next save transaction; cleared after SaveChanges()
+    StringSet _transationTags;
+    public StringSet TransactionTags {
+      get {
+        _transationTags = _transationTags ?? new StringSet();
+        return _transationTags;
+      }
+    }
+    #endregion 
 
     //this method is defined for conveniences; only derived method in SecureSession does real elevation
     // But we want to be able to call this method without checking if we have secure session or not. 

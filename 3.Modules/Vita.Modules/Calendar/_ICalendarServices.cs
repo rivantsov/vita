@@ -17,10 +17,7 @@ namespace Vita.Modules.Calendar {
 
   public class CalendarEventArgs : EventArgs {
     public Guid EventId;
-    public Guid CalendarId;
     public Guid EventTemplateId;
-    public CalendarType CalendarType; 
-    public string CalendarName;
     public Guid? OwnerId;
     public string Code;
     public string Title;
@@ -36,15 +33,11 @@ namespace Vita.Modules.Calendar {
 
     public CalendarEventArgs(IEvent evt, IEventSubEvent subEvent = null) {
       EventId = evt.Id;
-      var cal = evt.Calendar;
-      CalendarId = cal.Id;
-      CalendarName = cal.Name;
-      CalendarType = cal.Type;
       var template = evt.Template;
       EventTemplateId = template.Id; 
       Code = template.Code;
       Title = template.Title;
-      OwnerId = cal.OwnerId;
+      OwnerId = evt.OwnerId;
       Status = evt.Status;
       StartOn = evt.StartOn;
       CustomItemId = template.CustomId;

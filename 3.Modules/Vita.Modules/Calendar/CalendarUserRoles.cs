@@ -13,10 +13,9 @@ namespace Vita.Modules.Calendar {
 
     internal CalendarUserRoles() {
       var calendarData = new EntityGroupResource("Calendar", 
-        typeof(IEventCalendar), typeof(IEventTemplate), typeof(IEventSubEvent), typeof(IEvent));
+        typeof(IEventTemplate), typeof(IEventSubEvent), typeof(IEvent));
       var userFilter = new AuthorizationFilter("CalendarUse");
-      userFilter.Add<IEventCalendar, Guid>((c, userid) => c.OwnerId == userid);
-      userFilter.Add<IEvent, Guid>((e, userid) => e.Calendar.OwnerId == userid);
+      userFilter.Add<IEvent, Guid>((e, userid) => e.OwnerId == userid);
       var editCalPerm = new EntityGroupPermission("EditCalendar", AccessType.CRUD, calendarData);
       var useCalendar = new Activity("UseCalendar", editCalPerm);
       RegularUser = new Role("CalendarUser");

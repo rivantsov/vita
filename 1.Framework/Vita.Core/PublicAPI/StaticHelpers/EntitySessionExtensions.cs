@@ -111,12 +111,6 @@ namespace Vita.Entities {
       return entSession.LastCommand;
     }
 
-    //Used in Search to set main query command as LAST - it is overridden by Total query
-    internal static void SetLastCommand(this IEntitySession session, System.Data.IDbCommand command) {
-      var entSession = (EntitySession)session;
-      entSession.LastCommand = command;
-    }
-
     public static IDisposable WithElevateRead(this IEntitySession session) {
       var entSession = (EntitySession)session;
       return entSession.ElevateRead(); 
@@ -251,6 +245,10 @@ namespace Vita.Entities {
       return (T) ConvertHelper.ChangeType(v, typeof(T));
     }
 
+    /// <summary>Returns user local time. The timezone offset for the user must be previously set by a web api call.</summary>
+    /// <param name="context">Operation context, must have user sesssion established.</param>
+    /// <param name="utcDateTime">Optional, current UTC date/time.</param>
+    /// <returns></returns>
     public static DateTime GetUserLocalTime(this OperationContext context, DateTime? utcDateTime = null) {
       Util.Check(context.UserSession != null, "No user session established, cannot infer user local time.");
       var utc = utcDateTime == null ? context.App.TimeService.UtcNow : utcDateTime.Value;
@@ -259,8 +257,57 @@ namespace Vita.Entities {
       return local;
     }
 
+    #region Transaction tags access
+    /// <summary>Returns a set of tags set for the coming transaction. </summary>
+    /// <param name="session">Entity session.</param>
+    /// <returns>A set of transaction tags defined.</returns>
+    /// <remarks>The tags are free-form strings that can be used by client code to remember certain facts/values associated with SaveChanges operation. 
+    /// They are NOT used in any database operations directly. The tags are cleared after session.SaveChanges() completes. 
+    /// Example use: automatic scheduling of update queries in SavingChanges event for particular entity. 
+    /// To avoid scheduling the same query multiple times, the client code can add a tag after scheduling the query for the first time, for ex: 
+    /// [UpdateOrderTotalScheduled/orderid]. In consequitive invocations of the event handler the code can if the tag is already defined, so the query is already
+    /// scheduled to run. 
+    /// </remarks>
+    public static HashSet<string> GetTransactionTags(this IEntitySession session) {
+      var entSession = (EntitySession)session;
+      return entSession.TransactionTags;
+    }
+
+    /// <summary>Returns true if a transaction tag is defined. </summary>
+    /// <param name="session">Entity session.</param>
+    /// <param name="tag">Tag value.</param>
+    /// <returns>True if the tag is defined; otherwise, false.</returns>
+    public static bool HasTransactionTag(this IEntitySession session, string tag) {
+      var entSession = (EntitySession)session;
+      return entSession.TransactionTags.Contains(tag); 
+    }
+
+    /// <summary>Adds a transaction tag. </summary>
+    /// <param name="session">Entity session.</param>
+    /// <param name="tag">Tag value.</param>
+    public static void AddTransactionTag(this IEntitySession session, string tag) {
+      var entSession = (EntitySession)session;
+      entSession.TransactionTags.Add(tag);
+    }
+
+    /// <summary>Removes a transaction tag. </summary>
+    /// <param name="session">Entity session.</param>
+    /// <param name="tag">Tag value.</param>
+    public static void RemoveTransactionTag(this IEntitySession session, string tag) {
+      var entSession = (EntitySession)session;
+      if(entSession.TransactionTags.Contains(tag))
+        entSession.TransactionTags.Remove(tag);
+    }
+    #endregion 
+
     public static bool IsSet(this EntitySessionOptions options, EntitySessionOptions option) {
       return (options & option) != 0;
+    }
+
+    //Used in Search to set main query command as LAST - it is overridden by Total query
+    internal static void SetLastCommand(this IEntitySession session, System.Data.IDbCommand command) {
+      var entSession = (EntitySession)session;
+      entSession.LastCommand = command;
     }
 
   }//class

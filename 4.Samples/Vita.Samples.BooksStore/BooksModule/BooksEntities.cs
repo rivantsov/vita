@@ -166,7 +166,7 @@ namespace Vita.Samples.BookStore {
 
   }
 
-  [Entity, ClusteredIndex("Order,Id")] //, OrderBy("LineNumber")]
+  [Entity, ClusteredIndex("Order,Id")] 
   public interface IBookOrderLine {
     [PrimaryKey, Auto]
     Guid Id { get; set; }

@@ -16,8 +16,8 @@ namespace Vita.Data.Linq.Translation.Expressions
     {
         public SelectExpression Select { get; private set; }
 
-        public SubSelectExpression(SelectExpression select, Type type, string alias, Vita.Data.Model.DbTableInfo tableInfo)
-            : base(type, alias, tableInfo)
+        public SubSelectExpression(SelectExpression select, Type type, string alias, 
+                     Vita.Data.Model.DbTableInfo tableInfo)  : base(tableInfo, type, alias)
         {
             this.Select = select;
             this.Alias = alias;

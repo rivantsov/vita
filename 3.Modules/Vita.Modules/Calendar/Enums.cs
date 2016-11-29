@@ -6,12 +6,6 @@ using System.Threading.Tasks;
 
 namespace Vita.Modules.Calendar {
 
-  public enum CalendarType {
-    System,
-    Group,
-    Individual,
-  }
-
   public enum EventStatus {
     Pending = 0,
     Firing = 1,
@@ -28,7 +22,7 @@ namespace Vita.Modules.Calendar {
   [Flags]
   public enum EventFlags {
     None = 0,
-    /// <summary>Indicates that IEventInfo is a customized version, for specific occurrence, 
+    /// <summary>Indicates that IEventTemplate is a customized version, for specific occurrence, 
     /// of a repeated generic event with a schedule.</summary>
     IsCustomizedVersion = 1, 
     // For personal calendars indicates if event is visible to the user (it might be system-scheduled, hidden event)

@@ -157,9 +157,11 @@ namespace Vita.Data.Linq.Translation.SqlGen {
                                (from clause in clauses where clause.ToString() != string.Empty select clause).ToList());
         }
 
-        protected virtual SqlStatement BuildExpression(Expression expression)
-        {
-
+        protected virtual SqlStatement BuildExpression(Expression expression, bool allowNull = false)  {
+            if (expression == null) {
+              Util.Check(allowNull, "Expression argument may not be null.");
+              return null;
+            }
             if (expression is ConstantExpression)
               return _sqlProvider.GetLiteral(((ConstantExpression)expression).Value);
 
@@ -487,14 +489,14 @@ namespace Vita.Data.Linq.Translation.SqlGen {
             return _sqlProvider.GetOrderByClause(orderByClauses.ToArray());
         }
 
-        protected virtual SqlStatement BuildLimit(SelectExpression select, SqlStatement literalSelect)
+        protected virtual SqlStatement BuildLimit(SelectExpression selectExpr, SqlStatement selectBody)
         {
-            if (select.Limit == null)
-              return literalSelect;
-            var literalLimit = BuildExpression(select.Limit);
-            var literalOffset = BuildExpression(select.Offset);
-            var literalOffsetAndLimit = BuildExpression(select.OffsetAndLimit);
-            return _sqlProvider.GetLiteralLimit(literalSelect, literalLimit, literalOffset, literalOffsetAndLimit);
+            if (selectExpr.Limit == null && selectExpr.Offset == null)
+              return selectBody;
+            var literalLimit = BuildExpression(selectExpr.Limit, allowNull: true);
+            var literalOffset = BuildExpression(selectExpr.Offset, allowNull: true);
+            var literalOffsetAndLimit = BuildExpression(selectExpr.OffsetAndLimit, allowNull: true);
+            return _sqlProvider.GetLiteralLimit(selectBody, literalLimit, literalOffset, literalOffsetAndLimit);
         }
 
     }

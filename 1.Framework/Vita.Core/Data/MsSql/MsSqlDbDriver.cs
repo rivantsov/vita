@@ -30,7 +30,7 @@ namespace Vita.Data.MsSql {
         | DbFeatures.NoIndexOnForeignKeys 
         | DbFeatures.SkipTakeRequireOrderBy | DbFeatures.AllowsFakeOrderBy
         | DbFeatures.BatchedUpdates | DbFeatures.OutParamsInBatchedUpdates
-        | DbFeatures.Paging | DbFeatures.TreatBitAsInt 
+        | DbFeatures.Paging | DbFeatures.TreatBitAsInt | DbFeatures.UpdateFromSubQuery
         ;
     public const DbFeatures MsSql12Features = MsSql08Features | DbFeatures.HeapTables | DbFeatures.Sequences;
 

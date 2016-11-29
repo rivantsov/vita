@@ -95,7 +95,7 @@ namespace Vita.Samples.BookStore {
     // A simple facility to test how calendars work. We schedule restocking event using CRON spec in SampleDataGenerator, 
     // so it should be fired every 5 minutes. We pretend to do the operation and add notes to the event. 
     private void CalendarService_EventFired(object sender, CalendarEventArgs e) {
-      if (e.CalendarType == CalendarType.System && e.Code == EventCodeRestock) 
+      if (e.OwnerId == null && e.Code == EventCodeRestock) 
         e.Log += "Restocking operation executed at " + App.TimeService.UtcNow.ToString("s"); 
     }
 

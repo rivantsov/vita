@@ -50,19 +50,16 @@ namespace Vita.Samples.BookStore.SampleData {
     // Creates system calendar and schedules regular job to restock the inventory
     public static void CreateScheduledEvents(EntityApp app) {
       var session = app.OpenSystemSession(); 
-      var sysCal = session.EntitySet<IEventCalendar>().FirstOrDefault(c => c.Type == CalendarType.System);
-      if(sysCal == null)
-        sysCal = session.NewCalendar(CalendarType.System, "System");
       // find existing or create new scheduled process
-      var sched = session.EntitySet<IEventSchedule>()
-          .Where(s => s.Calendar.Id == sysCal.Id && s.Template.Code == BooksModule.EventCodeRestock).FirstOrDefault();
-      if(sched == null) {
-        var evtTemplate = sysCal.NewEventTemplate(BooksModule.EventCodeRestock, "Restocking",
+      var evtTemplate = session.EntitySet<IEventTemplate>()
+          .Where(t => t.OwnerId == null && t.Code == BooksModule.EventCodeRestock).FirstOrDefault();
+      if(evtTemplate == null) {
+        evtTemplate = session.NewEventTemplate(BooksModule.EventCodeRestock, "Restocking",
             "Sample event firing every five minutes, to run restock operation");
         //In real life would happen like once a day; here we set it to 5 minutes to observe how events are fired 
         // while we browse the sample UI app.
         //  You can see the events appearing in the database in the CalendarEvent table, with ExecutionNotes 
-        sched = sysCal.NewSchedule(evtTemplate, "*/5 * * * *");
+        var sched = evtTemplate.NewSchedule("*/5 * * * *");
       }
       session.SaveChanges();
     }
@@ -139,6 +136,7 @@ Covers c# 4.0.";
       var diegoOrder = session.NewOrder(diego);
       diegoOrder.Add(vbBook, 1);
       diegoOrder.Add(csBook, 1);
+      diegoOrder.Add(winBook, 1);
       diegoOrder.CompleteOrder();
       //Reviews
       var doraReview = session.NewReview(dora, csBook, 5, "Very interesting book!", "Liked it very much!");

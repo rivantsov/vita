@@ -14,16 +14,23 @@ namespace Vita.Data.Linq.Translation {
     public SelectExpression BaseSelect;
     public List<Expression> SelectOutputValues = new List<Expression>();
     public TableExpression TargetTable;
-    public bool IsSingleTableCommand;
+    public bool UseSimpleCommand;
     public List<ColumnExpression> TargetColumns = new List<ColumnExpression>();
-    public List<Expression> Where = new List<Expression>();
-    public List<TableExpression> From = new List<TableExpression>();
 
-    public NonQueryLinqCommandData(LinqCommand baseLinqCommand, SelectExpression baseSelect, TableExpression targetTable, bool isSingleTable) {
+    public NonQueryLinqCommandData(LinqCommand baseLinqCommand, SelectExpression baseSelect, TableExpression targetTable) {
       BaseLinqCommand = baseLinqCommand; 
       BaseSelect = baseSelect; 
       TargetTable = targetTable;
-      IsSingleTableCommand = isSingleTable;
+      switch(BaseLinqCommand.CommandType) {
+        case LinqCommandType.Insert: UseSimpleCommand = false; break;
+        default:
+          var allTables = BaseSelect.Tables;
+          var usesSkipTakeOrderBy = BaseSelect.Offset != null || BaseSelect.Limit != null; 
+          UseSimpleCommand = allTables.Count == 1 && allTables[0].TableInfo == targetTable.TableInfo && !usesSkipTakeOrderBy;
+          break; 
+
+      }
+
     }
     public LinqCommandType CommandType { get { return BaseLinqCommand.CommandType; } }
   }

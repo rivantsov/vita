@@ -16,10 +16,17 @@ namespace Vita.Data.Linq.Translation.SqlGen {
       switch(commandData.CommandType) {
         case LinqCommandType.Insert:
           return BuildInsertCommand(commandData);
-        case LinqCommandType.Update: 
-          return BuildUpdateCommand(commandData);
+        case LinqCommandType.Update:
+          if(commandData.UseSimpleCommand)
+            return BuildUpdateSimple(commandData);
+          else
+            return BuildUpdateWithSubquery(commandData);
         case LinqCommandType.Delete:
-          return BuildDeleteCommand(commandData);
+          if (commandData.UseSimpleCommand)
+            return BuildDeleteSimple(commandData);
+          else
+            return BuildDeleteWithSubquery(commandData);
+
         default:
           Util.Throw("Linq command type {0} not supported.", commandData.CommandType);
           return null; 
@@ -39,13 +46,6 @@ namespace Vita.Data.Linq.Translation.SqlGen {
       return new SqlStatement(sql);
     }
 
-    public SqlStatement BuildUpdateCommand(NonQueryLinqCommandData command) {
-      if(command.IsSingleTableCommand)
-        return BuildUpdateSimple(command);
-      else
-        return BuildUpdateMultiTable(command);
-    }
-
     // Builds one-table update
     public SqlStatement BuildUpdateSimple(NonQueryLinqCommandData command) {
       var setValueClauses = new List<string>();
@@ -62,15 +62,15 @@ namespace Vita.Data.Linq.Translation.SqlGen {
       var setClause = string.Join(", ", setValueClauses);
       var sqlWhere = string.Empty;
       var whereList = command.BaseSelect.Where;
-      if(whereList.Count > 0) {
-        var tables = new[] { command.TargetTable };
-        sqlWhere = "\r\n  " + BuildWhere(tables, whereList);
-      }
+      if(whereList.Count > 0)
+        sqlWhere = "\r\n  " + BuildWhere(new[] { command.TargetTable }, whereList);
       var sql = "UPDATE " + command.TargetTable.TableInfo.FullName + "\r\n SET " + setClause + sqlWhere + ";";
       return new SqlStatement(sql);
     } 
 
-    public SqlStatement BuildUpdateMultiTable(NonQueryLinqCommandData commandData) {
+    public SqlStatement BuildUpdateWithSubquery(NonQueryLinqCommandData commandData) {
+      Util.Check(this._dbModel.Driver.Supports(Driver.DbFeatures.UpdateFromSubQuery),
+        "The database server does not support UPDATE statements with 'FROM <subquery>' clause, cannot translate this LINQ query.");
       var subQueryAlias = "_from";
       var setValueClauses = new List<string>();
       var whereClauses = new List<string>(); 
@@ -97,37 +97,37 @@ namespace Vita.Data.Linq.Translation.SqlGen {
       return new SqlStatement(sql);
     }
 
-    public SqlStatement BuildDeleteCommand(NonQueryLinqCommandData commandData) {
+    public SqlStatement BuildDeleteSimple(NonQueryLinqCommandData commandData) {
       var sqlWhere = string.Empty;
-      if(commandData.IsSingleTableCommand) {
-        var whereList = commandData.BaseSelect.Where;
-        if(whereList.Count > 0) {
-          var tables = new[] { commandData.TargetTable };
-          sqlWhere = "\r\n  " + BuildWhere(tables, whereList);
-        }
-      } else {
-        //multiple tables version
-        // base query must return set of PK values
-        var targetEnt = commandData.TargetTable.TableInfo.Entity;
-        Util.Check(targetEnt.PrimaryKey.ExpandedKeyMembers.Count == 1,
-          "DELETE LINQ query with multiple tables cannot be used for table with composite primiry key. Entity: {0}", targetEnt.EntityType);
-        var pk = targetEnt.PrimaryKey.ExpandedKeyMembers[0].Member;
-        var outExpr = commandData.BaseSelect.Reader.Body; 
-        Util.Check(outExpr.Type == pk.DataType, 
-          "DELETE Query with multiple tables must return a value compatible with primary key of the table." +
-          " Query returns: {0}; Primary key type: {1}, entity: {2}", outExpr.Type, pk.DataType, targetEnt.EntityType);
-        var subQueryStmt = BuildSelect(commandData.BaseSelect);
-        var subQuery = subQueryStmt.ToString();
-        var pkCol = commandData.TargetTable.TableInfo.GetColumnByMemberName(pk.MemberName);
-        Util.Check(pkCol != null, "Internal error in Linq engine: failed to find PK column for PK member {0}, entity {1}", 
-                 pk.MemberName, targetEnt.EntityType);
-        var strPkCol = _sqlProvider.GetColumn(pkCol.ColumnName);
-        sqlWhere = string.Format("   WHERE {0} IN (\r\n{1})",  strPkCol, subQuery);
-      }
+      var whereList = commandData.BaseSelect.Where;
+      if(whereList.Count > 0)
+        sqlWhere = "\r\n  " + BuildWhere(new[] { commandData.TargetTable }, whereList);
       var tblInfo = commandData.TargetTable.TableInfo;
       var sql =string.Format("DELETE FROM {0} {1};", tblInfo.FullName, sqlWhere);
       return new SqlStatement(sql);
     }
-  
+
+    public SqlStatement BuildDeleteWithSubquery(NonQueryLinqCommandData commandData) {
+      // base query must return set of PK values
+      var targetEnt = commandData.TargetTable.TableInfo.Entity;
+      Util.Check(targetEnt.PrimaryKey.ExpandedKeyMembers.Count == 1,
+        "DELETE LINQ query with multiple tables cannot be used for table with composite primiry key. Entity: {0}", targetEnt.EntityType);
+      var pk = targetEnt.PrimaryKey.ExpandedKeyMembers[0].Member;
+      var outExpr = commandData.BaseSelect.Reader.Body;
+      Util.Check(outExpr.Type == pk.DataType,
+        "DELETE Query with multiple tables must return a value compatible with primary key of the table." +
+        " Query returns: {0}; Primary key type: {1}, entity: {2}", outExpr.Type, pk.DataType, targetEnt.EntityType);
+      var subQueryStmt = BuildSelect(commandData.BaseSelect);
+      var subQuery = subQueryStmt.ToString();
+      var pkCol = commandData.TargetTable.TableInfo.GetColumnByMemberName(pk.MemberName);
+      Util.Check(pkCol != null, "Internal error in Linq engine: failed to find PK column for PK member {0}, entity {1}",
+                pk.MemberName, targetEnt.EntityType);
+      var strPkCol = _sqlProvider.GetColumn(pkCol.ColumnName);
+      var sqlWhere = string.Format("   WHERE {0} IN (\r\n{1})", strPkCol, subQuery);
+      var tblInfo = commandData.TargetTable.TableInfo;
+      var sql = string.Format("DELETE FROM {0} {1};", tblInfo.FullName, sqlWhere);
+      return new SqlStatement(sql);
+    }
+
   }//class
 }

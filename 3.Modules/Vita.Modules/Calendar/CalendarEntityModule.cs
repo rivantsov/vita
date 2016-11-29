@@ -24,8 +24,7 @@ namespace Vita.Modules.Calendar {
 
     public CalendarEntityModule(EntityArea area) : base(area, "CalendarModule", version: CurrentVersion) {
       Requires<JobExecution.JobExecutionModule>();
-      RegisterEntities(typeof(IEventCalendar), typeof(IEvent), 
-            typeof(IEventTemplate), typeof(IEventSubEvent), typeof(IEventSchedule));
+      RegisterEntities(typeof(IEvent), typeof(IEventTemplate), typeof(IEventSubEvent), typeof(IEventSchedule));
       App.RegisterService<ICalendarService>(this);
       Roles = new CalendarUserRoles(); 
     }

@@ -229,7 +229,9 @@ namespace Vita.Modules.Login {
         trustLevel = device.TrustLevel;
         device.LastLoggedIn = App.TimeService.UtcNow; 
       }
-      if(context.UserSession != null) {
+      // If we had session for anonymous user, we keep the session
+      var oldSession = context.UserSession;
+      if(oldSession != null && oldSession.User != null && oldSession.User.Kind == UserKind.Anonymous) {
         context.UserSession.User = context.User;
         _sessionService.UpdateSession(context);
         return; 

@@ -42,6 +42,11 @@ namespace Vita.UnitTests.Web {
       //Logout
       client.ExecuteDelete(loginUrl);
       client.RemoveRequestHeader("Authorization");
+
+      // Bug fix: double-login without logout
+      var dora2 = LoginAs("dora");
+      var diego2 = LoginAs("diego");
+      Assert.AreNotEqual(dora2.AuthenticationToken, diego2.AuthenticationToken, "Expected different auth token.");
     }
 
     [TestMethod]

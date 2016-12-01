@@ -17,7 +17,7 @@ namespace Vita.Modules.Calendar {
     }
 
     public static IEventTemplate NewEventTemplate(this IEntitySession session, 
-               string code, string title, string description, Guid? ownerId = null, EventFlags flags = EventFlags.None,  
+               string code, string title, string description, int durationMinutes = 0, Guid? ownerId = null, EventFlags flags = EventFlags.None,  
                Guid? customId = null, string customData = null, IJob jobToRun = null) {
       var template = session.NewEntity<IEventTemplate>();
       template.Code = code;
@@ -25,6 +25,7 @@ namespace Vita.Modules.Calendar {
       template.Description = description;
       template.OwnerId = ownerId; 
       template.Flags = flags;
+      template.DurationMinutes = durationMinutes;
       template.CustomId = customId;
       template.CustomData = customData;
       template.JobToRun = jobToRun; 
@@ -44,7 +45,7 @@ namespace Vita.Modules.Calendar {
       return le; 
     }
 
-    public static IEventSchedule NewSchedule(this IEventTemplate eventTemplate, 
+    public static IEventSchedule CreateSchedule(this IEventTemplate eventTemplate, 
               string cronSpec, DateTime? activeFrom = null, DateTime? activeUntil = null) {
       var session = EntityHelper.GetSession(eventTemplate);
       var utcNow = session.Context.App.TimeService.UtcNow;

@@ -60,11 +60,12 @@
     </CodeAnalysisDependentAssemblyPaths>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Calendar\EventSchedulingTests.cs" />
+    <Compile Include="Calendar\CronTests.cs" />
     <Compile Include="DataHistoryTests.cs" />
     <Compile Include="LinqTests\LinqIncludeTests.cs" />
     <Compile Include="MiscTests2.cs" />
     <Compile Include="LockSampleCode_Disabled.cs" />
-    <Compile Include="HashCryptTests.cs" />
     <Compile Include="LinqTests\LinqSearchTests.cs" />
     <Compile Include="MultiTenantTests.cs" />
     <Compile Include="LoginTests.cs" />

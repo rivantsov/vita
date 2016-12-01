@@ -96,22 +96,20 @@ namespace Vita.Samples.BookStore {
       order.Status = OrderStatus.Completed;
       JobHelper.ExecuteWithRetriesNoWait(session.Context, (jobCtx) => SendPurchaseConfirmationEmail(jobCtx, order.Id), 
           code: "SendOrderConfirmation");
-/*
-      var reviewEmail = session.CreateUserEvent(user.Id, BooksModule.EventCodeAskReview,
-          "Book review request", "Send user email asking to review the books he bought.", utcNow.AddMonths(1), customId: order.Id);
-*/
     }
 
     private static async Task SendPurchaseConfirmationEmail(JobRunContext jobContext, Guid orderId) {
-      //Pretend we are sending email here
+      //Pretend we are sending email here, using external email service - which can fail sometimes, that's why we use task with retries
       await Task.Delay(100);
-      // the progress will not be saved because we are running successfully
+      // Actually the progress will not be saved because we are completing successfully
       jobContext.UpdateProgress(100, "Confirmation email sent!");
-      //IBookOrder order; order.Summary
     }
 
     //Schedules update LINQ-based command that will recalculate totals at the end of SaveChanges transaction
     public static void ScheduleUpdateTotal(this IBookOrder order) {
+      // only open orders; completed order might have coupon discount applied
+      if(order.Status != OrderStatus.Open)
+        return; 
       var session = EntityHelper.GetSession(order);
       var orderTotalQuery = from bol in session.EntitySet<IBookOrderLine>()
                               where bol.Order.Id == order.Id 

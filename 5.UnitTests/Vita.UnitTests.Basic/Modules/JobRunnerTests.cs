@@ -144,6 +144,7 @@ namespace Vita.UnitTests.Basic {
 
     [TestMethod]
     public void TestJobServiceLightAsyncTask() {
+      _jobApp.TimeService.SetCurrentOffset(TimeSpan.Zero);
       try {
         AsyncHelper.RunSync(() => TestLightTaskAsync());
       } finally {
@@ -152,50 +153,58 @@ namespace Vita.UnitTests.Basic {
     }
 
     private async Task TestLightTaskAsync() {
-      _jobApp.TimeService.SetCurrentOffset(TimeSpan.Zero);
       /* to get all jobs
       var allJobs = _jobApp.JobService.GetRunningJobs();
       Assert.IsTrue(allJobs.Count == 0, "Expected no jobs running");
       */
       var ctx = _jobApp.CreateSystemContext();
       _lightCallCount = 0;
-      _lightJobFailed = false; 
+      _lightTaskLastRunFailed = false; 
+
+      // 1. ExecuteWithRetriesAsync, run with 2 failures and then success ------------------------------------------------------------------------
+
       //Run with 2 initial failures; on first failure the task will be persisted; second run will be done after delay, from data saved in DB
       // the third run will succeed. 
-      var jobContext = await JobHelper.ExecuteWithRetriesAsync(ctx, (jobCtx) => LightJob("abc", 2));
-      Assert.IsTrue(_lightJobFailed, "Expected light job to fail.");
+      var jobContext = await JobHelper.ExecuteWithRetriesAsync(ctx, (jobCtx) => LightTask("abc", 2));
+      Assert.IsTrue(_lightTaskLastRunFailed, "Expected light job to fail.");
 
       for(int i = 0; i < 40; i++) {
         _jobApp.TimeService.SetCurrentOffset(TimeSpan.FromMinutes(i));
         _timersControl.FireAll();
         Thread.Sleep(20); //let tasks run
       }
-
-      Assert.IsFalse(_lightJobFailed, "Expected light job to succeed.");
+      Assert.IsFalse(_lightTaskLastRunFailed, "Expected light job to succeed.");
       Assert.AreEqual(3, _lightCallCount, "Expected 3 attempts of light job.");
 
-      //Now run without failures
-       _lightCallCount = 0; 
-       jobContext = await _jobApp.JobService.RunLightTaskAsync(ctx, (jobCtx) => LightJob("abc", 0), "SampleLightTask"); //do not fail at all
+      // 2. ExecuteWithRetriesAsync, run without failures ------------------------------------------------------------------------
+      _lightCallCount = 0; 
+       jobContext = await _jobApp.JobService.RunLightTaskAsync(ctx, (jobCtx) => LightTask("abc", 0), "SampleLightTask"); //do not fail at all
       Thread.Sleep(20); //let tasks run
-      Assert.IsFalse(_lightJobFailed, "Expected light job succeed without retries.");
-      _jobApp.TimeService.SetCurrentOffset(TimeSpan.Zero);
+      Assert.AreEqual(1, _lightCallCount, "Expected 1 attempt of light job.");
+      Assert.IsFalse(_lightTaskLastRunFailed, "Expected light job succeed without retries.");
+
+      // 3. JobHelper.ExecuteWithRetriesNoWait, without failures
+      _lightCallCount = 0;
+      JobHelper.ExecuteWithRetriesNoWait(ctx, (jobCtx) => LightTask("xyz", 0), "NoWaitExecution"); 
+      Thread.Sleep(20); //let tasks run
+      Assert.AreEqual(1, _lightCallCount, "Expected 1 attempt of light job.");
+      Assert.IsFalse(_lightTaskLastRunFailed, "Expected task to succeed without retries.");
     }
 
     static int _lightCallCount;
-    static bool _lightJobFailed;
+    static bool _lightTaskLastRunFailed;
     static object _lock = new object(); 
 
-    private static async Task LightJob(string arg0, int failCount) {
+    private static async Task LightTask(string arg0, int failCount) {
       lock(_lock) {
         _lightCallCount++;
+        _lightTaskLastRunFailed = false;
         if(_lightCallCount <= failCount) {
-          _lightJobFailed = true;
+          _lightTaskLastRunFailed = true;
           Debug.WriteLine("Failing light task...");
-          throw new Exception("Light task error!");
+          throw new Exception("Light task failed!");
         }
-        _lightJobFailed = false;
-        Debug.WriteLine("light task completed! ");
+        Debug.WriteLine("light task completed successfully. ");
       }
       await Task.Delay(10);
     }

@@ -12,7 +12,7 @@ using System.Security.Cryptography;
 using Vita.Data.Driver;
 
 
-namespace Vita.UnitTests.Extended {
+namespace Vita.UnitTests.Basic {
 
   [TestClass]
   public class HashCryptTests {

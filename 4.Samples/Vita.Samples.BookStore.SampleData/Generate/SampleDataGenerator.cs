@@ -59,7 +59,7 @@ namespace Vita.Samples.BookStore.SampleData {
         //In real life would happen like once a day; here we set it to 5 minutes to observe how events are fired 
         // while we browse the sample UI app.
         //  You can see the events appearing in the database in the CalendarEvent table, with ExecutionNotes 
-        var sched = evtTemplate.NewSchedule("*/5 * * * *");
+        var sched = evtTemplate.CreateSchedule("*/5 * * * *");
       }
       session.SaveChanges();
     }

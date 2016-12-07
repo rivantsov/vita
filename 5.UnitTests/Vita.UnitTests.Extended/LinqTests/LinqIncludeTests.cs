@@ -68,7 +68,7 @@ namespace Vita.UnitTests.Extended {
       var reviews = qReviews.ToList();
       //Go through all reviews, touch properties of objects; 
       // Without Include, accessing 'review.Book.Title' would cause loading of IBook entity; with Include there should be no extra db roundrips
-      // We handle Loaded app event - fired for any record loaded; we  increment loadCount in event handler
+      // We handle ExecutedSelect app event (spying on the app); the event fired for any record loaded; we  increment loadCount in event handler
       _loadCount = 0;
       summary.Clear();
       foreach (var rv in reviews) 
@@ -80,8 +80,8 @@ namespace Vita.UnitTests.Extended {
       // list properties, many2one and many2many; 2 forms of Include 
       var qOrders = session.EntitySet<IBookOrder>().Where(o => o.Status != OrderStatus.Canceled)
         .Include(o => new { o.Lines, o.User })   // include version 1 - against results of query (IBookOrder)
-        .Include((IBookOrderLine l) => l.Book) // include version 2 - against 'internal' results, order lines; means 'whenever we load IBookOrderLine, load all related Books'
-        .Include((IBook b) => new { b.Publisher, b.Authors}) //again, for any book, load publisher and authors
+        .Include((IBookOrderLine l) => l.Book) // include version 2 - against 'internal' results, order lines; means 'whenever we load IBookOrderLine, load related Book'
+        .Include((IBook b) => new { b.Publisher, b.Authors}) // for any book, load publisher and authors
         ;  
       var orders = qOrders.ToList();
       //verify - go thru all orders, touch lines, books, users, publishers; check there were no DB commands executed

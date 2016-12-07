@@ -133,6 +133,19 @@ namespace Vita.Common {
       return result;
     }
 
+    // Helper method, allows using string list as log object
+    public static string Add(this IList<string> list, string message, params object[] args) {
+      var str = SafeFormat(message, args);
+      list.Add(str);
+      return str; 
+    }
+
+    public static string ToText(this IList<string> list) {
+      return string.Join(Environment.NewLine, list); 
+    }
+
+
+
 
   }//class
 } //ns

@@ -16,7 +16,7 @@ namespace Vita.Modules.JobExecution {
     public readonly OperationContext OperationContext;
     public readonly DateTime StartedOn;
     public readonly string JobCode;
-    public readonly Guid? SourceId; 
+    public readonly Guid? EventId; 
     public readonly Guid JobRunId;
     public readonly Guid JobId;
     public readonly JobFlags Flags; 
@@ -36,7 +36,7 @@ namespace Vita.Modules.JobExecution {
       StartedOn = app.TimeService.UtcNow; 
       Serializer = serializer;
       JobCode = jobRun.Job.Code;
-      SourceId = jobRun.SourceId; 
+      EventId = jobRun.EventId; 
       JobRunId = jobRun.Id;
       var job = jobRun.Job; 
       JobId = job.Id; 
@@ -46,11 +46,11 @@ namespace Vita.Modules.JobExecution {
     }
 
     // Used for creating 'light' jobs
-    internal JobRunContext(EntityApp app, JsonSerializer serializer, string jobCode, JobFlags flags, Guid? sourceId) {
+    internal JobRunContext(EntityApp app, JsonSerializer serializer, string jobCode, JobFlags flags, Guid? eventId) {
       OperationContext = app.CreateSystemContext();
       Serializer = serializer;
       JobCode = jobCode;
-      SourceId = sourceId; 
+      EventId = eventId; 
       JobRunId = Guid.NewGuid();
       JobId = Guid.NewGuid();
       Flags = flags;

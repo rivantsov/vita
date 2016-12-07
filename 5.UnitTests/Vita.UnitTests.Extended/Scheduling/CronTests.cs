@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Vita.Modules.Calendar.Cron;
+using Vita.Modules.EventScheduling.Cron;
 
 namespace Vita.UnitTests.Extented {
 

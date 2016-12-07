@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 using Vita.Common;
 using Vita.Entities;
 
-namespace Vita.Modules.Calendar.Cron {
+namespace Vita.Modules.EventScheduling.Cron {
 
   public class CronParsingException : OperationAbortException {
     public CronParsingException(string message, Exception inner = null) : base(message, "InvalidCronSpec", inner) { }

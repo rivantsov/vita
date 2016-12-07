@@ -34,13 +34,6 @@ namespace Vita.Modules.JobExecution {
       ent.RetryCount = rp.RetryCount;
       ent.RetryPauseMinutes = rp.PauseMinutes;
       ent.RetryRoundsCount = rp.RoundsCount;
-      if(job.ParentJob != null) {
-        Util.Check(!ent.Flags.IsSet(JobFlags.StartOnSave),
-              "Invalid job definition: the flag StartOnSave may not be set on a job with a parent job. Job code: {0}", job.Code);
-        ent.ParentJob = session.GetEntity<IJob>(ent.ParentJob.Id);
-        Util.Check(ent.ParentJob != null, "Parent job not found: {0}.", job.ParentJob.Id);
-        ent.ParentJob.Flags |= JobFlags.HasChildJobs; 
-      }
       return ent;
     }
 
@@ -60,7 +53,7 @@ namespace Vita.Modules.JobExecution {
       var session = EntityHelper.GetSession(job);
       var jobRun = session.NewEntity<IJobRun>();
       jobRun.Job = job;
-      jobRun.SourceId = sourceId;
+      jobRun.EventId = sourceId;
       jobRun.CurrentArguments = job.Arguments;
       jobRun.Status = JobRunStatus.Executing;
       jobRun.RemainingRetries = job.RetryCount;
@@ -94,8 +87,9 @@ namespace Vita.Modules.JobExecution {
       for(int i = 0; i < arguments.Length; i++) {
         var arg = arguments[i];
         if(arg == null || arg is JobRunContext)
-          continue;
-        serArgs[i] = Serialize(serializer, arg);
+          serArgs[i] = "(JobContext)";
+        else 
+          serArgs[i] = Serialize(serializer, arg);
       }
       var result = string.Join(ArgsDelimiter, serArgs);
       return result;
@@ -114,13 +108,7 @@ namespace Vita.Modules.JobExecution {
         jobData.Object = app.GetGlobalObject(jobData.DeclaringType); //throws if not found. 
       //arguments
       var prms = jobData.Method.GetParameters();
-      if (prms.Length == 0) {
-        jobData.Arguments = new object[0];
-        return jobData; 
-      }
       var serArgs = jobRun.CurrentArguments;
-      Util.Check(!string.IsNullOrEmpty(serArgs),
-        "Serialized parameter values not found in job entity, expected {0} values.", prms.Length);
       var arrStrArgs = serArgs.Split(new[] { ArgsDelimiter }, StringSplitOptions.None);
       Util.Check(prms.Length == arrStrArgs.Length, "Serialized arg count ({0}) in job entity " +
            "does not match the number of target method parameters ({1}); target method: {2}.", 

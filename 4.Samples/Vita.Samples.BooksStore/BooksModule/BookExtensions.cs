@@ -8,7 +8,7 @@ using Vita.Common;
 
 using Vita.Entities;
 using Vita.Entities.Linq;
-using Vita.Modules.Calendar;
+using Vita.Modules.EventScheduling;
 using Vita.Modules.JobExecution;
 
 namespace Vita.Samples.BookStore {

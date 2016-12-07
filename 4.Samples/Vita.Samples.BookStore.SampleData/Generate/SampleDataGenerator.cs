@@ -7,7 +7,7 @@ using System.Diagnostics;
 using Vita.Entities;
 using Vita.Modules.Login;
 using Vita.Modules.TextTemplates;
-using Vita.Modules.Calendar;
+using Vita.Modules.EventScheduling;
 
 namespace Vita.Samples.BookStore.SampleData {
 
@@ -19,7 +19,7 @@ namespace Vita.Samples.BookStore.SampleData {
     public static void CreateUnitTestData(EntityApp app) {
       CreateBasicTestData(app);
       CreateSampleBooks(app);
-      CreateScheduledEvents(app);
+      // CreateScheduledEvents(app);
     }
 
     public static void CreateBasicTestData(EntityApp app) {
@@ -51,15 +51,15 @@ namespace Vita.Samples.BookStore.SampleData {
     public static void CreateScheduledEvents(EntityApp app) {
       var session = app.OpenSystemSession(); 
       // find existing or create new scheduled process
-      var evtTemplate = session.EntitySet<IEventTemplate>()
+      var restockEvt = session.EntitySet<IEventInfo>()
           .Where(t => t.OwnerId == null && t.Code == BooksModule.EventCodeRestock).FirstOrDefault();
-      if(evtTemplate == null) {
-        evtTemplate = session.NewEventTemplate(BooksModule.EventCodeRestock, "Restocking",
+      if(restockEvt == null) {
+        restockEvt = session.NewEventInfo(BooksModule.EventCodeRestock, "Restocking",
             "Sample event firing every five minutes, to run restock operation");
         //In real life would happen like once a day; here we set it to 5 minutes to observe how events are fired 
         // while we browse the sample UI app.
-        //  You can see the events appearing in the database in the CalendarEvent table, with ExecutionNotes 
-        var sched = evtTemplate.CreateSchedule("*/5 * * * *");
+        //  You can see the events appearing in the database in the EventOccurrence table, with ExecutionNotes 
+        var sched = restockEvt.CreateSchedule("*/5 * * * *");
       }
       session.SaveChanges();
     }

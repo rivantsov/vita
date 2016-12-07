@@ -14,7 +14,7 @@ namespace Vita.Modules.JobExecution {
   public class JobRetryPolicy {
     public int IntervalSeconds = 60;
     public int RetryCount = 3;
-    public int PauseMinutes = 6 * 60; //3 hours
+    public int PauseMinutes = 30; 
     public int RoundsCount = 4;
 
     public static JobRetryPolicy Default = new JobRetryPolicy();
@@ -37,24 +37,17 @@ namespace Vita.Modules.JobExecution {
     public JobFlags Flags; 
     public ThreadType ThreadType;
     public JobRetryPolicy RetryPolicy;
-    public JobDefinition ParentJob; 
     internal JobStartInfo StartInfo; 
 
     //constructor is private, we allow only 
     private JobDefinition(string code, LambdaExpression jobMethod, JobFlags flags = JobFlags.Default, JobRetryPolicy retryPolicy = null,
-          ThreadType threadType = ThreadType.Pool, JobDefinition parentJob = null) {
+          ThreadType threadType = ThreadType.Pool) {
       Id = Guid.NewGuid(); 
       Code = code;
       Expression = jobMethod;
       Flags = flags;
       RetryPolicy = retryPolicy ?? JobRetryPolicy.Default;
       ThreadType = threadType;
-      ParentJob = parentJob;
-      if(ParentJob != null) {
-        Util.Check(!Flags.IsSet(JobFlags.StartOnSave), 
-              "Invalid job definition: the flag StartOnSave may not be set on a job with a parent job. Job code: {0}", code);
-        ParentJob.Flags |= JobFlags.HasChildJobs;
-      }
       StartInfo = JobExtensions.GetJobStartInfo(jobMethod);
       var returnType = StartInfo.Method.ReturnType;
       switch(ThreadType) {
@@ -67,14 +60,14 @@ namespace Vita.Modules.JobExecution {
       }
     }
 
-    public static JobDefinition CreatePoolJob(string code, Expression<Func<JobRunContext, Task>> jobMethod, JobFlags flags = JobFlags.Default, JobRetryPolicy retryPolicy = null,
-          JobDefinition parentJob = null) {
-        return new JobDefinition(code, jobMethod, flags, retryPolicy, ThreadType.Pool, parentJob);
+    public static JobDefinition CreatePoolJob(string code, Expression<Func<JobRunContext, Task>> jobMethod, JobFlags flags = JobFlags.Default,
+                  JobRetryPolicy retryPolicy = null) {
+      return new JobDefinition(code, jobMethod, flags, retryPolicy, ThreadType.Pool);
     }
 
-    public static JobDefinition CreateBackgroundJob(string code, Expression<Action<JobRunContext>> jobMethod, JobFlags flags = JobFlags.Default, JobRetryPolicy retryPolicy = null,
-          JobDefinition parentJob = null) {
-        return new JobDefinition(code, jobMethod, flags, retryPolicy, ThreadType.Background, parentJob);
+    public static JobDefinition CreateBackgroundJob(string code, Expression<Action<JobRunContext>> jobMethod, JobFlags flags = JobFlags.Default,
+                   JobRetryPolicy retryPolicy = null) {
+        return new JobDefinition(code, jobMethod, flags, retryPolicy, ThreadType.Background);
     }
 
   }

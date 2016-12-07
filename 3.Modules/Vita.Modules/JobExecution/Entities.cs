@@ -19,8 +19,6 @@ namespace Vita.Modules.JobExecution {
     string Code { get; set; }
     ThreadType ThreadType { get; set; }
     JobFlags Flags { get; set; }
-    [Nullable]
-    IJob ParentJob { get; set; }
     [Size(250)]
     string TargetType { get; set; }
     [Size(100)]
@@ -44,7 +42,7 @@ namespace Vita.Modules.JobExecution {
     DateTime CreatedOn { get; }
 
     IJob Job { get; set; }
-    Guid? SourceId { get; set; }
+    Guid? EventId { get; set; }
     JobRunStatus Status { get; set; }
     [Utc]
     DateTime LastStartedOn { get; set; }

@@ -33,13 +33,13 @@ namespace Vita.Modules.JobExecution {
       }
     }
 
-    private void StartJob(IJob job, Guid? sourceId) {
+    private void StartJob(IJob job, Guid? eventId) {
       //check if job is already running
       var jobCtx = GetRunningJob(job.Id);
       if(jobCtx != null)
         return; 
       var session = EntityHelper.GetSession(job);
-      var jobRun = job.NewJobRun(sourceId);
+      var jobRun = job.NewJobRun(eventId);
       jobRun.LastStartedOn = session.Context.App.TimeService.UtcNow;
       jobRun.RunCount = 1; 
       session.SaveChanges();
@@ -111,14 +111,14 @@ namespace Vita.Modules.JobExecution {
       OnJobNotify(jobCtx, JobNotificationType.Starting);
       jobCtx.StartInfo = JobExtensions.GetJobStartInfo(jobRun, jobCtx);
       if(jobRun.Job.ThreadType == ThreadType.Background) {
-        jobCtx.Thread = new Thread(RunBackgroundJob);
+        jobCtx.Thread = new Thread(StartBackgroundJob);
         jobCtx.Thread.Start(jobCtx); 
       } else {
         Task.Run(() => StartPoolJob(jobCtx));
       }
     }
 
-    private void RunBackgroundJob(object data) {
+    private void StartBackgroundJob(object data) {
       var jobCtx = (JobRunContext)data;
       try {
         var startInfo = jobCtx.StartInfo; 
@@ -151,7 +151,6 @@ namespace Vita.Modules.JobExecution {
       }
     }
 
-
     private Task OnAsyncJobRunCompleted(Task mainTask, JobRunContext jobContext) {
       var realExc = (mainTask.Exception == null) ? null : mainTask.Exception.InnerExceptions[0];
       UpdateFinishedJobRun(jobContext, realExc);
@@ -183,12 +182,10 @@ namespace Vita.Modules.JobExecution {
         jobContext.Status = JobRunStatus.Completed;
         session.SaveChanges();
         OnJobNotify(jobContext, JobNotificationType.Completed); 
-        if (jobRun.Job.Flags.IsSet(JobFlags.HasChildJobs)) //flag is set automatically when saving child jobs
-          StartChildJobs(jobRun.Job, jobRun.SourceId); 
         return; 
       } 
       // Current run ended with error
-      ReportJobRunError(jobRun, exception);
+      ReportJobRunFailure(jobRun, exception);
       OnJobNotify(jobContext, JobNotificationType.Error);
       // current run failed; if we have no more retries, mark as error
       if(jobRun.RemainingRetries == 0 && jobRun.RemainingRounds == 0) {
@@ -210,7 +207,7 @@ namespace Vita.Modules.JobExecution {
       session.SaveChanges(); 
     }//method
 
-    private void ReportJobRunError(IJobRun jobRun, Exception exception) {
+    private void ReportJobRunFailure(IJobRun jobRun, Exception exception) {
       var session = EntityHelper.GetSession(jobRun); 
       var errHeader = string.Format("=========================== Error {0} ======================================" 
              + Environment.NewLine, App.TimeService.UtcNow);
@@ -224,15 +221,6 @@ namespace Vita.Modules.JobExecution {
         _errorLog.LogError(exception, session.Context);
       //Update job status 
       jobRun.Errors += errMsg + Environment.NewLine;
-    }
-
-    private void StartChildJobs(IJob job, Guid? sourceId) {
-      var session = EntityHelper.GetSession(job);
-      var childJobs = session.EntitySet<IJob>().Where(j => j.ParentJob == job).ToList();
-      if(childJobs.Count == 0)
-        return;
-      foreach(var ch in childJobs)
-        StartJob(job, sourceId); 
     }
 
   }//class

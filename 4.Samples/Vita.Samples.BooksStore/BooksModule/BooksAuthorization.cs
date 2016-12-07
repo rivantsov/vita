@@ -10,7 +10,7 @@ using Vita.Entities.Authorization;
 using Vita.Modules.Login;
 using Vita.Entities.Linq;
 using Vita.Common;
-using Vita.Modules.Calendar;
+using Vita.Modules.EventScheduling;
 
 namespace Vita.Samples.BookStore {
 
@@ -47,7 +47,6 @@ namespace Vita.Samples.BookStore {
     public BooksAuthorization(BooksEntityApp app) {
       _app = app;
       var loginRoles = app.GetModule<LoginModule>().Roles;
-      var calendarRoles = app.GetModule<CalendarEntityModule>().Roles;
 
       // Data filters
       // 'userid' value will be automatically injected by runtime when evaluating lambdas
@@ -144,7 +143,7 @@ namespace Vita.Samples.BookStore {
 
       // Customer -  view/edit orders only for current user; edit reviews only created by current user 
       Customer = new Role("Customer");
-      Customer.AddChildRoles(AnonymousUser, loginRoles.SelfServiceEditor, calendarRoles.RegularUser);
+      Customer.AddChildRoles(AnonymousUser, loginRoles.SelfServiceEditor);
       Customer.Grant(CallUserAccountController);
       Customer.Grant(userDataFilter, shopping, writingReviews, editingUserInfo); 
 
@@ -166,7 +165,7 @@ namespace Vita.Samples.BookStore {
       // This garantees that during adjustment editing we modify only data for the order that we started adjustment for.
       ManagerAdjustOrderGrant = StoreManager.GrantDynamic(adjustOrderFilter, adjustingOrders, AdjustedOrderIdKey);
       //Add permission to access LoginAdministration functions, calendar entities
-      StoreManager.AddChildRoles(loginRoles.LoginAdministrator, calendarRoles.Administrator);
+      StoreManager.AddChildRoles(loginRoles.LoginAdministrator);
       StoreManager.ChildRoles.Add(Vita.Modules.Logging.LoggingAuthorizationRoles.Instance.LogDataViewerRole);
     }
 

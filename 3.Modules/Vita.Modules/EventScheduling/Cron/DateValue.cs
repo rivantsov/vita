@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Vita.Modules.Calendar.Cron {
+namespace Vita.Modules.EventScheduling.Cron {
 
   public class DateValue {
     public int[] FieldValues; 

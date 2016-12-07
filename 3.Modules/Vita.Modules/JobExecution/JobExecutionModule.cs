@@ -37,7 +37,6 @@ namespace Vita.Modules.JobExecution {
       _timers.Elapsed10Seconds += Timers_Elapsed10Seconds;
       var ent = App.Model.GetEntityInfo(typeof(IJob));
       ent.SaveEvents.SavedChanges += SaveEvents_SavedChanges;
-      ent.SaveEvents.SavingChanges += SaveEvents_SavingChanges;
     }
 
     public override void Shutdown() {
@@ -49,10 +48,10 @@ namespace Vita.Modules.JobExecution {
     #region IJobExecutionService members
 
     public async Task<JobRunContext> RunLightTaskAsync(OperationContext context, Expression<Func<JobRunContext, Task>> func, 
-                     string jobCode, Guid? sourceId = null, JobRetryPolicy retryPolicy = null) {
+                     string jobCode, Guid? eventId = null, JobRetryPolicy retryPolicy = null) {
       JobRunContext jobCtx = null;
       try {
-        jobCtx = new JobRunContext(this.App, _serializer, jobCode, JobFlags.IsLightJob, sourceId);
+        jobCtx = new JobRunContext(this.App, _serializer, jobCode, JobFlags.IsLightJob, eventId);
         RegisterRunningJob(jobCtx);
         OnJobNotify(jobCtx, JobNotificationType.Starting);
         var compiledFunc = func.Compile();
@@ -66,7 +65,7 @@ namespace Vita.Modules.JobExecution {
         if(jobCtx == null)
           throw new Exception("Failed to create JobRunContext for light task: " + ex.Message, ex);
         //Failure is ok for now, it is expected eventually; just save the job for retries
-        SaveFailedLightTask(context, jobCtx, func, jobCode, sourceId, ex, retryPolicy ?? JobRetryPolicy.DefaultLightTask);
+        SaveFailedLightTask(context, jobCtx, func, jobCode, eventId, ex, retryPolicy ?? JobRetryPolicy.DefaultLightTask);
         return jobCtx;
       }
     }
@@ -77,41 +76,27 @@ namespace Vita.Modules.JobExecution {
     }
 
     public IJob CreateBackgroundJob(IEntitySession session, string code, Expression<Action<JobRunContext>> expression, JobFlags flags = JobFlags.Default, 
-                                     JobRetryPolicy retryPolicy = null, IJob parentJob = null) {
+                                     JobRetryPolicy retryPolicy = null) {
       var jobDef = JobDefinition.CreateBackgroundJob(code, expression, flags, retryPolicy);
       var job = JobExtensions.NewJob(session, jobDef, _serializer);
-      job.ParentJob = parentJob;
-      ValidateNewJob(job);
       return job; 
     }
 
-    public IJob CreatePoolJob(IEntitySession session, string code, Expression<Func<JobRunContext, Task>> expression, JobFlags flags = JobFlags.Default, JobRetryPolicy retryPolicy = null,
-              IJob parentJob = null) {
+    public IJob CreatePoolJob(IEntitySession session, string code, Expression<Func<JobRunContext, Task>> expression, 
+         JobFlags flags = JobFlags.Default, JobRetryPolicy retryPolicy = null) {
       var jobDef = JobDefinition.CreatePoolJob(code, expression, flags, retryPolicy);
       var job = JobExtensions.NewJob(session, jobDef, _serializer);
-      job.ParentJob = parentJob;
-      ValidateNewJob(job);
       return job;
     }
 
-    private void ValidateNewJob(IJob job) {
-      if(job.ParentJob != null) {
-        job.Flags |= JobFlags.HasChildJobs;
-        Util.Check(!job.Flags.IsSet(JobFlags.StartOnSave),
-              "Invalid job definition: the flag StartOnSave may not be set on a job with a parent job. Job code: {0}", job.Code);
-      }
-    } //method
-
-
-
-    public void StartJob(OperationContext context, Guid jobId, Guid? sourceId = null) {
+    public void StartJob(OperationContext context, Guid jobId, Guid? eventId = null) {
       var runningJob = GetRunningJob(jobId);
       if(runningJob != null)
         return; 
       var session = context.OpenSystemSession();
       var job = session.GetEntity<IJob>(jobId);
       Util.Check(job != null, "Job not found, ID: " + jobId);
-      StartJob(job, sourceId); 
+      StartJob(job, eventId); 
     }
 
     public void CancelJob(Guid jobId) {
@@ -162,21 +147,6 @@ namespace Vita.Modules.JobExecution {
     #endregion
 
     #region Event handlers
-    // Automatically set HasChildJobs flag on parent job
-    private void SaveEvents_SavingChanges(Entities.Runtime.EntityRecord record, EventArgs args) {
-      switch(record.Status) {
-        case EntityStatus.New:
-        case EntityStatus.Modified: break;
-        default: return; 
-      }
-      var job = (IJob)record.EntityInstance;
-      var parent = job.ParentJob; 
-      if(parent == null || parent.Flags.IsSet(JobFlags.HasChildJobs))
-        return;
-      // set the flag 
-      parent.Flags |= JobFlags.HasChildJobs; 
-    }
-
     private void SaveEvents_SavedChanges(Entities.Runtime.EntityRecord record, EventArgs args) {
       if(record.StatusBeforeSave != Vita.Entities.Runtime.EntityStatus.New)
         return;

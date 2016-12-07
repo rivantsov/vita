@@ -60,8 +60,8 @@
     </CodeAnalysisDependentAssemblyPaths>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Calendar\EventSchedulingTests.cs" />
-    <Compile Include="Calendar\CronTests.cs" />
+    <Compile Include="Scheduling\EventSchedulingTests.cs" />
+    <Compile Include="Scheduling\CronTests.cs" />
     <Compile Include="DataHistoryTests.cs" />
     <Compile Include="LinqTests\LinqIncludeTests.cs" />
     <Compile Include="MiscTests2.cs" />

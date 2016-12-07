@@ -5,7 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 
 using Vita.Entities;
-using Vita.Modules.Calendar;
+using Vita.Modules.EventScheduling;
 
 namespace Vita.Samples.BookStore {
   public partial class BooksModule {

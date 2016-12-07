@@ -29,8 +29,6 @@ namespace Vita.Modules.JobExecution {
     StartOnSave = 1 << 1,
     /// <summary>Indicates that job method arguments must be serialized back to database on intermittent failures.</summary>
     PersistArguments = 1 << 2,
-    /// <summary>Indicates that the job has child jobs that should be started immediately after the job completes successfully.</summary>
-    HasChildJobs = 1 << 3,
     // Light means initially not persisted, trying to execute it on the fly; if failed, it is persisted and retried
     /// <summary>The job is not persisted initially but is tried to execute immediately. If fails, it is persisted to be retried later.</summary>
     IsLightJob = 1 << 4,

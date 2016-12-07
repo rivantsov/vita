@@ -10,7 +10,7 @@ using Vita.Entities.Authorization;
 using Vita.Entities.Runtime;
 using Vita.Entities.Services;
 using Vita.Entities.Web;
-using Vita.Modules.Calendar;
+using Vita.Modules.EventScheduling;
 using Vita.Modules.DataHistory;
 using Vita.Modules.DbInfo;
 using Vita.Modules.EncryptedData;
@@ -58,7 +58,7 @@ namespace Vita.Samples.BookStore {
 
       //Calendar module; it requires job execution module
       var jobExecModule = new Modules.JobExecution.JobExecutionModule(booksArea);
-      var calModule = new CalendarEntityModule(booksArea);
+      var calModule = new EventSchedulingModule(booksArea);
 
       // LoginModule
       var loginStt = new LoginModuleSettings(passwordExpirationPeriod: TimeSpan.FromDays(180));

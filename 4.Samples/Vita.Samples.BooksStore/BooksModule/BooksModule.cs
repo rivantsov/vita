@@ -4,7 +4,7 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Text;
 using Vita.Entities;
-using Vita.Modules.Calendar;
+using Vita.Modules.EventScheduling;
 using Vita.Modules.Logging;
 using Vita.Samples.BookStore.Api;
 
@@ -20,10 +20,10 @@ namespace Vita.Samples.BookStore {
     public const string EventCodeAskBookReview = "AskBookReview";
 
     //Services
-    ICalendarService _calendarService;
+    IEventSchedulingService _calendarService;
 
     public BooksModule(EntityArea area) : base(area, "Books", "Books module", version: CurrentVersion) {
-      Requires<CalendarEntityModule>(); 
+      Requires<EventSchedulingModule>(); 
 
       RegisterEntities(typeof(IBook), typeof(IPublisher), typeof(IAuthor), typeof(IBookAuthor), typeof(IBookReview),
                        typeof(IUser), typeof(IBookOrder), typeof(IBookOrderLine),  typeof(ICoupon), typeof(IImage));
@@ -88,13 +88,13 @@ namespace Vita.Samples.BookStore {
 
     public override void Init() {
       base.Init();
-      _calendarService = App.GetService<ICalendarService>();
+      _calendarService = App.GetService<IEventSchedulingService>();
       _calendarService.EventFired += CalendarService_EventFired;
     }
 
     // A simple facility to test how calendars work. We schedule restocking event using CRON spec in SampleDataGenerator, 
     // so it should be fired every 5 minutes. We pretend to do the operation and add notes to the event. 
-    private void CalendarService_EventFired(object sender, CalendarEventArgs e) {
+    private void CalendarService_EventFired(object sender, SchedulingEventArgs e) {
       if (e.OwnerId == null && e.Code == EventCodeRestock) 
         e.Log += "Restocking operation executed at " + App.TimeService.UtcNow.ToString("s"); 
     }

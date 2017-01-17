@@ -3,8 +3,10 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+
 using Vita.Common;
 using Vita.Entities;
+using Vita.Data;
 
 namespace Vita.Modules.EventScheduling {
   // IEventSchedulingService implementation
@@ -37,8 +39,8 @@ namespace Vita.Modules.EventScheduling {
       //Account for multiple data sources (databases), each might contain its own set of events
       var dsList = App.DataAccess.GetDataSources();
       foreach(var ds in dsList) {
-        //Check if it contains Calendar module
-        if(!ds.Database.DbModel.ContainsSchema(this.Area.Name))
+        //Check if it contains Scheduling module
+        if(!ds.ExistsTableFor(typeof(IEvent)))
           continue;
         var ctx = App.CreateSystemContext();
         ctx.DataSourceName = ds.Name;
@@ -106,9 +108,10 @@ namespace Vita.Modules.EventScheduling {
       int BatchSize = 100;
       while(true) {
         // Find and process due instances in batches of 100
+        // we get all past waiting events, without regards range.From
         var dueEvents = session.EntitySet<IEvent>()
                               .Include(e => e.EventInfo)
-                              .Where(e => (e.StartOn >= range.From && e.StartOn < range.Until))
+                              .Where(e => e.Status == EventStatus.Pending && e.StartOn < range.Until) /*e.StartOn >= range.From && */
                               .Take(BatchSize)
                               .ToList();
         if(dueEvents.Count == 0)

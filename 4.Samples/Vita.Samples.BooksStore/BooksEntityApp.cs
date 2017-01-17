@@ -4,13 +4,10 @@ using System.Collections.Specialized;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+
 using Vita.Common;
 using Vita.Entities;
 using Vita.Entities.Authorization;
-using Vita.Entities.Runtime;
-using Vita.Entities.Services;
-using Vita.Entities.Web;
-using Vita.Modules.EventScheduling;
 using Vita.Modules.DataHistory;
 using Vita.Modules.DbInfo;
 using Vita.Modules.EncryptedData;
@@ -18,9 +15,7 @@ using Vita.Modules.Logging;
 using Vita.Modules.Logging.Api;
 using Vita.Modules.Login;
 using Vita.Modules.Login.Api;
-//using Vita.Modules.OAuthClient;
 using Vita.Modules.TextTemplates;
-using Vita.Samples.BookStore.Api;
 
 namespace Vita.Samples.BookStore {
 
@@ -58,7 +53,6 @@ namespace Vita.Samples.BookStore {
 
       //Calendar module; it requires job execution module
       var jobExecModule = new Modules.JobExecution.JobExecutionModule(booksArea);
-      var calModule = new EventSchedulingModule(booksArea);
 
       // LoginModule
       var loginStt = new LoginModuleSettings(passwordExpirationPeriod: TimeSpan.FromDays(180));
@@ -74,9 +68,10 @@ namespace Vita.Samples.BookStore {
       //api config - register controllers defined in Vita.Modules assembly; books controllers are registered by BooksModule
       base.ApiConfiguration.RegisterControllerTypes(
         typeof(LoginController), typeof(PasswordResetController), typeof(LoginSelfServiceController), typeof(LoginAdministrationController),
-        typeof(ClientErrorController), typeof(LoggingDataController), typeof(EventsPostController),
+        typeof(LogsDataController), typeof(LogsPostController),
         typeof(DiagnosticsController), typeof(UserSessionInfoController)
         );
+      LogsPostController.EnablePublicEvents = true; 
 
       //logging app - linked to main app
       this.LoggingApp = new LoggingEntityApp("log");

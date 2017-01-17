@@ -208,6 +208,16 @@ namespace Vita.UnitTests.Common {
       return app.DataAccess.GetDataSources().First();
     }
 
+    public static void EnableTimers(EntityApp app, bool enable) {
+      EnableAppTimers(app, enable);
+      foreach(var linked in app.LinkedApps)
+        EnableAppTimers(linked, enable); 
+    }
+    private static void EnableAppTimers(EntityApp app, bool enable) {
+      var timers = app.GetService<ITimerServiceControl>();
+      if(timers != null)
+        timers.EnableAutoFire(enable); 
+    }
 
 
   }

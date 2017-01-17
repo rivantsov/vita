@@ -14,6 +14,11 @@ namespace Vita.Entities.Services {
     event EventHandler Elapsed10Seconds;
     event EventHandler Elapsed1Minute;
     event EventHandler Elapsed5Minutes;
+    event EventHandler Elapsed15Minutes;
+    event EventHandler Elapsed30Minutes;
+    event EventHandler Elapsed60Minutes;
+    event EventHandler Elapsed6Hours;
+    event EventHandler Elapsed24Hours;
   }
 
   public interface ITimerServiceControl {

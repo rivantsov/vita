@@ -5,8 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Vita.Modules.EventScheduling.Cron {
-
+namespace Vita.Modules.JobExecution.Cron {
 
   public enum CronFieldType {
     Year,

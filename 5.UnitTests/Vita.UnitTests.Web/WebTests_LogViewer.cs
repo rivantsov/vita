@@ -71,7 +71,7 @@ namespace Vita.UnitTests.Web {
         Location = "somewhere", Value = 1.0, StringValue = "Touch", Parameters = new Dictionary<string, string>()
       };
       clickEvt.Parameters["Param1"] = "Value1";
-      var status = client.ExecutePost<EventData[], HttpStatusCode>(new []{clickEvt}, "api/events/public");
+      var status = client.ExecutePost<EventData[], HttpStatusCode>(new []{clickEvt}, "api/logs-post/events/public");
 
       //Login as dora, try other endpoint for posting events for logged in users
       LoginAs("dora");
@@ -80,7 +80,7 @@ namespace Vita.UnitTests.Web {
         Location = "somewhere", Value = 1.0, StringValue = "Touch", Parameters = new Dictionary<string, string>()
       };
       clickEvt2.Parameters["Param2"] = "Value2";
-      status = client.ExecutePost<EventData[], HttpStatusCode>(new [] {clickEvt2}, "api/events");
+      status = client.ExecutePost<EventData[], HttpStatusCode>(new [] {clickEvt2}, "api/logs-post/events");
       Logout(); 
 
       // let's search and find this event. We need to be logged in as site admin

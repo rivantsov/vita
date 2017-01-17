@@ -28,6 +28,7 @@ namespace Vita.Modules.OAuthClient.Api {
   /// <summary>Represents an authorization process for a user with a remote OAuth Server, completed or in progress.</summary>
   public class OAuthFlow {
     public Guid Id;
+    public DateTime StartedOn;
     public string Server;
     public Guid? UserId; 
     public OAuthFlowStatus Status;
@@ -58,7 +59,7 @@ namespace Vita.Modules.OAuthClient.Api {
     public static OAuthFlow ToModel(this IOAuthClientFlow flow) {
       if(flow == null)
         return null;
-      return new OAuthFlow() { Id = flow.Id, Status = flow.Status, Server = flow.Account.Server.Name,
+      return new OAuthFlow() { Id = flow.Id, StartedOn = flow.CreatedOn, Status = flow.Status, Server = flow.Account.Server.Name,
         UserId = flow.UserId,  AuthorizationUrl = flow.AuthorizationUrl };
     }
 

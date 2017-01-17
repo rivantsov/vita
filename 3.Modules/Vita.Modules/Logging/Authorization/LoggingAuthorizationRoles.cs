@@ -30,7 +30,7 @@ namespace Vita.Modules.Logging {
                   typeof(IEvent), typeof(IEventParameter));
       var viewLogs = new EntityGroupPermission("ViewLogs", AccessType.Read, loggingResources);
       ViewingLogs = new Activity("ViewingLogs", viewLogs);
-      ViewLogsPermission = new ObjectAccessPermission("ViewLogsPermission", AccessType.ApiGet, typeof(LoggingDataController));
+      ViewLogsPermission = new ObjectAccessPermission("ViewLogsPermission", AccessType.ApiGet, typeof(LogsDataController));
       LogDataViewerRole = new Role("LogsAnalyzerRole", ViewingLogs);
       LogDataViewerRole.Grant(ViewLogsPermission);
     }

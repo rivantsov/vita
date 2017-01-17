@@ -4,7 +4,7 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Text;
 using Vita.Entities;
-using Vita.Modules.EventScheduling;
+using Vita.Modules.JobExecution;
 using Vita.Modules.Logging;
 using Vita.Samples.BookStore.Api;
 
@@ -19,15 +19,12 @@ namespace Vita.Samples.BookStore {
     public const string EventCodeRestock = "Restock";
     public const string EventCodeAskBookReview = "AskBookReview";
 
-    //Services
-    IEventSchedulingService _calendarService;
-
     public BooksModule(EntityArea area) : base(area, "Books", "Books module", version: CurrentVersion) {
-      Requires<EventSchedulingModule>(); 
+      Requires<JobExecutionModule>();
 
       RegisterEntities(typeof(IBook), typeof(IPublisher), typeof(IAuthor), typeof(IBookAuthor), typeof(IBookReview),
-                       typeof(IUser), typeof(IBookOrder), typeof(IBookOrderLine),  typeof(ICoupon), typeof(IImage));
-      
+                       typeof(IUser), typeof(IBookOrder), typeof(IBookOrderLine), typeof(ICoupon), typeof(IImage));
+
       //Register companion types that describe keys and indexes on entities
       RegisterCompanionTypes(
           typeof(IBookKeys), typeof(IAuthorKeys), typeof(IPublisherKeys));
@@ -83,21 +80,9 @@ namespace Vita.Samples.BookStore {
       // AuthorUser view - test for bug fix, reading values from outer join into nullable value (UserType?)
       var authQuery = from a in ViewHelper.EntitySet<IAuthor>()
                       select new { FirstName = a.FirstName, LastName = a.LastName, UserName = a.User.UserName, UserType = (UserType?)a.User.Type };
-      RegisterView<IAuthorUser>(authQuery); 
+      RegisterView<IAuthorUser>(authQuery);
     }
 
-    public override void Init() {
-      base.Init();
-      _calendarService = App.GetService<IEventSchedulingService>();
-      _calendarService.EventFired += CalendarService_EventFired;
-    }
-
-    // A simple facility to test how calendars work. We schedule restocking event using CRON spec in SampleDataGenerator, 
-    // so it should be fired every 5 minutes. We pretend to do the operation and add notes to the event. 
-    private void CalendarService_EventFired(object sender, SchedulingEventArgs e) {
-      if (e.OwnerId == null && e.Code == EventCodeRestock) 
-        e.Log += "Restocking operation executed at " + App.TimeService.UtcNow.ToString("s"); 
-    }
 
     // Static method computing FullName computed property for an Author
     public static string GetFullName(IAuthor author) {
@@ -113,8 +98,14 @@ namespace Vita.Samples.BookStore {
 
     // Static method validating Book entity
     public static void ValidateBook(IBook book) {
-      var session = EntityHelper.GetSession(book); 
+      var session = EntityHelper.GetSession(book);
       session.ValidateEntity(book, book.Price >= 0.0m, "PriceNegative", "Price", book.Price, "Price may not be negative");
+    }
+
+    // Sample scheduled job; sample data generator schedules this method as a job to run every 5 minutes
+    public void RestockingJobMethod(JobRunContext jobContext) {
+
+
     }
 
 

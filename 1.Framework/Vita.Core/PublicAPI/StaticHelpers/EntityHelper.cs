@@ -60,6 +60,15 @@ namespace Vita.Entities {
       return rec.EntityInfo.EntityType;
     }
 
+    public static int GetPropertySize<TEntity>(this EntityApp app, Expression<Func<TEntity, object>> selector) {
+      var ent = app.Model.GetEntityInfo(typeof(TEntity));
+      Util.Check(ent != null, "Type {0} is not a registered entity, cannot retrieve property size.", typeof(TEntity));
+      var propName = ReflectionHelper.GetSelectedProperty(selector);
+      var member = ent.GetMember(propName);
+      Util.Check(member != null, "Property {0} not found on entity {1}.", propName, typeof(TEntity));
+      return member.Size; 
+    }
+
     /// <summary>Returns a value of the entity property.</summary>
     /// <param name="entity">The entity instance.</param>
     /// <param name="propertyName">The property name.</param>

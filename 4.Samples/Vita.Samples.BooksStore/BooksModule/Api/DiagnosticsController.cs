@@ -110,12 +110,12 @@ namespace Vita.Samples.BookStore {
 
     [ApiGet, ApiRoute("nowaittest-inc")]
     public string IncCallCountNoWait() {
-      JobHelper.ExecuteWithRetriesNoWait(this.Context, (jobCtx) => IncrementCallCount(jobCtx), "JobNoWait");
+      JobHelper.ExecuteWithRetriesNoWait(this.Context, "NoWaitTestJob-inc", (jobCtx) => IncrementCallCount(jobCtx));
       return "OK";
     }
 
-    private async Task IncrementCallCount(JobRunContext jobCtx) {
-      await Task.Delay(100);
+    private void IncrementCallCount(JobRunContext jobCtx) {
+      System.Threading.Thread.Sleep(100);
       _noWaitCallCount++;
     }
 

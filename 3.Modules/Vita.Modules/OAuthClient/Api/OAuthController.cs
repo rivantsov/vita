@@ -35,7 +35,7 @@ namespace Vita.Modules.OAuthClient.Api {
     /// <param name="serverName">Server name as registered in the system.</param>
     /// <returns>None.</returns>
     /// <remarks>If user token is not found, or token is not active, the method does nothing.</remarks>
-    [ApiGet, ApiRoute("{servername}/user/revoke")]
+    [ApiDelete, ApiRoute("{servername}/user/token")]
     public async Task RevokeUserPermissions(string serverName) {
       var service = Context.App.GetService<IOAuthClientService>();
       var session = Context.OpenSession();
@@ -77,7 +77,7 @@ namespace Vita.Modules.OAuthClient.Api {
         var acct = session.GetOAuthAccount(serverName);
         Context.ThrowIfNull(acct, ClientFaultCodes.ObjectNotFound, "serverName", "Account not registered for server {0}.", serverName);
         var service = Context.App.GetService<IOAuthClientService>();
-        var scopes = scopesParam.Scopes ?? acct.Server.Scopes; //take all scopes
+        var scopes = string.IsNullOrWhiteSpace(scopesParam.Scopes)? acct.Server.Scopes : scopesParam.Scopes; //take all scopes
         var flow = acct.BeginOAuthFlow(Context.User.UserId, scopes);
         session.SaveChanges();
         return flow.ToModel();
@@ -90,15 +90,16 @@ namespace Vita.Modules.OAuthClient.Api {
     /// <returns>Authorization flow object.</returns>
     [ApiGet, ApiRoute("{servername}/flow/{id}")]
     public OAuthFlow GetOAuthFlow(string serverName, Guid id) {
+      var service = Context.App.GetService<IOAuthClientService>();
       var session = OpenSession();
-      var flow = session.GetEntity<IOAuthClientFlow>(id);
+      var flow = service.GetOAuthFlow(session, id); //it will check if flow is expired
       return flow.ToModel(); 
     }
 
     /// <summary>Retrieves authorization token from the remote server using authorization code returned by the server in prior 
     /// redirect action.</summary>
     /// <param name="serverName">Server name.</param>
-    /// <param name="id">Authorization flow ID.</param>
+    /// <param name="flowId">Authorization flow ID.</param>
     /// <returns>User authorization status object.</returns>
     /// <remarks>This is a final action in OAuth authorization process. After user authorizes access on remote server, the server
     /// hits back the client app with redirect action, providing authorization code. The hit-back action is handled 
@@ -106,10 +107,10 @@ namespace Vita.Modules.OAuthClient.Api {
     /// After that the application should invoke action to retrieve the authorization token (this method). 
     /// Once the call returns successfully, the client application has authorization token that it can use to access the user 
     /// information.</remarks>
-    [ApiPost, ApiRoute("{servername}/flow/{id}/token")]
-    public async Task<OAuthUserStatus> RetrieveAccessToken(string serverName, Guid id) {
+    [ApiPost, ApiRoute("{servername}/flow/{flowid}/token")]
+    public async Task<OAuthUserStatus> RetrieveAccessToken(string serverName, Guid flowId) {
       var service = Context.App.GetService<IOAuthClientService>();
-      var tokenId = await service.RetrieveAccessTokenAsync(Context, id);
+      var tokenId = await service.RetrieveAccessTokenAsync(Context, flowId);
       return GetUserOAuthStatus(serverName);
     }
 

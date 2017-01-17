@@ -87,6 +87,14 @@ namespace Vita.Common {
       return interfaceType.GetAllProperties().FirstOrDefault(p => p.Name == propertyName); 
     }
 
+    public static bool HasSetter(this MemberInfo member) {
+      var propInfo = member as PropertyInfo;
+      if(propInfo == null)
+        return false;
+      var setter = propInfo.GetSetMethod();
+      return setter != null; 
+    }
+
     public static bool ImplementsInterface(this Type type, Type interfaceType) {
       return interfaceType.IsAssignableFrom(type); 
     }

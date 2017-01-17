@@ -7,7 +7,7 @@ using System.Diagnostics;
 using Vita.Entities;
 using Vita.Modules.Login;
 using Vita.Modules.TextTemplates;
-using Vita.Modules.EventScheduling;
+using Vita.Modules.JobExecution;
 
 namespace Vita.Samples.BookStore.SampleData {
 
@@ -48,18 +48,18 @@ namespace Vita.Samples.BookStore.SampleData {
     }
 
     // Creates system calendar and schedules regular job to restock the inventory
-    public static void CreateScheduledEvents(EntityApp app) {
+    public static void CreateScheduledJobs(EntityApp app) {
       var session = app.OpenSystemSession(); 
       // find existing or create new scheduled process
-      var restockEvt = session.EntitySet<IEventInfo>()
-          .Where(t => t.OwnerId == null && t.Code == BooksModule.EventCodeRestock).FirstOrDefault();
-      if(restockEvt == null) {
-        restockEvt = session.NewEventInfo(BooksModule.EventCodeRestock, "Restocking",
-            "Sample event firing every five minutes, to run restock operation");
+      var restockJob = session.EntitySet<IJob>()
+          .Where(j => j.Name == BooksModule.EventCodeRestock).FirstOrDefault();
+      if(restockJob == null) {
+        var bkModule = app.GetModule<BooksModule>(); 
+        restockJob = JobHelper.CreateJob(session, BooksModule.EventCodeRestock, (jobCtx) => bkModule.RestockingJobMethod(jobCtx));
         //In real life would happen like once a day; here we set it to 5 minutes to observe how events are fired 
         // while we browse the sample UI app.
         //  You can see the events appearing in the database in the EventOccurrence table, with ExecutionNotes 
-        var sched = restockEvt.CreateSchedule("*/5 * * * *");
+        var sched = JobHelper.SetJobSchedule(restockJob, "*/5 * * * *");
       }
       session.SaveChanges();
     }

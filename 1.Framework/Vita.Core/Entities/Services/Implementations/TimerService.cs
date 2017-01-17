@@ -12,15 +12,6 @@ using Vita.Entities.Runtime;
 namespace Vita.Entities.Services.Implementations {
 
   public class TimerService : ITimerService, ITimerServiceControl {
-    // We need to have a single global instance of TimerService
-    public static TimerService Instance {
-      get {
-        _instance = _instance ?? new TimerService();
-        return _instance; 
-      }
-    } static TimerService _instance;
-    private TimerService() { }
-
     private Timer _timer;
     private ITimeService _timeService;
     private bool _enabled; 
@@ -36,16 +27,20 @@ namespace Vita.Entities.Services.Implementations {
 
     public event EventHandler Elapsed1Minute;
     public event EventHandler Elapsed5Minutes;
+    public event EventHandler Elapsed15Minutes;
+    public event EventHandler Elapsed30Minutes;
+    public event EventHandler Elapsed60Minutes;
+    public event EventHandler Elapsed6Hours;
+    public event EventHandler Elapsed24Hours;
 
-    bool _initialized; 
+    public TimerService() {
+    }
+
     public void Init(EntityApp app) {
-      if(_initialized)
-        return; 
       _errorLog = app.GetService<IErrorLogService>();
       _timeService = TimeService.Instance;
       _timer = new Timer(Timer_Elapsed, null, 100, 100);
       app.AppEvents.Initializing += Events_Initializing;
-      _initialized = true; 
     }
 
     void Events_Initializing(object sender, AppInitEventArgs e) {
@@ -71,8 +66,19 @@ namespace Vita.Entities.Services.Implementations {
           SafeInvoke(Elapsed10Seconds.GetInvocationList());
         if(seconds % 60 == 0 && Elapsed1Minute != null)
           SafeInvoke(Elapsed1Minute.GetInvocationList());
-        if(seconds % 300 == 0 && Elapsed5Minutes != null)
+        var oneMin = 60;
+        if(seconds % (5 * oneMin) == 0 && Elapsed5Minutes != null)
           SafeInvoke(Elapsed5Minutes.GetInvocationList());
+        if(seconds % (15 * oneMin) == 0 && Elapsed15Minutes != null)
+          SafeInvoke(Elapsed15Minutes.GetInvocationList());
+        if(seconds % (30 * oneMin) == 0 && Elapsed30Minutes != null)
+          SafeInvoke(Elapsed30Minutes.GetInvocationList());
+        if(seconds % (60 * oneMin) == 0 && Elapsed60Minutes != null)
+          SafeInvoke(Elapsed60Minutes.GetInvocationList());
+        if(seconds % (60 * 6 * oneMin) == 0 && Elapsed6Hours != null)
+          SafeInvoke(Elapsed6Hours.GetInvocationList());
+        if(seconds % (60 * 24 * oneMin) == 0 && Elapsed24Hours != null)
+          SafeInvoke(Elapsed24Hours.GetInvocationList());
       }
     }
 
@@ -99,16 +105,17 @@ namespace Vita.Entities.Services.Implementations {
     public void FireAll() {
       lock(_lock) {
         try {
-          if(Elapsed100Ms != null)
-            Elapsed100Ms(this, EventArgs.Empty);
-          if(Elapsed1Second != null)
-            Elapsed1Second(this, EventArgs.Empty);
-          if(Elapsed10Seconds != null)
-            Elapsed10Seconds(this, EventArgs.Empty);
-          if(Elapsed1Minute != null)
-            Elapsed1Minute(this, EventArgs.Empty);
-          if(Elapsed5Minutes != null)
-            Elapsed5Minutes(this, EventArgs.Empty);
+          Elapsed100Ms?.Invoke(this, EventArgs.Empty);
+          Elapsed1Second?.Invoke(this, EventArgs.Empty);
+          Elapsed10Seconds?.Invoke(this, EventArgs.Empty);
+          Elapsed1Minute?.Invoke(this, EventArgs.Empty);
+          Elapsed5Minutes?.Invoke(this, EventArgs.Empty);
+          Elapsed15Minutes?.Invoke(this, EventArgs.Empty);
+          Elapsed15Minutes?.Invoke(this, EventArgs.Empty);
+          Elapsed30Minutes?.Invoke(this, EventArgs.Empty);
+          Elapsed60Minutes?.Invoke(this, EventArgs.Empty);
+          Elapsed6Hours?.Invoke(this, EventArgs.Empty);
+          Elapsed24Hours?.Invoke(this, EventArgs.Empty);
         } catch(Exception ex) {
           if(_errorLog != null)
             _errorLog.LogError(ex);

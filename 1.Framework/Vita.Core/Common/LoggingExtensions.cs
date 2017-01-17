@@ -201,7 +201,7 @@ Parameters:
     private static void WriteAggregateExceptionLogString(StringBuilder sb, AggregateException exception) {
       sb.AppendFormat("AggregateException: {0} ======================================\r\n", exception.Message);
       sb.AppendLine("Inner exceptions: ");
-      foreach(var inner in exception.InnerExceptions)
+      foreach(var inner in exception.Flatten().InnerExceptions)
         WriteExceptionLogString(sb, inner);
       sb.AppendLine("End InnerExceptions log =============================================");
     }

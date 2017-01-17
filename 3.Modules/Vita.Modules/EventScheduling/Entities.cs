@@ -9,7 +9,7 @@ using Vita.Modules.JobExecution;
 
 namespace Vita.Modules.EventScheduling {
 
-  [Entity, Display("{Code}: {StartOn}")]
+  [Entity, BypassAuthorization, Display("{Code}: {StartOn}")]
   public interface IEvent {
     [PrimaryKey, Auto]
     Guid Id { get; }
@@ -24,7 +24,7 @@ namespace Vita.Modules.EventScheduling {
     string Log { get; set; }
   }
 
-  [Entity, Display("{Code}")]
+  [Entity, BypassAuthorization, Display("{Code}")]
   public interface IEventInfo {
     [PrimaryKey, Auto]
     Guid Id { get; }
@@ -33,7 +33,7 @@ namespace Vita.Modules.EventScheduling {
     string Code { get; set; }
     [Size(Sizes.LongName)]
     string Title { get; set; }
-    [Unlimited]
+    [Unlimited, Nullable]
     string Description { get; set; }
     [OneToOne]
     IEventSchedule Schedule { get; }
@@ -48,7 +48,7 @@ namespace Vita.Modules.EventScheduling {
     string Data { get; set; }
   }
   
-  [Entity, Display("{EventInfo.Code}: {CronSpec}")]
+  [Entity, BypassAuthorization, Display("{EventInfo.Code}: {CronSpec}")]
   public interface IEventSchedule {
     [PrimaryKey]
     IEventInfo EventInfo { get; set; }

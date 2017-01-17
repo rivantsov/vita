@@ -8,16 +8,17 @@ namespace Vita.Modules.JobExecution {
 
   /// <summary>Represents a status of a job run (execution attempt).</summary>
   public enum JobRunStatus {
+    Pending = 0,
     /// <summary>The job is executing.</summary>
-    Executing = 0,
+    Executing,
     /// <summary>The job run has completed successfully.</summary>
     Completed,
-    /// <summary>The job run failed, but will be retried in the future.</summary>
-    Failed, // failed, but will continue to retry
-    /// <summary>The job runs failed after exausting all retry attempts.</summary>
-    Error,  //failed completely 
+    /// <summary>The job run failed.</summary>
+    Error, 
     /// <summary>The job run was interrupted, most common cause - system shutdown.</summary>
     Interrupted, // interrupted by system shutdown
+    /// <summary>The job run was deactivated (killed) from code.</summary>
+    Killed,
   }
 
   /// <summary>Job flags, indicate various job options.</summary>
@@ -25,20 +26,14 @@ namespace Vita.Modules.JobExecution {
   public enum JobFlags {
     /// <summary>No flags</summary>
     None = 0,
-    /// <summary>Start the job run immediately after job entity is saved to the database.</summary>
-    StartOnSave = 1 << 1,
-    /// <summary>Indicates that job method arguments must be serialized back to database on intermittent failures.</summary>
-    PersistArguments = 1 << 2,
-    // Light means initially not persisted, trying to execute it on the fly; if failed, it is persisted and retried
-    /// <summary>The job is not persisted initially but is tried to execute immediately. If fails, it is persisted to be retried later.</summary>
-    IsLightJob = 1 << 4,
+  }
 
-    /// <summary>Default flags: StartOnSave.</summary>
-    Default = StartOnSave
+  public enum JobRestartHostMode {
+    SameInstance, 
   }
 
   /// <summary>Defines job execution thread types.</summary>
-  public enum ThreadType {
+  public enum JobThreadType {
     /// <summary>Execute on a pool thread, typically as short async Task.</summary>
     Pool,
     /// <summary>Execute on a background, non-pool thread. Use it for long-running tasks.</summary>

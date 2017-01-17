@@ -43,8 +43,6 @@ namespace Vita.Modules.Login {
     public const string OneTimePasswordSubject = "Login.OneTimePassword.Email.Subject";
     public const string OneTimePasswordBody = "Login.OneTimePassword.Email.Body";
 
-    [Obsolete("Use VerifySmsBody constant.")]
-    public const string VerifyPhoneSmsBody = VerifySmsBody;
   }
 
 

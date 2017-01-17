@@ -13,34 +13,32 @@ using Vita.Entities;
 
 namespace Vita.Modules.JobExecution {
 
-  internal static class JobExtensions {
+  public static class JobUtil {
     // delimiter for parameters serialized as json in one text file. 
-    public static readonly string ArgsDelimiter = Environment.NewLine + new string('"', 4) + Environment.NewLine;
+    public static readonly string JsonArgsDelimiter = Environment.NewLine + new string('"', 4) + Environment.NewLine;
 
-    public static IJob NewJob(this IEntitySession session, JobDefinition job, JsonSerializer serializer) {
-      ValidateJobMethod(session.Context.App, job); 
+    public static bool IsSet(this JobFlags flags, JobFlags flag) {
+      return (flags & flag) != 0;
+    }
+
+
+    public static IJob NewJob(this IEntitySession session, string code, LambdaExpression expression, JsonSerializer serializer) {
+      var startInfo = JobStartInfo.Create(expression);
+      ValidateJobMethod(session.Context.App, startInfo); 
       var ent = session.NewEntity<IJob>();
-      ent.Code = job.Code;
-      ent.ThreadType = job.ThreadType;
-      ent.Id = job.Id;
-      ent.Flags = job.Flags;
-      var startInfo = job.StartInfo;
-      ent.TargetType = startInfo.DeclaringType.Namespace + "." + startInfo.DeclaringType.Name;
-      ent.TargetMethod = startInfo.Method.Name;
-      ent.TargetParameterCount = startInfo.Arguments.Length;
+      ent.Code = code;
+      ent.Flags = JobFlags.None;
+      ent.DeclaringType = startInfo.DeclaringType.Namespace + "." + startInfo.DeclaringType.Name;
+      ent.MethodName = startInfo.Method.Name;
+      ent.MethodParameterCount = startInfo.Arguments.Length;
       ent.Arguments = SerializeArguments(startInfo.Arguments, serializer);
-      var rp = job.RetryPolicy;
-      ent.RetryIntervalSec = rp.IntervalSeconds;
-      ent.RetryCount = rp.RetryCount;
-      ent.RetryPauseMinutes = rp.PauseMinutes;
-      ent.RetryRoundsCount = rp.RoundsCount;
       return ent;
     }
 
-    internal static void ValidateJobMethod(EntityApp app, JobDefinition job) {
+    internal static void ValidateJobMethod(EntityApp app, JobStartInfo startInfo) {
       // We already check return type (Task or Void) in JobDefinition constructor
       // We need to check for instance methods that they are defined on global objects - that can be 'found' easily when it's time to invoke the method.
-      var method = job.StartInfo.Method; 
+      var method = startInfo.Method; 
       if (!method.IsStatic) {
         // it is instance method; check that it is defined on one of global objects - module, service, or custom global object
         var obj = app.GetGlobalObject(method.DeclaringType);
@@ -49,37 +47,17 @@ namespace Vita.Modules.JobExecution {
       }
     }
 
-    public static IJobRun NewJobRun(this IJob job, Guid? sourceId) {
+    public static IJobRun NewJobRun(this IJob job, DateTime startOn) {
       var session = EntityHelper.GetSession(job);
       var jobRun = session.NewEntity<IJobRun>();
       jobRun.Job = job;
-      jobRun.EventId = sourceId;
       jobRun.CurrentArguments = job.Arguments;
       jobRun.Status = JobRunStatus.Executing;
-      jobRun.RemainingRetries = job.RetryCount;
-      jobRun.RemainingRounds = job.RetryRoundsCount;
-      jobRun.NextStartOn = session.Context.App.TimeService.UtcNow;
+      jobRun.StartOn = startOn;
       // We use update query to append messages (Log = job.Log + message) - see JobContext class.
       // It does not work if initial value is null; so we initialize it to empty string 
       jobRun.Log = string.Empty;
       return jobRun;
-    }
-
-    internal static JobStartInfo GetJobStartInfo(LambdaExpression expression) {
-      var callExpr = expression.Body as MethodCallExpression;
-      Util.Check(callExpr != null, "Invalid Job definition expression - must be a method call: {0}", expression);
-      var job = new JobStartInfo(); 
-      job.Method = callExpr.Method;
-      job.DeclaringType = job.Method.DeclaringType;
-      // parameters
-      job.Arguments = new object[callExpr.Arguments.Count];
-      for(int i = 0; i < callExpr.Arguments.Count; i++) {
-        var argExpr = callExpr.Arguments[i];
-        if(argExpr.Type == typeof(JobRunContext))
-          continue;
-        job.Arguments[i] = ExpressionHelper.Evaluate(argExpr);
-      }
-      return job; 
     }
 
     internal static string SerializeArguments(object[] arguments, JsonSerializer serializer) {
@@ -91,25 +69,25 @@ namespace Vita.Modules.JobExecution {
         else 
           serArgs[i] = Serialize(serializer, arg);
       }
-      var result = string.Join(ArgsDelimiter, serArgs);
+      var result = string.Join(JsonArgsDelimiter, serArgs);
       return result;
     }
 
-    public static JobStartInfo GetJobStartInfo(IJobRun jobRun, JobRunContext jobContext) {
+    public static JobStartInfo CreateJobStartInfo(IJobRun jobRun, JobRunContext jobContext) {
       var app = jobContext.App; 
       var jobData = new JobStartInfo();
       var job = jobRun.Job; 
-      jobData.DeclaringType = ReflectionHelper.GetLoadedType(job.TargetType, throwIfNotFound: true); //it will throw if cannot find it
-      var methName = job.TargetMethod;
-      var argCount = job.TargetParameterCount;
-      jobData.Method = ReflectionHelper.FindMethod(jobData.DeclaringType, job.TargetMethod, job.TargetParameterCount); 
+      jobData.DeclaringType = ReflectionHelper.GetLoadedType(job.DeclaringType, throwIfNotFound: true); //it will throw if cannot find it
+      var methName = job.MethodName;
+      var argCount = job.MethodParameterCount;
+      jobData.Method = ReflectionHelper.FindMethod(jobData.DeclaringType, job.MethodName, job.MethodParameterCount); 
       // if Method is not static, it must be Module instance - this is a convention
       if(!jobData.Method.IsStatic)
         jobData.Object = app.GetGlobalObject(jobData.DeclaringType); //throws if not found. 
       //arguments
       var prms = jobData.Method.GetParameters();
       var serArgs = jobRun.CurrentArguments;
-      var arrStrArgs = serArgs.Split(new[] { ArgsDelimiter }, StringSplitOptions.None);
+      var arrStrArgs = serArgs.Split(new[] { JsonArgsDelimiter }, StringSplitOptions.None);
       Util.Check(prms.Length == arrStrArgs.Length, "Serialized arg count ({0}) in job entity " +
            "does not match the number of target method parameters ({1}); target method: {2}.", 
            arrStrArgs.Length, prms.Length, jobData.Method.Name);

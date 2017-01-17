@@ -6,7 +6,6 @@ using System.Threading.Tasks;
 
 using Vita.Entities;
 using Vita.Entities.Services;
-using Vita.Entities.Web;
 using Vita.Data.Upgrades;
 using Vita.Modules.DbInfo;
 using Vita.Common;
@@ -30,10 +29,10 @@ namespace Vita.Modules.Logging {
     public readonly IEventLogService EventLogService;
     public readonly IWebClientLogService WebClientLogService;
 
-    public LoggingEntityApp(string schema = "log", LogModules includeModule = LogModules.All, 
+    public LoggingEntityApp(string schema = "log", LogModules includeModules = LogModules.All, 
                             UserSessionSettings sessionSettings = null) : base("LoggingApp", CurrentVersion) {
       var area = base.AddArea(schema);
-      ActiveModules = includeModule;
+      ActiveModules = includeModules;
       // DbInfo module is not shared with main app, it is local for the database
       var dbInfo = new DbInfoModule(area);
       // ErrorLog is property in EntityApp, will be set there automatically

@@ -9,7 +9,7 @@ using Vita.Entities.Web;
 
 namespace Vita.Modules.Login.Api {
 
-  [ApiRoutePrefix("mylogin"), LoggedInOnly, ApiGroup("Login/Management")]
+  [ApiRoutePrefix("mylogin"), LoggedInOnly, ApiGroup("Login-MyLogin")]
   public class LoginSelfServiceController : SlimApiController {
     ILoginManagementService _loginManager; 
 

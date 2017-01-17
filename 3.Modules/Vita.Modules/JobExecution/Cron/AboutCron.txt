@@ -15,8 +15,8 @@ There are a few extensions implemented here:
    in a months with day 13 being Friday; see CronTests in Extended Unit Tests project. 
 
 Usage: 
-  var sched = new CronSchedule("13 13 13 * 5 *"); // run on Fri 13 at 13:13
-  var start = new Date(2016, 10, 11); // 11 Oct 2016
-  DateTime? next = sched.TryGetNext(start);  // 2017-01-13 Fri 13:13
+  var sched = new CronSchedule("13 13 13 * 5 *"); // run on every Fri 13 at 13:13
+  var start = new Date(2016, 10, 11); // initial date is 11 Oct 2016
+  DateTime? next = sched.TryGetNext(start);  // find next match from initial date; result: 2017-01-13 Fri 13:13
   // You can call it again to get next date
   var next2 = sched.TryGetNext(next.Value); // 2017-10-13 Fri 13:13

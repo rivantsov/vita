@@ -32,7 +32,7 @@ namespace Vita.UnitTests.Web {
         AppName = "TestApp", Message = "Client Error Message", Details = "Client Error Details",
         LocalTime = Startup.BooksApp.TimeService.Now.AddMinutes(-5) //pretend it happened 5 minutes ago
       };
-      var serverErrorId = client.ExecutePost<ClientError, Guid>(clientError, "api/clienterrors");
+      var serverErrorId = client.ExecutePost<ClientError, Guid>(clientError, "api/logs-post/clienterrors");
       Assert.AreEqual(clientError.Id, serverErrorId, "Failed to submit client error, IDs do not match");
 
       //Verify record exists in database

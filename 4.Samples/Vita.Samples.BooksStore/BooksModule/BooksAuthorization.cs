@@ -10,7 +10,6 @@ using Vita.Entities.Authorization;
 using Vita.Modules.Login;
 using Vita.Entities.Linq;
 using Vita.Common;
-using Vita.Modules.EventScheduling;
 
 namespace Vita.Samples.BookStore {
 

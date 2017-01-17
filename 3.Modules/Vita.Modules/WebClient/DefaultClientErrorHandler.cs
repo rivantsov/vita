@@ -35,8 +35,6 @@ namespace Vita.Modules.WebClient {
         throw new Exception(explain, exc);
       }
     }
-
-
     #endregion
 
     private async Task<Exception> ReadError(HttpResponseMessage response) {

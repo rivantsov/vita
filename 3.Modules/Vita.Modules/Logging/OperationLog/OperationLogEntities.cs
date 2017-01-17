@@ -7,8 +7,6 @@ using System.Text;
 using System.Threading.Tasks;
 
 using Vita.Entities;
-using Vita.Entities.Logging;
-using Vita.Data.Model;
 
 namespace Vita.Modules.Logging {
 

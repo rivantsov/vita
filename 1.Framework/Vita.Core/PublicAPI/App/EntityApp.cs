@@ -140,7 +140,7 @@ namespace Vita.Entities {
       AppDomain.CurrentDomain.DomainUnload += CurrentDomain_DomainUnload;
       // Time service and Timers service  are global singletons, we register these here, as early as possible
       this.TimeService = this.RegisterService<ITimeService>(Services.Implementations.TimeService.Instance);
-      var timers = this.RegisterService<ITimerService>(TimerService.Instance);
+      var timers = this.RegisterService<ITimerService>(new TimerService());
       this.RegisterService<ITimerServiceControl>(timers as ITimerServiceControl);
     }
 

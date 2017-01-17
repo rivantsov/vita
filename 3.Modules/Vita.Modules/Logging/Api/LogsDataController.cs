@@ -9,8 +9,8 @@ using Vita.Entities.Web;
 
 namespace Vita.Modules.Logging.Api {
 
-  [ApiRoutePrefix("logs"), LoggedInOnly, Secured]
-  public class LoggingDataController : SlimApiController {
+  [ApiRoutePrefix("logs"), ApiGroup("Logs"), LoggedInOnly, Secured]
+  public class LogsDataController : SlimApiController {
 
     protected IEntitySession OpenSession() {
       return Context.OpenSecureSession(); 

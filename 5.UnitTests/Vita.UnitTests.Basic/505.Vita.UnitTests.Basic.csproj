@@ -67,7 +67,6 @@
     <Compile Include="GetSchemaTests.cs" />
     <Compile Include="HashCryptTests.cs" />
     <Compile Include="LockTests.cs" />
-    <Compile Include="Modules\JobRunnerTests.cs" />
     <Compile Include="SequenceTests.cs" />
     <Compile Include="OneToOneRefTest.cs" />
     <Compile Include="_Program.cs" />

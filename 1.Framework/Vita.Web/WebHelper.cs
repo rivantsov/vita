@@ -62,14 +62,13 @@ namespace Vita.Web {
      // config.ParameterBindingRules.Add(typeof(DateTime), p => new DateTimeParameterBinding(p));
     }
 
-    /* experiments
-    public class DateTimeParameterBinding : HttpRequestParameterBinding {
-      public DateTimeParameterBinding(HttpParameterDescriptor d) : base(d) { }
-      public override Task ExecuteBindingAsync(System.Web.Http.Metadata.ModelMetadataProvider metadataProvider, HttpActionContext actionContext, System.Threading.CancellationToken cancellationToken) {
-        return base.ExecuteBindingAsync(metadataProvider, actionContext, cancellationToken); 
-      }
+    public static bool IsSet(this WebHandlerOptions options, WebHandlerOptions option) {
+      return (options & option) != 0;
     }
-     */ 
+
+    public static bool IsSet(this WebTokenDirection flags, WebTokenDirection flag) {
+      return (flags & flag) != 0;
+    }
 
     //Helper method - retrieves WebCallInfo object from request properties; optionally creates and saves it if it does not exist. 
     public static WebCallContext GetWebCallContext(this HttpRequestMessage request) {
@@ -310,31 +309,6 @@ namespace Vita.Web {
 
     public static string EncryptVersionArray(long[] array) {
       return Encrypt(string.Join(",", array), "Versions");
-    }
-
-    public static string GetSwaggerApiGroup(this HttpActionDescriptor descriptor) {
-      var slimDescr = descriptor as SlimApiActionDescriptor;
-      if(slimDescr != null)
-        return slimDescr.ControllerInfo.ApiGroup;
-      return descriptor.ControllerDescriptor.ControllerType.Name;
-    }
-
-    public static string GetSwaggerOperationId(this HttpActionDescriptor descriptor) {
-      string contrTypeName;
-      var slimDescr = descriptor as SlimApiActionDescriptor;
-      if(slimDescr != null)
-        contrTypeName = slimDescr.ControllerInfo.TypeInfo.Name;
-      else
-        contrTypeName = descriptor.ControllerDescriptor.ControllerType.Name;
-      return contrTypeName  + "_" + descriptor.ActionName;
-    }
-
-    public static bool IsSet(this WebHandlerOptions options, WebHandlerOptions option) {
-      return (options & option) != 0;
-    }
-
-    public static bool IsSet(this WebTokenDirection flags, WebTokenDirection flag) {
-      return (flags & flag) != 0;
     }
 
 

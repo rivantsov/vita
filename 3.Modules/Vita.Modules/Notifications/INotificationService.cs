@@ -5,7 +5,6 @@ using System.Text;
 using System.Threading.Tasks;
 
 using Vita.Entities;
-using Vita.Entities.Services.Implementations;
 
 namespace Vita.Modules.Notifications {
 

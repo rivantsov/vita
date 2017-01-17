@@ -15,7 +15,7 @@ using Vita.Modules.ApiClients.Recaptcha;
 namespace Vita.Modules.Login.Api {
 
   // Handles Password reset
-  [ApiRoutePrefix("passwordreset"), ApiGroup("Login/PasswordReset")] 
+  [ApiRoutePrefix("passwordreset"), ApiGroup("Login-PasswordReset")] 
   public class PasswordResetController : SlimApiController {
     LoginModuleSettings _loginSettings; 
     ILoginProcessService _processService;

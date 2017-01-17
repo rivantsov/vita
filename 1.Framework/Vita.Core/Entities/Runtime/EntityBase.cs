@@ -24,13 +24,16 @@ namespace Vita.Entities.Runtime {
       return Record.GetHashCode(); //return PrimaryKey.GetHashCode()
     }
 
-    public override bool Equals(object obj) {
-      if (obj == this)
-        return true;
-      if (obj == null)
+    public override bool Equals(object other) {
+      if(other == null)
         return false;
-      var rec = EntityHelper.GetRecord(obj);
-      return (this.Record.PrimaryKey.Equals(rec.PrimaryKey));
+      if(other == (object)this)
+        return true;
+      var otherEntBase = other as EntityBase;
+      if(otherEntBase == null)
+        return false; 
+      var otherRec = otherEntBase.Record;
+      return (this.Record.PrimaryKey.Equals(otherRec.PrimaryKey));
     }
 
     #region INotifyPropertyChanged Members

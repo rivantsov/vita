@@ -1,17 +1,7 @@
 ﻿using System;
-using System.ComponentModel; 
-using System.Collections.Generic;
-using System.Diagnostics; 
-using System.Linq;
-using System.Text;
-using System.IO;
-using System.Xml;
 
 using Vita.Common;
 using Vita.Entities;
-using Vita.Entities.Runtime;
-using Vita.Entities.Model;
-using Vita.Data;
 using Vita.Entities.Services;
 
 namespace Vita.Modules.Logging {

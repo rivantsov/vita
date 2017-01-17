@@ -55,9 +55,10 @@ namespace Vita.Entities.Locking {
       var query = session.EntitySet<TEntity>(options).Where(filter);
       // We use ToList() on entire query instead of First() because we have already filter on PK value, 
       // and we want to avoid adding any paging (skip/take) clauses to the SQL.
-      // We use First on entire list, not FirstOrDefault, to ensure it blows up if entity does not exist
-      // (so no lock was actually established
-      var ent = query.ToList().First();
+      // We use FirstOrDefult on entire list, and check that we got something; if not, we throw clear message.
+      var ent = query.ToList().FirstOrDefault();
+      Util.Check(ent != null, "Entity {0} with ID {1} does not exist, cannot set the lock.", entInfo.EntityType.Name,
+          primaryKey);
       return ent;
       /*
       //The following is just a sketch

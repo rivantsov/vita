@@ -20,6 +20,7 @@ namespace Vita.Modules.OAuthClient {
   }
 
   public interface IOAuthClientService {
+    IOAuthClientFlow GetOAuthFlow(IEntitySession session, Guid flowId); 
     IOAuthAccessToken GetUserOAuthToken(IEntitySession session, Guid userId, string serverName, string accountName = null);
 
     Task OnRedirected(OperationContext context, string state, string authCode, string error);

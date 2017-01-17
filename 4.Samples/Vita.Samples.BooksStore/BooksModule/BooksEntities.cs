@@ -102,7 +102,7 @@ namespace Vita.Samples.BookStore {
     IUser User { get; set; } //author might be a user
 
     [Computed(typeof(BooksModule), "GetFullName"), DependsOn("FirstName,LastName")] //DependsOn is optional, used for auto PropertyChanged firing
-    string FullName { get; }
+    string FullName { get;} 
   }
 
   // Note: we set CascadeDelete on reference to Book, but not Author. 

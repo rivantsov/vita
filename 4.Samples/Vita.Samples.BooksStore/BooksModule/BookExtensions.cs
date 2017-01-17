@@ -8,7 +8,6 @@ using Vita.Common;
 
 using Vita.Entities;
 using Vita.Entities.Linq;
-using Vita.Modules.EventScheduling;
 using Vita.Modules.JobExecution;
 
 namespace Vita.Samples.BookStore {
@@ -92,17 +91,7 @@ namespace Vita.Samples.BookStore {
           order.Total = (decimal) (((double)order.Total) * ((100 - entCoupon.DiscountPerc) / 100.0));
         }
       }
-      // send email confirming purchase, using reliable with-retries method
       order.Status = OrderStatus.Completed;
-      JobHelper.ExecuteWithRetriesNoWait(session.Context, (jobCtx) => SendPurchaseConfirmationEmail(jobCtx, order.Id), 
-          code: "SendOrderConfirmation");
-    }
-
-    private static async Task SendPurchaseConfirmationEmail(JobRunContext jobContext, Guid orderId) {
-      //Pretend we are sending email here, using external email service - which can fail sometimes, that's why we use task with retries
-      await Task.Delay(100);
-      // Actually the progress will not be saved because we are completing successfully
-      jobContext.UpdateProgress(100, "Confirmation email sent!");
     }
 
     //Schedules update LINQ-based command that will recalculate totals at the end of SaveChanges transaction

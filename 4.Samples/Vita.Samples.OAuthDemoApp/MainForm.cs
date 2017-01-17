@@ -121,7 +121,8 @@ namespace Vita.Samples.OAuthDemoApp {
       var server = GetCurrentServer(session);
       Log("=== Starting OAuth2 flow, server: {0}", server.Name);
       var act = session.GetOAuthAccount(server.Name);
-      var flow = act.BeginOAuthFlow(null, server.Scopes);
+      var scopes = server.Name == "Fitbit" ? "sleep" : server.Scopes; //-- experiment
+      var flow = act.BeginOAuthFlow(null, scopes); // server.Scopes);
       session.SaveChanges();
       _processStatus = ProcessStatus.WaitingRedirect;
       // Open browser page and direct it to authorization URL for the server

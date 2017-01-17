@@ -47,13 +47,26 @@ namespace Vita.Modules.OAuthClient {
     #region IAuthClientService
     public event AsyncEvent<RedirectEventArgs> Redirected;
 
+    public IOAuthClientFlow GetOAuthFlow(IEntitySession session, Guid flowId) {
+      var flow = session.GetEntity<IOAuthClientFlow>(flowId);
+      if(flow == null)
+        return null;
+      if (flow.UserId != null) {
+        var currUserId = session.Context.User.UserId;
+        if(currUserId != flow.UserId.Value)
+          return null; 
+      }
+      CheckExpired(flow);
+      return flow; 
+    }
+
     public async Task OnRedirected(OperationContext context, string state, string authCode, string error) {
       var session = context.OpenSystemSession();
       Guid reqId;
       Util.Check(Guid.TryParse(state, out reqId), "Invalid state parameter ({0}), expected GUID.", state);
       var flow = session.GetEntity<IOAuthClientFlow>(reqId);
       Util.Check(flow != null, "OAuth Redirect: invalid state parameter, OAuth flow not found.", state);
-      CheckFlowExpired(flow); 
+      ThrowIfExpired(flow); 
       flow.AuthorizationCode = authCode;
       flow.Error = error;
       flow.Status = string.IsNullOrWhiteSpace(error) ? OAuthFlowStatus.Authorized : OAuthFlowStatus.Error;
@@ -68,7 +81,7 @@ namespace Vita.Modules.OAuthClient {
       var session = context.OpenSystemSession();
       var flow = session.GetEntity<IOAuthClientFlow>(flowId);
       Util.Check(flow != null, "OAuth client flow not found, ID: {0}", flowId);
-      CheckFlowExpired(flow);
+      ThrowIfExpired(flow);
       string err = null;
       switch(flow.Status) {
         case OAuthFlowStatus.Started: err = "Access not authorized yet."; break;
@@ -277,15 +290,29 @@ namespace Vita.Modules.OAuthClient {
 
     #endregion
 
-    private void CheckFlowExpired(IOAuthClientFlow flow) {
+    private void ThrowIfExpired(IOAuthClientFlow flow) {
+      CheckExpired(flow);
       var session = EntityHelper.GetSession(flow);
-      var expires = flow.CreatedOn.AddMinutes(Settings.FlowExpirationMinutes);
-      var now = App.TimeService.UtcNow;
-      if (expires < now) {
-        flow.Status = OAuthFlowStatus.Expired;
-        session.SaveChanges(); 
-        session.Context.ThrowIf(true, ClientFaultCodes.InvalidAction, "OAuthFlow", "OAuth 2.0 process expired.");
-      }
+      session.Context.ThrowIf(flow.Status == OAuthFlowStatus.Expired, ClientFaultCodes.InvalidAction, "OAuthFlow", "OAuth 2.0 process expired.");
     }
+
+    private void CheckExpired(IOAuthClientFlow flow) {
+      switch(flow.Status) {
+        case OAuthFlowStatus.Started:
+        case OAuthFlowStatus.Authorized:
+          var session = EntityHelper.GetSession(flow);
+          var expires = flow.CreatedOn.AddMinutes(Settings.FlowExpirationMinutes);
+          var now = App.TimeService.UtcNow;
+          if(expires > now)
+            return;
+          //Update the status in database
+          flow.Status = OAuthFlowStatus.Expired;
+          var updQuery = session.EntitySet<IOAuthClientFlow>().Where(f => f.Id == flow.Id).Select(f => new { Status = OAuthFlowStatus.Expired });
+          updQuery.ExecuteUpdate<IOAuthClientFlow>();
+          return;
+      }
+    }//method
+
+
   } //class
 }

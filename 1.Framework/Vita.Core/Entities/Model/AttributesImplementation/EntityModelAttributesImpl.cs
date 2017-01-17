@@ -274,14 +274,19 @@ namespace Vita.Entities {
     private MethodInfo _method;
 
     public override void Apply(AttributeContext context, Attribute attribute, EntityMemberInfo member) {
-      if (!this.Persist) {
-        member.Kind = MemberKind.Transient;
+      if (member.ClrMemberInfo.HasSetter()) {
+        context.Log.Error("Computed property {0}.{1} may not have a setter, it is readonly.", member.Entity.EntityType.Name, member.MemberName);
+        return; 
       }
+      if (!this.Persist)
+        member.Kind = MemberKind.Transient;
       member.Flags |= EntityMemberFlags.Computed;
       _method = this.MethodClass.GetMethod(this.MethodName);
-      if (_method == null)
-        context.Log.Error("Method {0} for computed column {1} not found in type {2}", 
+      if (_method == null) {
+        context.Log.Error("Method {0} for computed column {1} not found in type {2}",
           this.MethodName, member.MemberName, this.MethodClass);
+        return; 
+      }
       member.GetValueRef = GetComputedValue;
       member.SetValueRef = MemberValueGettersSetters.DummySetValue;
     }
@@ -696,14 +701,15 @@ namespace Vita.Entities {
       var argNameList = new StringList(); 
       //split by left brace {
       var segments = template.Split(new char[]{'{'}, StringSplitOptions.RemoveEmptyEntries);
-      for (int i = 0; i < segments.Length; i++) {
+      for (int i = 1; i < segments.Length; i++) { //ignore 0 segment
         var segm = segments[i];
         if (string.IsNullOrEmpty(segm)) continue; 
         //find closing brace, extract prop name, replace it with index
         var rPos = segm.IndexOf('}');
-        if (rPos < 0) rPos = segm.Length; // catch error by including all
+        if (rPos < 0) 
+          rPos = segm.Length;    // most likely error 
         var argName = segm.Substring(0, rPos);
-        var tail = segm.Substring(rPos + 1);
+        var tail = rPos < segm.Length - 1 ? segm.Substring(rPos + 1) : string.Empty;
         argNameList.Add(argName);
         segments[i] = "{" + i + "}" + tail; // replace 'propName} abcd'   with '{0} abcd'
       }

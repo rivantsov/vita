@@ -33,6 +33,10 @@ namespace Vita.Data {
       return (flags & flag) != 0;
     }
 
+    public static bool ExistsTableFor(this DataSource dataSource, Type entityType) {
+      var table = dataSource.Database.DbModel.GetTable(entityType, throwIfNotFound: false);
+      return table != null; 
+    }
 
 
   }//class

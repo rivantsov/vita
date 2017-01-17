@@ -57,6 +57,9 @@ namespace Vita.UnitTests.Basic.MiscTests {
     [OneToMany("Owner")]
     IList<IVehicle> Vehicles { get; set; }
 
+    [OneToMany("Driver")]
+    IList<IVehicle> DrivesVehicles { get; set; }
+
     //DependsOn is optional, used for auto PropertyChanged firing
     [Computed(typeof(MiscTestsExtensions), "GetFullName"), DependsOn("FirstName,LastName")] 
     string FullName { get; }

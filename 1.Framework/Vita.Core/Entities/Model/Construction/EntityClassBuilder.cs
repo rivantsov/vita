@@ -102,9 +102,9 @@ namespace Vita.Entities.Model.Construction {
       CreateGetter(typeBuilder, propBuilder, member.Index);
       // Note: we create setters for all "real" properties, even if interface has only getter - to work properly with LINQ, which uses setter 
       // to assign value coming from the database; 
-      // The only exception is Computed property - it does not need setter
-      if (!member.Flags.IsSet(EntityMemberFlags.Computed))      
-        CreateSetter(typeBuilder, propBuilder, member.Index);
+      // Computed property - it does not need setter, but we still create it, just in case interface prop has it (by mistake), to avoid 
+      //   TypeLoad exception. Note: ModelBuilder detects this and logs an error (Computed prop may not have a setter)
+      CreateSetter(typeBuilder, propBuilder, member.Index);
       CloneCustomAttributes(propBuilder, member);
     }
 

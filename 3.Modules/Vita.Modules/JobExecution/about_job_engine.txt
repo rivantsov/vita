@@ -12,7 +12,7 @@ Each error on each attempt is logged into IncidentLog, except the last one which
 You can use JobHelper.ExecuteWithRetries(...) method to define and execute an async task, with later retries if it fails. 
 
  ====================== Long-running jobs ====================== 
-The job 'definition' is saved to the database and then started  -immediately or later, by calendar event. The job is rehyndrated from the database and the target delegate is invoked on background thread (not pool thread). The job can run for a long time - minutes or hours. If the system is shutdown/restarted, the job is stopped (with a signal to executing code through cancellation token), and then restarted immediately when the app is up again. 
+The job 'definition' is saved to the database and then started  -immediately or later. The job is rehyndrated from the database and the target delegate is invoked on a background thread (not pool thread). The job can run for a long time - minutes or hours. If the system is shutdown/restarted, the job is stopped (with a signal to executing code through cancellation token), and then restarted immediately when the app is up again. 
 
  ====================== Defining a job implementation method ====================== 
 To define a job, you need to implement a method that actually does the work, and provide a delegate that calls it to the job definition methods. The signature is different for short and long tasks. The short tasks expected to be async (but does not have to be), so it must be a function returning Task. For long-running tasks it must be a 'void' procedure. 
@@ -20,12 +20,12 @@ The method can be static or instance method. Instance methods must be defined on
 The implementat method can have arbitrary parameters, the first one is typically a JobRunContext instance - the system will provide it. You provide a reference to implementation method using a call expression. 
 
 Long running jobs: 
-      var job = _jobApp.JobService.CreateBackgroundJob(session, "MyDocJob", (jobCtx) => ProcessDocuments(jobCtx, "MyStringParam", myIntParam, docIds), 
+      var job = JobHelper.CreateBackgroundJob(session, "MyDocJob", (jobCtx) => ProcessDocuments(jobCtx, "MyStringParam", myIntParam, docIds), 
                             JobFlags.PersistArguments | JobFlags.StartOnSave);
       session.SaveChanges(); //this will start the job because we have flag StartOnSave (it is default)
 
 Short async tasks:
-      var asyncJob = _jobApp.JobService.CreatePoolJob(session, "MyEmailTask", (jobCtx) => SendEmailAsync(jobCtx, emailList, emailSubject, emailBody));
+      var asyncJob = JobHelper.CreatePoolJob(session, "MyEmailTask", (jobCtx) => SendEmailAsync(jobCtx, emailList, emailSubject, emailBody));
       session.SaveChanges(); 
 
 Implementation methods: 

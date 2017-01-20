@@ -23,6 +23,7 @@ namespace Vita.Common {
       message = message.SafeFormat(args); 
       throw new NotImplementedException(message); 
     }
+
     public static void Check(bool condition, string message, params object[] args) {
       if(!condition)
         Throw(message, args);

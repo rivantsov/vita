@@ -22,20 +22,26 @@ namespace Vita.Modules.JobExecution {
       const int BatchSize = 100;
       while(true) {
         var session = context.OpenSystemSession();
-        var jobRuns = session.EntitySet<IJobRun>().Include(jr => jr.Job)
+        // 1. Get batch of up to 100 JobRuns due
+        var jobRuns = session.EntitySet<IJobRun>()
+          .Include(jr => jr.Job)
           .Where(jr => jr.Status == JobRunStatus.Pending && jr.StartOn <= utcNow && 
                  jr.Job.HostName == _settings.HostName)
           .Take(BatchSize)
           .ToList();
         if(jobRuns.Count == 0)
           return;
-        //update job run statuses to executing
+        //2. Updates: create next runs for scheduled runs, update job run statuses to executing
+        CreateNextRunsForScheduledRuns(session, jobRuns, utcNow);
         var ids = jobRuns.Select(jr => jr.Id).ToArray();
         var updateQuery = session.EntitySet<IJobRun>().Where(jr => ids.Contains(jr.Id))
                  .Select(jr => new {
                    Status = JobRunStatus.Executing, StartedOn = utcNow
                  });
-        updateQuery.ExecuteUpdate<IJobRun>();
+        // updateQuery.ExecuteUpdate<IJobRun>();
+        session.ScheduleUpdate<IJobRun>(updateQuery);
+        session.SaveChanges(); 
+        //3. Actually start job runs
         foreach(var jobRun in jobRuns)
           StartJobRun(jobRun);
         // If we got the last record, exit
@@ -43,6 +49,24 @@ namespace Vita.Modules.JobExecution {
           return;
       } //while
     } // method
+
+    private void CreateNextRunsForScheduledRuns(IEntitySession session, IList<IJobRun> jobRuns, DateTime utcNow) {
+      //Find all schedules involed with these jobs/runs
+      var jobIds = jobRuns.Select(j => j.Job.Id).ToList();
+      var scheds = session.EntitySet<IJobSchedule>().Where(js => jobIds.Contains(js.Job.Id)).ToList();
+      if(scheds.Count == 0)
+        return; 
+      foreach(var sched in scheds) {
+        var nextStartOn = sched.GetNextStartAfter(utcNow);
+        if(nextStartOn != null) {
+          var nextRun = sched.Job.NewJobRun(nextStartOn);
+          sched.NextRunId = nextRun.Id;
+        } else {
+          sched.NextRunId = null;
+          sched.Status = JobScheduleStatus.Stopped;
+        }
+      } //foreach
+    } //method
 
     private JobRunContext StartJobRun(IJobRun jobRun) {
       //create job context 

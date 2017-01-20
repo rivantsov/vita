@@ -9,10 +9,10 @@ using Vita.Modules.JobExecution.Cron;
 namespace Vita.UnitTests.Extented {
 
   [TestClass]
-  public class CronTests {
+  public class JobExecution_CronTests {
 
     [TestMethod]
-    public void TestCronScheduler() {
+    public void TestJobExecution_CronEngine() {
       DateTime nextDt;
 
       //Day of month tests

@@ -63,15 +63,22 @@ namespace Vita.Modules.JobExecution {
     /// The only parameter of the delegate is a <c>JobRunContext</c> object that provides the context 
     /// of the running job to the implementation method. </remarks>
     public static IJobRun ExecuteWithRetriesOnSaveChanges(this IEntitySession session, string jobName, Expression<Action<JobRunContext>> jobMethod,
-                                                  Guid? dataId = null, string data = null,  JobThreadType threadType = JobThreadType.Pool, RetryPolicy retryPolicy = null) {
+                                                  Guid? dataId = null, string data = null,  JobThreadType threadType = JobThreadType.Background, RetryPolicy retryPolicy = null) {
       var job = CreateJob(session, jobName, jobMethod, threadType, retryPolicy);
       var jobRun = job.StartJobOnSaveChanges(dataId, data);
       return jobRun; 
     }
 
+    public static IJobRun ExecuteWithRetriesOn(this IEntitySession session, string jobName,
+            Expression<Action<JobRunContext>> jobMethod, DateTime runOnUtc, Guid? dataId = null, string data = null,
+            JobThreadType threadType = JobThreadType.Background, RetryPolicy retryPolicy = null) {
+      var service = session.Context.App.GetService<IJobExecutionService>();
+      var job = service.CreateJob(session, jobName, jobMethod, threadType, retryPolicy);
+      var jobRun = service.ScheduleJobRunOn(job, runOnUtc, dataId, data);
+      return jobRun;
+    }
 
-
-    /// <summary>Creates a job entity.</summary>
+    /// <summary>Creates a job entity. The job can be scheduled later to run at certain time(s).</summary>
     /// <param name="session">Entity session.</param>
     /// <param name="jobName">Name or code that identifies the job.</param>
     /// <param name="jobMethod">The expression representing a call to the worker method. Must be a sync or async method returning Task. </param>
@@ -82,7 +89,7 @@ namespace Vita.Modules.JobExecution {
     /// See remarks for ExecuteWithRetries methods for more about implementation method. 
     /// </remarks>
     public static IJob CreateJob(this IEntitySession session, string jobName, Expression<Action<JobRunContext>> jobMethod,
-                                JobThreadType threadType = JobThreadType.Pool, RetryPolicy retryPolicy = null) {
+                                JobThreadType threadType = JobThreadType.Background, RetryPolicy retryPolicy = null) {
       var service = session.Context.App.GetService<IJobExecutionService>();
       var job = service.CreateJob(session, jobName, jobMethod, threadType, retryPolicy);
       return job; 
@@ -95,7 +102,6 @@ namespace Vita.Modules.JobExecution {
       return jobRun;
     }
 
-
     public static IJobRun ScheduleJobRunOn(this IJob job, DateTime runOnUtc, Guid? dataId = null, string data = null) {
       var session = EntityHelper.GetSession(job);
       var service = session.Context.App.GetService<IJobExecutionService>();
@@ -103,10 +109,10 @@ namespace Vita.Modules.JobExecution {
       return jobRun;
     }
 
-    public static IJobSchedule SetJobSchedule(IJob job, string cronSpec, DateTime? activeFrom = null, DateTime? activeUntil = null) {
+    public static IJobSchedule CreateJobSchedule(this IJob job, string name, string cronSpec, DateTime? activeFrom = null, DateTime? activeUntil = null) {
       var session = EntityHelper.GetSession(job);
       var service = session.Context.App.GetService<IJobExecutionService>();
-      var sched = service.SetJobSchedule(job, cronSpec, activeFrom, activeUntil);
+      var sched = service.CreateJobSchedule(job, name, cronSpec, activeFrom, activeUntil);
       return sched;
     }
 
@@ -138,9 +144,21 @@ namespace Vita.Modules.JobExecution {
       return GetLastFinishedJobRun(session, job.Id); 
     }
 
+    public static DateTime? GetNextStartAfter(this IJobSchedule sched, DateTime afterDate) {
+      if(sched.ActiveUntil != null && afterDate > sched.ActiveUntil.Value)
+        return null;
+      if(afterDate < sched.ActiveFrom)
+        afterDate = sched.ActiveFrom;
+      var cron = new Cron.CronSchedule(sched.CronSpec);
+      var result = cron.TryGetNext(afterDate);
+      return result;
+    }
+
+
     public static bool IsSet(this JobFlags flags, JobFlags flag) {
       return (flags & flag) != 0;
     }
+
 
 
   }//class 

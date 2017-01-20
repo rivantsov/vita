@@ -16,7 +16,7 @@ namespace Vita.Modules.JobExecution {
       var session = jobContext.OperationContext.OpenSession();
       var job = NewJob(session, jobContext.JobName, jobContext.StartInfo, retryPolicy);
       job.Id = jobContext.JobId;
-      var jobRun = NewJobRun(job);
+      var jobRun = job.NewJobRun();
       jobRun.Id = jobContext.JobRunId;
       jobContext.IsPersisted = true;
       jobRun.Status = status;
@@ -38,32 +38,8 @@ namespace Vita.Modules.JobExecution {
       job.MethodParameterCount = startInfo.Arguments.Length;
       job.Arguments = SerializeArguments(startInfo.Arguments);
       job.RetryIntervals = retryPolicy.AsString;
-      job.TryCount = retryPolicy.RetryIntervals.Length + 1;
       job.HostName = _settings.HostName;
       return job;
-    }
-
-    private IJobRun NewJobRun(IJob job, DateTime? startOn = null, Guid? dataId = null, string data = null) {
-      var session = EntityHelper.GetSession(job);
-      var jobRun = session.NewEntity<IJobRun>();
-      jobRun.Job = job;
-      jobRun.StartOn = startOn == null ? App.TimeService.UtcNow : startOn.Value;
-      jobRun.DataId = dataId;
-      jobRun.Data = data;
-      jobRun.AttemptNumber = 1;
-      jobRun.UserId = job.CreatedBy; 
-      return jobRun;
-
-    }
-
-    private IJobSchedule NewJobSchedule(IJob job, string cronSpec, DateTime? activeFrom, DateTime? activeUntil) {
-      var session = EntityHelper.GetSession(job);
-      var sched = session.NewEntity<IJobSchedule>();
-      sched.Job = job;
-      sched.CronSpec = cronSpec;
-      sched.ActiveFrom = activeFrom == null ? App.TimeService.UtcNow : activeFrom.Value;
-      sched.ActiveUntil = activeUntil;
-      return sched;
     }
 
 
@@ -132,7 +108,7 @@ namespace Vita.Modules.JobExecution {
       var session = EntityHelper.GetSession(jobRun);
       var baseTime = jobRun.EndedOn ?? jobRun.StartedOn ?? App.TimeService.UtcNow;
       var retryOn = baseTime.AddMinutes(waitMinutes); 
-      var retryRun = NewJobRun(jobRun.Job, retryOn);
+      var retryRun = jobRun.Job.NewJobRun(retryOn);
       retryRun.AttemptNumber = jobRun.AttemptNumber + 1;
       retryRun.UserId = jobRun.UserId;
       return retryRun; 

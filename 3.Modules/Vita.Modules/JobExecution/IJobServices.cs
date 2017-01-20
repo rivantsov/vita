@@ -41,7 +41,7 @@ namespace Vita.Modules.JobExecution {
            JobThreadType threadType = JobThreadType.Pool, RetryPolicy retryPolicy = null);
     IJobRun StartJobOnSaveChanges(IJob job, Guid? dataId = null, string data = null);
     IJobRun ScheduleJobRunOn(IJob job, DateTime runOnUtc, Guid? dataId = null, string data = null);
-    IJobSchedule SetJobSchedule(IJob job, string cronSpec, DateTime? activeFrom, DateTime? activeUntil);
+    IJobSchedule CreateJobSchedule(IJob job, string name, string cronSpec, DateTime? activeFrom, DateTime? activeUntil);
   }
 
 }

@@ -34,11 +34,12 @@ namespace Vita.Modules.JobExecution {
     [Nullable, Unlimited]
     string Arguments { get; set; }
 
-    // Retry parameters
-    int TryCount { get; set; }
     // ex: "1,1,30,360,360", means retry after 1 minute, again after 1 min, then after 30m, then after 6h, again after 6h
     [Nullable, Size(50)]
     string RetryIntervals { get; set; } 
+
+    [Nullable, OneToOne]
+    IJobSchedule Schedule { get; }
   }
 
   [Entity, BypassAuthorization]
@@ -84,15 +85,16 @@ namespace Vita.Modules.JobExecution {
   public interface IJobSchedule {
     [PrimaryKey]
     IJob Job { get; set; }
+    [Size(Sizes.Name)]
+    string Name { get; set; }
     JobScheduleStatus Status { get; set; }
     DateTime ActiveFrom { get; set; }
     DateTime? ActiveUntil { get; set; }
     // Schedule
     [Size(100)]
     string CronSpec { get; set; }
-
-    [Nullable]
-    IJobRun NextRun { get; set; }
+    // Id of IJobRun 
+    Guid? NextRunId { get; set; }
   }
 
 }

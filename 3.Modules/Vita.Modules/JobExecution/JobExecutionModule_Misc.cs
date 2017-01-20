@@ -114,4 +114,15 @@ namespace Vita.Modules.JobExecution {
     }
 
   }//class
+
+  /* SQL to look at JobRun/Job tables: 
+    
+SELECT TOP 1000 
+   j."Name", jr."Status", jr."AttemptNumber", jr."StartOn", jr."StartedOn", jr."EndedOn",
+   jr."Progress", jr."ProgressMessage", jr."CreatedOn", jr."UserId",jr."DataId", jr."Data", jr."Log"
+FROM "books"."JobRun" jr 
+     INNER JOIN "books"."Job" j ON jr.Job_id = j.Id 
+ORDER BY j."Name", jr.AttemptNumber;
+
+ */
 }

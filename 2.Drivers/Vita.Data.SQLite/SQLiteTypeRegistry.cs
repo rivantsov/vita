@@ -27,7 +27,8 @@ namespace Vita.Data.SQLite {
       AddType("INTEGER", DbType.Int64, typeof(Int64), clrTypes: intTypes, dbFirstClrType: typeof(Int64), aliases: "int");
       AddType("REAL", DbType.Double, typeof(double), clrTypes: realTypes, dbFirstClrType: typeof(double));
       AddType("TEXT", DbType.String, typeof(string), supportsMemo: true, clrTypes: stringTypes, dbFirstClrType: typeof(string));
-      AddType("BLOB", DbType.Binary, typeof(byte[]), supportsMemo: true, clrTypes: blobTypes, dbFirstClrType: typeof(Vita.Common.Binary), valueToLiteral: ConvertBinaryToLiteral);
+      AddType("BLOB", DbType.Binary, typeof(byte[]), supportsMemo: true, clrTypes: blobTypes,
+          dbFirstClrType: typeof(Vita.Common.Binary), valueToLiteral: ConvertBinaryToLiteral);
 
       Converters.AddConverter<string, DateTime>(x => StringToDateTime(x), x => DateTimeToString(x));
       Converters.AddConverter<string, TimeSpan>(x => TimeSpan.Parse((string)x), x => ((TimeSpan)x).ToString("G"));

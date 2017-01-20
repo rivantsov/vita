@@ -83,5 +83,25 @@ namespace Vita.Common {
       }
     }
 
+    // Chars with excluded similar chars
+    private static char[] _safeLetters = "ABCDEFGHJKMNPQRSTUVWXYZ".ToCharArray();
+    private static char[] _safeDigits = "23456789".ToCharArray();
+    private static char[] _safeAlpha = "ABCDEFGHJKMNPQRSTUVWXYZ23456789".ToCharArray();
+
+
+    public static string GenerateSafePin(int len = 10) {
+      var rand = new Random();
+      var pin = GetRandomString(rand, len, _safeAlpha);
+      return pin;
+    }
+
+    private static string GetRandomString(Random rand, int length, char[] fromChars) {
+      var chars = new char[length];
+      for(int i = 0; i < length; i++)
+        chars[i] = fromChars[rand.Next(fromChars.Length)];
+      return new string(chars);
+    }
+
+
   }//class
 }

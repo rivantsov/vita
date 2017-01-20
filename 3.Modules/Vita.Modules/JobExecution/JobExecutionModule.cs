@@ -47,17 +47,8 @@ namespace Vita.Modules.JobExecution {
       var jobRunEntInfo = App.Model.GetEntityInfo(typeof(IJobRun));
       jobRunEntInfo.SaveEvents.SavedChanges += JobRunEntitySavedHandler;
       var jobSchedEntInfo = App.Model.GetEntityInfo(typeof(IJobSchedule));
-      jobSchedEntInfo.SaveEvents.SavedChanges += OnJobScheduleSaved;
+      jobSchedEntInfo.SaveEvents.SavingChanges += JobScheduleEntitySavingHandler;
       HostName = HostName ?? System.Net.Dns.GetHostName();
-    }
-
-    private void JobRunEntitySavedHandler(EntityRecord record, EventArgs args) {
-      // we are interested only in new jobs with StartMode = OnSave
-      if(record.StatusBeforeSave != EntityStatus.New)
-        return;
-      var jobRun = (IJobRun)record.EntityInstance;
-      if(jobRun.Status == JobRunStatus.Executing)
-        StartJobRun(jobRun); 
     }
 
     public override void Shutdown() {
@@ -85,7 +76,24 @@ namespace Vita.Modules.JobExecution {
     #endregion
 
     #region Event handlers: SavedChanged, Timers_Elapsed1Minute
-    private void OnJobScheduleSaved(Entities.Runtime.EntityRecord record, EventArgs args) {
+    private void JobRunEntitySavedHandler(EntityRecord record, EventArgs args) {
+      // we are interested only in new jobs with StartMode = OnSave
+      if(record.StatusBeforeSave != EntityStatus.New)
+        return;
+      var jobRun = (IJobRun)record.EntityInstance;
+      if(jobRun.Status == JobRunStatus.Executing)
+        StartJobRun(jobRun);
+    }
+
+    private void JobScheduleEntitySavingHandler(Entities.Runtime.EntityRecord record, EventArgs args) {
+      switch(record.Status) {
+        case EntityStatus.Deleting:
+          break; //nothing to do
+        default:
+          var sched = (IJobSchedule) record.EntityInstance;
+          sched.VerifyJobSchedule();
+          break; 
+      }
     }
 
     // if false, we just started up

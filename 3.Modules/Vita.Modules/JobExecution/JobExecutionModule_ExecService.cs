@@ -32,7 +32,7 @@ namespace Vita.Modules.JobExecution {
 
     public IJobRun StartJobOnSaveChanges(IJob job, Guid? dataId = null, string data = null) {
       var utcNow = App.TimeService.UtcNow;
-      var jobRun = NewJobRun(job, utcNow, dataId, data);
+      var jobRun = job.NewJobRun(utcNow, dataId, data);
       // Entity.SavedChanges handler will recognize the new (just inserted) IJobRun entity 
       // with status Executing and will start it
       jobRun.Status = JobRunStatus.Executing;
@@ -43,12 +43,12 @@ namespace Vita.Modules.JobExecution {
     public IJobRun ScheduleJobRunOn(IJob job, DateTime runOnUtc, Guid? dataId = null, string data = null) {
       Util.Check(job != null, "Job parameter may not be null.");
       Util.Check(runOnUtc.Kind == DateTimeKind.Utc, "RunOn argument must be UTC time.");
-      return NewJobRun(job, runOnUtc, dataId, data);
+      return job.NewJobRun(runOnUtc, dataId, data);
     }
 
-    public IJobSchedule SetJobSchedule(IJob job, string cronSpec, DateTime? activeFrom, DateTime? activeUntil) {
+    public IJobSchedule CreateJobSchedule(IJob job, string name, string cronSpec, DateTime? activeFrom, DateTime? activeUntil) {
       Util.Check(job != null, "Job parameter may not be null.");
-      return NewJobSchedule(job, cronSpec, activeFrom, activeUntil);
+      return JobUtil.CreateJobSchedule(job, name, cronSpec, activeFrom, activeUntil);
     }
     #endregion 
 

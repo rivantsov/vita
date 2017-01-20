@@ -347,9 +347,10 @@ namespace Vita.Modules.Login {
     public static string DefaultGeneratePin(ILoginProcess process, ILoginExtraFactor factor) {
       switch(factor.FactorType) {
         case ExtraFactorTypes.Phone:
+          return RandomHelper.GenerateSafePin(5);
         case ExtraFactorTypes.Email:
         default:
-          return RandomHelper.GenerateRandomString(3, CharKinds.UpperLetter) + RandomHelper.GenerateRandomString(5, CharKinds.Digit);
+          return RandomHelper.GenerateSafePin(10);
       }
     }
 

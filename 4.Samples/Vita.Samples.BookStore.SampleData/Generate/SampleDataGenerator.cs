@@ -59,7 +59,7 @@ namespace Vita.Samples.BookStore.SampleData {
         //In real life would happen like once a day; here we set it to 5 minutes to observe how events are fired 
         // while we browse the sample UI app.
         //  You can see the events appearing in the database in the EventOccurrence table, with ExecutionNotes 
-        var sched = JobHelper.SetJobSchedule(restockJob, "*/5 * * * *");
+        var sched = JobHelper.CreateJobSchedule(restockJob, "Restock schedule", "*/5 * * * *");
       }
       session.SaveChanges();
     }

@@ -23,6 +23,7 @@ namespace Vita.Modules.JobExecution {
     public bool ReturnsTask;
     public JobThreadType ThreadType;
 
+    internal JobStartInfo() { }
   }
 
   /// <summary>Holds information about current job run. </summary>

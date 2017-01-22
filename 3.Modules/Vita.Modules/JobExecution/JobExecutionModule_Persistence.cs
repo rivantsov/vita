@@ -45,7 +45,6 @@ namespace Vita.Modules.JobExecution {
 
     private void UpdateFinishedJobRun(JobRunContext jobContext, Exception exception = null) {
       try {
-        UnregisterRunningJob(jobContext.JobId);
         if(exception == null)
           UpdateSuccessfulJobRun(jobContext);
         else

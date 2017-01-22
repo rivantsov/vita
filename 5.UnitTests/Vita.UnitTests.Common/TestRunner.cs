@@ -60,7 +60,8 @@ namespace Vita.UnitTests.Common {
       return testRun; 
     }
 
-    public List<TestRun> RunTests<TData>(Assembly assembly, IEnumerable<TData> data, Func<TData, bool> init) {
+    public List<TestRun> RunTests<TData>(Assembly assembly, IEnumerable<TData> data, 
+        Func<TData, bool> init, Action done) {
       var allRuns = new List<TestRun>();
       foreach (var dv in data) {
         if (init != null && !init(dv)) {
@@ -68,6 +69,8 @@ namespace Vita.UnitTests.Common {
           continue;
         }
         var runs = RunTests(assembly);
+        if(done != null)
+          done(); 
         allRuns.AddRange(runs); 
       }
       return allRuns;

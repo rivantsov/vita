@@ -31,7 +31,9 @@ namespace Vita.UnitTests.Basic {
           runner.ConsoleWriteRed("  Connection test failed for connection string: {0}, \r\n   Error: {1}", Startup.ConnectionString, error);
           skipServerCount++;
           return false; 
-        });
+        }, 
+         null //finalizer
+        );
 
       //Report results
       var errCount = testRuns.Sum(tr => tr.Errors.Count) + skipServerCount;

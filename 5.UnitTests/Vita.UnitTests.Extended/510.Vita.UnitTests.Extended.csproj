@@ -60,7 +60,7 @@
     </CodeAnalysisDependentAssemblyPaths>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Jobs\JobExecution_CronTests.cs" />
+    <Compile Include="JobExecutionTests_Cron.cs" />
     <Compile Include="DataHistoryTests.cs" />
     <Compile Include="LinqTests\LinqIncludeTests.cs" />
     <Compile Include="MiscTests2.cs" />
@@ -71,7 +71,7 @@
     <Compile Include="DirectDbTests.cs" />
     <Compile Include="ListPropTests.cs" />
     <Compile Include="LinqTests\LinqNonQueryTests.cs" />
-    <Compile Include="Jobs\JobExecutionTests.cs" />
+    <Compile Include="JobExecutionTests.cs" />
     <Compile Include="_Program.cs" />
     <Compile Include="LinqTests\LinqTests.cs" />
     <Compile Include="MiscTests.cs" />

@@ -174,7 +174,7 @@ namespace Vita.UnitTests.Extended {
       var session = Startup.BooksApp.OpenSession();
 
       var johnSharp = session.EntitySet<IAuthor>().First(u => u.LastName == "Sharp");
-      Assert.AreEqual("Sharp, John", johnSharp.ToString());
+      Assert.AreEqual("Author: Sharp, John", johnSharp.ToString());
 
       var dora = session.EntitySet<IUser>().First(u => u.UserName == "Dora");
       var doraOrder1 = session.EntitySet<IBookOrder>().Where(o => o.User == dora).OrderBy(o => o.CreatedOn).First();

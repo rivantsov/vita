@@ -78,7 +78,7 @@ namespace Vita.Samples.BookStore {
   }
 
   [Entity, Paged, OrderBy("LastName,FirstName"), Description("Represents an author.")]
-  [Display("{LastName}, {FirstName}")]
+  [Display("Author: {LastName}, {FirstName}")]
   public interface IAuthor {
     [PrimaryKey, Auto]
     Guid Id { get; set; }

@@ -100,7 +100,12 @@ namespace Vita.Modules.JobExecution {
     private void Timers_ElapsedIMinue(object sender, EventArgs e) {
       if(App.Status != EntityAppStatus.Connected)
         return;
+      try {
+        PendingCountInc(); 
         StartDueJobRuns();
+      } finally {
+        PendingCountDec(); 
+      }
     }
 
     #endregion
@@ -118,7 +123,7 @@ namespace Vita.Modules.JobExecution {
       var log = "Job stopped due to system shutdown at " + utcNow.ToLongTimeString() + Environment.NewLine;
       var jobRunIds = activeJobRunContexts.Select(j => j.JobRunId).ToArray();
       var updateQuery = session.EntitySet<IJobRun>().Where(jr => jobRunIds.Contains(jr.Id))
-            .Select(jr => new { Status = JobRunStatus.Interrupted, LastEndedOn = utcNow, Log = jr.Log + log });
+            .Select(jr => new { Status = JobRunStatus.Interrupted, EndedOn = utcNow, Log = jr.Log + log });
       updateQuery.ExecuteUpdate<IJobRun>();
       _runningJobs.Clear();
     }
@@ -153,5 +158,23 @@ namespace Vita.Modules.JobExecution {
     }
     #endregion
 
+
+
+    #region PendingCounter
+    static int _pendingCounter; 
+    public static void PendingCountReset() {
+      Interlocked.Exchange(ref _pendingCounter, 0); 
+    }
+    public static void PendingCountInc(int value = 1) {
+      Interlocked.Add(ref _pendingCounter, value);
+    }
+    public static void PendingCountDec() {
+      Interlocked.Decrement(ref _pendingCounter);
+    }
+    public static bool PendingCountIsZero() {
+      return _pendingCounter == 0; 
+    }
+
+    #endregion 
   }//module
 }

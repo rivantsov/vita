@@ -28,11 +28,15 @@ namespace Vita.UnitTests.Extended {
           Startup.Reset(cfg);
           // Check if server is available
           string error;
-          if (ToolHelper.TestConnection(Startup.Driver, Startup.ConnectionString, out error)) return true; 
+          if (ToolHelper.TestConnection(Startup.Driver, Startup.ConnectionString, out error))
+            return true; 
           runner.ConsoleWriteRed("  Connection test failed for connection string: {0}, \r\n   Error: {1}", Startup.ConnectionString, error);
           skipServerCount++;
           return false; 
-        });
+        },
+        //finalizer: shutdown app; important - stop timers activity
+        () => { Startup.BooksApp.Shutdown(); } 
+        );
 
       //Report results
       var errCount = testRuns.Sum(tr => tr.Errors.Count) + skipServerCount;

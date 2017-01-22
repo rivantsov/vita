@@ -69,6 +69,7 @@ namespace Vita.Modules.JobExecution {
     } //method
 
     private JobRunContext StartJobRun(IJobRun jobRun) {
+      PendingCountInc();
       //create job context 
       var jobCtx = new JobRunContext(jobRun);
       RegisterRunningJob(jobCtx);
@@ -84,6 +85,7 @@ namespace Vita.Modules.JobExecution {
     }
 
     private void StartBackgroundJobRun(object data) {
+      PendingCountDec(); 
       var jobCtx = (JobRunContext)data;
       try {
         var startInfo = jobCtx.StartInfo;
@@ -96,6 +98,7 @@ namespace Vita.Modules.JobExecution {
     }
 
     private async Task StartPoolJobRunAsync(object objJobContext) {
+      PendingCountDec(); 
       JobRunContext jobCtx = (JobRunContext)objJobContext;
       try {
         var startInfo = jobCtx.StartInfo;
@@ -122,6 +125,7 @@ namespace Vita.Modules.JobExecution {
 
     private void OnJobRunFinished(JobRunContext jobContext, Exception exception = null) {
       UpdateFinishedJobRun(jobContext, exception);
+      UnregisterRunningJob(jobContext.JobId);
       var notifType = exception == null ? JobNotificationType.Completed : JobNotificationType.Error;
       OnJobNotify(jobContext, notifType, exception);
     }

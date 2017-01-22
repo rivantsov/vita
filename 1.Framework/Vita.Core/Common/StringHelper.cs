@@ -144,6 +144,68 @@ namespace Vita.Common {
       return string.Join(Environment.NewLine, list); 
     }
 
+    /// <summary>Parses text template, convertes segmets like {name} to standard template wildcards like {0}, and returns name list as output argument.</summary>
+    /// <param name="template"></param>
+    /// <param name="adjustedTemplate"></param>
+    /// <param name="argNames"></param>
+    public static bool TryParseTemplate(string template, out string adjustedTemplate, out string[] argNames) {
+      argNames = new string[] { };
+      adjustedTemplate = template;
+      try {
+        if(string.IsNullOrWhiteSpace(template)) 
+          return false;
+        const char lbr = '{';
+        const char rbr = '}';
+        var chars = template.ToCharArray();
+        var outBuilder = new StringBuilder();
+        var nameList = new List<string>();
+        var skipNext = false;
+        var nameStart = -1;
+        for(int i = 0; i < chars.Length; i++) {
+          if(skipNext) {
+            skipNext = false;
+            continue;
+          }
+          var ch = chars[i];
+          var chNext = i + 1 < chars.Length ? chars[i + 1] : '\0';
+          // }} and {{ - escaped braces
+          if((ch == lbr || ch == rbr) && chNext == ch) {
+            outBuilder.Append(ch);
+            skipNext = true;
+            continue;
+          }
+          // { - start of name
+          if(ch == lbr) {
+            outBuilder.Append(lbr);
+            nameStart = i + 1;
+            continue;
+          }
+          // } - end of name
+          if(ch == rbr && nameStart != -1) {
+            outBuilder.Append(nameList.Count);
+            outBuilder.Append(rbr);
+            var name = new string(chars.Skip(nameStart).Take(i - nameStart).ToArray());
+            nameList.Add(name);
+            nameStart = -1;
+            continue; 
+          }
+          // regular char; if we are not reading name (namestart == -1) then append to outbuilder; otherwise do nothing
+          if(nameStart == -1)
+            outBuilder.Append(ch);
+        }// for i
+
+        adjustedTemplate = outBuilder.ToString();
+        argNames = nameList.ToArray();
+        //Final test - try to format 
+        var test = string.Format(adjustedTemplate, argNames);
+        return true; 
+      } catch(Exception ex) {
+        adjustedTemplate = "(format error: " + ex.Message + "), template: " + template;
+        return false; 
+      }
+
+    }//method
+
 
 
 

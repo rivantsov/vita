@@ -59,17 +59,11 @@
     <Compile Include="ApiClients\Recaptcha\RecaptchaService.cs" />
     <Compile Include="ApiClients\Recaptcha\RecaptchaSettings.cs" />
     <Compile Include="ApiClients\Recaptcha\RecaptchaUtil.cs" />
-    <None Include="EventScheduling\EventSchedulingModule.cs" />
-    <None Include="EventScheduling\EventSchedulingModule_Service.cs" />
-    <None Include="EventScheduling\Enums.cs" />
-    <None Include="EventScheduling\Entities.cs" />
-    <None Include="EventScheduling\EventSchedulingExtensions.cs" />
     <Compile Include="JobExecution\Cron\CronSpecParser.cs" />
     <Compile Include="JobExecution\Cron\CronSchedule.cs" />
     <Compile Include="JobExecution\Cron\CronFields.cs" />
     <Compile Include="JobExecution\Cron\DateFields.cs" />
     <Compile Include="JobExecution\Cron\DateValue.cs" />
-    <None Include="EventScheduling\_IEventSchedulingServices.cs" />
     <Compile Include="DataHistory\KeepHistoryAttributes.cs" />
     <Compile Include="DataHistory\DataHistoryExtensions.cs" />
     <Compile Include="DataHistory\DataHistoryModule.cs" />
@@ -230,7 +224,6 @@
   <ItemGroup>
     <None Include="OAuthClient\_about_oauthclient.txt" />
     <None Include="EncryptedData\_about_encr_data.txt" />
-    <Content Include="EventScheduling\_AboutEventScheduling.txt" />
     <Content Include="JobExecution\Cron\AboutCron.txt" />
     <Content Include="DataHistory\about_data_history.txt" />
     <Content Include="JobExecution\about_job_engine.txt" />

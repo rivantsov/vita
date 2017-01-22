@@ -60,8 +60,9 @@ namespace Vita.Modules.JobExecution {
       IJobRun nextRun = (nextRunId == null) ? null : session.GetEntity<IJobRun>(nextRunId.Value);
       switch(sched.Status) {
         case JobScheduleStatus.Stopped:
-          if(nextRun != null && nextRun.Status == JobRunStatus.Pending && nextRun.StartOn > utcNow.AddMinutes(2))
-            session.DeleteEntity(nextRun);
+          // if there is a pending run in the future, kill it
+          if(nextRun != null && nextRun.Status == JobRunStatus.Pending && nextRun.StartOn > utcNow.AddMinutes(1))
+            nextRun.Status = JobRunStatus.Killed;
           break;
         case JobScheduleStatus.Active:
           // Create or adjust JobRun entity for next run

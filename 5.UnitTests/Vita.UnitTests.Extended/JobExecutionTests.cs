@@ -18,17 +18,19 @@ using Vita.Samples.BookStore;
 namespace Vita.UnitTests.Extended {
 
   [TestClass]
-  public class JobRunnerTests {
+  public class JobExecutionTests {
 
     static string SuccessMessage = "Completed successfully!";
     EntityApp _app;
     ITimerServiceControl _timersControl;
+    IJobInformationService _jobInfoService; 
 
     [TestInitialize]
     public void TestInit() {
       Startup.InitApp();
       _app = Startup.BooksApp;
       _timersControl = _app.GetService<ITimerServiceControl>();
+      _jobInfoService = _app.GetService<IJobInformationService>(); 
     }
 
     [TestMethod]
@@ -44,8 +46,8 @@ namespace Vita.UnitTests.Extended {
       }
     }
 
-    public async Task TestImmediateJobs() {
-      _app.TimeService.SetCurrentOffset(TimeSpan.Zero);
+    private async Task TestImmediateJobs() {
+      SetTime0(); 
       // Use session associated with particular user. Jobs are retried with the same user context as original attempt. 
       var context = GetUserBoundContext();
       var session = context.OpenSecureSession();
@@ -60,7 +62,7 @@ namespace Vita.UnitTests.Extended {
       IJobRun jobRun;
       // 1.a Async job executing successfully 1st time     -------------------------------------------
       jobRunContext = await JobHelper.ExecuteWithRetriesAsync(session.Context, "1a: Sample async job, no failures",
-                                  (ctx) => JobRunnerTests.JobMethodAsync(ctx, 0, "Some string argument", listArg));
+                                  (ctx) => JobMethodAsync(ctx, 0, "Some string argument", listArg));
       Assert.AreEqual(JobRunStatus.Completed, jobRunContext.Status, "Expected Completed for async job");
       // Check that job was not persisted - because it ended successfully first time
       jobRun = session.GetLastFinishedJobRun(jobRunContext.JobId);
@@ -68,7 +70,7 @@ namespace Vita.UnitTests.Extended {
 
       // 1.b Async job initially failing     -------------------------------------------
       jobRunContext = await JobHelper.ExecuteWithRetriesAsync(session.Context, "1b: Sample async job, 3 failures",
-                                  (ctx) => JobRunnerTests.JobMethodAsync(ctx, 3, "Some string argument", listArg));
+                                  (ctx) => JobMethodAsync(ctx, 3, "Some string argument", listArg));
       Assert.AreEqual(JobRunStatus.Error, jobRunContext.Status, "Expected Error");
       // Check that job is persisted - because it ended with error
       jobRun = session.GetLastFinishedJobRun(jobRunContext.JobId);
@@ -85,7 +87,7 @@ namespace Vita.UnitTests.Extended {
 
       // 2.a NoWait job executing successfully 1st time     -------------------------------------------
       jobRunContext = JobHelper.ExecuteWithRetriesNoWait(session.Context, "2a: Sample no-wait job, no failures",
-                                  (ctx) => JobRunnerTests.JobMethod(ctx, 0, "Some string argument", listArg));
+                                  (ctx) => JobMethod(ctx, 0, "Some string argument", listArg));
       Thread.Sleep(100); //make sure job finished
       Assert.AreEqual(JobRunStatus.Completed, jobRunContext.Status, "Expected completed status");
       // Check that job was not persisted - because it ended successfully first time
@@ -94,7 +96,7 @@ namespace Vita.UnitTests.Extended {
 
       // 2.b NoWait job failing initially     -------------------------------------------
       jobRunContext = JobHelper.ExecuteWithRetriesNoWait(session.Context, "2b: Sample no-wait job, 3 failures",
-                                  (ctx) => JobRunnerTests.JobMethod(ctx, 3, "Some string argument", listArg));
+                                  (ctx) => JobMethod(ctx, 3, "Some string argument", listArg));
       Thread.Sleep(100); //make sure job finished
       Assert.AreEqual(JobRunStatus.Error, jobRunContext.Status, "Expected Error status");
       // Check that job is persisted - because it failed
@@ -129,7 +131,7 @@ namespace Vita.UnitTests.Extended {
       jobRun = JobHelper.ExecuteWithRetriesOnSaveChanges(session, "3b: Sample on-save job, 3 failures",
                         (ctx) => JobMethod(ctx, 3, "Sample string arg", listArg), dataId, data, threadType);
       session.SaveChanges();
-      Thread.Sleep(200); //make sure job finished (with error)
+      Thread.Sleep(100); //make sure job finished (with error)
       // get this failed run
       jobRun = jobRun.Job.GetLastFinishedJobRun();
       Assert.AreEqual(JobRunStatus.Error, jobRun.Status, "Expected Error status.");
@@ -145,10 +147,10 @@ namespace Vita.UnitTests.Extended {
     } //method
 
     // Job methods --------------------------------------------------------------------------------------
-    static int _callCount;
+
     // failCount parameter specifies number of failures before succeeding
     public static async Task JobMethodAsync(JobRunContext jobContext, int failCount, string stringArg, List<string> listArg) {
-      _callCount++;
+      _callCount++; 
       // Check string arg and listPrm are deserialized correctly
       Util.Check(!string.IsNullOrEmpty(stringArg), "StringArg is not deserialized.");
       Util.Check(listArg != null && listArg.Count > 1, "Failed to deserialize list argument.");
@@ -178,14 +180,15 @@ namespace Vita.UnitTests.Extended {
     public void TestJobExecution_ScheduledJobs() {
       try {
         _timersControl.EnableAutoFire(false);
-        TestScheduledJobs();
+       // for(int i = 0; i < 10; i++)
+          TestScheduledJobs(0);
       } finally {
         _timersControl.EnableAutoFire(true);
         ResetTimeOffset();
       }
     }
 
-    private void TestScheduledJobs() {
+    private void TestScheduledJobs(int runNumber = 0) {
       // Set explicitly the default RetryPolicy
       var jobExecConfig = _app.GetConfig<JobModuleSettings>();
       jobExecConfig.DefaultRetryPolicy = new RetryPolicy(new[] { 2, 2, 2, 2, 2, 2 }); //repeat 6 times with 2 minute intervals
@@ -205,18 +208,20 @@ namespace Vita.UnitTests.Extended {
       IJobRun jobRun;
 
       // 1. Create and run job at certain time
-      jobRun = JobHelper.ExecuteWithRetriesOn(session, "Scheduled Job 1", (jobCtx) => ScheduledJob(jobCtx, 0, "123", 5), halfHourFwd, threadType: jobThreadType);
+      jobRun = JobHelper.ExecuteWithRetriesOn(session, "4. Scheduled Job 4", 
+             (jobCtx) => ScheduledJob(jobCtx, 0, "123", 5), halfHourFwd, threadType: jobThreadType);
       session.SaveChanges();
-      _callCount = 0;
+      _callCount = 0; 
       // After 25 minutes job should NOT be executed
       SetTimeOffsetFireTimers(25);
-      Assert.AreEqual(0, _callCount, "Expected job not executed.");
+      //Thread.Sleep(50);
+      AssertCallCount(0, "Expected job not executed.");
       // After 31 minutes job should be executed
       SetTimeOffsetFireTimers(31);
-      Assert.AreEqual(1, _callCount, "Expected job to execute after 31 minutes");
+      AssertCallCount(1, "Expected callCount 1 after 31 minutes");
 
       // 2. Another approach - create job entity, and then schedule it later, to run at certain time
-      const string ScheduledJobName2 = "Scheduled Job 2";
+      var ScheduledJobName2 = "5. Scheduled Job #" + runNumber;
       job = JobHelper.CreateJob(session, ScheduledJobName2, (jobCtx) => ScheduledJob(jobCtx, 0, "abc", 10), threadType: jobThreadType);
 
       // 2.a. Now set the job to run at certain time. For each invocation we can provide some custom data; 
@@ -228,10 +233,10 @@ namespace Vita.UnitTests.Extended {
       session.SaveChanges();
 
       SetTimeOffsetFireTimers(30);       // Move forwad 30 minutes - job should not fire yet
-      Assert.AreEqual(0, _callCount, "Expected scheduled job not activated.");
+      AssertCallCount(0, "Expected scheduled job not activated.");
 
       SetTimeOffsetFireTimers(61);       // Move forwad
-      Assert.AreEqual(1, _callCount, "Expected scheduled call count to increment.");
+      AssertCallCount(1, "Expected scheduled call count to increment.");
       Assert.AreEqual(guidData, _receivedDataId.Value, "DataId does not match.");
       Assert.AreEqual(stringData, _receivedData, "String data does not match.");
 
@@ -239,7 +244,7 @@ namespace Vita.UnitTests.Extended {
       // After job was saved, we can find it by JobName. Note that in this case JobName must be unique 
       session = context.OpenSecureSession();
       job = session.GetJobByUniqueName(ScheduledJobName2);
-      _callCount = 0;
+      _callCount = 0; 
       _receivedData = null;
       _receivedDataId = null;
       var twoHourFwd = oneHourFwd.AddHours(1);
@@ -247,53 +252,54 @@ namespace Vita.UnitTests.Extended {
       session.SaveChanges();
       //Move to the future and fire timers
       SetTimeOffsetFireTimers(125);
-      Assert.AreEqual(1, _callCount, "Expected scheduled call count to increment.");
+      AssertCallCount(1, "Expected scheduled call count to increment.");
       Assert.AreEqual(guidData, _receivedDataId.Value, "DataId does not match.");
       Assert.AreEqual(stringData, _receivedData, "String data does not match.");
 
 
       // 3. Let's schedule a job with initial failures; start time 10 minutes forward
       SetTime0();
-      jobRun = JobHelper.ExecuteWithRetriesOn(session, "Scheduled Job 3", (jobCtx) => ScheduledJob(jobCtx, 2, "456", 5), utcNow.AddMinutes(10), threadType: jobThreadType);
+      _callCount = 0;
+      jobRun = JobHelper.ExecuteWithRetriesOn(session, "6. Scheduled Job, 2 fails", 
+           (jobCtx) => ScheduledJob(jobCtx, 2, "456", 5), utcNow.AddMinutes(10), threadType: jobThreadType);
       job = jobRun.Job;
       session.SaveChanges();
-      _callCount = 0;
-      // After 25 minutes job should NOT be executed
+      // After 9 minutes job should NOT be executed
       SetTimeOffsetFireTimers(9);
-      Thread.Sleep(50); //just an extra time to finish
-      Assert.AreEqual(0, _callCount, "Expected job not executed.");
-      // After 31 minutes job should be executed and fail
+      // Thread.Sleep(50); //just an extra time to finish
+      AssertCallCount(0, "Expected job not executed.");
+      // After 12 minutes job should be executed and fail
       SetTimeOffsetFireTimers(12);
-      Thread.Sleep(50); //just an extra time to finish
-      Assert.AreEqual(1, _callCount, "Expected job to execute and fail after 12 minutes");
+      // Thread.Sleep(100); //just an extra time to finish
+      AssertCallCount(1, "Expected job to execute and fail after 12 minutes");
       jobRun = job.GetLastFinishedJobRun();
       Assert.AreEqual(JobRunStatus.Error, jobRun.Status, "Expected error status.");
       //execute 2 more times, total 3 - finally should succeed
       SetTimeOffsetFireTimers(15);
-      Thread.Sleep(50); //just an extra time to finish
+      // Thread.Sleep(100); //just an extra time to finish
       SetTimeOffsetFireTimers(18);
-      Thread.Sleep(50);
-      Assert.AreEqual(3, _callCount, "Expected job tried 3 times");
+      // Thread.Sleep(100);
+      AssertCallCount(3, "Expected job tried 3 times");
       jobRun = job.GetLastFinishedJobRun();
       Assert.AreEqual(JobRunStatus.Completed, jobRun.Status, "Expected completed status.");
 
       // 4. Long running job 
       SetTime0();
-      _callCount = 0;
-      job = JobHelper.CreateJob(session, "Long running job", (ctx) => LongRunningJobMethod(ctx, "xyz", 42), JobThreadType.Background);
+      _callCount = 0; 
+      job = JobHelper.CreateJob(session, "7. Long running job", (ctx) => LongRunningJobMethod(ctx, "xyz", 42), JobThreadType.Background);
       jobRun = job.StartJobOnSaveChanges();
       session.SaveChanges();
-      Thread.Sleep(50);
+      Thread.Sleep(50); 
       // Job must be started 
-      Assert.AreEqual(1, _callCount, "Expected long job to start");
+      AssertCallCount(1, "Expected long job to start");
       EntityHelper.RefreshEntity(jobRun);
-      Assert.AreEqual(JobRunStatus.Executing, jobRun.Status, "Expecte status Executing");
-      SetTimeOffsetFireTimers(5); //move forward 5 minutes, should still be executing
+      Assert.AreEqual(JobRunStatus.Executing, jobRun.Status, "Expecte long job status Executing");
+      SetTimeOffsetFireTimers(5, waitForJobFinish: false); //move forward 5 minutes, should still be executing
       EntityHelper.RefreshEntity(jobRun);
-      Assert.AreEqual(JobRunStatus.Executing, jobRun.Status, "Expecte status Executing");
+      Assert.AreEqual(JobRunStatus.Executing, jobRun.Status, "Expecte long job status Executing");
       SetTimeOffsetFireTimers(11); //move forward 11 minutes, should be completed
       EntityHelper.RefreshEntity(jobRun);
-      Assert.AreEqual(JobRunStatus.Completed, jobRun.Status, "Expecte status Completed");
+      Assert.AreEqual(JobRunStatus.Completed, jobRun.Status, "Expecte long job status Completed");
 
       ResetTimeOffset();
     }
@@ -346,47 +352,63 @@ namespace Vita.UnitTests.Extended {
       IJobRun jobRun; 
       IJobSchedule jobSchedule;
 
-      _callCount = 0;
+      _callCount = 0; 
       // Schedule CRON job to run every 10 minutes
-      job = session.CreateJob("CRON job", (ctx) => CronJobMethod(ctx, "abc", 99));
+      job = session.CreateJob("8. CRON job", (ctx) => CronJobMethod(ctx, "abc", 99));
       jobSchedule = job.CreateJobSchedule("Sample Schedule",  "/10 * * * * *"); //run every 10 minutes
       session.SaveChanges();
 
       SetTimeOffsetFireTimers(5); // 5 minutes
-      Assert.AreEqual(0, _callCount, "Expected 0 call count.");
+      AssertCallCount(0, "Expected 0 call count.");
       jobRun = job.GetLastFinishedJobRun();
       Assert.IsNull(jobRun, "Expected no job run");
 
       // After 11 minutes, there must be 1 run
       SetTimeOffsetFireTimers(11);
-      Assert.AreEqual(1, _callCount, "Expected 1 call count.");
+      AssertCallCount(1, "Expected 1 call count.");
       jobRun = job.GetLastFinishedJobRun();
       Assert.IsNotNull(jobRun, "Expected 1 job run");
       Assert.AreEqual(JobRunStatus.Completed, jobRun.Status, "Expected status Completed.");
 
       // After 15 minutes, still 1 run
       SetTimeOffsetFireTimers(15);
-      Assert.AreEqual(1, _callCount, "Expected 1 call count.");
+      AssertCallCount(1, "Expected 1 call count.");
 
       // After 21 minutes, 2 runs 
       SetTimeOffsetFireTimers(21);
-      Assert.AreEqual(2, _callCount, "Expected 2 call count.");
+      AssertCallCount(2, "Expected 2 call count.");
       var allRuns = session.EntitySet<IJobRun>().Where(jr => jr.Job == job).ToList();
       // 3 JobRun records - 2 completed + 1 scheduled in the future 
       Assert.AreEqual(3, allRuns.Count, "Expected 3 job run records.");
 
+      //Disable schedule and kill pending run, to avoid disturbing other tests
+      SetTime0();
+      EntityHelper.RefreshEntity(jobSchedule); //to refresh NextRunId 
+      jobSchedule.Status = JobScheduleStatus.Stopped;
+      session.SaveChanges(); //this should stop the pending run
+
     }
 
-    private static void CronJobMethod(JobRunContext context, string arg0, int arg1) {
+    private static void CronJobMethod(JobRunContext jobContext, string arg0, int arg1) {
       _callCount++;
     }
 
 
     // Utilities ==========================================================================================================
+
+    static int _callCount;
+    // Helper method, to be able to stop on invalid call count
+    private static void AssertCallCount(int value, string message) {
+      if(_callCount == value)
+        return;
+ //     Debugger.Break();
+      Assert.IsTrue(false, message); 
+    }
+
     // We use sessions bound to particular user, to test that retries are executed as the same user
     private OperationContext GetUserBoundContext() {
       var session = _app.OpenSystemSession();
-      var dora = session.EntitySet<IUser>().Where(u => u.UserName == "dora").Single();
+      var dora = session.EntitySet<IUser>().Where(u => u.UserName == "Dora").Single();
       var userInfo = new UserInfo(dora.Id, dora.UserName);
       var context = new OperationContext(_app, userInfo);
       return context; 
@@ -405,23 +427,30 @@ namespace Vita.UnitTests.Extended {
     private void ResetTimeOffset() {
       _app.TimeService.SetCurrentOffset(TimeSpan.Zero);
     }
+
     private void FastForwardTimeFireTimers(int minutes) {
       for(int i = 0; i <= minutes; i++)
-        SetTimeOffsetFireTimers(i);
+        SetTimeOffsetFireTimers(i, waitForJobFinish: true);
     }
-    private void SetTimeOffsetFireTimers(int minutes) {
+
+    private void SetTimeOffsetFireTimers(int minutes, bool waitForJobFinish = true) {
       ResetTimeOffset();
       var utcNow = _app.TimeService.UtcNow;
       var targetTime = _timeZero.AddMinutes(minutes);
       var offs = targetTime.Subtract(utcNow); 
       _app.TimeService.SetCurrentOffset(offs);
       _timersControl.FireAll();
-      //To let threads (pool or bkground) actually start jobs
-      Thread.Yield();
-      Thread.Sleep(50);
-      Thread.Yield();
+      while(!JobExecutionModule.PendingCountIsZero())
+        Thread.Yield();
+      if(!waitForJobFinish)
+        return; 
+      while(true) {
+        var count = _jobInfoService.GetRunningJobs().Count;
+        if(count == 0)
+          return;
+        Thread.Yield(); 
+      }
     }
-
 
   }//class
 }//ns

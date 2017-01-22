@@ -1,3 +1,0 @@
-﻿BrowserForm is a IE browser control wrapped into a form. The purpose is to use in automated tests that require opening HTML pages. User BrowserHandler to open the form, navigate to URL, and then directly manipulate with page elements. The initial goal was to automate OAuth client tests. 
-
-Note by RI: currently not used in Vita tests, I use it for testing real-life app at work. 

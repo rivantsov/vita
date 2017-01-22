@@ -765,11 +765,13 @@ namespace Vita.UnitTests.Extended {
       Assert.AreEqual(2, lTakeSkip.Count, "TakeSkip query failed.");
 
       //using min/max dates - parameter should use DbType.DateTime2, not DateTime to avoid overflow
-      var qByDates = books.Where(b => b.PublishedOn > DateTime.MinValue && b.PublishedOn < DateTime.MaxValue);
-      var lByDates = qByDates.ToList();
-      Assert.IsTrue(lByDates.Count > 0, "MinDate query failed");
+      if (Startup.ServerType != DbServerType.SqlCe) { //SQL CE does not like big dates
+        var qByDates = books.Where(b => b.PublishedOn > DateTime.MinValue && b.PublishedOn < DateTime.MaxValue);
+        var lByDates = qByDates.ToList();
+        Assert.IsTrue(lByDates.Count > 0, "MinDate query failed");
+      }
 
-      // SQLCE and maybe others: when using OFFSET and LIMIT clauses, ORDER BY must be specified
+      // Some servers: when using OFFSET and LIMIT clauses, ORDER BY must be specified
       // If not, LINQ engine must add default ( 'ORDER BY (SELECT 1)' or by primary key)
       var qSkipTake = books.Skip(1).Take(1);
       var lSkipTake = qSkipTake.ToList();

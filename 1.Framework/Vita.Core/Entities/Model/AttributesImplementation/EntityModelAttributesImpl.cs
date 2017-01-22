@@ -682,7 +682,7 @@ namespace Vita.Entities {
         return;
       }
       //Parse Format value, build argIndexes from referenced property names
-      ParseTemplate(Format, out _adjustedFormat, out _propNames); 
+      StringHelper.TryParseTemplate(Format, out _adjustedFormat, out _propNames); 
       //verify and build arg indexes
       foreach(var prop in _propNames) {
         //it might be dotted sequence of props; we check only first property
@@ -694,30 +694,6 @@ namespace Vita.Entities {
       }//foreach
       entity.DisplayMethod = GetDisplayString;
     }
-
-    private static void ParseTemplate(string template, out string adjustedTemplate, out string[] argNames) {
-      // Double brace '{{' is 'escaped brace'. We start by replacing these doubles with \b symbol. At the end we'll replace it back with single brace
-      template = template.Replace("{{", "\b");
-      var argNameList = new StringList(); 
-      //split by left brace {
-      var segments = template.Split(new char[]{'{'}, StringSplitOptions.RemoveEmptyEntries);
-      for (int i = 1; i < segments.Length; i++) { //ignore 0 segment
-        var segm = segments[i];
-        if (string.IsNullOrEmpty(segm)) continue; 
-        //find closing brace, extract prop name, replace it with index
-        var rPos = segm.IndexOf('}');
-        if (rPos < 0) 
-          rPos = segm.Length;    // most likely error 
-        var argName = segm.Substring(0, rPos);
-        var tail = rPos < segm.Length - 1 ? segm.Substring(rPos + 1) : string.Empty;
-        argNameList.Add(argName);
-        segments[i] = "{" + i + "}" + tail; // replace 'propName} abcd'   with '{0} abcd'
-      }
-      // Merge modified segments
-      adjustedTemplate = string.Join(string.Empty, segments);
-      adjustedTemplate = adjustedTemplate.Replace('\b', '{');
-      argNames = argNameList.ToArray();      
-    }//method
 
     // we might have secure session, so elevate read to allow access
     private string InvokeCustomDisplay(EntityRecord record) {

@@ -105,8 +105,9 @@ namespace Vita.Modules.JobExecution {
         return;
       var log = string.IsNullOrWhiteSpace(progressMessage) ? string.Empty : progressMessage + Environment.NewLine;
       var session = OperationContext.OpenSystemSession();
+      // SQL CE does not support string concatenation for 'text' columns, so commenting out Log update
       var updQuery = session.EntitySet<IJobRun>().Where(jr => jr.Id == JobRunId)
-          .Select(jr => new { Progress = _progress, ProgressMessage = _progressMessage, Log = jr.Log + log });
+          .Select(jr => new { Progress = _progress, ProgressMessage = _progressMessage /*, Log = jr.Log + log */ });
       updQuery.ExecuteUpdate<IJobRun>(); 
     }
 

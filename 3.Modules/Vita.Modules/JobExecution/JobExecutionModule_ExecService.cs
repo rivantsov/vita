@@ -75,6 +75,7 @@ namespace Vita.Modules.JobExecution {
         if(jobContext == null)
           throw new Exception("Failed to create JobRunContext for light task: " + ex.Message, ex);
         SaveJobAndJobRun(jobContext, retryPolicy, JobRunStatus.Error, ex);
+        UnregisterRunningJob(jobContext.JobId);
         OnJobNotify(jobContext, JobNotificationType.Error, ex);
         return jobContext;
       }

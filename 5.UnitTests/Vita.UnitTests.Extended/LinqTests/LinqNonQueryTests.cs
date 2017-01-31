@@ -37,6 +37,7 @@ namespace Vita.UnitTests.Extended {
 
       #region Simple update involving 1 table (the table being updated) ----------------------------------
       session = app.OpenSession();
+      session.EnableCache(false);
       //Pre-load old values, to compare them with new updated values
       var fictionBook0 = session.EntitySet<IBook>().First(b => b.Category == BookCategory.Fiction);
       var nonFictionBook0 = session.EntitySet<IBook>().First(b => b.Category != BookCategory.Fiction);
@@ -48,6 +49,7 @@ namespace Vita.UnitTests.Extended {
       updateCount = booksQuery.ExecuteUpdate<IBook>();
       //verify with new session
       session = app.OpenSession();
+      session.EnableCache(false);
       var updatedFictionBook0 = session.GetEntity<IBook>(fictionBook0.Id);
       var updatedNonFictionBook0 = session.GetEntity<IBook>(nonFictionBook0.Id);
       Assert.AreEqual(fictionBook0.Price + 1, updatedFictionBook0.Price, "Expected increased price for fiction book.");
@@ -66,6 +68,7 @@ namespace Vita.UnitTests.Extended {
       Assert.AreEqual(noDescrCount, updateDescrCount, "Update count does not match.");
       // count again books with Descr = null; should be zero
       session = app.OpenSession();
+      session.EnableCache(false); 
       var noDescrCoun0 = session.EntitySet<IBook>().Where(b => b.Description == null).Count();
       Assert.AreEqual(0, noDescrCoun0, "Expected no books with no description.");
       // Update back to null
@@ -75,6 +78,7 @@ namespace Vita.UnitTests.Extended {
       revertDescrQuery.ExecuteUpdate<IBook>();
       //verify that noDescr count is back to original
       session = app.OpenSession();
+      session.EnableCache(false);
       Thread.Sleep(50); // to let cache refresh, occasionally failing when cache is enabled
       var noDescrCount1 = session.EntitySet<IBook>().Where(b => b.Description == null).Count();
       Assert.AreEqual(noDescrCount, noDescrCount1,
@@ -106,6 +110,7 @@ namespace Vita.UnitTests.Extended {
         var sql = cmd.CommandText;
         //Let's check non-zero totals
         session = app.OpenSession();
+        session.EnableCache(false);
         var countZeroTotals = session.EntitySet<IBookOrder>().Where(o => o.Lines.Count > 0 && o.Total == 0).Count(); //there is one order with zero lines
         Assert.AreEqual(0, countZeroTotals, "Expected no zero totals.");
         /*  SQL:
@@ -124,6 +129,7 @@ namespace Vita.UnitTests.Extended {
         // Because the query involves order-by and skip/take, the engine should use update SQL with FROM clause, not simplified update statement
         // (bug fix)
         session = app.OpenSession();
+        session.EnableCache(false);
         //There is Diego's order with 3 books
         var diegoOrder = session.EntitySet<IBookOrder>().First(ord => ord.User.UserName == "Diego");
         Assert.AreEqual(3, diegoOrder.Lines.Count, "Expected 3 books in order.");

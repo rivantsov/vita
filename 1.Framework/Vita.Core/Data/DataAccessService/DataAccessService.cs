@@ -96,9 +96,12 @@ namespace Vita.Data {
 
     public void RemoveDataSource(string name) {
       lock(_lock) {
+        var ds = LookupDataSource(name);
+        Util.Check(ds != null, "Datasource {0} not found.", name);
+        _events.OnDataSourceStatusChanging(new DataSourceEventArgs(ds, DataSourceEventType.Disconnecting));
         var newDict = new Dictionary<string, DataSource>(_dataSources, StringComparer.OrdinalIgnoreCase);
         newDict.Remove(name);
-        _dataSources = newDict; 
+        System.Threading.Interlocked.Exchange(ref _dataSources, newDict);
       }
     }
 

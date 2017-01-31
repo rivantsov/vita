@@ -44,6 +44,7 @@ namespace Vita.Data {
     DbModelUpdating,
     DbModelUpdated,
     Connected,
+    Disconnecting,
   }
 
   public class DataSourceEventArgs : EventArgs {

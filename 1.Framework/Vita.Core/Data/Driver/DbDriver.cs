@@ -123,7 +123,7 @@ namespace Vita.Data.Driver {
     public virtual IDbDataParameter AddParameter(IDbCommand command, DbParamInfo prmInfo) {
       var prm = command.CreateParameter();
       var typeInfo = prmInfo.TypeInfo;
-      prm.DbType = typeInfo.VendorDbType.DbType;
+      prm.DbType = typeInfo.DbType;
       prm.Direction = prmInfo.Direction;
       prm.ParameterName = prmInfo.Name;
       if (typeInfo.Precision > 0) prm.Precision = typeInfo.Precision;

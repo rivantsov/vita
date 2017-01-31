@@ -104,6 +104,7 @@ namespace Vita.Data.Model {
     static Func<object, object> _noConv = x => x; 
 
     public VendorDbTypeInfo VendorDbType;
+    public DbType DbType; // most often the same as VendorDbType.DbType; SQLite driver assigns specific values here
     public string SqlTypeSpec;
     public bool IsNullable;
     public long Size;
@@ -117,6 +118,7 @@ namespace Vita.Data.Model {
     public DbTypeInfo(VendorDbTypeInfo vendorTypeInfo, string sqlTypeSpec, bool isNullable,
                          long size, byte precision, byte scale, string initExpression = null) {
       VendorDbType = vendorTypeInfo;
+      DbType = VendorDbType.DbType; 
       SqlTypeSpec = sqlTypeSpec;
       IsNullable = isNullable;
       Size = size;

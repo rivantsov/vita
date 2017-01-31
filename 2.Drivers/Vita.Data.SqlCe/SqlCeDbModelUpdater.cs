@@ -26,7 +26,7 @@ namespace Vita.Data.SqlCe {
     }
     public override void BuildColumnModifySql(DbObjectChange change, DbColumnInfo column, DbScriptOptions options = DbScriptOptions.None) {
       //SqlCe does not allow any modification of 'ntext'/memo columns
-      var dbType = column.TypeInfo.VendorDbType.DbType;
+      var dbType = column.TypeInfo.DbType;
       bool isNText = column.TypeInfo.Size < 0 && (dbType == DbType.String || dbType == DbType.Binary);
       if(isNText) {
         change.NotSupported("Modifying ntext column not supported in SqlCE. Column: {0}.{1}", column.Table.TableName, column.ColumnName);

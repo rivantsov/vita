@@ -35,8 +35,9 @@ namespace Vita.UnitTests.Extended {
       var password = Samples.BookStore.SampleData.SampleDataGenerator.DefaultPassword; 
       var app = Startup.BooksApp;
       var loginService = app.GetService<ILoginService>();
-      var loginMgr = app.GetService<ILoginManagementService>();
-      var loginProcessService = app.GetService<ILoginProcessService>(); 
+      var loginMgr = app.GetService<ILoginManagementService>(); 
+      var loginProcessService = app.GetService<ILoginProcessService>();
+      var loginAdmin = app.GetService<ILoginAdministrationService>(); 
       var context = app.CreateSystemContext(); 
 
       // Simple login/logout ------------------------------------------------------------------------
@@ -63,14 +64,15 @@ namespace Vita.UnitTests.Extended {
       // but do not disclose that email did not match; say 'Reset URL was sent to this email if it was found in our database'
       Assert.IsNotNull(doraEmailFactor, "Expected to find login by email.");
       // login is found; Start login process
-      var process = loginProcessService.StartProcess(doraEmailFactor.Login, LoginProcessType.PasswordReset, enteredEmail);
+      var processToken = loginProcessService.GenerateProcessToken(); 
+      var process = loginProcessService.StartProcess(doraEmailFactor.Login, LoginProcessType.PasswordReset, processToken);
 
       Assert.AreEqual(ExtraFactorTypes.Email | ExtraFactorTypes.SecretQuestions, process.PendingFactors, "Expected Email and Secret questions pending factors");
       // send email to email address provided by user with a link containing the flowToken; wait for the user to hit the link.
       // Do not send anything if login factor was not found by email; otherwise your site becomes email DDOS bot
       // Important: in both cases (email found or not), present user (dora or not) with the same page 
       // saying 'Reset instructions were sent to email you provided, if it was found in our database. ', without disclosing if email was found or not
-      var processToken = process.Token; //embed it in URL and send it in email
+      // Embed process token in URL and send it in email
       loginProcessService.SendPin(process, doraEmailFactor);
 
       //Dora receives email, copies pin
@@ -115,6 +117,12 @@ namespace Vita.UnitTests.Extended {
       //Change back, to avoid breaking other tests
       loginMgr.ChangePassword(process.Login, newPass, oldPass);
 
+/*      // Quick test of a bug (LastLoggedIn not updated with one-time pwd)
+      var tempPass = "abcd1234";
+      loginAdmin.SetOneTimePassword(doraLogin.Login, tempPass);
+      doraLogin = loginService.Login(context, "dora", tempPass);
+      loginMgr.ChangePassword(doraLogin.Login, tempPass, oldPass);
+*/
     }//method
 
     [TestMethod]
@@ -138,7 +146,7 @@ namespace Vita.UnitTests.Extended {
       //account shoud be suspended by LoginFailedTrigger
       duffyLogin = loginService.Login(context, "Duffy", password);
       Assert.IsFalse(duffyLogin.Status == LoginAttemptStatus.Success, "Duffy should be suspended");
-
+   
     }
 
     // Extracting pin. Pin in email templates is always preceeded by ':' and followed by New-line or EOF

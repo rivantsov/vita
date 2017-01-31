@@ -38,10 +38,6 @@ namespace Vita.Entities.Model {
     public static bool IsSet(this EntityCommandFlags flags, EntityCommandFlags flag) {
       return (flags & flag) != 0;
     }
-    public static bool IsSet(this DbViewOptions flags, DbViewOptions flag) {
-      return (flags & flag) != 0;
-    }
-
     public static bool IsSelect(this EntityCommandKind kind) {
       switch(kind) {
         case EntityCommandKind.SelectAll: case EntityCommandKind.SelectAllPaged: 

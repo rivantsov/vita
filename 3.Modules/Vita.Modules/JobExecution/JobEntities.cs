@@ -20,11 +20,8 @@ namespace Vita.Modules.JobExecution {
     // Definition
     [Size(Sizes.Name), Index]
     string Name { get; set; }
-    JobFlags Flags { get; set; }
 
     // Launch parameters
-    [Size(50), Nullable]
-    string HostName { get; set; }
     JobThreadType ThreadType { get; set; }
     [Size(250)]
     string DeclaringType { get; set; }
@@ -42,15 +39,18 @@ namespace Vita.Modules.JobExecution {
     IJobSchedule Schedule { get; }
   }
 
-  [Entity, BypassAuthorization]
+  [Entity, Index("Status,StartOn"), BypassAuthorization]
   public interface IJobRun {
     [PrimaryKey, Auto]
     Guid Id { get; set; }
     [Utc, Auto(AutoType.CreatedOn)]
     DateTime CreatedOn { get; }
     Guid? UserId { get; set; }
+    JobRunType RunType { get; set; }
 
     IJob Job { get; set; }
+    [Size(50)]
+    string HostName { get; set; }
     Guid? DataId { get; set; }
     [Unlimited, Nullable]
     string Data { get; set; }
@@ -87,6 +87,8 @@ namespace Vita.Modules.JobExecution {
     IJob Job { get; set; }
     [Size(Sizes.Name)]
     string Name { get; set; }
+    [Size(50)]
+    string HostName { get; set; }
     JobScheduleStatus Status { get; set; }
     DateTime ActiveFrom { get; set; }
     DateTime? ActiveUntil { get; set; }

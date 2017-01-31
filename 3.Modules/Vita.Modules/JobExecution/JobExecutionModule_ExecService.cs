@@ -32,7 +32,7 @@ namespace Vita.Modules.JobExecution {
 
     public IJobRun StartJobOnSaveChanges(IJob job, Guid? dataId = null, string data = null) {
       var utcNow = App.TimeService.UtcNow;
-      var jobRun = job.NewJobRun(utcNow, dataId, data);
+      var jobRun = NewJobRun(job, JobRunType.OnSave, utcNow, dataId, data);
       // Entity.SavedChanges handler will recognize the new (just inserted) IJobRun entity 
       // with status Executing and will start it
       jobRun.Status = JobRunStatus.Executing;
@@ -40,16 +40,21 @@ namespace Vita.Modules.JobExecution {
       return jobRun;  
     }
 
-    public IJobRun ScheduleJobRunOn(IJob job, DateTime runOnUtc, Guid? dataId = null, string data = null) {
+    public IJobRun ScheduleJobRunOn(IJob job, DateTime runOnUtc, Guid? dataId = null, string data = null, string hostName = null) {
       Util.Check(job != null, "Job parameter may not be null.");
       Util.Check(runOnUtc.Kind == DateTimeKind.Utc, "RunOn argument must be UTC time.");
-      return job.NewJobRun(runOnUtc, dataId, data);
+      return NewJobRun(job, JobRunType.ScheduledDateTime, runOnUtc, dataId, data, hostName);
     }
 
-    public IJobSchedule CreateJobSchedule(IJob job, string name, string cronSpec, DateTime? activeFrom, DateTime? activeUntil) {
+    public IJobSchedule CreateJobSchedule(IJob job, string name, string cronSpec, DateTime? activeFrom, DateTime? activeUntil, string hostName = null) {
       Util.Check(job != null, "Job parameter may not be null.");
-      return JobUtil.CreateJobSchedule(job, name, cronSpec, activeFrom, activeUntil);
+      return NewJobSchedule(job, name, cronSpec, activeFrom, activeUntil, hostName);
     }
+
+    public int StartInterruptedJobsAfterAfterRestart(OperationContext context) {
+      return StartInterruptedJobsAfterRestartImpl(context); 
+    }
+
     #endregion 
 
 
@@ -59,23 +64,26 @@ namespace Vita.Modules.JobExecution {
       JobRunContext jobContext = null;
       try {
         var startInfo = CreateJobStartInfo(func, JobThreadType.Pool);
-        jobContext = new JobRunContext(context, jobName, startInfo, JobFlags.None);
-        RegisterRunningJob(jobContext);
+        jobContext = new JobRunContext(context, jobName, startInfo, JobRunType.Immediate);
+        RegisterJobRun(jobContext);
         OnJobNotify(jobContext, JobNotificationType.Starting);
         //actually start
         var compiledFunc = func.Compile();
         await Task.Run(async () => await (Task)compiledFunc.Invoke(jobContext), jobContext.CancellationToken);
         // completed successfully
         jobContext.Status = JobRunStatus.Completed;
-        UnregisterRunningJob(jobContext.JobId);
+        UnregisterJobRun(jobContext);
         OnJobNotify(jobContext, JobNotificationType.Completed);
         return jobContext;
+      } catch(OperationAbortException) {
+        //soft exceptions (validation failed, smth like this) - we abort immediately, something wrong with input data, there's no point to repeat execution
+        throw;  
       } catch(Exception agrEx) {
-        var ex = JobUtil.GetInnerMostExc(agrEx);
+        var ex = GetInnerMostExc(agrEx);
         if(jobContext == null)
           throw new Exception("Failed to create JobRunContext for light task: " + ex.Message, ex);
         SaveJobAndJobRun(jobContext, retryPolicy, JobRunStatus.Error, ex);
-        UnregisterRunningJob(jobContext.JobId);
+        UnregisterJobRun(jobContext);
         OnJobNotify(jobContext, JobNotificationType.Error, ex);
         return jobContext;
       }
@@ -84,8 +92,8 @@ namespace Vita.Modules.JobExecution {
     private JobRunContext ExecuteJobNoWait (OperationContext context, string jobName, Expression<Action<JobRunContext>> action, RetryPolicy retryPolicy) {
       jobName = CheckJobName(jobName);
       var startInfo = CreateJobStartInfo(action, JobThreadType.Pool);
-      var jobContext = new JobRunContext(context, jobName, startInfo, JobFlags.None);
-      RegisterRunningJob(jobContext);
+      var jobContext = new JobRunContext(context, jobName, startInfo, JobRunType.Immediate);
+      RegisterJobRun(jobContext);
       OnJobNotify(jobContext, JobNotificationType.Starting);
       //actually start
       var compiledFunc = action.Compile();
@@ -95,10 +103,10 @@ namespace Vita.Modules.JobExecution {
     }
 
     private Task NoWaitJobCompleted(Task mainTask, JobRunContext jobContext, RetryPolicy retryPolicy) {
-      var realExc = mainTask.Exception == null ? null : JobUtil.GetInnerMostExc(mainTask.Exception);
+      var realExc = mainTask.Exception == null ? null : GetInnerMostExc(mainTask.Exception);
       if (realExc == null) {
         jobContext.Status = JobRunStatus.Completed;
-        UnregisterRunningJob(jobContext.JobId);
+        UnregisterJobRun(jobContext);
         OnJobNotify(jobContext, JobNotificationType.Completed);
         return Task.CompletedTask;
       }
@@ -109,7 +117,7 @@ namespace Vita.Modules.JobExecution {
       } else {
         SaveJobAndJobRun(jobContext, retryPolicy, JobRunStatus.Error, realExc);
       }
-      UnregisterRunningJob(jobContext.JobId);
+      UnregisterJobRun(jobContext);
       OnJobNotify(jobContext, JobNotificationType.Error);
       return Task.CompletedTask;
     }

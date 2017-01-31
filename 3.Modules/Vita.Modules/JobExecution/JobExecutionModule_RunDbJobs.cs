@@ -26,7 +26,7 @@ namespace Vita.Modules.JobExecution {
         var jobRuns = session.EntitySet<IJobRun>()
           .Include(jr => jr.Job)
           .Where(jr => jr.Status == JobRunStatus.Pending && jr.StartOn <= utcNow && 
-                 jr.Job.HostName == _settings.HostName)
+                 jr.HostName == _settings.HostName)
           .Take(BatchSize)
           .ToList();
         if(jobRuns.Count == 0)
@@ -59,7 +59,7 @@ namespace Vita.Modules.JobExecution {
       foreach(var sched in scheds) {
         var nextStartOn = sched.GetNextStartAfter(utcNow);
         if(nextStartOn != null) {
-          var nextRun = sched.Job.NewJobRun(nextStartOn);
+          var nextRun = NewJobRun(sched.Job, JobRunType.Schedule, nextStartOn);
           sched.NextRunId = nextRun.Id;
         } else {
           sched.NextRunId = null;
@@ -69,10 +69,10 @@ namespace Vita.Modules.JobExecution {
     } //method
 
     private JobRunContext StartJobRun(IJobRun jobRun) {
-      PendingCountInc();
+      _activitiesCounter.Increment();
       //create job context 
       var jobCtx = new JobRunContext(jobRun);
-      RegisterRunningJob(jobCtx);
+      RegisterJobRun(jobCtx);
       OnJobNotify(jobCtx, JobNotificationType.Starting);
       jobCtx.StartInfo = CreateJobStartInfo(jobRun, jobCtx);
       if(jobCtx.StartInfo.ThreadType == JobThreadType.Background) {
@@ -85,7 +85,7 @@ namespace Vita.Modules.JobExecution {
     }
 
     private void StartBackgroundJobRun(object data) {
-      PendingCountDec(); 
+      _activitiesCounter.Decrement(); 
       var jobCtx = (JobRunContext)data;
       try {
         var startInfo = jobCtx.StartInfo;
@@ -98,7 +98,6 @@ namespace Vita.Modules.JobExecution {
     }
 
     private async Task StartPoolJobRunAsync(object objJobContext) {
-      PendingCountDec(); 
       JobRunContext jobCtx = (JobRunContext)objJobContext;
       try {
         var startInfo = jobCtx.StartInfo;
@@ -106,8 +105,10 @@ namespace Vita.Modules.JobExecution {
         if(startAsync) {
           var task = Task.Factory.StartNew(async () => await (Task)startInfo.Method.Invoke(startInfo.Object, startInfo.Arguments)).Unwrap();
           var task2 = task.ContinueWith((t) => OnAsyncTaskCompleted(t, jobCtx));
+          _activitiesCounter.Decrement();
           await task2;
         } else {
+          _activitiesCounter.Decrement();
           startInfo.Method.Invoke(startInfo.Object, startInfo.Arguments);
           OnJobRunFinished(jobCtx);
         }
@@ -118,14 +119,14 @@ namespace Vita.Modules.JobExecution {
     }
 
     private Task OnAsyncTaskCompleted(Task mainTask, JobRunContext jobContext) {
-      var realExc = mainTask.Exception == null ? null : JobUtil.GetInnerMostExc(mainTask.Exception); 
+      var realExc = mainTask.Exception == null ? null : GetInnerMostExc(mainTask.Exception); 
       OnJobRunFinished(jobContext, realExc);
       return Task.CompletedTask;
     }
 
     private void OnJobRunFinished(JobRunContext jobContext, Exception exception = null) {
       UpdateFinishedJobRun(jobContext, exception);
-      UnregisterRunningJob(jobContext.JobId);
+      UnregisterJobRun(jobContext);
       var notifType = exception == null ? JobNotificationType.Completed : JobNotificationType.Error;
       OnJobNotify(jobContext, notifType, exception);
     }

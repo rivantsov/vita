@@ -30,7 +30,9 @@ namespace Vita.Data.SQLite {
     }
 
     public override IDbConnection CreateConnection(string connectionString) {
-      return new SQLiteConnection(connectionString); 
+      var conn = new SQLiteConnection(connectionString);
+      conn.Flags &= ~SQLiteConnectionFlags.BindDateTimeWithKind;
+      return conn; 
     }
 
     public override LinqSqlProvider CreateLinqSqlProvider(Model.DbModel dbModel) {

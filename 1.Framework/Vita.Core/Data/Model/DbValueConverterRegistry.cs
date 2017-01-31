@@ -13,7 +13,7 @@ namespace Vita.Data.Model {
   using ConvertFunc = Func<object, object>;
 
   public class DbValueConverter {
-    private static ConvertFunc _noConv = x => x;
+    public static ConvertFunc NoConvertFunc = x => x;
 
     public readonly Type ColumnType;   //The CLR type of value returned by DB
     public readonly Type PropertyType; // The type of property in entity
@@ -26,8 +26,8 @@ namespace Vita.Data.Model {
     public DbValueConverter(Type columnType, Type propertyType, ConvertFunc columnToProperty, ConvertFunc propertyToColumn) {
       ColumnType = columnType;
       PropertyType = propertyType;
-      ColumnToPropertyUnsafe = columnToProperty ?? _noConv;
-      PropertyToColumn = propertyToColumn ?? _noConv;
+      ColumnToPropertyUnsafe = columnToProperty ?? NoConvertFunc;
+      PropertyToColumn = propertyToColumn ?? NoConvertFunc;
       ColumnToProperty = ConvertSafeColumnToProp;      
     }
 
@@ -102,12 +102,12 @@ namespace Vita.Data.Model {
       AddConverter<string, char>(x => x == null ? '\0' : ((string)x)[0], x => ((char)x).ToString());
     }
 
-    public DbValueConverter AddConverter<TFrom, TTo>(ConvertFunc convert, ConvertFunc convertBack) {
-      return AddConverter(typeof(TFrom), typeof(TTo), convert, convertBack);
+    public DbValueConverter AddConverter<TColumn, TProperty>(ConvertFunc columnToProperty, ConvertFunc propertyToColumn) {
+      return AddConverter(typeof(TColumn), typeof(TProperty), columnToProperty, propertyToColumn);
     }
 
-    public DbValueConverter AddConverter(Type fromType, Type toType, ConvertFunc convert, ConvertFunc convertBack) {
-      var conv = new DbValueConverter(fromType, toType, convert, convertBack);
+    public DbValueConverter AddConverter(Type columnType, Type propertyType, ConvertFunc columnToProperty, ConvertFunc propertyToColumn) {
+      var conv = new DbValueConverter(columnType, propertyType, columnToProperty, propertyToColumn);
       AddWithLock(conv);
       return conv; 
     }
@@ -279,7 +279,7 @@ namespace Vita.Data.Model {
       return (Func<object, object>)func;
     }
 
-    private Func<object, object> BuildIntToEnum(Type intType, Type enumType) {
+    public static Func<object, object> BuildIntToEnum(Type intType, Type enumType) {
       var baseEnumType = Enum.GetUnderlyingType(enumType); 
       var prm = Expression.Parameter(typeof(object));
       var intValue = Expression.Convert(prm, intType);
@@ -293,7 +293,7 @@ namespace Vita.Data.Model {
       return (Func<object, object>)func; 
     }
 
-    private Func<object, object> BuildEnumToInt(Type intType, Type enumType) {
+    public static Func<object, object> BuildEnumToInt(Type intType, Type enumType) {
       var baseEnumType = Enum.GetUnderlyingType(enumType);
       var prm = Expression.Parameter(typeof(object));
       var enumValue = Expression.Convert(prm, enumType);

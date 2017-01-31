@@ -17,5 +17,10 @@ namespace Vita.Entities {
       return new EntitySet<T>();
     }
 
+    public static bool IsSet(this DbViewOptions flags, DbViewOptions flag) {
+      return (flags & flag) != 0;
+    }
+
+
   }
 }

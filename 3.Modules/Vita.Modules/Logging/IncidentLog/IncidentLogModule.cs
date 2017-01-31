@@ -25,7 +25,8 @@ namespace Vita.Modules.Logging {
                                     Guid? keyId1 = null, Guid? keyId2 = null,
                                     string key1 = null, string key2 = null, string key3 = null, string key4 = null,
                                     string notes = null, OperationContext context = null) {
-
+      if(App.Status != EntityAppStatus.Connected)
+        return null; //cannot write log 
       var session = App.OpenSystemSession();
       var log = session.NewEntity<IIncidentLog>();
       log.CreatedOn = App.TimeService.UtcNow;

@@ -17,6 +17,10 @@ namespace Vita.Data.SQLite {
 
     }
 
+    public override SelectExpression PreviewSelect(SelectExpression e) {
+      return base.PreviewSelect(e);
+    }
+
     public override Type GetSqlFunctionResultType(SqlFunctionType functionType, Type[] operandTypes) {
       switch(functionType) {
         case SqlFunctionType.Count: return typeof(long); 
@@ -61,12 +65,31 @@ namespace Vita.Data.SQLite {
       return base.GetLiteralStringEqual(x, y, forceIgnoreCase);
     }
 
+
     //Datetime is a special case - we need to convert to string properly
+
+    public override SqlStatement GetLiteral(DateTime literal) {
+      return "'" + SQLiteTypeRegistry.DateTimeToString(literal) + "'";
+    }
+
+
+    /*
+    public override void CheckQueryParameter(ExternalValueExpression parameter) {
+      base.CheckQueryParameter(parameter);
+    }
     public override void SetDbParameterValue(IDbDataParameter parameter, Type type, object value) {
-      if (value != null && (type == typeof(DateTime) || type == typeof(DateTime?))) 
-        parameter.Value = SQLiteTypeRegistry.DateTimeToString(value);
-      else 
+
+      if(value != null && (type == typeof(DateTime) || type == typeof(DateTime?))) {
+
+        var dtq = value as DateTime?;
+        var dt = dtq == null ? (DateTime)value : dtq.Value; 
+        parameter.Value = SQLiteTypeRegistry.DateTimeToString(dt);
+
+//        parameter.Value = SQLiteTypeRegistry.DateTimeToString(value);
+    } else
+
         base.SetDbParameterValue(parameter, type, value);
     }
+    */
   }
 }

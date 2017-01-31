@@ -16,24 +16,30 @@ using Vita.Data;
 
 namespace Vita.Modules.JobExecution {
 
-  public partial class JobExecutionModule : EntityModule, IJobInformationService, IJobExecutionService  {
+  public partial class JobExecutionModule : EntityModule,
+       IJobInformationService, IJobExecutionService, IJobDiagnosticsService  {
     public static readonly Version CurrentVersion = new Version("1.0.0.0");
     JobModuleSettings _settings; 
-    JsonSerializer _serializer;
+    JsonSerializer _serializer; //used to serialize job arguments
     ITimerService _timers;
     IErrorLogService _errorLog;
     IIncidentLogService _incidentLog;
+    ConcurrentDictionary<Guid, JobRunContext> _runningJobs = new ConcurrentDictionary<Guid, JobRunContext>();
+    //used in pre-save validation of job definition; for light jobs (save only on error), 
+    // save comes only when 1st run fails - which might not happen for a while. But when error happens, 
+    // attempt to save the job might fail (name too long). To avoid this, we validate job parameters early.
     int _jobNameSize;
-
-    public string HostName;
+    ThreadSafeCounter _activitiesCounter;
 
     public JobExecutionModule(EntityArea area, JobModuleSettings settings = null) : base(area, "JobRunner", version: CurrentVersion) {
       RegisterEntities(typeof(IJob), typeof(IJobRun), typeof(IJobSchedule));
       _settings = settings ?? new JobModuleSettings();
+      _activitiesCounter = new ThreadSafeCounter(); 
       App.RegisterConfig(_settings); 
       App.RegisterService<IJobInformationService>(this);
       App.RegisterService<IJobExecutionService>(this);
-    } //constructor
+      App.RegisterService<IJobDiagnosticsService>(this); 
+    } 
 
     public override void Init() {
       base.Init();
@@ -41,14 +47,23 @@ namespace Vita.Modules.JobExecution {
       _errorLog = App.GetService<IErrorLogService>();
       _incidentLog = App.GetService<IIncidentLogService>();
       _serializer = new JsonSerializer();
-      _jobNameSize = App.GetPropertySize<IJob>(j => j.Name);
+      _jobNameSize = App.GetPropertySize<IJob>(j => j.Name); 
       //hook to events
+      // every minute we check for due job runs and start them
       _timers.Elapsed1Minute += Timers_ElapsedIMinue;
+      // Every 30 minutes check for long overdue jobs for ANY server
+      _timers.Elapsed30Minutes += Timers_Elapsed30Minutes;
+      // Whenever job run is saved, and RunType=OnSave, we start the run in this handler  
       var jobRunEntInfo = App.Model.GetEntityInfo(typeof(IJobRun));
       jobRunEntInfo.SaveEvents.SavedChanges += JobRunEntitySavedHandler;
+      // On saving job schedule (CRON schedule), we automatically create the first job run
       var jobSchedEntInfo = App.Model.GetEntityInfo(typeof(IJobSchedule));
       jobSchedEntInfo.SaveEvents.SavingChanges += JobScheduleEntitySavingHandler;
-      HostName = HostName ?? System.Net.Dns.GetHostName();
+    }
+
+    private void Timers_Elapsed30Minutes(object sender, EventArgs e) {
+      if(_settings.Flags.IsSet(JobModuleFlags.TakeOverLongOverdueJobs))
+        CheckLongOverdueJobRuns(); 
     }
 
     public override void Shutdown() {
@@ -57,31 +72,28 @@ namespace Vita.Modules.JobExecution {
     }
 
     #region Running jobs dictionary
-    ConcurrentDictionary<Guid, JobRunContext> _runningJobs = new ConcurrentDictionary<Guid, JobRunContext>();
 
-    private bool RegisterRunningJob(JobRunContext job) {
-      return _runningJobs.TryAdd(job.JobId, job); 
+    private bool RegisterJobRun(JobRunContext job) {
+      return _runningJobs.TryAdd(job.JobRunId, job); 
     }
 
-    private JobRunContext GetRunningJob(Guid jobId) {
+    private JobRunContext GetJobRun(Guid jobRunId) {
       JobRunContext result;
-      if(_runningJobs.TryGetValue(jobId, out result))
+      if(_runningJobs.TryGetValue(jobRunId, out result))
         return result;
       return null; 
     }
-    private bool UnregisterRunningJob(Guid jobId) {
+    private bool UnregisterJobRun(JobRunContext jobContext) {
       JobRunContext dummy;
-      return _runningJobs.TryRemove(jobId, out dummy);
+      return _runningJobs.TryRemove(jobContext.JobRunId, out dummy);
     }
     #endregion
 
     #region Event handlers: SavedChanged, Timers_Elapsed1Minute
     private void JobRunEntitySavedHandler(EntityRecord record, EventArgs args) {
-      // we are interested only in new jobs with StartMode = OnSave
-      if(record.StatusBeforeSave != EntityStatus.New)
-        return;
+      // Start job runs that are new and that have RunType = OnSave
       var jobRun = (IJobRun)record.EntityInstance;
-      if(jobRun.Status == JobRunStatus.Executing)
+      if(record.StatusBeforeSave == EntityStatus.New && jobRun.RunType == JobRunType.OnSave)
         StartJobRun(jobRun);
     }
 
@@ -91,23 +103,24 @@ namespace Vita.Modules.JobExecution {
           break; //nothing to do
         default:
           var sched = (IJobSchedule) record.EntityInstance;
-          sched.VerifyJobSchedule();
+          OnJobScheduleSaving(sched);
           break; 
       }
     }
 
-    // if false, we just started up
     private void Timers_ElapsedIMinue(object sender, EventArgs e) {
       if(App.Status != EntityAppStatus.Connected)
         return;
       try {
-        PendingCountInc(); 
+        // we add 1 here to immediately move it from zero; for every starting job will increment it, 
+        // and then decrement when it actually starts on another thread. The counter gets to zero when all 
+        // activities are actually completed and due jobs actually started.
+        _activitiesCounter.Increment(); 
         StartDueJobRuns();
       } finally {
-        PendingCountDec(); 
+        _activitiesCounter.Decrement();  
       }
     }
-
     #endregion
 
     private void SuspendJobsOnShutdown() {
@@ -156,25 +169,25 @@ namespace Vita.Modules.JobExecution {
     private void OnJobNotify(JobRunContext jobContext, JobNotificationType notificationType, Exception exception = null) {
       Notify?.Invoke(this, new JobNotificationEventArgs() { JobRunContext = jobContext, NotificationType = notificationType, Exception = exception });
     }
+
     #endregion
 
+    #region IJobDiagnosticsService members
+    public void WaitStarting() {
+      while(!_activitiesCounter.IsZero())
+        Thread.Yield(); 
+    }
 
-
-    #region PendingCounter
-    static int _pendingCounter; 
-    public static void PendingCountReset() {
-      Interlocked.Exchange(ref _pendingCounter, 0); 
-    }
-    public static void PendingCountInc(int value = 1) {
-      Interlocked.Add(ref _pendingCounter, value);
-    }
-    public static void PendingCountDec() {
-      Interlocked.Decrement(ref _pendingCounter);
-    }
-    public static bool PendingCountIsZero() {
-      return _pendingCounter == 0; 
+    public void WaitAllCompleted() {
+      while(true) {
+        if(_activitiesCounter.IsZero() && _runningJobs.Count == 0)
+          return;
+        Thread.Yield(); 
+      }
     }
 
     #endregion 
+
+
   }//module
 }

@@ -220,7 +220,7 @@ namespace Vita.Entities {
       //Inject interceptor
       _defaultGetter = member.GetValueRef;
       _defaultSetter = member.SetValueRef;
-      member.GetValueRef = this.GetValueInterceptor;
+      //member.GetValueRef = this.GetValueInterceptor;
       member.SetValueRef = this.SetValueInterceptor;
     }
     //Interceptor for SetValue
@@ -248,7 +248,7 @@ namespace Vita.Entities {
       switch (dtValue.Kind) {
         case DateTimeKind.Utc: return dtValue; 
         case DateTimeKind.Local: return dtValue.ToUniversalTime();
-        case DateTimeKind.Unspecified: return new DateTime(dtValue.Ticks, DateTimeKind.Utc); //assume it is already UTC value, but need to recreate with proper kind
+        case DateTimeKind.Unspecified: return DateTime.SpecifyKind(dtValue, DateTimeKind.Utc); // assume it is already UTC
         default: return dtValue; // just to supress compiler error
       }
     } 
@@ -610,6 +610,8 @@ namespace Vita.Entities {
 
     public void OnSettingValue(EntityRecord record, EntityMemberInfo member, object value) {
       _oldSetter(record, member, value);
+      if(record.Status == EntityStatus.Loading)
+        return; //we are loading from db 
       var strValue = (string)value;
       record.ValuesModified[_member.ValueIndex] = Util.StableHash(strValue); 
     }

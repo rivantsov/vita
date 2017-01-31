@@ -9,8 +9,10 @@ namespace Vita.Modules.JobExecution {
   [Flags]
   public enum JobModuleFlags {
     None = 0,
+    AutoRestartJobsOnStart = 1, 
+    TakeOverLongOverdueJobs = 1 << 1,
 
-    ExecuteLongJobs = 1 << 1, 
+    Default = AutoRestartJobsOnStart | TakeOverLongOverdueJobs,
   }
 
   public class RetryPolicy {
@@ -36,11 +38,9 @@ namespace Vita.Modules.JobExecution {
     public string HostName;
     public JobModuleFlags Flags;  
 
-    public JobModuleSettings(string hostName = null, bool isJobServer = true, RetryPolicy defaultRetryPolicy = null) {
+    public JobModuleSettings(string hostName = null, JobModuleFlags flags = JobModuleFlags.Default, RetryPolicy defaultRetryPolicy = null) {
       HostName = hostName ?? System.Net.Dns.GetHostName();
-      Flags = JobModuleFlags.None;
-      if(isJobServer)
-        Flags |= JobModuleFlags.ExecuteLongJobs;
+      Flags = flags;
     }
 
     public RetryPolicy DefaultRetryPolicy {

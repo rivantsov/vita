@@ -40,7 +40,7 @@ namespace Vita.UnitTests.Basic {
         connString = connString.Replace("{bin}", binFolder);
       }
       ConnectionString = connString;
-      Driver = ToolHelper.CreateDriver(ServerType); //, ConnectionString);
+      Driver = ToolHelper.CreateDriver(ServerType); 
       DbOptions = ToolHelper.GetDefaultOptions(ServerType);
       //enable stored procs
       DbOptions &= ~DbOptions.UseStoredProcs; //it is on by default

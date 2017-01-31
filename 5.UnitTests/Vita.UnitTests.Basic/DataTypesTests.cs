@@ -200,6 +200,8 @@ namespace Vita.UnitTests.Basic {
 
       [TestInitialize]
       public void Init() {
+        if(Startup.Driver == null)
+          Startup.SetupForTestExplorerMode();
         Startup.DropSchemaObjects("types");
         _app = new DataTypesTestEntityApp();
         Startup.ActivateApp(_app);
@@ -210,6 +212,23 @@ namespace Vita.UnitTests.Basic {
           _app.Flush();
       }
 
+    private object SQLiteDateToString(object x) {
+      if(x == null || x == DBNull.Value)
+        return DBNull.Value;
+      var dt = (DateTime)x;
+      var result = Vita.Common.ConvertHelper.DateTimeToUniString(dt);
+      return result;
+    }
+
+    private object SQLiteStringToDate(object x) {
+      if(x == null || x == DBNull.Value)
+        return DBNull.Value;
+      var str = x as string;
+      if(string.IsNullOrWhiteSpace(str))
+        return DBNull.Value;
+      DateTime result = DateTime.Parse(str, CultureInfo.InvariantCulture); //, DateTimeStyles.AssumeUniversal | DateTimeStyles.AdjustToUniversal);
+      return result;
+    }
 
     [TestMethod]
     public void TestDataTypes() {
@@ -327,15 +346,16 @@ namespace Vita.UnitTests.Basic {
     }
 
     private IDataTypesEntity CreateDataTypesEntity(IEntitySession session, string strProp, string memoProp) {
+      var rand = new Random(); 
       var ent = session.NewEntity<IDataTypesEntity>();
       var id = ent.Id = Guid.NewGuid();
       ent.StringProp = strProp;
       ent.MemoProp = memoProp;
-      ent.ByteProp = 250;
+      ent.ByteProp = (byte) rand.Next(255);
       ent.BoolProp = true;
-      ent.Int16Prop = -234;
-      ent.Int32Prop = -345;
-      ent.Int64Prop = Int64.MinValue; // (long)Int32.MaxValue + 100;
+      ent.Int16Prop = (Int16)rand.Next(Int16.MaxValue);
+      ent.Int32Prop = - rand.Next(int.MaxValue - 1);
+      ent.Int64Prop = Int64.MinValue; 
       ent.Int32NullProp = 222;
       ent.CharProp = 'X';
 
@@ -367,7 +387,8 @@ namespace Vita.UnitTests.Basic {
     private IMsSqlDataTypesEntity CreateSpecialDataTypesEntity(IEntitySession session, string varCharProp) {
       var ent = session.NewEntity<IMsSqlDataTypesEntity>();
       ent.Id = Guid.NewGuid();
-      ent.CharNProp = "12345678";
+      // Test bug fix
+      ent.CharNProp = " ";// "12345678"; 
       ent.NCharNProp = "234567";
       ent.VarCharProp = varCharProp;
       ent.TimeProp = DateTime.Now.TimeOfDay;

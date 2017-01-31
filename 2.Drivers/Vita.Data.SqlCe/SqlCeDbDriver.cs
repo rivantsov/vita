@@ -90,7 +90,7 @@ namespace Vita.Data.SqlCe {
       // NText columns must be nullable
       foreach (var table in dbModel.Tables) {
         foreach (var col in table.Columns) {
-          if (col.TypeInfo.VendorDbType.DbType == DbType.String && col.TypeInfo.Size < 0)
+          if (col.TypeInfo.DbType == DbType.String && col.TypeInfo.Size < 0)
             col.Flags |= DbColumnFlags.Nullable;
         }
         // SqlCe does not support filters; this may mess up unique keys on nullable columns

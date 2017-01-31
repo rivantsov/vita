@@ -190,6 +190,30 @@ namespace Vita.Data {
       } //for i
     }
 
+    private void SetCrudCommandParameterValues(DbCommandInfo commandInfo, IDbCommand command, EntityRecord record) {
+      if(record.Status == EntityStatus.Stub)
+        record.Reload();
+      for(int i = 0; i < commandInfo.Parameters.Count; i++) {
+        var prm = (IDbDataParameter)command.Parameters[i];
+        prm.Value = DBNull.Value;
+        var prmInfo = commandInfo.Parameters[i];
+        var isInput = prmInfo.Direction == ParameterDirection.Input || prmInfo.Direction == ParameterDirection.InputOutput;
+        if(!isInput)
+          continue;
+        var col = prmInfo.SourceColumn;
+        if(col == null || col.Member == null)
+          continue;
+        var value = record.GetValueDirect(col.Member);
+        if(value == null)
+          value = DBNull.Value;
+        var conv = prmInfo.TypeInfo.PropertyToColumnConverter;
+        if(value != DBNull.Value && conv != null)
+          value = conv(value);
+        prm.Value = value;
+      } //for i
+    }
+
+
     private void FormatTemplatedSql(DbCommandInfo commandInfo, IDbCommand command, object[] args) {
       if(args == null || args.Length == 0)
         return;

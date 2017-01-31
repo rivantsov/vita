@@ -152,9 +152,9 @@ namespace Vita.Tools.DbFirst {
           */
           //DbTypeDef is not default for this member - we need to specify DbType or TypeSpec explicitly
           // Let's see if explicit DbType is enough; let's try to search by DbType and check if it brings the same db type
-          var typeDef2 = _typeRegistry.FindVendorDbTypeInfo(col.TypeInfo.VendorDbType.DbType, memberDataType, isMemo);
-          if (typeDef2 == typeDef)
-            member.ExplicitDbType = col.TypeInfo.VendorDbType.DbType; //Explicit db type is enough
+          var vendorTypeDef = _typeRegistry.FindVendorDbTypeInfo(col.TypeInfo.VendorDbType.DbType, memberDataType, isMemo);
+          if (vendorTypeDef == typeDef)
+            member.ExplicitDbType = col.TypeInfo.DbType; //Explicit db type is enough
           else
             member.ExplicitDbTypeSpec = col.TypeInfo.SqlTypeSpec;
         }

@@ -23,14 +23,14 @@ namespace Vita.UnitTests.Extended {
     static string SuccessMessage = "Completed successfully!";
     EntityApp _app;
     ITimerServiceControl _timersControl;
-    IJobInformationService _jobInfoService; 
+    IJobDiagnosticsService _jobDiagService; 
 
     [TestInitialize]
     public void TestInit() {
       Startup.InitApp();
       _app = Startup.BooksApp;
       _timersControl = _app.GetService<ITimerServiceControl>();
-      _jobInfoService = _app.GetService<IJobInformationService>(); 
+      _jobDiagService = _app.GetService<IJobDiagnosticsService>(); 
     }
 
     [TestMethod]
@@ -118,7 +118,7 @@ namespace Vita.UnitTests.Extended {
       var dataId = new Guid("79C01818-0E1E-4CA1-8D8A-B6E8E6A6897F");
       var data = "Some Job Data";
       var threadType = JobThreadType.Background; // try changing it to pool, just for experiment 
-      jobRun = JobHelper.ExecuteWithRetriesOnSaveChanges(session, "3a: Sample on-save job, no failures",
+      jobRun = JobHelper.ScheduleJobRunOnSaveChanges(session, "3a: Sample on-save job, no failures",
                                      (ctx) => JobMethod(ctx, 0, "Sample string arg", listArg), dataId, data, threadType);
       session.SaveChanges();
       Thread.Sleep(100); //make sure job finished
@@ -128,7 +128,7 @@ namespace Vita.UnitTests.Extended {
       Assert.AreEqual(JobRunStatus.Completed, jobRun.Status, "Expected Completed status.");
 
       // 3.b Job executed on SaveChanges, executed with initial failures ------------------------------------
-      jobRun = JobHelper.ExecuteWithRetriesOnSaveChanges(session, "3b: Sample on-save job, 3 failures",
+      jobRun = JobHelper.ScheduleJobRunOnSaveChanges(session, "3b: Sample on-save job, 3 failures",
                         (ctx) => JobMethod(ctx, 3, "Sample string arg", listArg), dataId, data, threadType);
       session.SaveChanges();
       Thread.Sleep(100); //make sure job finished (with error)
@@ -180,15 +180,14 @@ namespace Vita.UnitTests.Extended {
     public void TestJobExecution_ScheduledJobs() {
       try {
         _timersControl.EnableAutoFire(false);
-       // for(int i = 0; i < 10; i++)
-          TestScheduledJobs(0);
+        TestScheduledJobs();
       } finally {
         _timersControl.EnableAutoFire(true);
         ResetTimeOffset();
       }
     }
 
-    private void TestScheduledJobs(int runNumber = 0) {
+    private void TestScheduledJobs() {
       // Set explicitly the default RetryPolicy
       var jobExecConfig = _app.GetConfig<JobModuleSettings>();
       jobExecConfig.DefaultRetryPolicy = new RetryPolicy(new[] { 2, 2, 2, 2, 2, 2 }); //repeat 6 times with 2 minute intervals
@@ -208,7 +207,7 @@ namespace Vita.UnitTests.Extended {
       IJobRun jobRun;
 
       // 1. Create and run job at certain time
-      jobRun = JobHelper.ExecuteWithRetriesOn(session, "4. Scheduled Job 4", 
+      jobRun = JobHelper.ScheduleJobRunOn(session, "4. Scheduled Job 4", 
              (jobCtx) => ScheduledJob(jobCtx, 0, "123", 5), halfHourFwd, threadType: jobThreadType);
       session.SaveChanges();
       _callCount = 0; 
@@ -221,7 +220,7 @@ namespace Vita.UnitTests.Extended {
       AssertCallCount(1, "Expected callCount 1 after 31 minutes");
 
       // 2. Another approach - create job entity, and then schedule it later, to run at certain time
-      var ScheduledJobName2 = "5. Scheduled Job #" + runNumber;
+      var ScheduledJobName2 = "5. Scheduled Job";
       job = JobHelper.CreateJob(session, ScheduledJobName2, (jobCtx) => ScheduledJob(jobCtx, 0, "abc", 10), threadType: jobThreadType);
 
       // 2.a. Now set the job to run at certain time. For each invocation we can provide some custom data; 
@@ -260,7 +259,7 @@ namespace Vita.UnitTests.Extended {
       // 3. Let's schedule a job with initial failures; start time 10 minutes forward
       SetTime0();
       _callCount = 0;
-      jobRun = JobHelper.ExecuteWithRetriesOn(session, "6. Scheduled Job, 2 fails", 
+      jobRun = JobHelper.ScheduleJobRunOn(session, "6. Scheduled Job, 2 fails", 
            (jobCtx) => ScheduledJob(jobCtx, 2, "456", 5), utcNow.AddMinutes(10), threadType: jobThreadType);
       job = jobRun.Job;
       session.SaveChanges();
@@ -287,7 +286,7 @@ namespace Vita.UnitTests.Extended {
       SetTime0();
       _callCount = 0; 
       job = JobHelper.CreateJob(session, "7. Long running job", (ctx) => LongRunningJobMethod(ctx, "xyz", 42), JobThreadType.Background);
-      jobRun = job.StartJobOnSaveChanges();
+      jobRun = job.ScheduleJobRunOnSaveChanges();
       session.SaveChanges();
       Thread.Sleep(50); 
       // Job must be started 
@@ -397,7 +396,7 @@ namespace Vita.UnitTests.Extended {
     // Utilities ==========================================================================================================
 
     static int _callCount;
-    // Helper method, to be able to stop on invalid call count
+    // Helper method, to be able to stop on invalid call count in debugging
     private static void AssertCallCount(int value, string message) {
       if(_callCount == value)
         return;
@@ -440,17 +439,23 @@ namespace Vita.UnitTests.Extended {
       var offs = targetTime.Subtract(utcNow); 
       _app.TimeService.SetCurrentOffset(offs);
       _timersControl.FireAll();
-      while(!JobExecutionModule.PendingCountIsZero())
-        Thread.Yield();
-      if(!waitForJobFinish)
-        return; 
-      while(true) {
-        var count = _jobInfoService.GetRunningJobs().Count;
-        if(count == 0)
-          return;
-        Thread.Yield(); 
-      }
+      // Use job diagnostic service to wait for 'starting' jobs to actually start. Or to complete running
+      if(waitForJobFinish)
+        _jobDiagService.WaitAllCompleted();
+      else
+        _jobDiagService.WaitStarting(); 
     }
 
+    /* SQL to view job runs in the database
+      
+SELECT TOP 1000 
+   j."Name", jr."RunType", jr."Status", jr."AttemptNumber", jr."StartOn", jr."StartedOn", jr."EndedOn",
+   jr."Progress", jr."ProgressMessage", jr."CreatedOn", jr."UserId",jr."DataId", jr."Data", 
+   jr."Log", jr."HostName", jr."Id" 
+FROM "books"."JobRun" jr 
+     INNER JOIN "books"."Job" j ON jr.Job_id = j.Id 
+ORDER BY j."Name", jr.AttemptNumber;
+
+    */
   }//class
 }//ns

@@ -47,23 +47,6 @@ namespace Vita.Samples.BookStore.SampleData {
       session.SaveChanges(); 
     }
 
-    // Creates system calendar and schedules regular job to restock the inventory
-    public static void CreateScheduledJobs(EntityApp app) {
-      var session = app.OpenSystemSession(); 
-      // find existing or create new scheduled process
-      var restockJob = session.EntitySet<IJob>()
-          .Where(j => j.Name == BooksModule.EventCodeRestock).FirstOrDefault();
-      if(restockJob == null) {
-        var bkModule = app.GetModule<BooksModule>(); 
-        restockJob = JobHelper.CreateJob(session, BooksModule.EventCodeRestock, (jobCtx) => bkModule.RestockingJobMethod(jobCtx));
-        //In real life would happen like once a day; here we set it to 5 minutes to observe how events are fired 
-        // while we browse the sample UI app.
-        //  You can see the events appearing in the database in the EventOccurrence table, with ExecutionNotes 
-        var sched = JobHelper.CreateJobSchedule(restockJob, "Restock schedule", "*/5 * * * *");
-      }
-      session.SaveChanges();
-    }
-
     public static void CreateSampleBooks(EntityApp app) {
       //Create identity for sample data generator; this results in SampleDataGenerator showing up in UserSession/UserTransaction tables
       // Books and coupons will reference these transactions as 'CreatedIn'

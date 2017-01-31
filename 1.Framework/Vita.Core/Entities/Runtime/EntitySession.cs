@@ -625,7 +625,8 @@ namespace Vita.Entities.Runtime {
       // Checking non-nullable fields; note that identity field for new records is initialized with temp value (in ValueBox)
       if(!nullable) {
         if(member.DataType == typeof(string)) {
-          if(string.IsNullOrWhiteSpace((string)value)) {
+          // Treat empty string as null
+          if(string.IsNullOrEmpty((string)value)) {
             record.AddValidationError(ClientFaultCodes.ValueMissing, ValidationMessages.ValueMissing, new object[] { member.MemberName },
               member.MemberName);
           }
@@ -633,7 +634,6 @@ namespace Vita.Entities.Runtime {
           if(value == null || value == DBNull.Value)
           record.AddValidationError(ClientFaultCodes.ValueMissing, ValidationMessages.ValueMissing, new object[] { member.MemberName }, 
             member.MemberName);
-
         }
       }
       //Check string size

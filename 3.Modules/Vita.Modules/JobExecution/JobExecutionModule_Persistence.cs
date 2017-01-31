@@ -16,7 +16,7 @@ namespace Vita.Modules.JobExecution {
       var session = jobContext.OperationContext.OpenSession();
       var job = NewJob(session, jobContext.JobName, jobContext.StartInfo, retryPolicy);
       job.Id = jobContext.JobId;
-      var jobRun = job.NewJobRun();
+      var jobRun = NewJobRun(job, JobRunType.Immediate);
       jobRun.Id = jobContext.JobRunId;
       jobContext.IsPersisted = true;
       jobRun.Status = status;
@@ -26,22 +26,46 @@ namespace Vita.Modules.JobExecution {
       session.SaveChanges();
     }
 
-
-
     private IJob NewJob(IEntitySession session, string name, JobStartInfo startInfo, RetryPolicy retryPolicy) {
       var job = session.NewEntity<IJob>();
       job.Name = name;
-      job.Flags = JobFlags.None;
       job.ThreadType = startInfo.ThreadType; 
       job.DeclaringType = startInfo.DeclaringType.Namespace + "." + startInfo.DeclaringType.Name;
       job.MethodName = startInfo.Method.Name;
       job.MethodParameterCount = startInfo.Arguments.Length;
       job.Arguments = SerializeArguments(startInfo.Arguments);
       job.RetryIntervals = retryPolicy.AsString;
-      job.HostName = _settings.HostName;
       return job;
     }
 
+    internal IJobRun NewJobRun(IJob job, JobRunType runType, DateTime? startOn = null, Guid? dataId = null, string data = null, string hostName = null) {
+      var session = EntityHelper.GetSession(job);
+      var timeService = session.Context.App.TimeService;
+      var jobRun = session.NewEntity<IJobRun>();
+      jobRun.Job = job;
+      jobRun.RunType = runType;
+      jobRun.StartOn = startOn == null ? timeService.UtcNow : startOn.Value;
+      jobRun.DataId = dataId;
+      jobRun.Data = data;
+      jobRun.AttemptNumber = 1;
+      jobRun.UserId = session.Context.User.UserId;
+      jobRun.HostName = hostName ?? _settings.HostName;
+      return jobRun;
+    }
+
+    internal IJobSchedule NewJobSchedule(IJob job, string name, string cronSpec, DateTime? activeFrom, DateTime? activeUntil, string hostName = null) {
+      Util.Check(job.Schedule == null, "Job '{0}' already has a schedule assigned, cannot create another one.", job.Name);
+      var session = EntityHelper.GetSession(job);
+      var timeService = session.Context.App.TimeService;
+      var sched = session.NewEntity<IJobSchedule>();
+      sched.Job = job;
+      sched.Name = name;
+      sched.CronSpec = cronSpec;
+      sched.ActiveFrom = activeFrom == null ? timeService.UtcNow : activeFrom.Value;
+      sched.ActiveUntil = activeUntil;
+      sched.HostName = hostName ?? _settings.HostName; 
+      return sched;
+    }
 
     private void UpdateFinishedJobRun(JobRunContext jobContext, Exception exception = null) {
       try {
@@ -76,23 +100,34 @@ namespace Vita.Modules.JobExecution {
     private void UpdateFailedJobRun(IEntitySession session, IJobRun jobRun, JobRunContext jobContext, Exception exception) {
       var utcNow = session.Context.App.TimeService.UtcNow;
       jobRun.EndedOn = utcNow;
-      // current run failed; if we have no more retries, mark as error
+      // current run failed; mark as error
       jobRun.Status = jobContext.Status = JobRunStatus.Error;
-      // get wait time for next attempt
-      var waitMinutes = JobUtil.GetWaitInterval(jobRun.Job.RetryIntervals, jobRun.AttemptNumber + 1);
-      var hasRetries = waitMinutes > 0; 
-      if(hasRetries) {
-        // create job run for retry
-        var nextTry = CreateRetryRun(jobRun, waitMinutes);
+      string customNote = null; 
+      // if exception is soft exc (validation failure) - do not retry
+      bool isOpAbort = exception is OperationAbortException;
+      if(isOpAbort)
+        //This will apear in log
+        customNote = "Attempt resulted in OperationAbort exception, no retries are scheduled.";
+      var hasRetries = !isOpAbort; 
+      if (hasRetries) {
+        // get wait time for next attempt
+        var waitMinutes = GetWaitInterval(jobRun.Job.RetryIntervals, jobRun.AttemptNumber + 1);
+        hasRetries &= waitMinutes > 0;
+        if (hasRetries) {
+          // create job run for retry
+          var nextTry = CreateRetryRun(jobRun, waitMinutes);
+        }
       }
-      ReportJobRunFailure(jobRun, exception, hasRetries);
+      ReportJobRunFailure(jobRun, exception, hasRetries, customNote);
     }
 
-    private void ReportJobRunFailure(IJobRun jobRun, Exception exception, bool hasRetries) {
+    private void ReportJobRunFailure(IJobRun jobRun, Exception exception, bool hasRetries, string customNote) {
       var session = EntityHelper.GetSession(jobRun);
       var errHeader = string.Format("=========================== Error {0} ======================================"
              + Environment.NewLine, App.TimeService.UtcNow);
       var errMsg = errHeader + exception.ToLogString();
+      if(!string.IsNullOrEmpty(customNote))
+        errMsg += Environment.NewLine + customNote;
       // If it is not final run, log it as an incident
       var job = jobRun.Job;
       if(hasRetries && _incidentLog != null)
@@ -107,13 +142,40 @@ namespace Vita.Modules.JobExecution {
       var session = EntityHelper.GetSession(jobRun);
       var baseTime = jobRun.EndedOn ?? jobRun.StartedOn ?? App.TimeService.UtcNow;
       var retryOn = baseTime.AddMinutes(waitMinutes); 
-      var retryRun = jobRun.Job.NewJobRun(retryOn);
+      var retryRun = NewJobRun(jobRun.Job, JobRunType.Retry, retryOn, jobRun.DataId, jobRun.Data, jobRun.HostName);
       retryRun.AttemptNumber = jobRun.AttemptNumber + 1;
       retryRun.UserId = jobRun.UserId;
+      retryRun.Status = JobRunStatus.Pending; 
       return retryRun; 
     }
 
-
+    private void OnJobScheduleSaving(IJobSchedule sched) {
+      var session = EntityHelper.GetSession(sched);
+      var job = sched.Job;
+      var utcNow = session.Context.App.TimeService.UtcNow;
+      var nextRunId = sched.NextRunId;
+      IJobRun nextRun = (nextRunId == null) ? null : session.GetEntity<IJobRun>(nextRunId.Value);
+      switch(sched.Status) {
+        case JobScheduleStatus.Stopped:
+          // if there is a pending run in the future, kill it
+          if(nextRun != null && nextRun.Status == JobRunStatus.Pending && nextRun.StartOn > utcNow.AddMinutes(1))
+            nextRun.Status = JobRunStatus.Killed;
+          break;
+        case JobScheduleStatus.Active:
+          // Create or adjust JobRun entity for next run
+          var nextStartOn = sched.GetNextStartAfter(utcNow);
+          if(nextStartOn != null) {
+            if(nextRun == null || nextRun.Status != JobRunStatus.Pending) {
+              nextRun = NewJobRun(job, JobRunType.Schedule, nextStartOn, hostName: sched.HostName);
+              sched.NextRunId = nextRun.Id;
+            } else
+              nextRun.StartOn = nextStartOn.Value;
+          } else
+            //nextSTartOn == null
+            sched.NextRunId = null;
+          break;
+      }//switch
+    }//method
 
   }
 }

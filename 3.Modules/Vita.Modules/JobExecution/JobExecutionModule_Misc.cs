@@ -7,6 +7,7 @@ using System.Linq.Expressions;
 using System.Text;
 using System.Threading.Tasks;
 using Vita.Common;
+using Vita.Entities;
 
 namespace Vita.Modules.JobExecution {
   public partial class JobExecutionModule {
@@ -113,16 +114,32 @@ namespace Vita.Modules.JobExecution {
       return name; 
     }
 
+    private int GetWaitInterval(string intervals, int attemptNumber) {
+      Util.Check(attemptNumber >= 2, "AttemptNumber may not be less than 2, cannot retrieve Wait interval.");
+      if(string.IsNullOrEmpty(intervals))
+        return -1;
+      // Attempt number is 1-based; so for attempt 2 the wait time will be the first in the list - 0
+      var index = attemptNumber - 2;
+      var arr = intervals.Split(',');
+      if(index >= arr.Length)
+        return -1;
+      int result;
+      if(int.TryParse(arr[index], out result))
+        return result;
+      return -1;
+    }
+
+    internal static Exception GetInnerMostExc(Exception ex) {
+      if(ex == null)
+        return null;
+      var aggrEx = ex as AggregateException;
+      if(aggrEx == null)
+        return ex;
+      return aggrEx.Flatten().InnerExceptions[0];
+    }
+
+
+
   }//class
 
-  /* SQL to look at JobRun/Job tables: 
-    
-SELECT TOP 1000 
-   j."Name", jr."Status", jr."AttemptNumber", jr."StartOn", jr."StartedOn", jr."EndedOn",
-   jr."Progress", jr."ProgressMessage", jr."CreatedOn", jr."UserId",jr."DataId", jr."Data", jr."Log"
-FROM "books"."JobRun" jr 
-     INNER JOIN "books"."Job" j ON jr.Job_id = j.Id 
-ORDER BY j."Name", jr.AttemptNumber;
-
- */
 }

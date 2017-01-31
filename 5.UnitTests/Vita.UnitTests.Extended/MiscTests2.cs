@@ -22,6 +22,7 @@ namespace Vita.UnitTests.Extended {
       var app = Startup.BooksApp;
       var session = app.OpenSession();
       session.EnableCache(false);
+      var utcNow = app.TimeService.UtcNow; 
 
       // bug: SQLite does not format properly Datetime parameters in LINQ
       var bk1 = session.EntitySet<IBook>().First(); //get random book 
@@ -30,8 +31,10 @@ namespace Vita.UnitTests.Extended {
       var createdOn2 = bk1.CreatedOn.AddSeconds(1);
       var bk2 = session.EntitySet<IBook>()
         .Where(b => b.Id == bkId && b.CreatedOn > createdOn1 && b.CreatedOn < createdOn2)
+        .Where(b => b.CreatedOn > new DateTime(2017, 1, 1)) //this results in constant (quoted string) in SQL
         .FirstOrDefault();
-      var cmd = session.GetLastCommand(); 
+      var cmd = session.GetLastCommand();
+      var cmdStr = cmd.ToLogString(); 
       //Obviously it should bring the same book 
       Assert.IsNotNull(bk2, "Expected book");
       Assert.IsTrue(bk2 == bk1, "Expected the same book");

@@ -23,6 +23,7 @@ namespace Vita.Modules.JobExecution {
     /// <summary>A notification event, fired when jobs are started, completed or failed. </summary>
     event EventHandler<JobNotificationEventArgs> Notify;
 
+
   }
 
   /// <summary>Job notification event arguments. </summary>
@@ -32,7 +33,7 @@ namespace Vita.Modules.JobExecution {
     public Exception Exception;
   }
 
-
+  /// <summary>Job execution service, provides methods to create and execute jobs.</summary>
   public interface IJobExecutionService {
     Task<JobRunContext> ExecuteWithRetriesAsync(OperationContext context, string jobName, Expression<Func<JobRunContext, Task>> func, RetryPolicy retryPolicy = null);
     JobRunContext ExecuteWithRetriesNoWait(OperationContext context, string jobName, Expression<Action<JobRunContext>> action, RetryPolicy retryPolicy = null);
@@ -40,8 +41,21 @@ namespace Vita.Modules.JobExecution {
     IJob CreateJob(IEntitySession session, string name, LambdaExpression jobMethod,
            JobThreadType threadType = JobThreadType.Pool, RetryPolicy retryPolicy = null);
     IJobRun StartJobOnSaveChanges(IJob job, Guid? dataId = null, string data = null);
-    IJobRun ScheduleJobRunOn(IJob job, DateTime runOnUtc, Guid? dataId = null, string data = null);
-    IJobSchedule CreateJobSchedule(IJob job, string name, string cronSpec, DateTime? activeFrom, DateTime? activeUntil);
+    IJobRun ScheduleJobRunOn(IJob job, DateTime runOnUtc, Guid? dataId = null, string data = null, string hostName = null);
+    IJobSchedule CreateJobSchedule(IJob job, string name, string cronSpec, DateTime? activeFrom, DateTime? activeUntil, string hostName = null);
+
+    int StartInterruptedJobsAfterAfterRestart(OperationContext context);
   }
+
+  /// <summary>Diagnostics service, primary use is in testing. </summary>
+  public interface IJobDiagnosticsService {
+    /// <summary>Waits for all currently starting jobs to actually start. 
+    /// Use it to wait for all job runs due to start to actually start after timer event had been fired. </summary>
+    void WaitStarting();
+
+    /// <summary>Waits until all running jobs are completed. </summary>
+    void WaitAllCompleted();
+  }
+
 
 }

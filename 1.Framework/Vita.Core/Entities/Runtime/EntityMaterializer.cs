@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Data;
+using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
 using System.Text;
@@ -15,6 +16,7 @@ namespace Vita.Entities.Runtime {
   // Encodes information for creating entities from data records; used in CRUD select statements and in LINQ queries
   public class EntityMaterializer {
     #region OutColumMapping nested class
+    [DebuggerDisplay("{DbColumn},#{ReaderColumnIndex}")]
     public class OutColumnMapping {
       public DbColumnInfo DbColumn;
       public int ReaderColumnIndex;
@@ -70,7 +72,7 @@ namespace Vita.Entities.Runtime {
           var conv = colMap.DbColumn.TypeInfo.ColumnToPropertyConverter;
           if(dbValue != null && conv != null)
             dbValue = conv(dbValue);
-          entRec.ValuesOriginal[colMap.DbColumn.Member.ValueIndex] = dbValue;
+          entRec.SetValue(colMap.DbColumn.Member, dbValue);
         } catch (Exception ex) {
           ex.AddValue("DataRecord", dataRecord);
           ex.AddValue("ColumnName", colMap.DbColumn.ColumnName);

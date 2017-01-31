@@ -33,7 +33,7 @@ namespace Vita.Modules.JobExecution {
     public readonly DateTime StartedOn;
     public readonly string JobName;
     public readonly Guid JobId;
-    public readonly JobFlags Flags;
+    public readonly JobRunType RunType;
     public readonly Guid JobRunId;
     public readonly int AttemptNumber; 
     public JobRunStatus Status { get; internal set; }
@@ -59,11 +59,11 @@ namespace Vita.Modules.JobExecution {
       OperationContext = new OperationContext(app, user);
       StartedOn = app.TimeService.UtcNow; 
       JobName = jobRun.Job.Name;
-      JobRunId = jobRun.Id; 
+      JobRunId = jobRun.Id;
+      RunType = jobRun.RunType;
       AttemptNumber = jobRun.AttemptNumber; 
       var job = jobRun.Job; 
       JobId = job.Id; 
-      Flags = job.Flags; 
       _progress = jobRun.Progress;
       IsPersisted = true;
       DataId = jobRun.DataId;
@@ -71,14 +71,14 @@ namespace Vita.Modules.JobExecution {
     }
 
     // Used for creating 'light' jobs
-    internal JobRunContext(OperationContext context, string jobName, JobStartInfo startInfo, JobFlags flags) {
+    internal JobRunContext(OperationContext context, string jobName, JobStartInfo startInfo, JobRunType runType) {
       OperationContext = context;
       JobName = jobName ?? "Unnamed/" + JobRunId;
       StartInfo = startInfo;
       StartedOn = context.App.TimeService.UtcNow; 
       JobRunId = Guid.NewGuid();
       JobId = Guid.NewGuid();
-      Flags = flags;
+      RunType = runType;
       _progress = 0;
       Status = JobRunStatus.Executing;
       IsPersisted = false;

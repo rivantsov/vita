@@ -12,7 +12,7 @@ namespace Vita.UnitTests.Extented {
   public class JobExecutionTests_Cron {
 
     [TestMethod]
-    public void TestCronEngine() {
+    public void TestJobExecution_CronEngine() {
       DateTime nextDt;
 
       //Day of month tests

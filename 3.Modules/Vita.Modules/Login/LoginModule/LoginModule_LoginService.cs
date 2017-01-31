@@ -38,37 +38,37 @@ namespace Vita.Modules.Login {
         return new LoginResult() { Status = LoginAttemptStatus.Failed };
       }
       var device = login.GetDevice(deviceToken);
-      try {
-        var status = CheckCanLoginImpl(login, device);
-        //Check non-success statuses
-        switch(status) {
-          case LoginAttemptStatus.Success:
-            PostLoginActions actions = GetPostLoginActions(login);
-            context.User = login.CreateUserInfo();
-            if(_sessionService != null)
-              AttachUserSession(context, login, device, expirationType);
-            App.UserLoggedIn(context);
-            var lastLogin = login.LastLoggedInOn; //save prev value
-            UpdateLastLoggedInOn(login);
-            OnLoginEvent(context, LoginEventType.Login, login, userName: userName);
-            return new LoginResult() { Status = status, Login = login, Actions = actions, User = context.User,
-              SessionToken = context.UserSession?.Token, RefreshToken = context.UserSession?.RefreshToken, LastLoggedInOn = lastLogin};
-          case LoginAttemptStatus.PendingMultifactor:
-            OnLoginEvent(context, LoginEventType.LoginPendingMultiFactor, login, userName: userName);
-            return new LoginResult() { Status = status, Login = login };
-          case LoginAttemptStatus.AccountInactive:
-            OnLoginEvent(context, LoginEventType.LoginFailed, login, "Login failed due to inactive status", userName: userName);
-            return new LoginResult() { Status = status, Login = login };
-          case LoginAttemptStatus.Failed:
-          default:
-            OnLoginEvent(context, LoginEventType.LoginFailed, login, userName: userName);
-            return new LoginResult() { Status = status };
-        }
-      } finally {
-        session.SaveChanges();
+      var status = CheckCanLoginImpl(login, device);
+      //Check non-success statuses
+      switch(status) {
+        case LoginAttemptStatus.Success:
+          PostLoginActions actions = GetPostLoginActions(login);
+          context.User = login.CreateUserInfo();
+          if(_sessionService != null)
+            AttachUserSession(context, login, device, expirationType);
+          App.UserLoggedIn(context);
+          var lastLogin = login.LastLoggedInOn; //save prev value
+          login.LastLoggedInOn = App.TimeService.UtcNow; 
+          OnLoginEvent(context, LoginEventType.Login, login, userName: userName);
+          session.SaveChanges();
+          return new LoginResult() {
+            Status = status, Login = login, Actions = actions, User = context.User,
+            SessionToken = context.UserSession?.Token, RefreshToken = context.UserSession?.RefreshToken, LastLoggedInOn = lastLogin
+          };
+        case LoginAttemptStatus.PendingMultifactor:
+          OnLoginEvent(context, LoginEventType.LoginPendingMultiFactor, login, userName: userName);
+          return new LoginResult() { Status = status, Login = login };
+        case LoginAttemptStatus.AccountInactive:
+          OnLoginEvent(context, LoginEventType.LoginFailed, login, "Login failed due to inactive status", userName: userName);
+          return new LoginResult() { Status = status, Login = login };
+        case LoginAttemptStatus.Failed:
+        default:
+          OnLoginEvent(context, LoginEventType.LoginFailed, login, userName: userName);
+          return new LoginResult() { Status = status };
       }
     }//method
 
+    // Used by OAuth
     public LoginResult LoginUser(OperationContext context, Guid userId, UserSessionExpirationType expirationType = UserSessionExpirationType.Sliding) {
       var session = context.OpenSystemSession();
       var login = session.EntitySet<ILogin>().Where(lg => lg.UserId == userId).FirstOrDefault();
@@ -79,8 +79,9 @@ namespace Vita.Modules.Login {
         AttachUserSession(context, login, null, expirationType);
       App.UserLoggedIn(context);
       var lastLogin = login.LastLoggedInOn; //save prev value
-      UpdateLastLoggedInOn(login);
+      login.LastLoggedInOn = App.TimeService.UtcNow;
       OnLoginEvent(context, LoginEventType.Login, login, userName: login.UserName);
+      session.SaveChanges(); 
       var sessionToken = context.UserSession == null ? null : context.UserSession.Token;
       return new LoginResult() { Status = LoginAttemptStatus.Success, Login = login, User = context.User, SessionToken = sessionToken, LastLoggedInOn = lastLogin };
     }
@@ -90,7 +91,9 @@ namespace Vita.Modules.Login {
       PostLoginActions actions = GetPostLoginActions(login);
       context.User = login.CreateUserInfo();
       var lastLogin = login.LastLoggedInOn;
-      UpdateLastLoggedInOn(login);
+      login.LastLoggedInOn = App.TimeService.UtcNow;
+      var session = EntityHelper.GetSession(login);
+      session.SaveChanges(); 
       AttachUserSession(context, login, null, expirationType);
       OnLoginEvent(context, LoginEventType.MultiFactorLoginCompleted, login);
       App.UserLoggedIn(context);

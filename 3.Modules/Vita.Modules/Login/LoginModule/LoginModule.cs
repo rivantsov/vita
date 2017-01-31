@@ -108,13 +108,6 @@ namespace Vita.Modules.Login {
         LoginEvent(this, args);
     }
 
-    protected void UpdateLastLoggedInOn(ILogin login) {
-      var session = EntityHelper.GetSession(login);
-      var now = App.TimeService.UtcNow;
-      var query = session.EntitySet<ILogin>().Where(lg => lg.Id == login.Id).Select(lg => new { LastLoggedInOn = now });
-      query.ExecuteUpdate<ILogin>();
-    }
-
     private bool VerifyPassword(ILogin login, string password) {
       var saltBytes = login.Id.ToByteArray();
       var ok = _settings.PasswordHasher.VerifyPassword(password, saltBytes, login.HashWorkFactor, login.PasswordHash);

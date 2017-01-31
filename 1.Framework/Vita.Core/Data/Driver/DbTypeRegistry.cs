@@ -176,7 +176,8 @@ namespace Vita.Data.Driver {
 
     public virtual VendorDbTypeInfo FindVendorDbTypeInfo(DbType dbType, Type clrType, bool isMemo) {
       var nonMemoOk = !isMemo;
-      var match = Types.FirstOrDefault(td => td.DbType == dbType && (td.HandlesMemo || nonMemoOk) && td.ClrTypes.Contains(clrType));
+      var match = Types.FirstOrDefault(vti => vti.DbType == dbType && 
+           (vti.HandlesMemo || nonMemoOk) && vti.ClrTypes.Contains(clrType));
       return match;
     }    
 

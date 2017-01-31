@@ -60,6 +60,7 @@
     <Compile Include="Common\RandomHelper.cs" />
     <Compile Include="Common\StringHelper.cs" />
     <Compile Include="Common\AsyncHelper.cs" />
+    <Compile Include="Common\ThreadSafeCounter.cs" />
     <Compile Include="Data\DataAccessService\DataSourceEvents.cs" />
     <Compile Include="Data\Database\DbBatchCommandSetBuilder.cs" />
     <Compile Include="Data\Driver\SqlSourceHasher.cs" />

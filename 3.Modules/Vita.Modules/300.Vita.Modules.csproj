@@ -73,9 +73,10 @@
     <Compile Include="JobExecution\JobExecutionModule_ExecService.cs" />
     <Compile Include="JobExecution\JobExecutionModule_Misc.cs" />
     <Compile Include="JobExecution\JobExecutionModule_Persistence.cs" />
+    <Compile Include="JobExecution\JobExecutionModule_Recovery.cs" />
     <Compile Include="JobExecution\JobExecutionModule_RunDbJobs.cs" />
     <Compile Include="JobExecution\JobModuleSettings.cs" />
-    <Compile Include="JobExecution\JobUtil.cs" />
+    <Compile Include="JobExecution\JobExtensions.cs" />
     <Compile Include="JobExecution\IJobServices.cs" />
     <Compile Include="JobExecution\JobExecutionModule.cs" />
     <Compile Include="JobExecution\_JobHelper.cs" />
@@ -226,7 +227,7 @@
     <None Include="EncryptedData\_about_encr_data.txt" />
     <Content Include="JobExecution\Cron\AboutCron.txt" />
     <Content Include="DataHistory\about_data_history.txt" />
-    <Content Include="JobExecution\about_job_engine.txt" />
+    <Content Include="JobExecution\AboutJobEngine.txt" />
     <Content Include="Login\PasswordHashing\BCrypt.Net\LICENSE_bcrypt.txt" />
     <Content Include="Logging\_about_logging.txt" />
     <EmbeddedResource Include="Login\DefaultSecretQuestions.txt" />

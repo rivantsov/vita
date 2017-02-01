@@ -61,7 +61,12 @@ namespace Vita.Modules.OAuthClient {
     }
 
     public IOAuthClientFlow GetOAuthFlow(IEntitySession session, Guid flowId) {
-      var flow = session.GetEntity<IOAuthClientFlow>(flowId);
+      // Limit to logged in user, to avoid authorizatio exception
+      var query = session.EntitySet<IOAuthClientFlow>().Where(f => f.Id == flowId);
+      var user = session.Context.User;
+      if(user.Kind == UserKind.AuthenticatedUser)
+        query = query.Where(f => f.UserId == user.UserId);
+      var flow = query.FirstOrDefault(); 
       if(flow == null)
         return null;
       if (flow.UserId != null) {

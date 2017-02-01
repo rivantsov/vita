@@ -102,7 +102,7 @@ namespace Vita.Samples.OAuthDemoApp {
       txtLog.Text += text + Environment.NewLine; 
     }
     private IEntitySession OpenSession() {
-      return _app.OpenSession();
+      return _app.OpenSession(); 
     }
     private IOAuthRemoteServer GetCurrentServer(IEntitySession session) {
       return session.GetOAuthServer((string)cboServers.SelectedItem);
@@ -115,14 +115,15 @@ namespace Vita.Samples.OAuthDemoApp {
       WaitingRedirect
     }
     ProcessStatus _processStatus;
+    // Current user ID - just random Guid
+    Guid _userId = Guid.NewGuid();
 
     private async void RunOAuthProcess() {
       var session = OpenSession();
       var server = GetCurrentServer(session);
       Log("=== Starting OAuth2 flow, server: {0}", server.Name);
       var act = session.GetOAuthAccount(server.Name);
-      var scopes = server.Name == "Fitbit" ? "sleep" : server.Scopes; //-- experiment
-      var flow = act.BeginOAuthFlow(null, scopes); // server.Scopes);
+      var flow = _service.BeginOAuthFlow(session, _userId, server.Name, server.Scopes); 
       session.SaveChanges();
       _processStatus = ProcessStatus.WaitingRedirect;
       // Open browser page and direct it to authorization URL for the server

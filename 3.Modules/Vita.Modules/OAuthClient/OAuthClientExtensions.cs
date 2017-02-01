@@ -124,18 +124,19 @@ namespace Vita.Modules.OAuthClient {
       var session = EntityHelper.GetSession(account);
       var stt = session.GetOAuthSettings(); 
       var flow = account.NewOAuthFlow();
-      CheckRedirectUrl(stt, session.Context, account.Server.Options); 
+      if(string.IsNullOrEmpty(stt.RedirectUrl))
+        AutoAssignRedirectUrl(stt, session.Context);
       flow.UserId = userId;
       flow.Scopes = scopes ?? account.Server.Scopes; //all scopes
-      flow.RedirectUrl = stt.RedirectUrl;
+      flow.RedirectUrl = AdjustRedirectUrl(stt.RedirectUrl, account.Server.Options);
       var clientId = account.ClientIdentifier;
       flow.AuthorizationUrl = account.Server.AuthorizationUrl + 
-            StringHelper.FormatUri(OAuthClientModule.AuthorizationUrlQuery, clientId, stt.RedirectUrl, flow.Scopes, flow.Id.ToString());
+            StringHelper.FormatUri(OAuthClientModule.AuthorizationUrlQuery, clientId, flow.RedirectUrl, flow.Scopes, flow.Id.ToString());
       return flow;
     }
 
     // If RedirectURL is missing, derive it automatically - convenient for testing
-    public static void CheckRedirectUrl(OAuthClientSettings settings, OperationContext context, OAuthServerOptions serverOptions) {
+    public static void AutoAssignRedirectUrl(OAuthClientSettings settings, OperationContext context) {
       if(!string.IsNullOrWhiteSpace(settings.RedirectUrl))
         return;
       var webCtx = context.WebContext;
@@ -149,12 +150,15 @@ namespace Vita.Modules.OAuthClient {
       if (needPort)
         uriComps |= UriComponents.Port;
       var baseAddress = uri.GetComponents(uriComps, UriFormat.Unescaped);
-      //Use either local IP or localhost if it is local server
-      if(serverOptions.IsSet(OAuthServerOptions.TokenReplaceLocalIpWithLocalHost))
-        baseAddress = baseAddress.Replace("127.0.0.1", "localhost");
-      else
-        baseAddress = baseAddress.Replace("localhost", "127.0.0.1");
       settings.RedirectUrl = baseAddress + "/api/oauth_redirect";
+    }
+
+    // Replace local IP with localhost if the server does not accept IP
+    private static string AdjustRedirectUrl(string url, OAuthServerOptions serverOptions) {
+      if(serverOptions.IsSet(OAuthServerOptions.TokenReplaceLocalIpWithLocalHost))
+        return url.Replace("127.0.0.1", "localhost");
+      else
+        return url;
     }
 
     private static OAuthClientSettings GetOAuthSettings(this IEntitySession session) {

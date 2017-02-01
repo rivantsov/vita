@@ -73,15 +73,10 @@ namespace Vita.Modules.OAuthClient.Api {
     public OAuthFlow BeginOAuthFlow(string serverName, [FromUrl] ScopesParam scopesParam) {
       var userId = Context.User.UserId;
       var session = OpenSession();
-      using(session.WithElevateRead()) {
-        var acct = session.GetOAuthAccount(serverName);
-        Context.ThrowIfNull(acct, ClientFaultCodes.ObjectNotFound, "serverName", "Account not registered for server {0}.", serverName);
-        var service = Context.App.GetService<IOAuthClientService>();
-        var scopes = string.IsNullOrWhiteSpace(scopesParam.Scopes)? acct.Server.Scopes : scopesParam.Scopes; //take all scopes
-        var flow = acct.BeginOAuthFlow(Context.User.UserId, scopes);
-        session.SaveChanges();
-        return flow.ToModel();
-      }
+      var service = Context.App.GetService<IOAuthClientService>();
+      var flow = service.BeginOAuthFlow(session, userId, serverName, scopesParam.Scopes);
+      session.SaveChanges();
+      return flow.ToModel(); 
     }
 
     /// <summary>Retrieves an authorization flow object representing an OAuth authorization process in progress. </summary>

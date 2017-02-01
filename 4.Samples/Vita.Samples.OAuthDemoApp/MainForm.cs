@@ -216,7 +216,7 @@ namespace Vita.Samples.OAuthDemoApp {
     }
 
     // receives the signal from Redirect API controller that redirect was fired
-    private Task OAuthClientService_Redirected(object source, RedirectEventArgs args) {
+    private Task OAuthClientService_Redirected(object source, OAuthEventArgs args) {
       if(_processStatus == ProcessStatus.WaitingRedirect)
         _processStatus = ProcessStatus.Executing;
       return null;

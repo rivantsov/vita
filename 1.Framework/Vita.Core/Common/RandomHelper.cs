@@ -89,9 +89,15 @@ namespace Vita.Common {
     private static char[] _safeAlpha = "ABCDEFGHJKMNPQRSTUVWXYZ23456789".ToCharArray();
 
 
-    public static string GenerateSafePin(int len = 10) {
+    public static string GenerateSafeRandomWord(int len = 10) {
       var rand = new Random();
       var pin = GetRandomString(rand, len, _safeAlpha);
+      return pin;
+    }
+
+    public static string GenerateRandomNumber(int len = 5) {
+      var rand = new Random();
+      var pin = GetRandomString(rand, len, _safeDigits);
       return pin;
     }
 

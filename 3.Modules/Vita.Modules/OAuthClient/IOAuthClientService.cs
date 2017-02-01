@@ -10,21 +10,24 @@ using Vita.Modules.WebClient;
 
 namespace Vita.Modules.OAuthClient {
 
-  public class RedirectEventArgs : EventArgs {
+  public class OAuthEventArgs : EventArgs {
     public readonly OperationContext Context; 
     public readonly Guid FlowId;
-    public RedirectEventArgs(OperationContext context, Guid requestId) {
+
+    public OAuthEventArgs(OperationContext context, Guid flowId) {
       Context = context; 
-      FlowId = requestId;
+      FlowId = flowId;
     }
   }
 
   public interface IOAuthClientService {
+    IOAuthClientFlow BeginOAuthFlow(IEntitySession session, Guid userId, string serverName, string scopes = null); 
     IOAuthClientFlow GetOAuthFlow(IEntitySession session, Guid flowId); 
     IOAuthAccessToken GetUserOAuthToken(IEntitySession session, Guid userId, string serverName, string accountName = null);
 
     Task OnRedirected(OperationContext context, string state, string authCode, string error);
-    event AsyncEvent<RedirectEventArgs> Redirected;
+    event AsyncEvent<OAuthEventArgs> Redirected;
+    event EventHandler<OAuthEventArgs> Authorized; 
     Task<Guid> RetrieveAccessTokenAsync(OperationContext context, Guid flowId);
     Task<bool> RefreshAccessTokenAsync(OperationContext context, Guid tokenId);
     Task RevokeAccessTokenAsync(OperationContext context, Guid tokenId);

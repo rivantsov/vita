@@ -196,15 +196,20 @@ namespace Vita.UnitTests.Web {
       Assert.AreEqual(ExtraFactorTypes.Email, emailFactor.Type, "Expected email");
       Assert.IsFalse(emailFactor.Confirmed, "Email should not be confirmed.");
       //Let's confirm it - send pin, read it from email and confirm it
-      client.ExecutePost<object, HttpStatusCode>(null, "api/mylogin/factors/{0}/pin", emailFactor.Id);
+      // The call returns processToken identifying email verificaiton process
+      var processTokenBox = client.ExecutePost<object, BoxedValue<string>>(null, "api/mylogin/factors/{0}/pin", emailFactor.Id);
       //let's do it twice - to make sure it works even if we have multiple pins sent
-      client.ExecutePost<object, HttpStatusCode>(null, "api/mylogin/factors/{0}/pin", emailFactor.Id);
+      processTokenBox = client.ExecutePost<object, BoxedValue<string>>(null, "api/mylogin/factors/{0}/pin", emailFactor.Id);
       var pinEmail = Startup.GetLastMessageTo(ferbEmail);
       Assert.IsNotNull(pinEmail, "Pin email not received.");
       var pin = pinEmail.GetString("Pin"); //get pin from email
       Assert.IsFalse(string.IsNullOrEmpty(pin), "Expected non-null pin");
       //submit pin
-      var pinOk = client.ExecutePut<object, bool>(null, "api/mylogin/factors/{0}/pin/{1}", emailFactor.Id, pin);
+      // method 1 - endpoint for logged in user, used when user copy/pastes pin on a page
+      // var pinOk = client.ExecutePut<object, bool>(null, "api/mylogin/factors/{0}/pin/{1}", emailFactor.Id, pin);
+      // method 2 - endpoint not requiring logged-in user; use it in a page activated from URL embedded in email: 
+      var pinOk = client.ExecutePut<object, bool>(null, "api/login/factors/verify-pin?processtoken={0}&&pin={1}",
+            processTokenBox.Value, pin);
       Assert.IsTrue(pinOk, "Pin submit failed.");
       //Now email should not be listed as incomplete factor
       loginInfo = client.ExecuteGet<LoginInfo>("api/mylogin");
@@ -269,7 +274,7 @@ namespace Vita.UnitTests.Web {
       //  He enters email in a text box, solves captcha and clicks Submit. The client code executes a request to start reset process
       //  "Magic" is a magic captcha value (it is set in login module settings) to bypass captcha check in unit tests.
       var request = new PasswordResetStartRequest() { Factor = ferbEmail, Captcha = "Magic" };
-      var processTokenBox = client.ExecutePost<PasswordResetStartRequest, BoxedValue<string>>(request, "api/passwordreset/start");
+      processTokenBox = client.ExecutePost<PasswordResetStartRequest, BoxedValue<string>>(request, "api/passwordreset/start");
       var processToken = processTokenBox.Value;
       Assert.IsFalse(string.IsNullOrWhiteSpace(processToken), "Expected process token.");
       // We do not disclose any details, even the fact that actual process started or not;

@@ -108,7 +108,7 @@
     <Compile Include="Email\EmailNotificationProvider.cs" />
     <Compile Include="OAuthClient\Api\OAuthLoginController.cs" />
     <Compile Include="OAuthClient\Api\OAuthController.cs" />
-    <Compile Include="OAuthClient\Api\_OAuthModels.cs" />
+    <Compile Include="OAuthClient\Api\OAuthModels.cs" />
     <Compile Include="OAuthClient\Api\OAuthRedirectController.cs" />
     <Compile Include="OAuthClient\IOAuthClientService.cs" />
     <Compile Include="OAuthClient\OpenIdConnect.cs" />
@@ -223,7 +223,7 @@
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="OAuthClient\_about_oauthclient.txt" />
+    <None Include="OAuthClient\About_oauthclient.txt" />
     <None Include="EncryptedData\_about_encr_data.txt" />
     <Content Include="JobExecution\Cron\AboutCron.txt" />
     <Content Include="DataHistory\about_data_history.txt" />

@@ -158,7 +158,7 @@ namespace Vita.Modules.Login.Api {
     /// <summary>Tells server to send the PIN to verify the extra factor.</summary>
     /// <param name="factorId">Factor ID.</param>
     [ApiPost, ApiRoute("factors/{factorId}/pin")]
-    public void SendPin(Guid factorId) {
+    public BoxedValue<string> SendPin(Guid factorId) {
       var login = GetCurrentLogin();
       var factor = login.ExtraFactors.FirstOrDefault(f => f.Id == factorId);
       Context.ThrowIfNull(factor, ClientFaultCodes.ObjectNotFound, "factor", "Factor not found, ID: {0}", factorId);
@@ -167,12 +167,18 @@ namespace Vita.Modules.Login.Api {
       var process = processService.StartProcess(login, LoginProcessType.FactorVerification, token);
       var pin = processService.GeneratePin(process, factor);
       processService.SendPin(process, factor);
+      return new BoxedValue<string>(process.Token);
     }
 
     /// <summary>Submits the PIN received by user (in email) to verify it. </summary>
     /// <param name="factorId">Factor ID.</param>
     /// <param name="pin">The PIN value.</param>
     /// <returns>True if PIN value matches; otherwise, false.</returns>
+    /// <remarks>This end point requires logged in user, so it can be used to verify the pin
+    /// entered by the user manually (copied from email). There is another endpoing 
+    /// (login/factors/verify-pin) that does not require logged-in user, so it can 
+    /// be used to automatically submit the pin by redirecting from the URL 
+    /// embedded in email. </remarks>
     [ApiPut, ApiRoute("factors/{factorid}/pin/{pin}")]
     public bool SubmitPin(Guid factorId, string pin) {
       Context.ThrowIfEmpty(pin, ClientFaultCodes.ValueMissing, "pin", "Pin value missing");

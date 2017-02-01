@@ -45,7 +45,20 @@ namespace Vita.Modules.OAuthClient {
     public const string OpenIdClaimsParameter = "claims={0}";
 
     #region IAuthClientService
-    public event AsyncEvent<RedirectEventArgs> Redirected;
+    public event AsyncEvent<OAuthEventArgs> Redirected;
+    public event EventHandler<OAuthEventArgs> Authorized;
+
+
+    public IOAuthClientFlow BeginOAuthFlow(IEntitySession session, Guid userId, string serverName, string scopes = null) {
+      using(session.WithElevateRead()) {
+        var acct = session.GetOAuthAccount(serverName);
+        session.Context.ThrowIfNull(acct, ClientFaultCodes.ObjectNotFound, "serverName", "Account not registered for server {0}.", serverName);
+        scopes = string.IsNullOrWhiteSpace(scopes) ? acct.Server.Scopes : scopes; //take all scopes
+        var flow = acct.BeginOAuthFlow(userId, scopes);
+        return flow;
+      }
+
+    }
 
     public IOAuthClientFlow GetOAuthFlow(IEntitySession session, Guid flowId) {
       var flow = session.GetEntity<IOAuthClientFlow>(flowId);
@@ -72,7 +85,7 @@ namespace Vita.Modules.OAuthClient {
       flow.Status = string.IsNullOrWhiteSpace(error) ? OAuthFlowStatus.Authorized : OAuthFlowStatus.Error;
       session.SaveChanges();
       if(Redirected != null) {
-        var args = new RedirectEventArgs(context, flow.Id);
+        var args = new OAuthEventArgs(context, flow.Id);
         await Redirected.RaiseAsync(this, args);
       }
     }
@@ -136,7 +149,8 @@ namespace Vita.Modules.OAuthClient {
         var idTkn = Settings.JsonDeserializer.Deserialize<OpenIdToken>(payload);
         accessToken.NewOpenIdToken(idTkn, payload);
       }
-      session.SaveChanges(); 
+      session.SaveChanges();
+      Authorized?.Invoke(this, new OAuthClient.OAuthEventArgs(context, flow.Id));
       return accessToken.Id;
     }
 

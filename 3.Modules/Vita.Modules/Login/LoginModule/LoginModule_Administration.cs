@@ -50,7 +50,7 @@ namespace Vita.Modules.Login {
 
     public string GenerateTempPassword() {
       if(_settings.Options.IsSet(LoginModuleOptions.GenerateSimpleTempPasswords))
-        return GenerateSimpleTempPassword();
+        return RandomHelper.GenerateSafeRandomWord(7);
       else
         return _settings.PasswordChecker.GenerateStrongPassword(); //will generate StrongPassword
     }
@@ -95,20 +95,6 @@ namespace Vita.Modules.Login {
       else
         login.Flags &= ~flag;
     }
-
-    public string GenerateSimpleTempPassword() {
-      var safeDigits = "23456789";
-      var safeLetters = "ABCDEFGHJKMNPQRSTUVWXYZ";
-      string pwd = string.Empty;
-      var rand = new Random();
-      for(int i = 0; i < 3; i++ )
-        pwd += safeLetters[rand.Next(safeLetters.Length)];
-      for(int i = 0; i < 4; i++)
-        pwd += safeDigits[rand.Next(safeDigits.Length)];
-      return pwd;
-    }
-
-
 
   }
 }

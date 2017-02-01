@@ -31,7 +31,7 @@ namespace Vita.UnitTests.Extended {
     }
 
     [TestMethod]
-    public void TestLogin() {
+    public void TestLoginAdvancedFeatures() {
       var password = Samples.BookStore.SampleData.SampleDataGenerator.DefaultPassword; 
       var app = Startup.BooksApp;
       var loginService = app.GetService<ILoginService>();

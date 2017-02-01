@@ -79,7 +79,7 @@ namespace Vita.Modules.Login.Api {
     /// <remarks>Login process is a server-side persistent object that tracks user progress through multi-step operations like password reset, multi-factor login, etc.</remarks>
     [ApiGet, ApiRoute("multifactor/process")]
     public LoginProcess GetMultiFactorProcess(string token) {
-      var process = GetActiveProcess(token, throwIfNotFound: false);
+      var process = GetMutiFactorProcess(token, throwIfNotFound: false);
       return process.ToModel();
     }
 
@@ -88,7 +88,7 @@ namespace Vita.Modules.Login.Api {
     /// Should contain process token and factor type (email, phone).</param>
     [ApiPost, ApiRoute("multifactor/pin/send")]
     public void SendPinForMultiFactor(SendPinRequest pinRequest) {
-      var process = GetActiveProcess(pinRequest.ProcessToken);
+      var process = GetMutiFactorProcess(pinRequest.ProcessToken);
       Context.ThrowIf(process.CurrentFactor != null, ClientFaultCodes.InvalidAction, "token", "Factor verification pending, the previous process step is not completed.");
       var pendingFactorTypes = process.PendingFactors;
       Context.ThrowIf(!pendingFactorTypes.IsSet(pinRequest.FactorType), ClientFaultCodes.InvalidValue, "factortype", "Factor type is not pending in login process");
@@ -103,7 +103,7 @@ namespace Vita.Modules.Login.Api {
     /// <returns>True if the pin is verified and is correct; otherwise, false.</returns>
     [ApiPut, ApiRoute("multifactor/pin/verify")]
     public bool VerifyPinForMultiFactor(VerifyPinRequest request) {
-      var process = GetActiveProcess(request.ProcessToken);
+      var process = GetMutiFactorProcess(request.ProcessToken);
       Context.ThrowIfNull(process, ClientFaultCodes.ObjectNotFound, "Process", "Process not found or expired.");
       Context.ThrowIfEmpty(request.Pin, ClientFaultCodes.ValueMissing, "Pin", "Pin value missing.");
       return _processService.SubmitPin(process, request.Pin);
@@ -116,7 +116,8 @@ namespace Vita.Modules.Login.Api {
     /// so PendingFactors property is empty.</remarks>
     [ApiPost, ApiRoute("multifactor/complete")]
     public LoginResponse CompleteMultiFactorLogin(MultifactorLoginRequest request) {
-      var process = GetActiveProcess(request.ProcessToken);
+      var process = GetMutiFactorProcess(request.ProcessToken);
+      Context.ThrowIfNull(process, ClientFaultCodes.ObjectNotFound, "processToken", "Login process not found or expired.");
       Context.ThrowIf(process.PendingFactors != ExtraFactorTypes.None, ClientFaultCodes.InvalidValue, "PendingFactors",
         "Multi-factor login process not completed, verification pending: {0}.", process.PendingFactors);
       var login = process.Login;
@@ -130,12 +131,33 @@ namespace Vita.Modules.Login.Api {
       };
     }//method
 
+    /// <summary>Submits the PIN received by user (in email) to verify email. </summary>
+    /// <param name="processToken">Verification process token.</param>
+    /// <param name="pin">The PIN value.</param>
+    /// <returns>True if PIN value matches; otherwise, false.</returns>
+    /// <remarks>This method does not require logged-in user. Use it when from a page activated 
+    /// by URL embedded in verification email. 
+    /// The other end point for pin verification (api/mylogin/factors/pin)
+    /// requires logged in user, so it should be used only when user enters the pin manually on the page.
+    /// </remarks>
+    [ApiPut, ApiRoute("factors/verify-pin")]
+    public bool VerifyEmailPin(string processToken, string pin) {
+      Context.ThrowIfEmpty(processToken, ClientFaultCodes.ValueMissing, "processToken", "ProcessToken value missing");
+      Context.ThrowIfEmpty(pin, ClientFaultCodes.ValueMissing, "pin", "Pin value missing");
+      var process = _processService.GetActiveProcess(Context, LoginProcessType.FactorVerification, processToken);
+      Context.ThrowIfNull(process, ClientFaultCodes.ObjectNotFound, "processToken", "Login process not found or expired.");
+      var processService = Context.App.GetService<ILoginProcessService>();
+      if(processService.SubmitPin(process, pin))
+        return true;
+      return false;
+    }
+
     /// <summary>Returns the list of user&quot;s secret questions. </summary>
     /// <param name="token">The token of login process.</param>
     /// <returns>The list of secret question objects for the user.</returns>
     [ApiGet, ApiRoute("multifactor/userquestions")]
     public IList<SecretQuestion> GetUserSecretQuestions(string token) {
-      var process = GetActiveProcess(token);
+      var process = GetMutiFactorProcess(token);
       var qs = _processService.GetUserSecretQuestions(process.Login);
       return qs.Select(q => q.ToModel()).ToList();
     }
@@ -147,7 +169,7 @@ namespace Vita.Modules.Login.Api {
     [ApiPut, ApiRoute("multifactor/questionanswers")]
     public bool SubmitQuestionAnswers(string token, List<SecretQuestionAnswer> answers) {
       Context.WebContext.MarkConfidential();
-      var process = GetActiveProcess(token);
+      var process = GetMutiFactorProcess(token);
       var result = _processService.CheckAllSecretQuestionAnswers(process, answers);
       return result;
     }
@@ -159,7 +181,7 @@ namespace Vita.Modules.Login.Api {
     [ApiPut, ApiRoute("multifactor/questionanswer")]
     public bool SubmitQuestionAnswer(string token, SecretQuestionAnswer answer) {
       Context.WebContext.MarkConfidential();
-      var process = GetActiveProcess(token);
+      var process = GetMutiFactorProcess(token);
       var storedAnswer = process.Login.SecretQuestionAnswers.FirstOrDefault(a => a.Question.Id == answer.QuestionId);
       Context.ThrowIfNull(storedAnswer, ClientFaultCodes.InvalidValue, "questionId", "Question is not registered user question.");
       var success = _processService.CheckSecretQuestionAnswer(process, storedAnswer.Question, answer.Answer);
@@ -187,7 +209,7 @@ namespace Vita.Modules.Login.Api {
       return strength; 
     }
 
-    private ILoginProcess GetActiveProcess(string token, bool throwIfNotFound = true) {
+    private ILoginProcess GetMutiFactorProcess(string token, bool throwIfNotFound = true) {
       Context.ThrowIfEmpty(token, ClientFaultCodes.ValueMissing, "token", "Process token may not be empty.");
       var process = _processService.GetActiveProcess(Context, LoginProcessType.MultiFactorLogin, token);
       if(throwIfNotFound)

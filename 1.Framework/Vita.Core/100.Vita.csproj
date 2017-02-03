@@ -53,8 +53,6 @@
     <Compile Include="Common\CompressionHelper.cs" />
     <Compile Include="Common\ConvertHelper.cs" />
     <Compile Include="Common\Crc32.cs" />
-    <Compile Include="Common\DictionaryWrapper.cs" />
-    <Compile Include="Common\DisposableWeakRefSet.cs" />
     <Compile Include="Common\ExpressionHelper.cs" />
     <Compile Include="Common\ObjectCache.cs" />
     <Compile Include="Common\RandomHelper.cs" />
@@ -86,8 +84,7 @@
     <Compile Include="Entities\Authorization\Runtime\OperationPermission.cs" />
     <Compile Include="Entities\Linq\LinqCommand.cs" />
     <Compile Include="Entities\Authorization\Model\AuthorizationFilter.cs" />
-    <Compile Include="Entities\Logging\SystemLogEntry.cs" />
-    <Compile Include="Entities\Logging\_LogEntry.cs" />
+    <Compile Include="Entities\Logging\SystemLog.cs" />
     <Compile Include="Entities\Model\Filters\QueryFilterHelper.cs" />
     <Compile Include="Entities\Model\Filters\EntityFilter.cs" />
     <Compile Include="Entities\Model\Filters\SafeMemberAccessRewriter.cs" />
@@ -222,7 +219,7 @@
     <Compile Include="Entities\Model\AttributesImplementation\IAttributeHandler.cs" />
     <Compile Include="Entities\Model\AttributesImplementation\SpecialEntityModelAttributesImpl.cs" />
     <Compile Include="PublicAPI\Exceptions\StartupFailureException.cs" />
-    <Compile Include="Entities\Logging\OperationLogEntries.cs" />
+    <Compile Include="Entities\Logging\LogEntries.cs" />
     <Compile Include="Entities\Logging\LogFileWriter.cs" />
     <Compile Include="PublicAPI\Contexts\UserInfo.cs" />
     <Compile Include="PublicAPI\Contexts\UserSessionContext.cs" />

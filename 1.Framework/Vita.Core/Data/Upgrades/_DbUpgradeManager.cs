@@ -19,7 +19,7 @@ namespace Vita.Data.Upgrades {
     DataAccessService _dataAccess; 
     DataSource _dataSource;
     Database _database;
-    MemoryLog _log;
+    SystemLog _log;
     ITimeService _timeService;
     DbUpgradeInfo _upgradeInfo;
 
@@ -28,7 +28,7 @@ namespace Vita.Data.Upgrades {
       _dataAccess = (DataAccessService) _dataSource.App.DataAccess;
       _database = _dataSource.Database;
       _app = _database.DbModel.EntityApp; 
-      _log = _app.ActivationLog;
+      _log = _app.SystemLog;
       _timeService = _app.GetService<ITimeService>();
     }
 
@@ -41,10 +41,6 @@ namespace Vita.Data.Upgrades {
           _upgradeInfo.Status = UpgradeStatus.Applied;
         }
         SaveDbVersionInfo();
-        //TODO: review this and refactor
-        var actLogFile = _database.DbModel.EntityApp.ActivationLogPath;
-        if(!string.IsNullOrEmpty(actLogFile))
-          _log.DumpTo(actLogFile);
       } catch(Exception ex) {
         SaveDbVersionInfo(ex);
         throw; 
@@ -137,8 +133,8 @@ namespace Vita.Data.Upgrades {
     }
 
     public void ApplyUpgrades() {
-      _log.Info("Applying DB Upgrade     ================================================================");
       OnUpgrading(_timeService.UtcNow);
+      _log.Info("Applying DB Upgrades, {0} scripts.", _upgradeInfo.AllScripts.Count);
       var startedOn = _timeService.UtcNow;
       var driver = _database.DbModel.Driver;
       var conn = driver.CreateConnection(_database.Settings.SchemaManagementConnectionString);
@@ -160,8 +156,6 @@ namespace Vita.Data.Upgrades {
           cmd.Dispose();
           cmd = null;
         }
-        _log.Info(_upgradeInfo.AllScripts.GetAllAsText());
-        _log.Info("End DB Upgrade scripts  ================================================================");
         OnUpgraded(_upgradeInfo.AllScripts, startedOn, _timeService.UtcNow);
       } catch (Exception ex) {
         OnUpgraded(appliedScripts, startedOn, _timeService.UtcNow, ex, currScript);

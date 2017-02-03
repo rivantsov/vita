@@ -35,10 +35,10 @@ namespace Vita.Entities.Model.Construction {
   // a container for passing context information to IAttributeHandler
   public class AttributeContext {
     public readonly EntityModel Model;
-    public MemoryLog Log;
-    public AttributeContext(EntityModel model, MemoryLog activationLog) {
+    public SystemLog Log;
+    public AttributeContext(EntityModel model) {
       Model = model; 
-      Log = activationLog;
+      Log = Model.App.SystemLog;
     }
   }
 

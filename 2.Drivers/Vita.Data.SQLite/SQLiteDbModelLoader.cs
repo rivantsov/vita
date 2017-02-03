@@ -16,7 +16,7 @@ using Vita.Entities.Logging;
 namespace Vita.Data.SQLite {
   public class SQLiteDbModelLoader : DbModelLoader {
 
-    public SQLiteDbModelLoader(DbSettings settings, MemoryLog log) : base(settings, log) {
+    public SQLiteDbModelLoader(DbSettings settings, SystemLog log) : base(settings, log) {
     }
 
     public override DbTable GetDatabases() {

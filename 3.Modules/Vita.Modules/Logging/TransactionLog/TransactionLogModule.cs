@@ -30,7 +30,7 @@ namespace Vita.Modules.Logging {
       public string Changes;
 
       public TransactionLogEntry(OperationContext context, DateTime startedOn, int duration, int recordCount, string changes)
-              : base(context, startedOn) {
+              : base(context, LogEntryType.Information, startedOn) {
         Duration = duration;
         RecordCount = recordCount;
         Changes = changes; 

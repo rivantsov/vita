@@ -94,7 +94,7 @@ namespace Vita.Data.MySql {
       return "'" + str.Replace("'", "''") + "'";
     }
 
-    public override DbTypeInfo GetDbTypeInfo(Entities.Model.EntityMemberInfo member, MemoryLog log) {
+    public override DbTypeInfo GetDbTypeInfo(Entities.Model.EntityMemberInfo member, SystemLog log) {
       var typeInfo = base.GetDbTypeInfo(member, log);
       if(member.DataType == typeof(TimeSpan) || member.DataType == typeof(TimeSpan?)) 
         typeInfo.PropertyToColumnConverter = CheckTimeSpanProperty;

@@ -90,7 +90,7 @@ namespace Vita.Data.MsSql {
       return new MsSqlDbModelUpdater(settings);
     }
 
-    public override DbModelLoader CreateDbModelLoader(DbSettings settings, MemoryLog log) {
+    public override DbModelLoader CreateDbModelLoader(DbSettings settings, SystemLog log) {
       return new MsSqlDbModelLoader(settings, log); 
     }
 

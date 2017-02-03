@@ -15,7 +15,7 @@ namespace Vita.Modules.Logging {
   public class NotificationLogEntry : LogEntry {
     public NotificationMessage Message;
 
-    public NotificationLogEntry(OperationContext context, NotificationMessage message)    : base(context) {
+    public NotificationLogEntry(OperationContext context, NotificationMessage message)    : base(context, LogEntryType.Information) {
       base.Id = Guid.NewGuid(); 
       Message = message;
     }

@@ -290,11 +290,11 @@ namespace Vita.Modules.Logging {
     }
 
     private string SerializeSessionValues(UserSessionContext userSession) {
-      if (userSession.Values.Count == 0)
+      var values = userSession.GetValues(); 
+      if (values.Count == 0)
         return null;
       else
-        return XmlSerializationHelper.SerializeDictionary(userSession.Values);
-
+        return XmlSerializationHelper.SerializeDictionary(values);
     }
 
     private TUserSession LoadUserSessionEntity(string token) {

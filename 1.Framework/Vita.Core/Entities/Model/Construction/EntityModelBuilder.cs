@@ -18,7 +18,7 @@ namespace Vita.Entities.Model.Construction {
   using ExpressionUtil = Vita.Data.Linq.Translation.ExpressionUtil;
 
   public class EntityModelBuilder {
-    MemoryLog _log;
+    SystemLog _log;
     EntityApp _app;
     EntityModel _model;
     //Temporary lists
@@ -28,13 +28,13 @@ namespace Vita.Entities.Model.Construction {
 
     public EntityModelBuilder(EntityApp app) {
       _app = app;
-      _log = _app.ActivationLog;
+      _log = _app.SystemLog;
     }
 
     public EntityModel BuildModel() {
       _model = new EntityModel(_app);
       SetModel(_app, _model);  
-      _attributeContext = new AttributeContext(this._model, _log);
+      _attributeContext = new AttributeContext(this._model);
       _allEntities = new List<EntityInfo>();
       _entitiesByType = new Dictionary<Type, EntityInfo>();
 
@@ -86,7 +86,7 @@ namespace Vita.Entities.Model.Construction {
       _log.Error(message, args);
     }
     private bool Failed() {
-      return _log.HasErrors();
+      return _log.HasErrors;
     }
 
     //Collects registered entities - creates EntityInfo objects for each entity and adds them to Model's Entities set. 
@@ -624,10 +624,23 @@ namespace Vita.Entities.Model.Construction {
           //CLR type is not nullable - flip it to nullable
           memberType = ReflectionHelper.GetNullable(memberType);
         }
-        var fkMember = new EntityMemberInfo(key.Entity, MemberKind.Column, fkMemberName, memberType);
+        var fkMember = key.Entity.GetMember(fkMemberName);
+        // if member exists, it is declared explicitly, or maybe it is part of another FK
+        if (fkMember != null) {
+          // check it matches the type
+          if (fkMember.DataType != memberType) {
+            LogError("Underlying foreign key column '{4}' for property {0}.{1} already exists - it is declared explicitly (or is a part of another key); " + 
+                "error - existing property type {2} does not match foreign key column type {3}.",
+                     refMember.Entity.FullName, refMember.MemberName, fkMember.DataType.Name, memberType.Name, fkMemberName);
+            return true; //true means done processing the entity
+          }
+        } else {
+          //create new column member
+          fkMember = new EntityMemberInfo(key.Entity, MemberKind.Column, fkMemberName, memberType);
+          fkMember.ExplicitDbType = targetMember.ExplicitDbType;
+          fkMember.ExplicitDbTypeSpec = targetMember.ExplicitDbTypeSpec;
+        }
         fkMember.Flags |= EntityMemberFlags.ForeignKey;
-        fkMember.ExplicitDbType = targetMember.ExplicitDbType;
-        fkMember.ExplicitDbTypeSpec = targetMember.ExplicitDbTypeSpec;
         if (targetMember.Size > 0)
           fkMember.Size = targetMember.Size;
         if (targetMember.Flags.IsSet(EntityMemberFlags.AutoValue)) {
@@ -755,7 +768,7 @@ namespace Vita.Entities.Model.Construction {
 
 
     private void BuildCommands() {
-      var commandBuilder = new EntityCommandBuilder(_model, _log);
+      var commandBuilder = new EntityCommandBuilder(_model);
       foreach (var entity in _model.Entities) {
         var entType = entity.EntityType;
         var cmds = entity.CrudCommands = new EntityCrudCommands();

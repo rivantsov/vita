@@ -25,7 +25,7 @@ namespace Vita.Data.Driver {
 
     protected DbSettings Settings;
     protected DbDriver Driver;
-    protected MemoryLog Log;
+    protected SystemLog Log;
 
     public DbVersionInfo VersionInfo;
     protected DbModel Model;
@@ -40,7 +40,7 @@ namespace Vita.Data.Driver {
     private string _schemasListForFilter;
 
 
-    public DbModelLoader(DbSettings settings, MemoryLog log) {
+    public DbModelLoader(DbSettings settings, SystemLog log) {
       Settings = settings;
       Log = log;
       Driver = Settings.ModelConfig.Driver;

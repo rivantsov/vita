@@ -46,7 +46,7 @@ namespace Vita.Data.SQLite {
       return new SQLiteDbModelUpdater(settings);
     }
 
-    public override DbModelLoader CreateDbModelLoader(DbSettings settings, MemoryLog log) {
+    public override DbModelLoader CreateDbModelLoader(DbSettings settings, SystemLog log) {
       return new SQLiteDbModelLoader(settings, log); 
     }
 

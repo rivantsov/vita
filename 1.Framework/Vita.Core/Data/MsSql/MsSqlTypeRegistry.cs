@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using Vita.Data;
 using Vita.Data.Driver;
 using Vita.Data.Model;
+using Vita.Entities.Logging;
 
 namespace Vita.Data.MsSql {
   public class MsSqlTypeRegistry : DbTypeRegistry {

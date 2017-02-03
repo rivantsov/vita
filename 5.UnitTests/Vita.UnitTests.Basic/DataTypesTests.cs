@@ -19,198 +19,197 @@ namespace Vita.UnitTests.Basic {
   using Vita.Data.Driver;
 
 
-  public enum SimpleEnum {
-    Zero,
-    One,
-    Two,
-    Three,
-  }
-
-  [Flags]
-  public enum BitEnum : byte {
-    None,
-    Bit0 = 1,
-    Bit1 = 1 << 1,
-    Bit2 = 1 << 2,
-  }
-
   [TestClass] 
   public class DataTypesTests {
 
-      [Entity]
-      //testing really long index name
-      //[Index(IndexName ="IX_LongIndex", MemberNames = "StringProp,ByteProp,Int16Prop,Int32Prop,Int64Prop,Int32NullProp,DoubleProp,DoublePropNull,SingleProp,DecProp,MoneyProp,DateTimeProp,EnumProp")]
-      public interface IDataTypesEntity {
+    public enum SimpleEnum {
+      Zero,
+      One,
+      Two,
+      Three,
+    }
 
-        // Guid
-        [PrimaryKey]
-        Guid Id { get; set; }
+    [Flags]
+    public enum BitEnum : byte {
+      None,
+      Bit0 = 1,
+      Bit1 = 1 << 1,
+      Bit2 = 1 << 2,
+    }
+
+    [Entity]
+    //testing really long index name
+    //[Index(IndexName ="IX_LongIndex", MemberNames = "StringProp,ByteProp,Int16Prop,Int32Prop,Int64Prop,Int32NullProp,DoubleProp,DoublePropNull,SingleProp,DecProp,MoneyProp,DateTimeProp,EnumProp")]
+    public interface IDataTypesEntity {
+
+      // Guid
+      [PrimaryKey]
+      Guid Id { get; set; }
         
-        // strings
-        [Size(20), Nullable]
-        string StringProp { get; set; }
-        [Unlimited, Nullable]
-        string MemoProp { get; set; }
+      // strings
+      [Size(20), Nullable]
+      string StringProp { get; set; }
+      [Unlimited, Nullable]
+      string MemoProp { get; set; }
 
-        //bool 
-        bool BoolProp { get; set; }
+      //bool 
+      bool BoolProp { get; set; }
 
-        // integer types
-        byte ByteProp { get; set; }
-        Int16 Int16Prop { get; set; }
-        Int32 Int32Prop { get; set; }
-        Int64 Int64Prop { get; set; }
-        Int32? Int32NullProp { get; set; }
+      // integer types
+      byte ByteProp { get; set; }
+      Int16 Int16Prop { get; set; }
+      Int32 Int32Prop { get; set; }
+      Int64 Int64Prop { get; set; }
+      Int32? Int32NullProp { get; set; }
 
-        // floating point types
-        double DoubleProp { get; set; }
-        double? DoublePropNull { get; set; }
-        float SingleProp { get; set; } //equiv System.Single
-        // decimal/ money
-        decimal DecProp { get; set; }
-        [Currency]
-        decimal MoneyProp { get; set; }
+      // floating point types
+      double DoubleProp { get; set; }
+      double? DoublePropNull { get; set; }
+      float SingleProp { get; set; } //equiv System.Single
+      // decimal/ money
+      decimal DecProp { get; set; }
+      [Currency]
+      decimal MoneyProp { get; set; }
 
-        // date-time
-        DateTime DateTimeProp { get; set; }
-        TimeSpan? TimeProp { get; set; }
+      // date-time
+      DateTime DateTimeProp { get; set; }
+      TimeSpan? TimeProp { get; set; }
 
-        //enums
-        SimpleEnum EnumProp { get; set; }
-        SimpleEnum? EnumNullProp { get; set; }
-        BitEnum BitsProp { get; set; }
-        BitEnum? BitsNullProp { get; set; }
+      //enums
+      SimpleEnum EnumProp { get; set; }
+      SimpleEnum? EnumNullProp { get; set; }
+      BitEnum BitsProp { get; set; }
+      BitEnum? BitsNullProp { get; set; }
 
-        // binary 
-        [Size(64)]
-        byte[] ByteArrayProp { get; set; }
-        [Nullable, Size(128)]
-        Binary BinaryProp { get; set; }
+      // binary 
+      [Size(64)]
+      byte[] ByteArrayProp { get; set; }
+      [Nullable, Size(128)]
+      Binary BinaryProp { get; set; }
 
-        [Nullable, Unlimited]
-        Binary BigBinaryProp { get; set; }
+      [Nullable, Unlimited]
+      Binary BigBinaryProp { get; set; }
 
-        //These types are not supported by SQL Server directly - but framework provides support for them and converts automatically when needed.
-        sbyte SByteProp { get; set; }
-        UInt16 UInt16Prop { get; set; }
-        UInt32 UInt32Prop { get; set; }
-        UInt64 UInt64Prop { get; set; }
+      //These types are not supported by SQL Server directly - but framework provides support for them and converts automatically when needed.
+      sbyte SByteProp { get; set; }
+      UInt16 UInt16Prop { get; set; }
+      UInt32 UInt32Prop { get; set; }
+      UInt64 UInt64Prop { get; set; }
 
-        char CharProp { get; set; }
-      }
+      char CharProp { get; set; }
+    }
 
-      [Entity]
-      //special MS SQL types - entity is registered only for MS SQl test
-      public interface IMsSqlDataTypesEntity {
-        // Guid
-        [PrimaryKey]
-        Guid Id { get; set; }
+    [Entity]
+    //special MS SQL types - entity is registered only for MS SQl test
+    public interface IMsSqlDataTypesEntity {
+      // Guid
+      [PrimaryKey]
+      Guid Id { get; set; }
 
-        DateTimeOffset DateTimeOffsetProp { get; set; }
+      DateTimeOffset DateTimeOffsetProp { get; set; }
 
-        [Column(DbType = DbType.AnsiStringFixedLength, Size = 10)]
-        string CharNProp { get; set; }
+      [Column(DbType = DbType.AnsiStringFixedLength, Size = 10)]
+      string CharNProp { get; set; }
 
-        [Column(DbType = DbType.StringFixedLength, Size = 10)]
-        string NCharNProp { get; set; }
+      [Column(DbType = DbType.StringFixedLength, Size = 10)]
+      string NCharNProp { get; set; }
 
-        [Column(DbType = DbType.AnsiString, Size = 10)]
-        string VarCharProp { get; set; }
+      [Column(DbType = DbType.AnsiString, Size = 10)]
+      string VarCharProp { get; set; }
 
-        [Column(DbType = DbType.Date)]
-        DateTime DateProp { get; set; }
+      [Column(DbType = DbType.Date)]
+      DateTime DateProp { get; set; }
 
-        [Column(DbType = DbType.DateTime)] //not DateTime2 which is default
-        DateTime DateTimeProp { get; set; }
+      [Column(DbType = DbType.DateTime)] //not DateTime2 which is default
+      DateTime DateTimeProp { get; set; }
 
-        [Column(DbType = DbType.Time)]
-        TimeSpan TimeProp { get; set; }
+      [Column(DbType = DbType.Time)]
+      TimeSpan TimeProp { get; set; }
 
-        [Column(DbTypeSpec = "SmallDateTime")]
-        DateTime SmallDateTimeProp { get; set; }
+      [Column(DbTypeSpec = "SmallDateTime")]
+      DateTime SmallDateTimeProp { get; set; }
 
-        [RowVersion]
-        byte[] TimeStampProp { get; set; }
+      [RowVersion]
+      byte[] TimeStampProp { get; set; }
 
-        [Column(DbTypeSpec="geography"), Nullable]
-        byte[] GeographyProp { get; set; }
+      [Column(DbTypeSpec="geography"), Nullable]
+      byte[] GeographyProp { get; set; }
 
-        [Column(DbTypeSpec = "geometry"), Nullable]
-        byte[] GeometryProp { get; set; }
+      [Column(DbTypeSpec = "geometry"), Nullable]
+      byte[] GeometryProp { get; set; }
 
-        [Column(DbTypeSpec = "hierarchyid"), Nullable]
-        byte[] HierarchyIdProp { get; set; }
+      [Column(DbTypeSpec = "hierarchyid"), Nullable]
+      byte[] HierarchyIdProp { get; set; }
 
-        [Column(DbTypeSpec = "image")]
-        byte[] ImageProp { get; set; }
+      [Column(DbTypeSpec = "image")]
+      byte[] ImageProp { get; set; }
 
-        [Column(DbTypeSpec = "ntext")]
-        string NTextProp { get; set; }
+      [Column(DbTypeSpec = "ntext")]
+      string NTextProp { get; set; }
 
-        [Column(DbTypeSpec = "text")]
-        string TextProp { get; set; }
+      [Column(DbTypeSpec = "text")]
+      string TextProp { get; set; }
 
-        [Column(DbTypeSpec = "xml")]
-        string XmlProp { get; set; }
+      [Column(DbTypeSpec = "xml")]
+      string XmlProp { get; set; }
 
-        [Column(DbTypeSpec = "smallmoney")]
-        Decimal SmallMoneyProp { get; set; }
+      [Column(DbTypeSpec = "smallmoney")]
+      Decimal SmallMoneyProp { get; set; }
 
-        [Column(DbTypeSpec = "sql_variant")] 
-        object SqlVariantProp { get; set; }
+      [Column(DbTypeSpec = "sql_variant")] 
+      object SqlVariantProp { get; set; }
 
-        [Column("DisplayUrl", DbTypeSpec = "varchar(max)"), Unlimited, Nullable]
-        //[Column("DisplayUrl", DbType = DbType.AnsiString), Unlimited, Nullable] // this works ok, but column type is 'Text'
-        string DisplayUrl { get; set; }
+      [Column("DisplayUrl", DbTypeSpec = "varchar(max)"), Unlimited, Nullable]
+      //[Column("DisplayUrl", DbType = DbType.AnsiString), Unlimited, Nullable] // this works ok, but column type is 'Text'
+      string DisplayUrl { get; set; }
 
-      }
+    }
 
-      [Entity]
-      public interface IMsSqlRowVersionedProduct {
-        // Guid
-        [PrimaryKey, Identity]
-        int Id { get; }
-        string Name { get; set; }
-        [Size(100)]
-        string Description { get; set; }
-        double Price { get; set; }
+    [Entity]
+    public interface IMsSqlRowVersionedProduct {
+      // Guid
+      [PrimaryKey, Identity]
+      int Id { get; }
+      string Name { get; set; }
+      [Size(100)]
+      string Description { get; set; }
+      double Price { get; set; }
 
-        [RowVersion]
-        byte[] RowVersion { get; set; }
-      }
+      [RowVersion]
+      byte[] RowVersion { get; set; }
+    }
 
 
-      // We skip defining custom entity module and use base EntityModule class
-      public class DataTypesTestEntityApp : EntityApp {
-        public DataTypesTestEntityApp() {
-          var area = AddArea("types");
-          var mainModule = new EntityModule(area, "MainModule");
-          mainModule.RegisterEntities(typeof(IDataTypesEntity));
-          switch(Startup.ServerType) {
-            case DbServerType.MsSql: 
-              mainModule.RegisterEntities(typeof(IMsSqlDataTypesEntity), typeof(IMsSqlRowVersionedProduct));
-              break; 
+    // We skip defining custom entity module and use base EntityModule class
+    public class DataTypesTestEntityApp : EntityApp {
+      public DataTypesTestEntityApp() {
+        var area = AddArea("types");
+        var mainModule = new EntityModule(area, "MainModule");
+        mainModule.RegisterEntities(typeof(IDataTypesEntity));
+        switch(Startup.ServerType) {
+          case DbServerType.MsSql: 
+            mainModule.RegisterEntities(typeof(IMsSqlDataTypesEntity), typeof(IMsSqlRowVersionedProduct));
+            break; 
 
-          }
         }
-
-      }//class
-
-      DataTypesTestEntityApp _app;
-
-      [TestInitialize]
-      public void Init() {
-        if(Startup.Driver == null)
-          Startup.SetupForTestExplorerMode();
-        Startup.DropSchemaObjects("types");
-        _app = new DataTypesTestEntityApp();
-        Startup.ActivateApp(_app);
       }
-      [TestCleanup]
-      public void TestCleanup() {
-        if(_app != null)
-          _app.Flush();
-      }
+
+    }//class
+
+    DataTypesTestEntityApp _app;
+
+    [TestInitialize]
+    public void Init() {
+      Startup.DropSchemaObjects("types");
+      _app = new DataTypesTestEntityApp();
+      Startup.ActivateApp(_app);
+    }
+
+    [TestCleanup]
+    public void Cleanup() {
+      if(_app != null)
+        _app.Shutdown(); 
+    }
 
     private object SQLiteDateToString(object x) {
       if(x == null || x == DBNull.Value)
@@ -232,7 +231,6 @@ namespace Vita.UnitTests.Basic {
 
     [TestMethod]
     public void TestDataTypes() {
-
       var session = _app.OpenSession();
       //Create 2 entities, to verify how batch updates work for all data types; batch is used only when there's more than 1 update
       var ent1 = CreateDataTypesEntity(session, "abcd", "Unlimited property 1");
@@ -335,6 +333,10 @@ namespace Vita.UnitTests.Basic {
       var session2 = _app.OpenSession();
       var ent1Copy = session2.GetEntity<IMsSqlDataTypesEntity>(ent1.Id);
       Assert.AreEqual(ent1.DateTimeOffsetProp, ent1Copy.DateTimeOffsetProp, "Datetime offset prop does not match");
+
+      // test single space - reported bug 
+      ent1Copy.CharNProp = " ";
+      session2.SaveChanges(); //just checking it does not blow up
     }//test method
 
     private void CheckDataType(DbTable dtColumns, string columnName, string dataType, int size = 0) {
@@ -388,7 +390,7 @@ namespace Vita.UnitTests.Basic {
       var ent = session.NewEntity<IMsSqlDataTypesEntity>();
       ent.Id = Guid.NewGuid();
       // Test bug fix
-      ent.CharNProp = " ";// "12345678"; 
+      ent.CharNProp = "12345678"; 
       ent.NCharNProp = "234567";
       ent.VarCharProp = varCharProp;
       ent.TimeProp = DateTime.Now.TimeOfDay;

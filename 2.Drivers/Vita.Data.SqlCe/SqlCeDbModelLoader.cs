@@ -12,7 +12,7 @@ using Vita.Data.Model;
 
 namespace Vita.Data.SqlCe {
   public class SqlCeDbModelLoader : DbModelLoader {
-    public SqlCeDbModelLoader(DbSettings settings, MemoryLog log) : base(settings, log) { }
+    public SqlCeDbModelLoader(DbSettings settings, SystemLog log) : base(settings, log) { }
 
     public override DbTable GetSchemas() {
       return EmptyTable;

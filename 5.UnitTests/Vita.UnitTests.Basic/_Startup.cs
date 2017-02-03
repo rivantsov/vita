@@ -25,7 +25,8 @@ namespace Vita.UnitTests.Basic {
     public static DbDriver Driver;
     public static DbOptions DbOptions; 
     public static string ConnectionString;
-    public static string LogFilePath = "_vitaBasicTests.log";
+    public static string LogFilePath = "_vitaOperations.log";
+    public static string SystemLogFilePath = "_vitaSystemLog.log";
 
     //Prepares for full run with a specified server
     public static void Reset(DbServerType serverType) {
@@ -65,13 +66,15 @@ namespace Vita.UnitTests.Basic {
     }
 
     //Make sure we do it once, when we run multiple times in console mode
-    static bool _logFileDeleted;
-    internal static void DeleteLocalLogFile() {
-      if(_logFileDeleted)
+    static bool _logFilesDeleted;
+    internal static void DeleteLocalLogFiles() {
+      if(_logFilesDeleted)
         return;
       if(File.Exists(LogFilePath))
         File.Delete(LogFilePath);
-      _logFileDeleted = true;
+      if(File.Exists(SystemLogFilePath))
+        File.Delete(SystemLogFilePath);
+      _logFilesDeleted = true;
     }
 
     public static void WriteLog(string message) {
@@ -80,8 +83,9 @@ namespace Vita.UnitTests.Basic {
     }
 
     public static EntityApp ActivateApp(EntityApp app, bool updateSchema = true, bool dropUnknownTables = false) {
-      DeleteLocalLogFile();
+      DeleteLocalLogFiles();
       app.LogPath = LogFilePath;
+      app.SystemLogPath = SystemLogFilePath; 
       //If driver is not set, it means we are running from Test Explorer in VS. Use ServerTypeForTestExplorer
       if(Driver == null)
         SetupForTestExplorerMode();
@@ -115,14 +119,14 @@ namespace Vita.UnitTests.Basic {
       TestUtil.DropSchemaObjects(dbSettings); 
     }      
 
-    public static DbModel LoadDbModel(string schema, MemoryLog log) {
+    public static DbModel LoadDbModel(string schema, SystemLog log) {
       if (Driver == null)
         SetupForTestExplorerMode();
       var dbSettings = new DbSettings(Driver, DbOptions, ConnectionString);
       dbSettings.SetSchemas(new[] { schema });
       var loader = Driver.CreateDbModelLoader(dbSettings, log);
       var dbModel = loader.LoadModel();
-      if (log.HasErrors())
+      if (log.HasErrors)
         Util.Throw("Model loading errors: \r\n" + log.GetAllAsText());
       return dbModel;
     }

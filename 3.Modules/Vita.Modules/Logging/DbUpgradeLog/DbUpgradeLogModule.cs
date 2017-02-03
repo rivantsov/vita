@@ -38,7 +38,9 @@ namespace Vita.Modules.Logging {
         Flush(); 
       }
     }
-
+    // Note: the call might be coming from the main app, but this app (LoggingApp)
+    // might be not connected at the moment; so we save batch in internal list, 
+    // and try to save when we can (when This app is connected to db)
     public void LogDbUpgrade(DbUpgradeReport report) {
       lock(_lock) {
         _pendingBatches.Add(report);

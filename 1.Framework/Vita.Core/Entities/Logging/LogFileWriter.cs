@@ -9,38 +9,45 @@ using Vita.Entities.Services;
 
 namespace Vita.Entities.Logging {
 
-  /// <summary>Listens to OperationLogService (which writes log to database) and copies all log entries to text file.</summary>
+  /// <summary>Listens to BackgroundSaveService (which writes log to database) and copies all log entries to text file.</summary>
   internal class LogFileWriter {
-    public string LogPath;
     EntityApp _app;
     IOperationLogService _logService;
+    IBackgroundSaveService _saveService; 
     private object _lock = new object();
+    string _logPath;
+    string _fullPath; 
 
     public LogFileWriter(EntityApp app, string logPath) {
       _app = app;
       LogPath = logPath; 
       _logService = app.GetService<IOperationLogService>();
-      Util.Check(_logService != null, "OperationLog service not registered, cannot attach LogFileWriter.");
-      if (_logService != null)
-        _logService.Saving += logService_Saving;
+      _saveService = app.GetService<IBackgroundSaveService>();
+      _saveService.Saving += SaveService_Saving;
     }
 
-    void logService_Saving(object sender, LogSaveEventArgs e) {
-      if(string.IsNullOrWhiteSpace(LogPath))
+    public string LogPath {
+      get { return _logPath; }
+      set {
+        _logPath = value;
+        _fullPath = Util.GetFullAppPath(_logPath);
+      }
+    } 
+
+    private void SaveService_Saving(object sender, BackgroundSaveEventArgs e) {
+      if(string.IsNullOrWhiteSpace(_logPath))
         return; 
-      try {
-        lock(_lock) {
-          System.IO.File.AppendAllText(LogPath, e.Text); //e.Text already includes NewLine, no need to add it here
-        }
-      } catch(Exception ex) {
-        Util.WriteToTrace(ex, e.Text, copyToEventLog: false);
+      var entries = e.Entries.OfType<LogEntry>().ToList();
+      if(entries.Count == 0)
+        return;
+      var text = string.Join(Environment.NewLine, entries);
+      // Here is the problem. We could use _logPath (filename only) directly in File.AppendAllText, it works in normal call, current dir is assigned to bin folder. 
+      // But when we are flushing in response to Domain_Unload event, the current directory is changed (when running inside VS - to VStudio bin folder)
+      // So we have to specify fuill path explicitly
+      lock(_lock) {
+        File.AppendAllText(_fullPath, text); 
       }
     }
 
-    internal void Disconnect() {
-      if (_logService != null)
-        _logService.Saving -= logService_Saving;
-      LogPath = null; 
-    }
   }
 }

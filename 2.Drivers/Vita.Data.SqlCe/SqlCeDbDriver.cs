@@ -42,7 +42,7 @@ namespace Vita.Data.SqlCe {
     public override DbModelUpdater CreateDbModelUpdater(DbSettings settings) {
       return new SqlCeDbModelUpdater(settings);
     }
-    public override DbModelLoader CreateDbModelLoader(DbSettings settings, MemoryLog log) {
+    public override DbModelLoader CreateDbModelLoader(DbSettings settings, SystemLog log) {
       return new SqlCeDbModelLoader(settings, log);
     }
 

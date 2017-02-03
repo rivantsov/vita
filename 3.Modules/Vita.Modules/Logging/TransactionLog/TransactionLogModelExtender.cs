@@ -34,7 +34,7 @@ namespace Vita.Modules.Logging {
         foreach(var type in spec.Types) {
           var entInfo = model.GetEntityInfo(type);
           if(entInfo == null) {
-            model.App.ActivationLog.Error("Failed to find entity info for type {0}", type);
+            model.App.SystemLog.Error("Failed to find entity info for type {0}", type);
             continue;
           }
           if(!string.IsNullOrEmpty(spec.CreateIdPropertyName)) {

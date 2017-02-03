@@ -698,7 +698,7 @@ namespace Vita.Entities.Runtime {
         command.CommandName, paramCount, argCount);
     }
 
-    public void AddLogEntry(OperationLogEntry entry) {
+    public void AddLogEntry(LogEntry entry) {
       if(LogDisabled && !(entry is ErrorLogEntry))
         return; 
       LocalLog.AddEntry(entry);

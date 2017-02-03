@@ -11,11 +11,11 @@ using Vita.Entities.Runtime;
 namespace Vita.Entities.Model.Construction {
   public class EntityCommandBuilder {
     EntityModel _model;
-    MemoryLog _log; 
+    SystemLog _log; 
 
-    public EntityCommandBuilder(EntityModel model, MemoryLog log) {
+    public EntityCommandBuilder(EntityModel model) {
       _model = model;
-      _log = log;
+      _log = _model.App.SystemLog;
     }
 
     public EntityCommand BuildCrudSelectAllCommand(EntityInfo entity) {

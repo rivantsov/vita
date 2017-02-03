@@ -18,7 +18,7 @@ namespace Vita.Data.Upgrades {
     DbUpgradeOptions _options;
     bool _useRefIntegrity, _compareTables, _compareIndexes, _compareViews, _compareStoredProcs, 
          _supportsSchemas, _supportsOrderInIndexes, _dropUnknown;
-    MemoryLog _log;
+    SystemLog _log;
 
     //global list of columns in old tables that changed
     HashSet<DbColumnInfo> _changedColumns = new HashSet<DbColumnInfo>();
@@ -26,7 +26,7 @@ namespace Vita.Data.Upgrades {
     // if FromKey or ToKey changed, then ref constraint must be regenerated
     HashSet<DbKeyInfo> _changedKeys = new HashSet<DbKeyInfo>();
 
-    public void AddDbModelChanges(DbUpgradeInfo upgradeInfo, MemoryLog log) {
+    public void AddDbModelChanges(DbUpgradeInfo upgradeInfo, SystemLog log) {
       _upgradeInfo = upgradeInfo;
       _newModel = upgradeInfo.NewDbModel;
       _oldModel = upgradeInfo.OldDbModel;

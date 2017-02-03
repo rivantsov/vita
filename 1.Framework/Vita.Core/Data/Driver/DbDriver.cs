@@ -52,7 +52,7 @@ namespace Vita.Data.Driver {
 
     #region virtual and abstract methods - to be overridden to customize behavior for particular server
     protected abstract DbTypeRegistry CreateTypeRegistry();
-    public abstract DbModelLoader CreateDbModelLoader(DbSettings settings, MemoryLog log);
+    public abstract DbModelLoader CreateDbModelLoader(DbSettings settings, SystemLog log);
     public abstract DbModelUpdater CreateDbModelUpdater(DbSettings settings);
     public abstract DbSqlBuilder CreateDbSqlBuilder(DbModel dbModel);
     public abstract LinqSqlProvider CreateLinqSqlProvider(DbModel dbModel);

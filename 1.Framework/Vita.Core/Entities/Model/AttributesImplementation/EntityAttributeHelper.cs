@@ -59,7 +59,8 @@ namespace Vita.Entities.Model.Construction {
       }
     }
 
-    public static EntityMemberInfo FindEntityRefMember(this EntityInfo inEntity, string memberNameToFind, Type typeToFind, EntityMemberInfo listMember, MemoryLog log) {
+    public static EntityMemberInfo FindEntityRefMember(this EntityInfo inEntity, string memberNameToFind, Type typeToFind, EntityMemberInfo listMember) {
+      var log = inEntity.Module.App.SystemLog; 
       IList<EntityMemberInfo> refMembers;
       if (!string.IsNullOrEmpty(memberNameToFind)) {
         refMembers = inEntity.Members.FindAll(m => m.MemberName == memberNameToFind);

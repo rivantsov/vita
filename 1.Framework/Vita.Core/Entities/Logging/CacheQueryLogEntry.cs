@@ -13,7 +13,7 @@ using Vita.Entities.Runtime;
 namespace Vita.Entities.Logging {
 
   // Used for logging queries in full set cache
-  public class CacheQueryLogEntry : OperationLogEntry {
+  public class CacheQueryLogEntry : LogEntry {
     DateTime _dateTime;
     string _expressionString; 
     object[] _args; // command parameters
@@ -22,7 +22,7 @@ namespace Vita.Entities.Logging {
     private string _toString;
 
     public CacheQueryLogEntry(OperationContext context, string expressionString, object[] args, DateTime dateTime, long executionTime, int rowCount) 
-               : base(LogEntryType.Command, context, dateTime) {
+               : base(context, LogEntryType.Command, dateTime) {
       _expressionString = expressionString; 
       _args = args;
       _dateTime = dateTime; 

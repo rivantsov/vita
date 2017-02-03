@@ -61,7 +61,7 @@ namespace Vita.Entities {
     public readonly CacheSettings CacheSettings = new CacheSettings();
 
     /// <summary>Gets the activation log for the application. </summary>
-    public MemoryLog ActivationLog; 
+    public SystemLog SystemLog { get; private set; } 
 
     /// <summary>A dictionary of custom attribute handlers.</summary>
     public readonly IDictionary<Type, CustomAttributeHandler> AttributeHandlers;
@@ -83,34 +83,48 @@ namespace Vita.Entities {
     /// <summary>Gets the entity model instance . Entity model is an internal object containing detailed meta-information about entities. </summary>
     /// <remarks> This property is initially null - do not use it the <c>EntityApp</c> constructor. 
     /// The model is built at application initialization. </remarks>
-    public EntityModel Model { get; internal set; } 
-
-    /// <summary>Get a path for activation log file. </summary>
-    public string ActivationLogPath;
+    public EntityModel Model { get; internal set; }
 
     public ApiConfiguration ApiConfiguration = new ApiConfiguration();
 
-    /// <summary>Gets or sets a full path of the log file.</summary>
+    /// <summary>Obsolete, gets a path for activation log file. </summary>
+    [Obsolete("Use SystemLogPath")]
+    public string ActivationLogPath {
+      get { return SystemLogPath; }
+      set { SystemLogPath = value; }
+    }
+
+    /// <summary>Gets or sets a path for the system log file. </summary>
+    /// <remarks>System log contains messages/errors regarding app startup/connect/shutdown events. </remarks>
+    public string SystemLogPath {
+      get { return SystemLog.LogFile; }
+      set { SystemLog.LogFile = value; }
+    }
+
+    /// <summary>Gets or sets operation log file name. Full path can be specified.</summary>
+    /// <remarks>Operation log contains SQLs of regular operations, and messages logged by
+    ///  the application code. </remarks>
     public string LogPath {
       get {
         return _logFilePath; 
       }
       set {
         _logFilePath = value;
-        if(this.Status== EntityAppStatus.Created)
-          return; //nothing to do
-        if(_logFileWriter == null)
-          _logFileWriter = new LogFileWriter(this, _logFilePath);
-        else
+        if (_logFileWriter != null) {
           _logFileWriter.LogPath = _logFilePath;
+          return; 
+        }
+        if(Status != EntityAppStatus.Created)
+          _logFileWriter = new LogFileWriter(this, _logFilePath);
       }
     }
     string _logFilePath; 
     LogFileWriter _logFileWriter;
 
+
     /// <summary>Gets the instance of the application time service. </summary>
-    public ITimeService TimeService { get; protected set; }
-    public virtual IErrorLogService ErrorLog { get { return GetService<IErrorLogService>(); } }
+    public readonly ITimeService TimeService;
+    public IErrorLogService ErrorLog { get { return GetService<IErrorLogService>(); } }
 
     /// <summary>Gets the instance of the application authorization service. </summary>
     public IAuthorizationService AuthorizationService { get; protected set; }
@@ -129,10 +143,9 @@ namespace Vita.Entities {
     /// <summary> Constructs a new EntityApp instance. </summary>
     public EntityApp(string appName = null, string version = "1.0.0.0") {
       AppName = appName ?? this.GetType().Name;
-      Version = new Version(version); 
+      Version = new Version(version);
+      SystemLog = new SystemLog();
       Status = EntityAppStatus.Created;
-      var ctx = this.CreateSystemContext(); 
-      ActivationLog = new MemoryLog(ctx); 
       AppEvents = new EntityAppEvents(this);
       EntityEvents = new EntityEvents();
       AttributeHandlers = CustomAttributeHandler.GetDefaultHandlers();
@@ -145,11 +158,8 @@ namespace Vita.Entities {
     }
 
     private void CurrentDomain_DomainUnload(object sender, EventArgs e) {
-      AppEvents.OnShutdown();
-      foreach(var m in this.Modules)
-        m.Shutdown(); 
+      Shutdown();
     }
-
 
     /// <summary>Initializes the entity app. </summary>
     /// <remarks>Call this method after you finished composing entity application of modules.
@@ -159,6 +169,7 @@ namespace Vita.Entities {
       if(Status != EntityAppStatus.Created)
         return; 
       Status = EntityAppStatus.Initializing;
+      SystemLog.Info("Initializing app {0}...", this.AppName);
       this.AppEvents.OnInitializing(EntityAppInitStep.Initializing);
       //Check dependencies
       foreach(var mod in this.Modules) {
@@ -166,7 +177,7 @@ namespace Vita.Entities {
         foreach(var dep in depList) {
           var ok = Modules.Any(m => dep.IsTypeOrSubType(m));
           if(!ok)
-            this.ActivationLog.Error("Module {0} requires dependent module {1} which is not included in the app.", mod.GetType(), dep);
+            this.SystemLog.Error("Module {0} requires dependent module {1} which is not included in the app.", mod.GetType(), dep);
         }
       }
       this.CheckActivationErrors();
@@ -175,17 +186,16 @@ namespace Vita.Entities {
         linkedApp.Init();
       // create default services, possibly importing from LinkedApps
       CreateDefaultServices();
-      //create log file writer
+      // Create log file writer
       if (!string.IsNullOrWhiteSpace(_logFilePath))
         _logFileWriter = new LogFileWriter(this, _logFilePath);
-       
+
       //Build model
+      SystemLog.Info("  Building entity model...", this.AppName);
       var modelBuilder = new EntityModelBuilder(this);
       modelBuilder.BuildModel();
-      if(ActivationLog.HasErrors()) {
-        if(!string.IsNullOrEmpty(this.ActivationLogPath))
-          ActivationLog.DumpTo(this.ActivationLogPath);
-        var errors = ActivationLog.GetAllAsText();
+      if(SystemLog.HasErrors) {
+        var errors = SystemLog.GetAllAsText();
         throw new StartupFailureException("Entity model build failed.", errors);
       }
       //Notify modules that entity app is constructed
@@ -206,6 +216,7 @@ namespace Vita.Entities {
 
       CheckActivationErrors();
       Status = EntityAppStatus.Initialized;
+      SystemLog.Info("  App {0} initialized.", this.AppName);
     }
 
     protected virtual void CreateDefaultServices() {
@@ -406,6 +417,7 @@ namespace Vita.Entities {
     /// <summary>Performs the shutdown of the application. Notifies all components and modules about pending application shutdown. 
     /// </summary>
     public virtual void Shutdown() {
+      SystemLog.Info("Shutting down app {0}.", AppName);
       Flush();
       Status = EntityAppStatus.Shutdown;
       foreach(var module in this.Modules)
@@ -419,16 +431,15 @@ namespace Vita.Entities {
           iEntService.Shutdown();
       }
       AppEvents.OnShutdown();
+      System.Threading.Thread.Sleep(100);
     }
 
     /// <summary>
     /// Checks activation log messages and throws exception if there were any errors during application initialization.
     /// </summary>
     public void CheckActivationErrors() {
-      if(ActivationLog.HasErrors()) {
-        if (!string.IsNullOrEmpty(ActivationLogPath))
-          ActivationLog.DumpTo(ActivationLogPath);
-        var allErrors = ActivationLog.GetAllAsText();
+      if(SystemLog.HasErrors) {
+        var allErrors = SystemLog.GetAllAsText();
         throw new StartupFailureException("Application activation failed.", allErrors);
       }
     }

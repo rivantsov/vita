@@ -51,7 +51,7 @@ namespace Vita.Data.SQLite {
       return match;
     }
 
-    public override DbTypeInfo GetDbTypeInfo(EntityMemberInfo member, MemoryLog log) {
+    public override DbTypeInfo GetDbTypeInfo(EntityMemberInfo member, SystemLog log) {
       var ti = base.GetDbTypeInfo(member, log);
       if(ti == null)
         return null;

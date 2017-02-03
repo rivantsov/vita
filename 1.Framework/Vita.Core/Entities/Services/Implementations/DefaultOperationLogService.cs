@@ -11,63 +11,45 @@ using Vita.Entities.Logging;
 
 namespace Vita.Entities.Services.Implementations {
 
-  public class DefaultOperationLogService : IOperationLogService {
-    ITimerService _timerService;
-    ConcurrentQueue<OperationLogEntry> _entries = new ConcurrentQueue<OperationLogEntry>(); 
+  public class DefaultOperationLogService : IOperationLogService, IEntityService {
+    IBackgroundSaveService _saveService; 
+    ConcurrentQueue<LogEntry> _entries = new ConcurrentQueue<LogEntry>(); 
 
     public DefaultOperationLogService(EntityApp app, LogLevel logLevel = Services.LogLevel.Details) {
       LogLevel = logLevel;
-      _timerService = app.GetService<ITimerService>();
-      _timerService.Elapsed1Second += TimerService_Elapsed1Second;
-      app.AppEvents.FlushRequested += Events_FlushRequested;
     }
 
-    void TimerService_Elapsed1Second(object sender, EventArgs e) {
-      Flush(); 
+    #region IEntityService members
+    public void Init(EntityApp app) {
+      _saveService = app.GetService<IBackgroundSaveService>();
     }
-    void Events_FlushRequested(object sender, EventArgs e) {
-      Flush();
+
+    public void Shutdown() {
     }
+    #endregion 
+
 
     #region IOperationLogService members
     public LogLevel LogLevel {get; set;}
 
-    public void Log(OperationLogEntry entry) {
-      OperationLogEntry dummy;
-      while(_entries.Count > 100)
+    public void Log(LogEntry entry) {
+      if(_saveService == null)
+        return; 
+      LogEntry dummy;
+      while(_entries.Count > 1000)
         _entries.TryDequeue(out dummy);
 
       switch(entry.EntryType) {
         case LogEntryType.Information: 
         case LogEntryType.Command:
           if(this.LogLevel == Services.LogLevel.Details)
-            _entries.Enqueue(entry); 
+            _saveService.AddObject(entry); 
           break; 
         case LogEntryType.Error:
-          _entries.Enqueue(entry);
+          _saveService.AddObject(entry); 
           break; 
       }
     }
-
-    public void Flush() {
-      if(Saving == null)
-        return; 
-      var entries = new List<LogEntry>(); 
-      OperationLogEntry entry;
-      while(_entries.TryDequeue(out entry))
-        entries.Add(entry);
-      var byUserId = entries.GroupBy(e => e.UserName);
-      foreach(var g in byUserId) {
-        var text = string.Join(Environment.NewLine, g);
-        if (Saving != null) {
-          Saving(this, new LogSaveEventArgs("--User: " + g.Key + Environment.NewLine + text));
-        }
-        //Trace.WriteLine(text); 
-      }
-    }
-    
-    public event EventHandler<LogSaveEventArgs> Saving;
-   
     #endregion
 
 

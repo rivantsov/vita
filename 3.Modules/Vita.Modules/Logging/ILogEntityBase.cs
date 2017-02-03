@@ -31,24 +31,24 @@ namespace Vita.Modules.Logging {
 
 
   internal static class LoggingExtensions {
-    public static void Init(this LogEntry log, OperationContext context) {
-      log.CreatedOn = context.App.TimeService.UtcNow;
-      log.UserName = context.User.UserName;
+    public static void Init(this LogEntry entry, OperationContext context) {
+      entry.CreatedOn = context.App.TimeService.UtcNow;
+      entry.UserName = context.User.UserName;
       if (context.UserSession != null)
-        log.UserSessionId = context.UserSession.SessionId;
+        entry.UserSessionId = context.UserSession.SessionId;
       if (context.WebContext != null)
-        log.WebCallId = context.WebContext.Id; 
+        entry.WebCallId = context.WebContext.Id; 
     }
 
-    public static TEntity NewLogEntity<TEntity>(this IEntitySession session, LogEntry log) 
+    public static TEntity NewLogEntity<TEntity>(this IEntitySession session, LogEntry entry) 
                               where TEntity: class, ILogEntityBase {
       var ent = session.NewEntity<TEntity>();
-      if (log.Id != null)
-        ent.Id = log.Id.Value;
-      ent.CreatedOn = log.CreatedOn;
-      ent.UserName = log.UserName;
-      ent.UserSessionId = log.UserSessionId;
-      ent.WebCallId = log.WebCallId;
+      if (entry.Id != null)
+        ent.Id = entry.Id.Value;
+      ent.CreatedOn = entry.CreatedOn;
+      ent.UserName = entry.UserName;
+      ent.UserSessionId = entry.UserSessionId;
+      ent.WebCallId = entry.WebCallId;
       return ent; 
     }
   }//class

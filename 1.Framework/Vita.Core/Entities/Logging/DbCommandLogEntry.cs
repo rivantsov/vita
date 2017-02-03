@@ -14,7 +14,7 @@ namespace Vita.Entities.Logging {
 
   // The goal here is to relay formatting of the output to the background thread (logging thread), so that the main thread
   // executing commands is not delayed by log formatting.
-  public class DbCommandLogEntry : OperationLogEntry {
+  public class DbCommandLogEntry : LogEntry {
 
     DateTime _dateTime;
     string _procCallFormat; // Format for command with parameters, ex:   'EXEC {0} {1}'
@@ -24,7 +24,7 @@ namespace Vita.Entities.Logging {
     private string _toString;
 
     public DbCommandLogEntry(OperationContext context, IDbCommand command, string procCallFormat, DateTime dateTime, long executionTime, int rowCount)
-                           : base(LogEntryType.Command, context, dateTime) {
+                           : base(context, LogEntryType.Command, dateTime) {
       _procCallFormat = procCallFormat;
       _command = command;
       _dateTime = dateTime; 

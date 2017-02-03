@@ -6,6 +6,7 @@ using System.Globalization;
 using System.Xml;
 using System.Linq.Expressions;
 using System.Diagnostics;
+using System.IO;
 
 namespace Vita.Common {
 
@@ -103,7 +104,7 @@ namespace Vita.Common {
       }
     }
 
-    public static void WriteToTrace(Exception exception, string localLog, bool copyToEventLog = false) {
+    public static void WriteToTrace(Exception exception, string localLog) {
       string message, details;
       if(exception == null) {
         details = message = "(No message, exception is null)";
@@ -111,10 +112,10 @@ namespace Vita.Common {
         message = exception.Message;
         details = exception.ToLogString();
       }
-      WriteToTrace(message, details, localLog, copyToEventLog);
+      WriteToTrace(message, details, localLog);
     }
 
-    public static void WriteToTrace(string message, string details, string localLog, bool copyToEventLog = false) {
+    public static void WriteToTrace(string message, string details, string localLog) {
       var lines = new List<string>();
       lines.Add("===================== ERROR ============================");
       lines.Add(StringHelper.SafeFormat("User={0}", Environment.UserName));
@@ -130,14 +131,17 @@ namespace Vita.Common {
       var errText = string.Join(Environment.NewLine, lines);
       //Write to Trace
       Trace.WriteLine(errText);
-      //Write to Windows event log
-      if(copyToEventLog) {
-        try { //under IIS creating event source might fail
-          var srcName = "VITA_ERROR_LOG";
-          if(!EventLog.SourceExists(srcName))
-            EventLog.CreateEventSource(srcName, srcName);
-          EventLog.WriteEntry(srcName, errText);
-        } catch { }
+    }
+
+    internal static string GetFullAppPath(string fileName) {
+      if(string.IsNullOrWhiteSpace(fileName))
+        return null;
+      else if(Path.IsPathRooted(fileName))
+        return fileName;
+      else {
+        var loc = typeof(Util).Assembly.Location;
+        var dir = Path.GetDirectoryName(loc);
+        return Path.Combine(dir, fileName);
       }
     }
 

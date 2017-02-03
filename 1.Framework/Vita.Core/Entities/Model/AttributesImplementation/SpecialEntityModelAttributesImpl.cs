@@ -149,7 +149,7 @@ namespace Vita.Entities {
         this.ThisEntityRef = fkMember.MemberName;
         listInfo.ParentRefMember = fkMember;
       } else
-        listInfo.ParentRefMember = listInfo.TargetEntity.FindEntityRefMember(this.ThisEntityRef, entType, member, context.Log);
+        listInfo.ParentRefMember = listInfo.TargetEntity.FindEntityRefMember(this.ThisEntityRef, entType, member);
       //Check that reference is found
       if(listInfo.ParentRefMember == null)
         context.Log.Error("EntityList member {0}.{1}: could not find reference property in target entity. ", entType, member.MemberName);
@@ -166,14 +166,14 @@ namespace Vita.Entities {
       var listInfo = member.ChildListInfo = new ChildEntityListInfo(member);
       listInfo.RelationType = EntityRelationType.ManyToMany;
       listInfo.LinkEntity = context.Model.GetEntityInfo(linkEntityType, true);
-      listInfo.ParentRefMember = listInfo.LinkEntity.FindEntityRefMember(this.ThisEntityRef, member.Entity.EntityType, member, context.Log);
+      listInfo.ParentRefMember = listInfo.LinkEntity.FindEntityRefMember(this.ThisEntityRef, member.Entity.EntityType, member);
       if(listInfo.ParentRefMember == null) {
         context.Log.Error( "Many-to-many setup error: back reference to entity {0} not found in link entity {1}.", member.Entity.EntityType, LinkEntity);
         return; 
       }
       listInfo.ParentRefMember.ReferenceInfo.TargetListMember = member; 
       var targetEntType = member.DataType.GetGenericArguments()[0];
-      listInfo.OtherEntityRefMember = listInfo.LinkEntity.FindEntityRefMember(this.OtherEntityRef, targetEntType, member, context.Log);
+      listInfo.OtherEntityRefMember = listInfo.LinkEntity.FindEntityRefMember(this.OtherEntityRef, targetEntType, member);
       if (listInfo.OtherEntityRefMember != null)
         listInfo.TargetEntity = context.Model.GetEntityInfo(listInfo.OtherEntityRefMember.DataType, true);
     }//method

@@ -17,17 +17,18 @@ using Vita.UnitTests.Common;
 using Vita.Entities.Model;
 
 namespace Vita.UnitTests.Basic.MiscTests {
-
+  //Description attr is defined in 2 places, resolving ambiguity. The other def in in Microsoft.VisualStudio.TestTools
+  using DescriptionAttribute = System.ComponentModel.DescriptionAttribute; 
 
   [Entity, OrderBy("Model")]
-  [System.ComponentModel.Description("Represents vehicle entity.")] //Description attr is defined twice, ambigous
+  [Description("Represents vehicle entity.")] 
   public interface IVehicle {
     [PrimaryKey, Auto]
     Guid Id { get; set; }
 
     [Size(30)]
     //we test that these attributes will be passed to the object's property
-    [System.ComponentModel.Description("Model of the vehicle.")] //Description attr is defined twice, ambigous
+    [Description("Model of the vehicle.")] 
     [Browsable(true), DisplayName("Vehicle model"), System.ComponentModel.CategoryAttribute("Miscellaneous")]
     string Model { get; set; }
 
@@ -37,6 +38,8 @@ namespace Vita.UnitTests.Basic.MiscTests {
     IDriver Owner { get; set; }
     [Nullable]
     IDriver Driver { get; set; }
+    // Bug fix test - declaring FK column explicitly
+    // Guid Owner_Id { get; set; }
   }
 
   [Entity]

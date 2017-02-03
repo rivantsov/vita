@@ -13,17 +13,17 @@ namespace Vita.Entities.Services {
     void SaveObjects(IEntitySession session, IList<object> items); 
   }
 
-  public class SaveEventArgs : EventArgs {
-    public readonly IEntitySession Session;
-    public SaveEventArgs(IEntitySession session) {
-      Session = session; 
+  public class BackgroundSaveEventArgs : EventArgs {
+    public readonly IList<object> Entries; 
+    public BackgroundSaveEventArgs(IList<object> entries) {
+      Entries = entries; 
     }
   }
 
   public interface IBackgroundSaveService {
     void RegisterObjectHandler(Type objectType, IObjectSaveHandler saver);
     void AddObject(object item);
-    event EventHandler<SaveEventArgs> Saving;
+    event EventHandler<BackgroundSaveEventArgs> Saving;
     // temporarily suspends service
     IDisposable Suspend(); 
   }

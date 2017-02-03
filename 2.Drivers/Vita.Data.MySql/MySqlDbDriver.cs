@@ -68,7 +68,7 @@ namespace Vita.Data.MySql {
     public override DbModelUpdater CreateDbModelUpdater(DbSettings settings) {
       return new MySqlDbModelUpdater(settings);
     }
-    public override DbModelLoader CreateDbModelLoader(DbSettings settings, MemoryLog log) {
+    public override DbModelLoader CreateDbModelLoader(DbSettings settings, SystemLog log) {
       return new MySqlDbModelLoader(settings, log);
     }
 

@@ -40,7 +40,7 @@ namespace Vita.Tools.DbFirst {
     public EntityApp Build(DbFirstConfig config) {
       _config = config;
       _app = new EntityApp();
-      var log = _app.ActivationLog;
+      var log = _app.SystemLog;
       _dbSettings = new DbSettings(_config.Driver, DbOptions.Default, _config.ConnectionString);
       _dbSettings.SetSchemas(_config.Schemas);
       var modelLoader = _config.Driver.CreateDbModelLoader(_dbSettings, log);

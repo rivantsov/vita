@@ -15,7 +15,7 @@ namespace Vita.Modules.Logging {
     public Guid? LoginId;
     public string EventType;
     public string Notes;
-    public LoginLogEntry(OperationContext context, Guid? loginId, string eventType, string notes, string userName = null)  : base(context) {
+    public LoginLogEntry(OperationContext context, Guid? loginId, string eventType, string notes, string userName = null)  : base(context, LogEntryType.Information) {
       LoginId = loginId;
       EventType = eventType;
       Notes = notes;

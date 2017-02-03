@@ -13,14 +13,14 @@ using Vita.Entities.Logging;
 namespace Vita.Data.Driver {
 
   public class DbTypeRegistry {
-    protected DbDriver Driver; 
+    protected DbDriver Driver;
 
     public IList<VendorDbTypeInfo> Types = new List<VendorDbTypeInfo>();
     public HashSet<string> AutoMemoTypes = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
     public DbValueConverterRegistry Converters = new DbValueConverterRegistry();
 
     public DbTypeRegistry(DbDriver driver) {
-      Driver = driver; 
+      Driver = driver;
     }
 
     public VendorDbTypeInfo AddType(string typeName, DbType dbType, Type columnOutType,
@@ -62,7 +62,7 @@ namespace Vita.Data.Driver {
       AutoMemoTypes.UnionWith(typeNames); 
     }
 
-    public virtual DbTypeInfo GetDbTypeInfo(EntityMemberInfo member, MemoryLog log) {
+    public virtual DbTypeInfo GetDbTypeInfo(EntityMemberInfo member, SystemLog log) {
       bool isUnlimited = member.Flags.IsSet(EntityMemberFlags.UnlimitedSize);
       //Storage data type is derived from member data type. For Nullable<T>, it is underlying type T; for enums, it is underlying int type
       var columnType = GetUnderlyingClrType(member.DataType);

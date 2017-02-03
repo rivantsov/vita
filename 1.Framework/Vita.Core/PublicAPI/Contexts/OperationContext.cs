@@ -35,7 +35,7 @@ namespace Vita.Entities {
     // The connection is registered in _disposables list, and will be force-closed at the end of the global operaiton.
     // At the end of web request WebCallContextHandler will call DisposeAll() to make sure all disposable objects (connections) 
     // are disposed (closed). 
-    internal DisposableWeakRefSet Disposables;
+    internal ConcurrentDisposableSet Disposables;
 
 
     // Name of data source when more than one is registered; null if single data source (db)
@@ -71,7 +71,7 @@ namespace Vita.Entities {
       WebContext = webContext;
       DbConnectionMode = connectionMode;
       LocalLog = new MemoryLog(this);
-      Disposables = new DisposableWeakRefSet(); 
+      Disposables = new ConcurrentDisposableSet(); 
     }
 
     //Used for creating System-level context within user operation
@@ -117,7 +117,7 @@ namespace Vita.Entities {
     }
 
     public void RegisterDisposable(IDisposable disposable) {
-      Disposables.Add(disposable); 
+      Disposables.AddRef(disposable); 
     }
 
     public void DisposeAll() {
@@ -227,8 +227,26 @@ namespace Vita.Entities {
         return copy; 
       }//lock
     } //method
-
     #endregion
+
+    #region nested ConcurrentDisposableSet
+    public class ConcurrentDisposableSet : ConcurrentBag<WeakReference> {
+
+      public void AddRef(IDisposable target) {
+        base.Add(new WeakReference(target));
+      }
+
+      public void DisposeAll() {
+        foreach(var wr in this) {
+          var disp = wr.Target as IDisposable;
+          if(disp != null)
+            try { disp.Dispose(); } catch { }
+        }
+      }
+    }//class
+    #endregion
+
+
   }//class
 
 }

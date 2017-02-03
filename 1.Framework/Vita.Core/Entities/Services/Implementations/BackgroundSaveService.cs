@@ -34,7 +34,7 @@ namespace Vita.Entities.Services.Implementations {
       _buffer.Enqueue(item);
     }
 
-    public event EventHandler<SaveEventArgs> Saving;
+    public event EventHandler<BackgroundSaveEventArgs> Saving;
 
     public IDisposable Suspend() {
       return new SuspendToken(this); 
@@ -89,16 +89,16 @@ namespace Vita.Entities.Services.Implementations {
         return;
       if (!_app.IsConnected())
         return; 
-      EntitySession session;
-      IList<object> list; 
       lock(_lock) {
         try {
+          _flushing = true;
           var start = _app.TimeService.ElapsedMilliseconds; 
-          list = DequeuAll();
-          if(list.Count == 0 && Saving == null)
+          var list = DequeuAll();
+          if(list.Count == 0)
             return;
-          _flushing = true; 
-          session = (EntitySession) _app.OpenSystemSession();
+          //fire event
+          Saving?.Invoke(this, new BackgroundSaveEventArgs(list));
+          var session = (EntitySession) _app.OpenSystemSession();
           session.LogDisabled = true; //do not log operations; what we save are log entries themselves most of the time
           if (list.Count > 0) {
             var byHandler = list.GroupBy(o => GetHandler(o));
@@ -109,9 +109,6 @@ namespace Vita.Entities.Services.Implementations {
               handler.SaveObjects(session, group.ToList());
             }
           }
-          //fire event
-          if (Saving != null)
-            Saving(this, new SaveEventArgs(session));
           //Get stats
           var recCount = session.GetChangeCount(); 
           var startSaving = _app.TimeService.ElapsedMilliseconds;
@@ -119,7 +116,7 @@ namespace Vita.Entities.Services.Implementations {
           var endSaving = _app.TimeService.ElapsedMilliseconds;
           //log stats
           if (_operationLog != null && OkToLogStatsMessage(list)) {
-            var logEntry = new Logging.SystemLogEntry(session.Context, "Background save completed, records: {0}, save time: {1} ms, total time: {2} ms.",
+            var logEntry = new Logging.InfoLogEntry(session.Context,  "Background save completed, records: {0}, save time: {1} ms, total time: {2} ms.",
                 recCount, (endSaving - startSaving), (endSaving - start));
             _operationLog.Log(logEntry);
           }
@@ -134,6 +131,8 @@ namespace Vita.Entities.Services.Implementations {
 
     //Do not log stat if the only message we saved was the stats message from previous background save
     private bool OkToLogStatsMessage(IList<object> entries) {
+      if(_app.Status != EntityAppStatus.Connected) //do not log if we are in shutdown
+        return false; 
       if (entries == null || entries.Count == 0)
         return false;
       if (entries.Count > 1)

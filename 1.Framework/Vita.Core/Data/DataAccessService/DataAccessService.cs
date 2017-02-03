@@ -67,6 +67,7 @@ namespace Vita.Data {
 
     public void RegisterDataSource(DataSource dataSource) {
       Util.CheckNotEmpty(dataSource.Name, "DataSource name may not be empty.");
+      _app.SystemLog.Info("  Connecting to data source {0}.", dataSource.Name);
       //dataSource.Database.CheckConnectivity();
       lock (_lock) {
         var oldDs = LookupDataSource(dataSource.Name);

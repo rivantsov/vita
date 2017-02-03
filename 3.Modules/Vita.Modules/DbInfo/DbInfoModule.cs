@@ -104,7 +104,7 @@ namespace Vita.Modules.DbInfo {
         db.SaveChanges(entSession);
         return true; 
       } catch (Exception ex) {
-        App.ActivationLog.Error(ex.ToLogString());
+        App.SystemLog.Error(ex.ToLogString());
         return false; 
       }
     }

@@ -51,22 +51,6 @@ namespace Vita.Entities {
 
     public long Version;
 
-    object _lock = new object();
-    bool _modified;
-
-    public IDictionary<string, object> Values {
-      get {
-        if (_values == null) {
-          lock (_lock) {
-            if (_values == null)
-            _values = new DictionaryWrapper<string, object>(
-                new ConcurrentDictionary<string, object>(StringComparer.OrdinalIgnoreCase));
-          }
-        }
-        return _values; 
-      }
-    } DictionaryWrapper<string, object> _values; //We use Dict wrapper here to track changes made to values - to user session when it is modified
-
     public UserSessionContext() { }
 
     public UserSessionContext(Guid sessionId, UserInfo user, DateTime startedOn, string token, string csrfToken, UserSessionStatus status,
@@ -82,53 +66,58 @@ namespace Vita.Entities {
       _timeZoneOffset = timeZoneOffsetMinutes;
       _userAgent = userAgent; 
       if(values != null && values.Count > 0) {
-        var dict = Values; 
         foreach(var de in values)
-          dict[de.Key] = de.Value;
+          _values[de.Key] = de.Value;
       }
-      ResetModified();
+      _modified = false; 
     }
 
+    #region Modified
+    bool _modified;
+    public bool IsModified() {
+      return _modified;
+    }
+
+    public void SetModified() {
+      _modified = true;
+    }
+
+    public void ResetModified() {
+      this._modified = false;
+    }
+    #endregion
+
+    #region Values dictionary 
+    ConcurrentDictionary<string, object> _values = new ConcurrentDictionary<string, object>(StringComparer.OrdinalIgnoreCase);
+
+    public IDictionary<string, object> GetValues() {
+      return _values;
+    }
     public T GetValue<T>(string key) {
-      if (_values == null)
-        return default(T); 
       object v;
-      if(Values.TryGetValue(key, out v))
+      if(_values.TryGetValue(key, out v))
         return (T)v;
       return default(T);
     }
 
     public bool TryGetValue(string key, out object value) {
       value = null; 
-      if (_values == null)
-        return false;
-      if (Values.TryGetValue(key, out value))
+      if (_values.TryGetValue(key, out value))
         return true;
       return false; 
     }
 
     public void SetValue(string key, object value) {
-      Values[key] = value;
-    }
-
-    public void RemoveValue(string key) {
-      if (_values == null)
-        return; 
-      Values.Remove(key);
-    }
-
-    public bool IsModified() {
-      return _modified || (_values != null && _values.Modified);
-    }
-
-    public void SetModified() {
+      _values[key] = value;
       _modified = true; 
     }
 
-    public void ResetModified() {
-      this._modified = false;
-      if (_values != null)
-        _values.Modified = false; 
+    public void RemoveValue(string key) {
+      object value;
+      _values.TryRemove(key, out value);
+      _modified = true; 
     }
+    #endregion 
+
   }//class
 }

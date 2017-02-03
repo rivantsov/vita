@@ -71,7 +71,7 @@ namespace Vita.UnitTests.Extended {
         //Setup model, initialize Books module, create database model, update schema -------------------------------------------------
         BooksApp = new BooksEntityApp(LoginCryptoKey);
         BooksApp.LogPath = LogFilePath;
-        BooksApp.ActivationLogPath = ActivationLogFilePath;
+        BooksApp.SystemLogPath = ActivationLogFilePath;
         BooksApp.CacheSettings.CacheEnabled = CacheEnabled;
         NotificationListener = new NotificationListener(BooksApp, blockAll: true);   //SmtpMock for testing password reset and other processes
         BooksApp.Init();

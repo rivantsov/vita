@@ -21,14 +21,14 @@ namespace Vita.Data.Model {
     DbDriver _driver;
     DbModelConfig _config;
     int _tableKeyIndex; //is used to generate unique index names
-    MemoryLog _log;
+    SystemLog _log;
     DbSqlBuilder _dbSqlBuilder; 
 
 
-    public DbModelBuilder(EntityModel entityModel, DbModelConfig config, MemoryLog log) {
+    public DbModelBuilder(EntityModel entityModel, DbModelConfig config) {
       _entityModel = entityModel;
       _config = config;
-      _log = log;
+      _log = entityModel.App.SystemLog;
       _driver = _config.Driver;
     }
 
@@ -52,7 +52,7 @@ namespace Vita.Data.Model {
     }//method
 
     private void CheckErrors() {
-      if(_log.HasErrors()) {
+      if(_log.HasErrors) {
         var errors = _log.GetAllAsText();
         throw new StartupFailureException("DbModel construction failed.", errors);
       }

@@ -204,7 +204,7 @@ namespace Vita.UnitTests.Basic.SchemaUpdates {
         Startup.ActivateApp(app); //updates schema
 
         // Load DbModel and verify it is correct
-        var dbModel = Startup.LoadDbModel(SchemaName, app.ActivationLog);
+        var dbModel = Startup.LoadDbModel(SchemaName, app.SystemLog);
         Assert.AreEqual(6, dbModel.Tables.Count(), "Expected 6 tables."); //2 tables in DbInfo + 4 tables in our module
         var parTable = dbModel.GetTable(SchemaName, "ParentEntity");
         Assert.AreEqual(8, parTable.Columns.Count, "Invalid number of columns in parent table.");
@@ -252,7 +252,7 @@ namespace Vita.UnitTests.Basic.SchemaUpdates {
 
         //At this point the schema should have been updated; let's check it      
         // Load DbModel and verify it is correct
-        var dbModel = Startup.LoadDbModel(SchemaName, app.ActivationLog);
+        var dbModel = Startup.LoadDbModel(SchemaName, app.SystemLog);
         Assert.AreEqual(6, dbModel.Tables.Count(), "Expected 6 tables after update.");
         var parTable = dbModel.GetTable(SchemaName, "ParentEntity");
         Assert.AreEqual(7, parTable.Columns.Count, "Invalid number of columns in parent table after schema update.");
@@ -309,7 +309,7 @@ namespace Vita.UnitTests.Basic.SchemaUpdates {
         Startup.ActivateApp(app); //updates schema
 
         // Load DbModel and verify it is correct
-        var dbModel = Startup.LoadDbModel(SchemaName, app.ActivationLog);
+        var dbModel = Startup.LoadDbModel(SchemaName, app.SystemLog);
         Assert.AreEqual(6, dbModel.Tables.Count(), "Expected 4 tables.");
         var parTable = dbModel.GetTable(SchemaName, "ParentEntity");
         Assert.AreEqual(8, parTable.Columns.Count, "Invalid number of columns in parent table.");
@@ -351,7 +351,7 @@ namespace Vita.UnitTests.Basic.SchemaUpdates {
 
         //At this point the schema should have been updated; let's check it      
         // Load DbModel and verify it is correct
-        var dbModel = Startup.LoadDbModel(SchemaName, app.ActivationLog);
+        var dbModel = Startup.LoadDbModel(SchemaName, app.SystemLog);
         //Note that we still have 4 tables, EntityToDelete is not dropped because of incoming FK
         Assert.AreEqual(7, dbModel.Tables.Count(), "Expected 7 tables after update.");
         var parTable = dbModel.GetTable(SchemaName, "ParentEntity");

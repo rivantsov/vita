@@ -20,12 +20,12 @@ namespace Vita.Entities.Model {
 
   public class AppInitEventArgs : EventArgs {
     public readonly EntityApp App;
-    public readonly MemoryLog Log;
+    public readonly SystemLog Log;
     public readonly EntityAppInitStep Step;
 
-    public AppInitEventArgs(EntityApp app, MemoryLog log, EntityAppInitStep step) {
+    public AppInitEventArgs(EntityApp app, EntityAppInitStep step) {
       App = app;
-      Log = log; 
+      Log = app.SystemLog; 
       Step = step; 
     }
   }
@@ -99,12 +99,11 @@ namespace Vita.Entities.Model {
 
     internal void OnInitializing(EntityAppInitStep step) {
       if (Initializing != null)
-        Initializing(_app, new AppInitEventArgs(_app, _app.ActivationLog, step)); 
+        Initializing(_app, new AppInitEventArgs(_app, step)); 
     }
 
     internal void OnShutdown() {
-      if(Shutdown != null)
-        Shutdown(_app, EventArgs.Empty);
+      Shutdown?.Invoke(_app, EventArgs.Empty);
     }
 
     internal void OnNewSession(EntitySession session) {

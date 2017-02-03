@@ -80,8 +80,8 @@ namespace Vita.UnitTests.Common {
           if (key.KeyType.IsSet(KeyType.Index))
             upgradeInfo.AddChange(key, null);
       }
-      foreach (var custType in model.CustomDbTypes)
-        upgradeInfo.AddChange(custType, null);
+    //  foreach (var custType in model.CustomDbTypes)
+    //    upgradeInfo.AddChange(custType, null);
       foreach(var cmd in model.Commands)
         upgradeInfo.AddChange(cmd, null);
       foreach (var seq in model.Sequences)

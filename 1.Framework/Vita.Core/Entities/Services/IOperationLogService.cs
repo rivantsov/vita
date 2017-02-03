@@ -17,17 +17,7 @@ namespace Vita.Entities.Services {
 
   public interface IOperationLogService {
     LogLevel LogLevel { get; }
-    void Log(OperationLogEntry entry);
-    event EventHandler<LogSaveEventArgs> Saving;
-  }
-
-  public class LogSaveEventArgs : EventArgs {
-    public readonly string Text;
-
-    public LogSaveEventArgs(string text) {
-      Text = text;
-    }
-
+    void Log(LogEntry entry);
   }
 
 }

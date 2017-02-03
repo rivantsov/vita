@@ -26,7 +26,6 @@ namespace Vita.Data {
     private DbDriver _driver;
     private ITimeService _timeService;
     private EntityModel _entityModel;
-    object _lock = new object();
 
     // constructors
     public Database(EntityApp app, DbSettings settings) {
@@ -40,15 +39,16 @@ namespace Vita.Data {
       settings.SetSchemas(allSchemas);
 
       //Check if model is shared
-      bool modelIsShared = Settings.ModelConfig.Options.IsSet(DbOptions.ShareDbModel);
-      lock (_lock) { //we need lock to prevent collision on shared model
+      var modelConfig = Settings.ModelConfig; 
+      bool modelIsShared = modelConfig.Options.IsSet(DbOptions.ShareDbModel);
+      lock (modelConfig) { //we need lock to prevent collision on shared model
           if (modelIsShared)
-            DbModel = Settings.ModelConfig.SharedDbModel;
+            DbModel = modelConfig.SharedDbModel;
           if (DbModel == null) {
-            var dbmBuilder = new DbModelBuilder(app.Model, settings.ModelConfig, app.ActivationLog);
+            var dbmBuilder = new DbModelBuilder(app.Model, modelConfig);
             DbModel = dbmBuilder.Build();
             if (modelIsShared)
-              Settings.ModelConfig.SharedDbModel = DbModel;
+              modelConfig.SharedDbModel = DbModel;
           }
         }//lock
       

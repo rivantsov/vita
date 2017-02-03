@@ -11,19 +11,19 @@ namespace Vita.Entities.Logging {
   public class MemoryLog {
     OperationContext _context; 
     public int MaxEntries;
-    ConcurrentQueue<OperationLogEntry> _entries = new ConcurrentQueue<OperationLogEntry>();
+    ConcurrentQueue<LogEntry> _entries = new ConcurrentQueue<LogEntry>();
 
     public MemoryLog(OperationContext context, int maxEntries = 200) {
       _context = context; 
       MaxEntries = maxEntries; 
     }
 
-    public void AddEntry(OperationLogEntry entry) {
+    public void AddEntry(LogEntry entry) {
       var str = entry.ToString();
       if (str.StartsWith("-- BEGIN BATCH")) {
 
       }
-      OperationLogEntry dummy;
+      LogEntry dummy;
       while(_entries.Count > MaxEntries)
         _entries.TryDequeue(out dummy); 
       _entries.Enqueue(entry); 

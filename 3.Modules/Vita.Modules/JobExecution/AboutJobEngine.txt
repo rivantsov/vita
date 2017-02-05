@@ -1,0 +1,58 @@
+﻿ About JobExecution Module  ====================== 
+This module allows you to persist a job (method call with parameters) and make it execute later. If the job run fails, system will retry it several times at specified wait intervals. 
+3 basic scenarios: 
+1. Execute a job at a certain date/time in the future
+2. Execute a job repeatedly based on a CRON schedule (read Cron\AboutCron.txt for more info)
+3. Execute a job immediately. 
+In each case, if job execution fails with exception, it will be restarted later several times based on predefined schedule.  
+For immediate execution (#3) there are 3 sub-options: 
+  A. Execute asynchronously a task-returning method; if fails, save it as a job for retries and continue
+  B. Start execution of a method on a background thread, and return immediately. If method fails, save it as a job for retries
+  C. Prepare a job definition in the context of an entity session, and start it when session.SaveChanges() completes successfully. With this method, you can associate method execution with a successful data transaction. The job starts only and if the transaction was successful. 
+
+Using Job execution module 
+----------------------------
+Use JobHelper static helper class to access most of the module functionality. Read the xml comments for methods for detailed information. 
+For regular, repeated jobs, you can use CRON-style spec to define the schedule (see Cron\AboutCron.txt).  
+For an example of usage, see JobExecutionTests.cs unit tests in Extended tests project. 
+
+Job Entities 
+-------------
+  IJob - job definition. Can be invoked multiple times
+  IJobRun - represents execution attempt of a job. If job run fails, job service marks it with Error status and creates a future retry job run, pointing to the same job. 
+  IJobSchedule - a CRON definition of repeated job. One-to-one related to IJob entity, so a job can have only a single job run. When IJobSchedule entity is saved, the system automatically creates the job run record representing the first future run of the schedule. When this job run is picked for start, the next job run is created. 
+
+User context
+------------
+Current UserId is saved with the job run, so job is run/retried as the same user as the one who created the job. At least the OperationContext available in JobRunContext parameter is setup this way. Your code can open secure sessions as this user, or switch to System session running as system, with no security restrictions. However, user identity is always available for a job run, even if it is started by a background job.  
+
+Exceptions and retry runs
+-------------------------
+If job run attempt fails with exception, the system saves it with error status and error info and then schedules the retry attempt (if there are still retries). The retry does not happen for all exceptions. Specifically, if the exception is OperationAbortException (soft exception, base for ValidationException thrown on validation failures) - the retry is NOT scheduled. The reasoning here is that this exception represents some input/setup data failure, so it does not make sense to retry it. For example, your job method tries to save some data, and session.SaveChanges throws a validation exception signalling some invalid data (property cannot be null). In this case system does not schedule retries but simply reports failure to error log. 
+
+Long-running jobs and progress report
+-------------------------------------
+For long-running jobs, you can report progress (numeric value and a message) from inside the job; the progress data is saved in JobRun record and can be inspected by outside processes, like client app waiting for completion. The progress report method is available on JobRunContext object passed as a parameter to the job method. 
+
+There are 2 aspects we need to take into account - multiple databases and multiple web/app servers.
+Special case: multi-tenant app with multiple databases
+------------------------------------------------------
+With this setup each database can have a JobRun table with job runs due for execution at certain time(s). So the job engine handles it properly: it is activated every minute, and it checks every connected database (all data sources in DataAccessService) for a JobRun table with jobs due to start. 
+
+Special case: multiple web/app servers 
+--------------------------------------
+Your application might be configured to run on multiple web servers against a single database. In this case the job engine must properly account for this, and avoid starting the same job on multiple servers. To handle this, each job run has a property 'HostName' - it is the name of the machine that must execute the job run. 
+Job service might be running on multiple servers, but when it scans the database, it looks only for records that have HostName matching the host. By default, the newly created jobs get the host name assigned from the machine that creates the record, so they will be executed (and retried) on the same machine. The host name for the service is defaulted to network name of the machine (or Environment.MachineName), but you can set it explicitly in JobModuleSettings. 
+As a result, jobs are always run/retried on the same app server from which they were created. 
+One special is web server going offline and never coming back. In this case, the job runs in database with this server/host name might become stale and never executed. To handle this, the Job service regularly scans the database for long-overdue jobs for ANY host server: it looks for any job that is overdue for more than 30 minutes for any host name. If it finds any, it changes its host name to its own name, re-asigning it to self, so they will be picked up in the next 1-minute cycle to execute on 'this' server.   
+
+Handling server restarts 
+---------------------------
+When application is shutdown, the module tries to intercept DomainUnload event, and marks all currently running jobs with Status Interrupted (in the database). If shutdown is sudden (crash), the status of job runs in the database remains as 'Executing'. In any case, when the app restarts, the startup code (your code!) needs to call JobHelper.StartInterruptedJobsAfterAfterRestart method, with context parameter configured for each of the connected databases (DataSourceName property). The module could be configured (coded) to do this automatically on startup or database connect, but I discovered there are some problems with execution - it is hard to determine automatically when the app is completely ready to re-start executing jobs. In the future, I can look again at implementing this automatic behavior, but for now you have to call this method explicitly. You also need to call it if you connect to databases dynamically (not all at once at startup) - each time you re-connect to the database which has JobRun table with jobs that must be restarted. 
+
+An example of execute-with-retries for non-essential actions
+-------------------------------------------------------------
+A typical use case is to wrap a non-essential not reliable external service. Let's say user submits a purchase order on your e-commerce web site, you need to process the payment using credit card processing service, and then send a confirmation email to the user using email service like MailChimp. There is an important difference between the two external services. Payment processing MUST be completed before you complete the transaction, so you include it into the workflow. If payment fails, you cancel the operation and show the error message to the user. 
+In constrast, immediate sending of confirmation email is not essential. If external email service is not available at the moment, you can still complete the purchase transaction, and send confirmation email later. In this case, you can code the email sending action as a job (light task) in job execution engine. The engine will try to execute it immediately, but if it fails, it will persist all parameters of the operation, and will retry it later. A typical retry pattern: retry after 2 minutes, then again after 3 hours, 6 and 24 hours. If failed after all attempts, stop retries and log error into error log. 
+Each error on each attempt is logged into IncidentLog, except the last one which goes to error log. The errors are saved into the IJobRun.Log text field. 
+You can use JobHelper.ExecuteWithRetriesAsync(...) method to define and execute an async task, with later retries if it fails. 

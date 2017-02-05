@@ -68,7 +68,7 @@ namespace Vita.Modules.JobExecution {
     double Progress { get; set; }
     [Nullable, Size(200)]
     string ProgressMessage { get; set; }
-    //Concatenation of ProgressMessages separated by NewLine; also error message 
+
     [Nullable, Unlimited]
     string Log { get; set; }
   }

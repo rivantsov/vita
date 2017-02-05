@@ -20,7 +20,7 @@ Job Entities
 -------------
   IJob - job definition. Can be invoked multiple times
   IJobRun - represents execution attempt of a job. If job run fails, job service marks it with Error status and creates a future retry job run, pointing to the same job. 
-  IJobSchedule - a CRON definition of repeated job. One-to-one related to IJob entity, so a job can have only a single job run. When IJobSchedule entity is saved, the system automatically creates the job run record representing the first future run of the schedule. When this job run is picked for start, the next job run is created. 
+  IJobSchedule - a CRON definition of repeated job. One-to-one related to IJob entity, so a job can have only a single schedule. When IJobSchedule entity is saved, the system automatically creates the job run record representing the first future run of the schedule. When this job run is picked for start, the next (next in the future) job run is created and saved. 
 
 User context
 ------------
@@ -41,10 +41,10 @@ With this setup each database can have a JobRun table with job runs due for exec
 
 Special case: multiple web/app servers 
 --------------------------------------
-Your application might be configured to run on multiple web servers against a single database. In this case the job engine must properly account for this, and avoid starting the same job on multiple servers. To handle this, each job run has a property 'HostName' - it is the name of the machine that must execute the job run. 
-Job service might be running on multiple servers, but when it scans the database, it looks only for records that have HostName matching the host. By default, the newly created jobs get the host name assigned from the machine that creates the record, so they will be executed (and retried) on the same machine. The host name for the service is defaulted to network name of the machine (or Environment.MachineName), but you can set it explicitly in JobModuleSettings. 
+Your application might be configured to run on multiple web servers against a single database. In this case the job engine must properly account for this, and avoid starting the same job on multiple servers. To handle this, each job run has a property 'HostName' - it is the name of the machine that must execute the job run. The host name is defaulted to network name of the machine (or Environment.MachineName), but you can set it explicitly in JobModuleSettings.
+Job service might be running on multiple servers, but when it scans the database, it looks only for records that have HostName matching the host. By default, the newly created jobs get the host name assigned from the machine that creates the record, so they will be executed (and retried) on the same machine.  
 As a result, jobs are always run/retried on the same app server from which they were created. 
-One special is web server going offline and never coming back. In this case, the job runs in database with this server/host name might become stale and never executed. To handle this, the Job service regularly scans the database for long-overdue jobs for ANY host server: it looks for any job that is overdue for more than 30 minutes for any host name. If it finds any, it changes its host name to its own name, re-asigning it to self, so they will be picked up in the next 1-minute cycle to execute on 'this' server.   
+One special case is web server going offline and never coming back. In this case, the job runs in database with this server/host name might become stale and never executed. To handle this, the Job service regularly scans the database for long-overdue jobs for ANY host server: it looks for any job that is overdue for more than 30 minutes for any host name. If it finds any, it changes its host name to its own name, re-asigning it to self, so they will be picked up in the next 1-minute cycle to execute on 'this' server.   
 
 Handling server restarts 
 ---------------------------

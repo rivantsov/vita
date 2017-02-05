@@ -56,7 +56,8 @@ namespace Vita.UnitTests.Web {
       var badSignup = new UserSignup() { UserName = "dora", Password = "abcefg", DisplayName = "Anonymous" }; //should get 'username is already used'
       var faultExc = TestUtil.ExpectClientFault(() => client.ExecutePost<UserSignup, User>(badSignup, "api/signup"));
       Assert.IsTrue(faultExc.Faults[0].Message.Contains("already in use"), "Expected 'username already in use' error");
-      badSignup.UserName = "somebody"; //fixed user name, now should get weak password
+      // fix user name, now should get weak password
+      badSignup.UserName = "somebody"; 
       faultExc = TestUtil.ExpectClientFault(() => client.ExecutePost<UserSignup, User>(badSignup, "api/signup"));
       Assert.IsTrue(faultExc.Faults[0].Message.Contains("strength criteria"), "Expected 'weak password' error");
 

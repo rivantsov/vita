@@ -28,7 +28,7 @@ namespace Vita.Modules.Logging {
     ITimerService _timers;
     IBackgroundSaveService _saveService;
     //private IWebCallNotificationService _webCallNotificationService;
-    ObjectCache<CachedSessionItem> _userSessionCache;
+    ObjectCache<string, CachedSessionItem> _userSessionCache;
     const int LastUsedIncrementSec = 10; 
 
     public UserSessionModule(EntityArea area, UserSessionSettings settings = null, string name = "UserSessionModule")  : base(area, name, version: UserSessionModule.CurrentVersion) {
@@ -41,7 +41,8 @@ namespace Vita.Modules.Logging {
     public override void Init() {
       base.Init();
       _opContext = App.CreateSystemContext();
-      _userSessionCache = new ObjectCache<CachedSessionItem>("UserSessonCache", Settings.MemoryCacheExpirationSec);
+      _userSessionCache = new ObjectCache<string, CachedSessionItem>(
+        expirationSeconds: Settings.MemoryCacheExpirationSec, maxLifeSeconds: Settings.MemoryCacheExpirationSec);
       _saveService = App.GetService<IBackgroundSaveService>();
       _timers = App.GetService<ITimerService>();
       _timers.Elapsed1Second += Timers_Elapsed1Second;

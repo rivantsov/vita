@@ -52,7 +52,7 @@ SELECT * FROM NumberedQuery
       //In paged version, inside OVER clause we must have some ORDER BY clause. If the table has no ORDER BY, then just use PK
       string strOrderBy = (table.DefaultOrderBy == null) ? "ORDER BY (SELECT 1)" : BuildOrderBy(table, table.DefaultOrderBy);
       var sql = string.Format(SqlSelectAllPaged, strColumns, table.FullName, strOrderBy);
-      var cmdName = ModelConfig.NamingPolicy.ConstructDbCommandName(entCommand, table.TableName, "SelectAllPaged");
+      var cmdName = ModelConfig.NamingPolicy.GetDbCommandName(entCommand, table.TableName, "SelectAllPaged");
       var cmdInfo = CreateDbCommandInfo(entCommand, cmdName, table, DbExecutionType.Reader, sql);
       cmdInfo.EntityMaterializer = CreateEntityMaterializer(table, outColumns); 
       return cmdInfo;
@@ -72,7 +72,7 @@ SELECT {0}
       var strColumns = outColumns.GetSqlNameList();
       string strOrderBy = (table.DefaultOrderBy == null) ? "ORDER BY (SELECT 1)" : BuildOrderBy(table, table.DefaultOrderBy);
       var sql = string.Format(SqlSelectAllPaged, strColumns, table.FullName, strOrderBy);
-      var cmdName = ModelConfig.NamingPolicy.ConstructDbCommandName(entCommand, table.TableName, "SelectAllPaged");
+      var cmdName = ModelConfig.NamingPolicy.GetDbCommandName(entCommand, table.TableName, "SelectAllPaged");
       var cmdInfo = CreateDbCommandInfo(entCommand, cmdName, table, DbExecutionType.Reader, sql);
       cmdInfo.EntityMaterializer = CreateEntityMaterializer(table, outColumns);
       return cmdInfo;
@@ -94,7 +94,7 @@ INSERT INTO {0}
       var rvClause = string.Empty;
       var listColumns = new List<DbColumnInfo>();
       var listValues = new StringList();
-      var cmdName = ModelConfig.NamingPolicy.ConstructDbCommandName(entityCommand, table.TableName, "Insert");
+      var cmdName = ModelConfig.NamingPolicy.GetDbCommandName(entityCommand, table.TableName, "Insert");
       var dbCmdInfo = CreateDbCommandInfo(entityCommand, cmdName, table, DbExecutionType.NonQuery, null);
       foreach (var prm in dbCmdInfo.Parameters) {
         var col = prm.SourceColumn;
@@ -140,7 +140,7 @@ UPDATE {0}
       var table = DbModel.LookupDbObject<DbTableInfo>(entityCommand.TargetEntityInfo, throwNotFound: true);
       if (entityCommand == null)
         return null;
-      var cmdName = this.ModelConfig.NamingPolicy.ConstructDbCommandName(entityCommand, table.TableName, "Update");
+      var cmdName = this.ModelConfig.NamingPolicy.GetDbCommandName(entityCommand, table.TableName, "Update");
       var cmdInfo = CreateDbCommandInfo(entityCommand, cmdName, table, DbExecutionType.NonQuery, null);
       var updateParams = cmdInfo.Parameters.Where(p => !p.SourceColumn.Flags.IsSet(DbColumnFlags.PrimaryKey | DbColumnFlags.NoUpdate));
       // Some tables (like many-to-many link entities) might have no columns to update
@@ -172,7 +172,7 @@ DELETE FROM {0}
   WHERE {1}; {2}"; 
       var table = DbModel.LookupDbObject<DbTableInfo>(entityCommand.TargetEntityInfo, throwNotFound: true);
       //Load by primary key
-      var cmdName = this.ModelConfig.NamingPolicy.ConstructDbCommandName(entityCommand, table.TableName, "Delete");
+      var cmdName = this.ModelConfig.NamingPolicy.GetDbCommandName(entityCommand, table.TableName, "Delete");
       var cmdInfo = CreateDbCommandInfo(entityCommand, cmdName, table, DbExecutionType.NonQuery, null);
       var strWhere = BuildWhereClause(cmdInfo.Parameters);
       var strCheckRowCount = BuildRowCountCheckStatement(table, cmdInfo.Parameters, entityCommand.Kind);
@@ -222,7 +222,7 @@ SELECT {0}
       var dbKey = DbModel.LookupDbObject<DbKeyInfo>(entityCommand.SelectKey);
       Util.Check(dbKey.KeyColumns.Count == 1, "Cannot construct SelectByKeyArray command for composite keys. Key: {0}", dbKey);
       var keyCols = dbKey.KeyColumns.GetNames(removeUnderscores: true);
-      var cmdName = ModelConfig.NamingPolicy.ConstructDbCommandName(entityCommand, table.TableName, "SelectByArrayOf", keyCols);
+      var cmdName = ModelConfig.NamingPolicy.GetDbCommandName(entityCommand, table.TableName, "SelectByArrayOf", keyCols);
       var cmdInfo = CreateDbCommandInfo(entityCommand, cmdName, table, DbExecutionType.Reader, null);
       //Build column list
       var outColumns = table.Columns.GetSelectable();

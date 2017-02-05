@@ -10,6 +10,7 @@ using Vita.Entities;
 using Vita.Entities.Authorization;
 using Vita.Modules.DataHistory;
 using Vita.Modules.DbInfo;
+using Vita.Modules.Email;
 using Vita.Modules.EncryptedData;
 using Vita.Modules.Logging;
 using Vita.Modules.Logging.Api;
@@ -63,6 +64,7 @@ namespace Vita.Samples.BookStore {
 
       //Notification service
       var notificationService = new Vita.Modules.Notifications.NotificationService(this);
+
       // Authorization object
       Authorization = new BooksAuthorization(this);
       //api config - register controllers defined in Vita.Modules assembly; books controllers are registered by BooksModule

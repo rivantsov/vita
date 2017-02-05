@@ -74,7 +74,7 @@ namespace Vita.Data.Postgres {
       return new PgLinqSqlProvider(dbModel);
     }
 
-    public override string GetFullName(string schema, string name) {
+    public override string FormatFullName(string schema, string name) {
       return schema + ".\"" +  name + "\"";
     }
 

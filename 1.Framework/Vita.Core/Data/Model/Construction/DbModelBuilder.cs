@@ -151,23 +151,22 @@ namespace Vita.Data.Model {
     //Create tables and regular "value" columns
     private void BuildTables() {
       var supportsViews = _dbModel.Driver.Supports(DbFeatures.Views);
-      foreach (var entityInfo in _entityModel.Entities) {
-        if (!IsActive(entityInfo.Area))
+      foreach (var entity in _entityModel.Entities) {
+        if (!IsActive(entity.Area))
           continue;
-        if (entityInfo.Kind == EntityKind.View && !supportsViews)
+        if (entity.Kind == EntityKind.View && !supportsViews)
           continue; 
-
-        var tableName = ConstructDefaultTableName(entityInfo);
-        var objType = entityInfo.Kind == EntityKind.Table ? DbObjectType.Table : DbObjectType.View;
-        var schema = _config.GetSchema(entityInfo.Area);
-        var table = new DbTableInfo(_dbModel, schema, tableName, entityInfo, objType);
+        var tableName = _config.NamingPolicy.GetDbTableViewName(entity, _config);
+        var objType = entity.Kind == EntityKind.Table ? DbObjectType.Table : DbObjectType.View;
+        var schema = _config.GetSchema(entity.Area);
+        var table = new DbTableInfo(_dbModel, schema, tableName, entity, objType);
         // Check materialized view - automatically set the flag if there are indexes on the view
-        if (entityInfo.Kind == EntityKind.View) {
-          if (_driver.Supports(DbFeatures.MaterializedViews) && entityInfo.ViewDefinition.Options.IsSet(DbViewOptions.Materialized))
+        if (entity.Kind == EntityKind.View) {
+          if (_driver.Supports(DbFeatures.MaterializedViews) && entity.ViewDefinition.Options.IsSet(DbViewOptions.Materialized))
             table.IsMaterializedView = true;
         }
         //create Value columns 
-        foreach (var member in entityInfo.Members)
+        foreach (var member in entity.Members)
           if (member.Kind == MemberKind.Column)
             CreateDbColumn(table, member);
         //reorder DbColumns, make PK appear first
@@ -380,16 +379,8 @@ namespace Vita.Data.Model {
     }
 
     //default, we run thru naming policy later
-    private string ConstructDefaultTableName(EntityInfo entity) {
-      if (!string.IsNullOrWhiteSpace(entity.TableName)) 
-        return entity.TableName;
-      switch(entity.Kind) {
-        case EntityKind.View:
-          return this._config.NamingPolicy.ViewPrefix + entity.Name;
-        case EntityKind.Table:
-        default:
-          return this._config.NamingPolicy.TablePrefix + entity.Name;
-      }
+    private string ConstructTableName(EntityInfo entity) {
+      return _config.NamingPolicy.GetDbTableViewName(entity, _config);
     }
 
     private void CheckObjectNames() {

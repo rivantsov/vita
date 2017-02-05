@@ -24,7 +24,7 @@ SELECT {0}
 
       var table = DbModel.LookupDbObject<DbTableInfo>(entityCommand.TargetEntityInfo, throwNotFound: true);
       //Build column list
-      var cmdName = ModelConfig.NamingPolicy.ConstructDbCommandName(entityCommand, table.TableName, "SelectAllPaged");
+      var cmdName = ModelConfig.NamingPolicy.GetDbCommandName(entityCommand, table.TableName, "SelectAllPaged");
       var outColumns = table.Columns.GetSelectable();
       var strColumns = outColumns.GetSqlNameList();
       //Build Order by

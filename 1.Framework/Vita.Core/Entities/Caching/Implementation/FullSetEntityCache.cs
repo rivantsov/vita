@@ -30,7 +30,7 @@ namespace Vita.Entities.Caching {
     CacheSettings _settings;
     IDataStore _dataStore;
     StringCaseMode _caseMode; 
-    ObjectCache<EntityCacheQuery> _queryCache;
+    ObjectCache<string, EntityCacheQuery> _queryCache;
     CacheLoadStatus _loadStatus; 
 
     public OperationContext OpContext; 
@@ -51,7 +51,7 @@ namespace Vita.Entities.Caching {
       _settings = settings;
       _dataStore = dataStore;
       _caseMode = caseMode; 
-      _queryCache = new ObjectCache<EntityCacheQuery>("QueryCacheForEntityCache", expirationSecs: 10 * 60);
+      _queryCache = new ObjectCache<string , EntityCacheQuery> (expirationSeconds: 5 * 60, maxLifeSeconds: 10 * 60);
       _timeService = _app.GetService<ITimeService>();
       _errorLog = _app.GetService<IErrorLogService>(); 
       OpContext = new OperationContext(_app, UserInfo.System);

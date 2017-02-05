@@ -28,14 +28,15 @@ namespace Vita.Modules.DbInfo {
     // We cannot use regular access thru EntitySession - db info/version loads at the very start of connecting to db;
     // the entity app is not ready yet (schema not updated, etc).
     public DbVersionInfo LoadDbInfo(DbSettings settings, string appName, Vita.Data.Driver.DbModelLoader loader) {
-      var thisSchema = settings.ModelConfig.GetSchema(this.Area); 
-      if (!loader.TableExists(thisSchema, "DbInfo"))
+      var thisSchema = settings.ModelConfig.GetSchema(this.Area);
+      var prefix = settings.ModelConfig.Options.IsSet(DbOptions.AddSchemaToTableNames) ? thisSchema + "_" : string.Empty;
+      var dbInfoName = prefix + "DbInfo";
+      var dbModuleInfoName = prefix + "DbModuleInfo";
+      if (!loader.TableExists(thisSchema, dbInfoName))
         return null;
-      var dbInfoTableName = settings.Driver.GetFullName(thisSchema, "DbInfo");
-      var dbModuleInfoTableName = settings.Driver.GetFullName(thisSchema, "DbModuleInfo");
       try {
         var dbInfo = new DbVersionInfo();
-        var sql = settings.Driver.GetDirectSelectAllSql(thisSchema, "DbInfo"); 
+        var sql = settings.Driver.GetDirectSelectAllSql(thisSchema, dbInfoName); 
         var dt = loader.ExecuteSelect(sql); 
         var appRow = dt.FindRow("AppName", appName);
         if (appRow != null) {
@@ -51,7 +52,7 @@ namespace Vita.Modules.DbInfo {
           }
         } //if appRow
         //Read modules
-        sql = settings.Driver.GetDirectSelectAllSql(thisSchema, "DbModuleInfo");
+        sql = settings.Driver.GetDirectSelectAllSql(thisSchema, dbModuleInfoName);
         dt = loader.ExecuteSelect(sql); 
         foreach(DbRow row in dt.Rows) {
           var moduleName = row.GetAsString("ModuleName");

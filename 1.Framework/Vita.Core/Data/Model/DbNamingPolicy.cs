@@ -39,13 +39,31 @@ namespace Vita.Data.Model {
     /// <returns>The procedure name.</returns>
     /// <remarks>Constructs the name of db command (stored procedure) by combining Table name, operation and optionally
     /// the list of columns involved. For ex: ProductSelectByName.</remarks>
-    public virtual string ConstructDbCommandName(EntityCommand command, string tableName, string operation, string suffix = null) {
+    public virtual string GetDbCommandName(EntityCommand command, string tableName, string operation, string suffix = null) {
       return command.CommandName;
     }
 
-    public virtual string ConstructDbParameterName(string baseName) {
+    public virtual string GetDbParameterName(string baseName) {
       return baseName; 
     }
+
+    public virtual string GetDbTableViewName(EntityInfo entity, DbModelConfig config) {
+      var name = entity.TableName;
+      if(!string.IsNullOrWhiteSpace(name))
+        return name;
+      switch(entity.Kind) {
+        case EntityKind.View:
+          name = this.ViewPrefix + entity.Name;
+          break; 
+        case EntityKind.Table:
+        default:
+          name = this.TablePrefix + entity.Name;
+          break; 
+      }
+      if(config.Options.IsSet(DbOptions.AddSchemaToTableNames))
+        name = entity.Area.Name + "_" + name;
+      return name; 
+    }//method
   }//class
 
 

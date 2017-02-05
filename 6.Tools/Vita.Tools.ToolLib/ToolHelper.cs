@@ -42,10 +42,10 @@ namespace Vita.Tools {
     public static DbOptions GetDefaultOptions(DbServerType serverType) {
       switch(serverType) {
         case DbServerType.MsSql: return Data.MsSql.MsSqlDbDriver.DefaultMsSqlDbOptions;
-        case DbServerType.SqlCe: return Vita.Data.SqlCe.SqlCeDbDriver.DefaultDbOptions;
+        case DbServerType.SqlCe: return Vita.Data.SqlCe.SqlCeDbDriver.DefaultSqlCeDbOptions;
         case DbServerType.MySql: return Vita.Data.MySql.MySqlDbDriver.DefaultMySqlDbOptions;
         case DbServerType.Postgres: return Vita.Data.Postgres.PgDbDriver.DefaultPgDbOptions;
-        case DbServerType.Sqlite: return Vita.Data.SQLite.SQLiteDbDriver.DefaultSQLiteDbOptions;
+        case DbServerType.Sqlite: return Vita.Data.SQLite.SQLiteDbDriver.DefaultSQLiteDbOptions;// & ~DbOptions.AddSchemaToTableNames;
         default: return DbOptions.Default; 
       }      
     }

@@ -16,12 +16,12 @@ using Vita.Entities.Services.Implementations;
 namespace Vita.Entities.Authorization {
 
   public class AuthorizationService: IAuthorizationService, IEntityService {
-    public int RoleCacheExpirationSec = 300;
+    public int RoleCacheExpirationSec = 60;
     public int UserCacheExpirationSec = 60;
     EntityApp _app;
     AuthorityBuilder _builder; 
-    ObjectCache<Authority> _authorityByRoleSet;
-    ObjectCache<AuthorityDescriptor> _authorityByUserId;
+    ObjectCache<string, Authority> _authorityByRoleSet;
+    ObjectCache<string, AuthorityDescriptor> _authorityByUserId;
 
     public AuthorizationService(EntityApp app) {
       _app = app; 
@@ -32,19 +32,23 @@ namespace Vita.Entities.Authorization {
 
     public void Init(EntityApp app) {
       _app = app;
-      _authorityByRoleSet = new ObjectCache<Authority>("AuthorityByRoleSet", RoleCacheExpirationSec);
-      _authorityByUserId = new ObjectCache<AuthorityDescriptor>("AuthorityByUserId", UserCacheExpirationSec);
-      _authorityByUserId.OnRemoved = OnAuthorityRemoved;
+      _authorityByRoleSet = new ObjectCache<string, Authority>(
+          expirationSeconds:  RoleCacheExpirationSec, maxLifeSeconds: RoleCacheExpirationSec * 5);
+      _authorityByUserId = new ObjectCache<string, AuthorityDescriptor>( 
+        expirationSeconds: UserCacheExpirationSec, maxLifeSeconds: UserCacheExpirationSec * 5);
+      _authorityByUserId.Removed += AuthorityByUserId_Removed;  
+    }
+
+    private void AuthorityByUserId_Removed(object sender, ObjectCache<string, AuthorityDescriptor>.CacheItemRemovedEventArgs e) {
+      var auth = e.Value;
+      auth.Invalidated = true;
+
     }
 
     public void Shutdown() {
       
     }
     #endregion
-
-    void OnAuthorityRemoved(string key, AuthorityDescriptor auth) {
-      auth.Invalidated = true; 
-    }
 
     #region IAuthorizationService Members
     public Authority GetAuthority(IList<Role> userRoles) {

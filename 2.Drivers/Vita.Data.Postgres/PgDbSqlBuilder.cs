@@ -39,7 +39,7 @@ LIMIT {3}__maxRows;";
       string strOrderBy = (table.DefaultOrderBy == null) ? "ORDER BY (SELECT 1)" : BuildOrderBy(table, table.DefaultOrderBy);
       var prmPrefix = GetParameterPrefix();
       var sql = string.Format(SqlSelectAllPaged, strColumns, table.FullName, strOrderBy, prmPrefix);
-      var cmdName = ModelConfig.NamingPolicy.ConstructDbCommandName(entityCommand, table.TableName, "SelectAllPaged");
+      var cmdName = ModelConfig.NamingPolicy.GetDbCommandName(entityCommand, table.TableName, "SelectAllPaged");
       var cmdInfo = CreateDbCommandInfo(entityCommand, cmdName, table, DbExecutionType.Reader, sql);
       cmdInfo.EntityMaterializer = CreateEntityMaterializer(table, outColumns);
       return cmdInfo;
@@ -56,7 +56,7 @@ SELECT {0}
       var dbKey = DbModel.LookupDbObject<DbKeyInfo>(entityCommand.SelectKey);
       Util.Check(dbKey.KeyColumns.Count == 1, "Cannot construct SelectByKeyArray command for composite keys. Key: {0}", dbKey);
       var keyCols = dbKey.KeyColumns.GetNames(removeUnderscores: true);
-      var cmdName = ModelConfig.NamingPolicy.ConstructDbCommandName(entityCommand, table.TableName, "SelectByArrayOf", keyCols);
+      var cmdName = ModelConfig.NamingPolicy.GetDbCommandName(entityCommand, table.TableName, "SelectByArrayOf", keyCols);
       var cmdInfo = CreateDbCommandInfo(entityCommand, cmdName, table, DbExecutionType.Reader, null);
       //Build column list
       var outColumns = table.Columns.GetSelectable();

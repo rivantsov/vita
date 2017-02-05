@@ -55,9 +55,14 @@ namespace Vita.UnitTests.Extended {
       cmd.Connection = directDb.DbConnection;
       cmd.Transaction = directDb.DbTransaction;
       switch(Startup.ServerType) {
-        case DbServerType.SqlCe: case DbServerType.Sqlite:
-          // SqlCe, SqlLite does not have schemas
+        case DbServerType.SqlCe:
+          // SqlCe, SqlLite does not have schemas; 
           cmd.CommandText = "UPDATE \"Book\" SET \"Price\" = \"Price\" + 1 WHERE \"Id\" = @P1;";
+          break;
+        case DbServerType.Sqlite:
+          // SqlCe, SqlLite does not have schemas; 
+          // For SQLite add default DbOptions flag AddSchemaToTableName, so table name is books_Book
+          cmd.CommandText = "UPDATE \"books_Book\" SET \"Price\" = \"Price\" + 1 WHERE \"Id\" = @P1;";
           break; 
         default:
           cmd.CommandText = "UPDATE \"books\".\"Book\" SET \"Price\" = \"Price\" + 1 WHERE \"Id\" = @P1;";

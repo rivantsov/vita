@@ -87,7 +87,7 @@ namespace Vita.UnitTests.Web {
       var clientContext = new OperationContext(BooksApp);
       // change options to None to disable logging of test client calls        
       Client = new WebApiClient(clientContext, serviceUrl, clientName : "TestClient", nameMapping: jsonMappingMode, 
-          options: ClientOptions.EnableLog);
+          options: ClientOptions.EnableLog, badRequestContentType: typeof(List<ClientFault>));
       WebApiClient.SharedHttpClientHandler.AllowAutoRedirect = false; //we need it for Redirect test
     }
 

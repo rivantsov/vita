@@ -74,7 +74,7 @@ namespace Vita.Data.Driver {
       return conn.ServerVersion;
     }
 
-    public virtual string GetFullName(string schema, string name) {
+    public virtual string FormatFullName(string schema, string name) {
       if(Supports(DbFeatures.Schemas))
         return string.Format("\"{0}\".\"{1}\"", schema, name);
       else
@@ -83,7 +83,7 @@ namespace Vita.Data.Driver {
 
     // Returns select-all SQL statement for a given table. Used in low-level, early access in system modules like DbInfo
     public virtual string GetDirectSelectAllSql(string schema, string tableName) {
-      var sql = string.Format("SELECT * FROM {0};", GetFullName(schema, tableName));
+      var sql = string.Format("SELECT * FROM {0};", FormatFullName(schema, tableName));
       return sql; 
     }
 

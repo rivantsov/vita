@@ -140,14 +140,20 @@ namespace Vita.Data.Upgrades {
       if (oldT != null) return oldT;
       var entity = newTable.Entity;
       if(entity == null) return null; //just in case, if we ever have tables without entities
-      if (entity.OldNames == null) return null; 
-      foreach (var oldName in entity.OldNames) {
+      if (entity.OldNames == null) return null;
+      var appendSchema = this._newModel.Config.Options.IsSet(DbOptions.AddSchemaToTableNames);
+      var prefix = appendSchema ? newTable.Schema + "_" : string.Empty; 
+      foreach (var oldN in entity.OldNames) {
+        var oldName = prefix + oldN; 
         oldT = _oldModel.GetTable(newTable.Schema, oldName);
         if (oldT != null)  return oldT;
         //if old name starts with "I" (like all interfaces), then try without I
-        if (oldName.StartsWith("I"))
-          oldT = _oldModel.GetTable(newTable.Schema, oldName.Substring(1));
-        if (oldT != null)  return oldT;
+        if (oldN.StartsWith("I")) {
+          oldName = prefix + oldN.Substring(1);
+          oldT = _oldModel.GetTable(newTable.Schema, oldName);
+        }
+        if (oldT != null)
+          return oldT;
       }//foreach oldName
       return null; 
     }

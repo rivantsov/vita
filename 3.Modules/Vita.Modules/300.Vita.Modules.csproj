@@ -118,9 +118,8 @@
     <Compile Include="TextTemplates\TemplateModule_Migrations.cs" />
     <Compile Include="OAuthClient\OAuthClientSettings.cs" />
     <Compile Include="DataHistory\DataHistoryEntities.cs" />
-    <Compile Include="WebClient\DefaultClientErrorHandler.cs" />
     <Compile Include="WebClient\ApiExceptions.cs" />
-    <Compile Include="WebClient\Interfaces.cs" />
+    <Compile Include="WebClient\Json\IContentSerializer.cs" />
     <Compile Include="WebClient\Json\JsonContentSerializer.cs" />
     <Compile Include="WebClient\Json\ClientJsonNameContractResolver.cs" />
     <Compile Include="WebClient\Sync\WebClientSyncExtensions.cs" />
@@ -172,6 +171,7 @@
     <Compile Include="Logging\TransactionLog\TransactionLogModule.cs" />
     <Compile Include="Logging\TransactionLog\Entities.cs" />
     <Compile Include="Logging\TransactionLog\TransactionLogSettings.cs" />
+    <Compile Include="WebClient\WebApiClient_ErrorHandling.cs" />
     <None Include="AddressPhone\AddressPhoneEntities_New.cs" />
     <Compile Include="Logging\DbUpgradeLog\DbUpgradeLogExtensions.cs" />
     <Compile Include="Logging\DbUpgradeLog\DbUpgradeLogModule.cs" />

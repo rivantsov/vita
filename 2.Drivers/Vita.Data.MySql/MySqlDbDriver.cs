@@ -76,7 +76,7 @@ namespace Vita.Data.MySql {
       return new MySqlLinqSqlProvider(dbModel);
     }
 
-    public override string GetFullName(string schema, string name) {
+    public override string FormatFullName(string schema, string name) {
       return string.Format("\"{0}\".\"{1}\"", schema, name);
     }
 

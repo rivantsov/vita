@@ -62,7 +62,7 @@ OFFSET @__skipRows
       var strColumns = outColumns.GetSqlNameList();
       string strOrderBy = BuildOrderBy(table, table.DefaultOrderBy); //might be empty
       var sql = string.Format(SqlSelectAllPaged, strColumns, table.FullName, strOrderBy);
-      var cmdName = ModelConfig.NamingPolicy.ConstructDbCommandName(entityCommand, table.TableName, "SelectAllPaged");
+      var cmdName = ModelConfig.NamingPolicy.GetDbCommandName(entityCommand, table.TableName, "SelectAllPaged");
       var cmdInfo = CreateDbCommandInfo(entityCommand, cmdName, table, DbExecutionType.Reader, sql);
       cmdInfo.EntityMaterializer = CreateEntityMaterializer(table, outColumns);
       return cmdInfo;

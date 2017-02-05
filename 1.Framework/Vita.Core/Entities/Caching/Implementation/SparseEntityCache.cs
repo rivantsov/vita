@@ -13,11 +13,13 @@ namespace Vita.Entities.Caching {
   
   public class SparseEntityCache {
     CacheSettings _settings;
-    ObjectCache<CachedRecordData> _cacheTable;  
+    ObjectCache<string, CachedRecordData> _cacheTable;  
 
     public SparseEntityCache(CacheSettings settings) {
       _settings = settings;
-      _cacheTable = new ObjectCache<CachedRecordData>("SparseEntityCache", _settings.SparseCacheExpirationSec, sliding: false); // use abs expiration
+      // Uses in fact maxLifetime expiration - because expSec > maxLifetime
+      _cacheTable = new ObjectCache<string, CachedRecordData>(
+        maxLifeSeconds: _settings.SparseCacheExpirationSec, expirationSeconds: _settings.SparseCacheExpirationSec * 2 ); 
     }
 
     public EntityRecord Lookup(EntityKey primaryKey, EntitySession session) {

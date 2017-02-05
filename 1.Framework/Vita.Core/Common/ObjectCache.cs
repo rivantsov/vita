@@ -4,49 +4,143 @@ using System.Collections.Concurrent;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Vita.Entities.Services;
+using Vita.Entities.Services.Implementations;
 using System.Threading;
-using System.Runtime.Caching;
-
 
 namespace Vita.Common {
 
-  public class ObjectCache<TValue> where TValue: class {
-    public Action<string, TValue> OnRemoved;
+  public class ObjectCache<TKey, TValue> where TValue : class {
+    #region nested CacheItem class
+    class CacheItem {
+      public readonly TKey Key;
+      public readonly TValue Value;
+      public readonly long AddedOnMs;
+      public long LastUsedOnMs;
 
-    MemoryCache _cache;
-    int _expirationSecs;
-    CacheItemPolicy _slidingExpirationPolicy; 
-
-    public ObjectCache(string name, int expirationSecs = 60, bool sliding = true) {
-      _expirationSecs = expirationSecs;
-      _cache = new MemoryCache(name);
-      if(sliding)
-        _slidingExpirationPolicy = new CacheItemPolicy() { RemovedCallback = OnCacheEntryRemoved, SlidingExpiration = TimeSpan.FromSeconds(_expirationSecs) };
+      public CacheItem(TKey key, TValue value, long timeMs) {
+        Key = key;
+        Value = value;
+        AddedOnMs = LastUsedOnMs = timeMs; 
+      }
     }
 
-    public void Add(string key, TValue value) {
-      var item = new CacheItem(key, value);
-      var policy = _slidingExpirationPolicy ?? new CacheItemPolicy() {RemovedCallback = OnCacheEntryRemoved, AbsoluteExpiration = DateTime.UtcNow.AddSeconds(_expirationSecs)  };
-      _cache.Add(item, policy); 
+    public class CacheItemRemovedEventArgs : EventArgs {
+      public readonly TKey Key;
+      public readonly TValue Value;
+      public CacheItemRemovedEventArgs(TKey key, TValue value) {
+        Key = key;
+        Value = value; 
+      }
     }
 
-    void OnCacheEntryRemoved(CacheEntryRemovedArguments args) {
-      OnRemoved?.Invoke(args.CacheItem.Key, (TValue) args.CacheItem.Value);
+    #endregion 
+
+    public event EventHandler<CacheItemRemovedEventArgs> Removed; 
+
+    ConcurrentDictionary<TKey, CacheItem> _items = new ConcurrentDictionary<TKey, CacheItem>();
+    int _expiratonMs;
+    int _maxLifeMs;
+    long _lastPurgedOn;
+    ITimeService _timeService;
+
+    public ObjectCache(int expirationSeconds = 10, int maxLifeSeconds = 30) {
+      _maxLifeMs = maxLifeSeconds * 1000;
+      _expiratonMs = expirationSeconds * 1000;
+      _timeService = TimeService.Instance;
     }
 
-    public TValue Lookup(string key) {
-      var value = _cache.Get(key);
-      return (TValue)value; 
+    public void Add(TKey key, TValue value) {
+      CheckNeedPurge();
+      var nowMs = _timeService.ElapsedMilliseconds;
+      var item = new CacheItem( key, value, nowMs);
+      _items[key] = item;
     }
 
-    public void Remove(string key) {
-      _cache.Remove(key); 
+    public TValue Lookup(TKey key) {
+      TValue value;
+      if(TryGetValue(key, out value))
+        return value;
+      return null; 
+    }
+
+    public bool TryGetValue(TKey key, out TValue value) {
+      CheckNeedPurge();
+      CacheItem item;
+      value = null;
+      if(!_items.TryGetValue(key, out item))
+        return false;
+      var msNow = _timeService.ElapsedMilliseconds;
+      if(CheckValid(item, msNow)) {
+        value = item.Value;
+        return true;
+      }
+      return false; 
+    }
+
+    public void Remove(TKey key) {
+      CacheItem item;
+      _items.TryRemove(key, out item);
+      if(item != null && Removed != null)
+        Removed(this, new CacheItemRemovedEventArgs(item.Key, item.Value));
     }
 
     public void Clear() {
-      _cache.Trim(100);
+      _items.Clear();
     }
 
+    public int Count {
+      get { return _items.Count; }
+    }
+
+    public override string ToString() {
+      return "Count=" + Count;
+    }
+
+    private bool CheckValid(CacheItem item, long nowMs) {
+      // Check lifetime since added
+      var valid = item.AddedOnMs + _maxLifeMs > nowMs;
+      if(valid) {
+        var lastUsed = Interlocked.Exchange(ref item.LastUsedOnMs, nowMs);
+        valid = (lastUsed + _expiratonMs > nowMs);
+      }
+      if(valid)
+        return true;
+      Remove(item.Key);
+      return false;
+    }
+
+
+    #region 
+    bool _purging;
+    public void CheckNeedPurge() {
+      if(_purging)
+        return;
+      var msNow = _timeService.ElapsedMilliseconds; 
+      var lastPurged = Interlocked.Read(ref _lastPurgedOn);
+      if(lastPurged + _expiratonMs / 2 < msNow)
+        Purge(msNow); 
+    }
+
+    public void Purge() {
+      Purge(_timeService.ElapsedMilliseconds); 
+    }
+
+    private void Purge(long msNow) {
+      if(_purging)
+        return; 
+      try {
+        _purging = true; 
+        var nowMs = _timeService.ElapsedMilliseconds;
+        var items = _items.Values;
+        foreach(var item in items.ToList())
+          CheckValid(item, nowMs);
+        Interlocked.Exchange(ref _lastPurgedOn, nowMs);
+      } finally {
+        _purging = true; 
+      }
+    }
+    #endregion
 
   }//class
 }//ns

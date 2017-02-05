@@ -16,7 +16,8 @@ namespace Vita.Data.SQLite {
   public class SQLiteDbDriver : DbDriver  {
     public const DbFeatures SQLiteFeatures = DbFeatures.TreatBitAsInt | DbFeatures.Views
                                                     | DbFeatures.ReferentialConstraints | DbFeatures.Paging;
-    public const DbOptions DefaultSQLiteDbOptions = DbOptions.Default | DbOptions.AutoIndexForeignKeys;
+    public const DbOptions DefaultSQLiteDbOptions = DbOptions.Default 
+      | DbOptions.AutoIndexForeignKeys | DbOptions.AddSchemaToTableNames;
 
     public SQLiteDbDriver() : base(DbServerType.Sqlite, SQLiteFeatures) {
       base.DynamicSqlParameterPrefix = "@";

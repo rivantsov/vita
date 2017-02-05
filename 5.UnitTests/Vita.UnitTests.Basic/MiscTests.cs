@@ -315,9 +315,9 @@ namespace Vita.UnitTests.Basic.MiscTests {
       Assert.AreEqual(DataAccessException.SubTypeUniqueIndexViolation, dex.SubType);
       switch(servType) {
         case DbServerType.Sqlite:
-          //SQLite is a special case
+          //SQLite is a special case; we setup the flag to attach schema to tablename (misc_XXX)
           var columnNames = dex.Data[DataAccessException.KeyDbColumnNames];
-          Assert.AreEqual("Driver.LicenseNumber", columnNames, "SQLite: Unexpected column name(s) in Unique index violation.");
+          Assert.AreEqual("misc_Driver.LicenseNumber", columnNames, "SQLite: Unexpected column name(s) in Unique index violation.");
           break; 
         default:
           indexAlias = dex.Data[DataAccessException.KeyIndexAlias];
@@ -338,7 +338,7 @@ namespace Vita.UnitTests.Basic.MiscTests {
         case DbServerType.Sqlite:
           //SQLite is a special case
           var columnNames = dex.Data[DataAccessException.KeyDbColumnNames];
-          Assert.AreEqual("Driver.LicenseNumber", columnNames, "SQLite: Unexpected column name(s) in Unique index violation.");
+          Assert.AreEqual("misc_Driver.LicenseNumber", columnNames, "SQLite: Unexpected column name(s) in Unique index violation.");
           break;
         default:
           indexAlias = dex.Data[DataAccessException.KeyIndexAlias];

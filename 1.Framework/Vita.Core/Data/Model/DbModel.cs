@@ -33,7 +33,8 @@ namespace Vita.Data.Model {
 
     // Cache - we use ObjectCache for compiled queries; we don't need cache entries to expire, but we want to limit cache size automatically
     // ObjectCache provides this cleanup on overflow functionality
-    public readonly ObjectCache<TranslatedLinqCommand> QueryCache = new ObjectCache<TranslatedLinqCommand>("LinqQueryCache", expirationSecs: 60 * 5);
+    public readonly ObjectCache<string, TranslatedLinqCommand> QueryCache 
+      = new ObjectCache<string, TranslatedLinqCommand>(expirationSeconds: 60, maxLifeSeconds: 60 * 5);
 
     //Table of all Db objects; accessed by entity-model object as key 
     private Dictionary<HashedObject, DbModelObjectBase> _allObjects = new Dictionary<HashedObject, DbModelObjectBase>();
@@ -138,7 +139,7 @@ namespace Vita.Data.Model {
       return GetDbObject(fullName) as DbTableInfo;
     }
     public DbTableInfo GetTable(string schemaName, string tableName) {
-      var fullName = Config.Driver.GetFullName(schemaName, tableName);
+      var fullName = Config.Driver.FormatFullName(schemaName, tableName);
       return GetTable(fullName);
     }
     

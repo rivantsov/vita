@@ -149,9 +149,12 @@ namespace Vita.UnitTests.Basic.SchemaUpdates {
         // otherwise adding foreign key constraint would fail. We set it to the same reference as Parent_Id column.
         // The script timing is 'Middle' - it will be executed AFTER column is added (as nullable), but before it is switched to NOT NULL and ref constraint is added. 
         // SQLite does not allow renaming tables
-        string tableName = migrations.ServerType == DbServerType.Sqlite ? "ChildEntity" : migrations.GetFullTableName<IChildEntityRenamed>();
-        var sql = string.Format(@"UPDATE {0} SET ""OtherParent_Id"" = ""Parent_Id"" WHERE ""OtherParent_Id"" IS NULL;", tableName); 
-        migrations.AddSql("1.1.0.0", "InitOtherParentColumn", "Initialize values of IChildEntityRenamed.OtherParent column.", sql, timing: DbMigrationTiming.Middlle);
+        string tableName = migrations.ServerType == DbServerType.Sqlite ? 
+          "upd_ChildEntity" : migrations.GetFullTableName<IChildEntityRenamed>();
+        var sql = string.Format(
+          @"UPDATE {0} SET ""OtherParent_Id"" = ""Parent_Id"" WHERE ""OtherParent_Id"" IS NULL;", tableName); 
+        migrations.AddSql("1.1.0.0", "InitOtherParentColumn", "Initialize values of IChildEntityRenamed.OtherParent column.",
+            sql, timing: DbMigrationTiming.Middlle);
 
         // Let's add a post-upgrade action - it is a code that will be executed after upgrade is done and entity session is available
         // We add a couple of records to a new table.
@@ -302,6 +305,8 @@ namespace Vita.UnitTests.Basic.SchemaUpdates {
     private void TestSchemaUpdateImplSQLite() {
       //Start from fresh copy of the database
       File.Copy("..\\..\\VitaTestSQLite.db", "VitaTestSQLite.db", overwrite: true);
+      // Note - we have the flag AddSchemaToTableName for SQlite setup (default), 
+      //  so table names are prefixed with 'upd_'
 
       //version 1 of model/schema
       {
@@ -311,7 +316,7 @@ namespace Vita.UnitTests.Basic.SchemaUpdates {
         // Load DbModel and verify it is correct
         var dbModel = Startup.LoadDbModel(SchemaName, app.SystemLog);
         Assert.AreEqual(6, dbModel.Tables.Count(), "Expected 4 tables.");
-        var parTable = dbModel.GetTable(SchemaName, "ParentEntity");
+        var parTable = dbModel.GetTable(null, "upd_ParentEntity");
         Assert.AreEqual(8, parTable.Columns.Count, "Invalid number of columns in parent table.");
         var keyCount = CountKeys(parTable);
         //Keys: PK, FK to IEntityToDelete, index on FK to IEntityToDelete, index on IntProp,StringProp
@@ -319,7 +324,7 @@ namespace Vita.UnitTests.Basic.SchemaUpdates {
 
 
         //child entity
-        var childTable = dbModel.GetTable(SchemaName, "ChildEntity");
+        var childTable = dbModel.GetTable(SchemaName, "upd_ChildEntity");
         Assert.AreEqual(5, childTable.Columns.Count, "Invalid number of columns in child table.");
         // 3 - PK + 2FKs, no indexes on FKs
         Assert.AreEqual(3, childTable.Keys.Count, "Invalid # of keys in child table.");
@@ -354,13 +359,13 @@ namespace Vita.UnitTests.Basic.SchemaUpdates {
         var dbModel = Startup.LoadDbModel(SchemaName, app.SystemLog);
         //Note that we still have 4 tables, EntityToDelete is not dropped because of incoming FK
         Assert.AreEqual(7, dbModel.Tables.Count(), "Expected 7 tables after update.");
-        var parTable = dbModel.GetTable(SchemaName, "ParentEntity");
+        var parTable = dbModel.GetTable(SchemaName, "upd_ParentEntity");
         //NO support for dropping columns, so old columns are not deleted; instead of renaming a new column is added
         Assert.AreEqual(11, parTable.Columns.Count, "Invalid number of columns in parent table after schema update.");
         Assert.AreEqual(4, parTable.Keys.Count, //PK, FK->EntityToDelete, indexes (IntProp,StringProp), (StropProp,Id)
            "Invalid # of keys in parent table after update.");
         //child entity
-        var childTable = dbModel.GetTable(SchemaName, "ChildEntity");
+        var childTable = dbModel.GetTable(SchemaName, "upd_ChildEntity");
         Assert.AreEqual(6, childTable.Columns.Count, "Invalid number of columns in child table after update.");
         // = 3:  Clustered PK, FK to parent, index on FK
         Assert.AreEqual(3, childTable.Keys.Count, "Invalid # of keys in child table after update.");

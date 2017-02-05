@@ -33,7 +33,7 @@ SELECT {0} FROM {1}
       var outColumns = table.Columns.GetSelectable();
       var strColumns = outColumns.GetSqlNameList();
       var strOrderBy = BuildOrderBy(table, table.DefaultOrderBy); //might be empty
-      var cmdName = ModelConfig.NamingPolicy.ConstructDbCommandName(entCommand, table.TableName, "SelectAllPaged");
+      var cmdName = ModelConfig.NamingPolicy.GetDbCommandName(entCommand, table.TableName, "SelectAllPaged");
       var cmdInfo = CreateDbCommandInfo(entCommand, cmdName, table, DbExecutionType.Reader, string.Empty);
       var skipPrm = cmdInfo.Parameters[0].Name;
       var takePrm = cmdInfo.Parameters[1].Name;
@@ -56,7 +56,7 @@ INSERT INTO {0}
       var idClause = string.Empty;
       var listColumns = new List<DbColumnInfo>();
       var listValues = new StringList();
-      var cmdName = ModelConfig.NamingPolicy.ConstructDbCommandName(entityCommand, table.TableName, "Insert");
+      var cmdName = ModelConfig.NamingPolicy.GetDbCommandName(entityCommand, table.TableName, "Insert");
       var dbCmdInfo = CreateDbCommandInfo(entityCommand, cmdName, table, DbExecutionType.NonQuery, null);
       foreach (var prm in dbCmdInfo.Parameters) {
         var col = prm.SourceColumn;
@@ -114,7 +114,7 @@ UPDATE {0}
       var table = DbModel.LookupDbObject<DbTableInfo>(entityCommand.TargetEntityInfo, throwNotFound: true);
       if (entityCommand == null)
         return null;
-      var cmdName = this.ModelConfig.NamingPolicy.ConstructDbCommandName(entityCommand, table.TableName, "Update");
+      var cmdName = this.ModelConfig.NamingPolicy.GetDbCommandName(entityCommand, table.TableName, "Update");
       var cmdInfo = CreateDbCommandInfo(entityCommand, cmdName, table, DbExecutionType.NonQuery, null);
       var updateParams = cmdInfo.Parameters.Where(p => !p.SourceColumn.Flags.IsSet(DbColumnFlags.PrimaryKey | DbColumnFlags.NoUpdate));
       // Some tables (like many-to-many link entities) might have no columns to update
@@ -145,7 +145,7 @@ DELETE FROM {0}
   WHERE {1}; {2}"; 
       var table = DbModel.LookupDbObject<DbTableInfo>(entityCommand.TargetEntityInfo, throwNotFound: true);
       //Load by primary key
-      var cmdName = this.ModelConfig.NamingPolicy.ConstructDbCommandName(entityCommand, table.TableName, "Delete");
+      var cmdName = this.ModelConfig.NamingPolicy.GetDbCommandName(entityCommand, table.TableName, "Delete");
       var cmdInfo = CreateDbCommandInfo(entityCommand, cmdName, table, DbExecutionType.NonQuery, null);
       var strWhere = BuildWhereClause(cmdInfo.Parameters);
       var strCheckRowCount = BuildRowCountCheckStatement(table, cmdInfo.Parameters, entityCommand.Kind);

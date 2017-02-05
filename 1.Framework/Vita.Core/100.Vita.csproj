@@ -55,6 +55,7 @@
     <Compile Include="Common\Crc32.cs" />
     <Compile Include="Common\ExpressionHelper.cs" />
     <Compile Include="Common\ObjectCache.cs" />
+    <None Include="Common\ObjectCache_Old.cs" />
     <Compile Include="Common\RandomHelper.cs" />
     <Compile Include="Common\StringHelper.cs" />
     <Compile Include="Common\AsyncHelper.cs" />

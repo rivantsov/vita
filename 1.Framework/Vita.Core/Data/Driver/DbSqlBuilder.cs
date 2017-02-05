@@ -28,7 +28,7 @@ namespace Vita.Data.Driver {
     }
 
     public virtual string GetFullName(string schema, string name) {
-      return ModelConfig.Driver.GetFullName(schema, name); 
+      return ModelConfig.Driver.FormatFullName(schema, name); 
     }
 
     // Builds a SELECT command without paging. For now paging is provider-dependent.
@@ -45,7 +45,7 @@ FROM {1}{2};"; //note: no space between 1 & 2
       if(!string.IsNullOrEmpty(strOrderBy))
         strOrderBy = " " + strOrderBy;
       var sql = string.Format(SqlSelectAllTemplate, strColumns, table.FullName, strOrderBy);
-      var cmdName = ModelConfig.NamingPolicy.ConstructDbCommandName(entityCommand, table.TableName, "SelectAll");
+      var cmdName = ModelConfig.NamingPolicy.GetDbCommandName(entityCommand, table.TableName, "SelectAll");
       
       var cmdInfo = CreateDbCommandInfo(entityCommand, cmdName, table, DbExecutionType.Reader, sql);
       cmdInfo.EntityMaterializer = CreateEntityMaterializer(table, outColumns);
@@ -68,7 +68,7 @@ FROM {1}{2};"; //note: no space between 1 & 2
       const string SqlDeleteTemplate = "DELETE FROM {0} WHERE {1};";
       var table = DbModel.LookupDbObject<DbTableInfo>(entityCommand.TargetEntityInfo, throwNotFound: true);
       //Load by primary key
-      var cmdName = ModelConfig.NamingPolicy.ConstructDbCommandName(entityCommand, table.TableName, "Delete");
+      var cmdName = ModelConfig.NamingPolicy.GetDbCommandName(entityCommand, table.TableName, "Delete");
       var cmdInfo = CreateDbCommandInfo(entityCommand, cmdName, table, DbExecutionType.NonQuery, null);
       var strWhere = BuildWhereClause(cmdInfo.Parameters);
       cmdInfo.Sql = string.Format(SqlDeleteTemplate, table.FullName, strWhere);
@@ -83,7 +83,7 @@ WHERE {2};";
       var table = DbModel.LookupDbObject<DbTableInfo>(entityCommand.TargetEntityInfo, throwNotFound: true);
       if (entityCommand == null)
         return null; 
-      var cmdName = ModelConfig.NamingPolicy.ConstructDbCommandName(entityCommand, table.TableName, "Update");
+      var cmdName = ModelConfig.NamingPolicy.GetDbCommandName(entityCommand, table.TableName, "Update");
       var cmdInfo = CreateDbCommandInfo(entityCommand, cmdName, table, DbExecutionType.NonQuery, null);
       var pkParams = cmdInfo.Parameters.Where(p => p.SourceColumn.Flags.IsSet(DbColumnFlags.PrimaryKey));
       // find members to update. For partial update, with explicitly specified members to update, we ignore NoUpdate flag
@@ -113,7 +113,7 @@ WHERE {2};";
       var idClause = string.Empty; 
       var listColumns = new List<DbColumnInfo>(); 
       var listValues = new StringList();
-      var cmdName = ModelConfig.NamingPolicy.ConstructDbCommandName(entityCommand, table.TableName, "Insert");
+      var cmdName = ModelConfig.NamingPolicy.GetDbCommandName(entityCommand, table.TableName, "Insert");
       var dbCmdInfo = CreateDbCommandInfo(entityCommand, cmdName, table, DbExecutionType.NonQuery, null);
       foreach (var prm in dbCmdInfo.Parameters) {
         var col = prm.SourceColumn;
@@ -138,7 +138,7 @@ SELECT {0} {1}
       var table = DbModel.LookupDbObject<DbTableInfo>(entityCommand.TargetEntityInfo, throwNotFound: true);
       var dbKey = DbModel.LookupDbObject<DbKeyInfo>(entityCommand.SelectKey); 
       var keyCols = dbKey.KeyColumns.GetNames(removeUnderscores: true);
-      var cmdName = ModelConfig.NamingPolicy.ConstructDbCommandName(entityCommand, table.TableName, "SelectBy", keyCols);
+      var cmdName = ModelConfig.NamingPolicy.GetDbCommandName(entityCommand, table.TableName, "SelectBy", keyCols);
       var cmdInfo = CreateDbCommandInfo(entityCommand, cmdName, table, DbExecutionType.Reader, null);
       //Build column list
       var outColumns = table.Columns.GetSelectable();
@@ -190,7 +190,7 @@ SELECT {0} {1}
       if (dbKey.KeyColumns.Count > 1)
         return null; 
       var keyCol = dbKey.KeyColumns[0].Column.ColumnName;
-      var cmdName = ModelConfig.NamingPolicy.ConstructDbCommandName(entityCommand, table.TableName, "SelectByArrayOf_", keyCol);
+      var cmdName = ModelConfig.NamingPolicy.GetDbCommandName(entityCommand, table.TableName, "SelectByArrayOf_", keyCol);
       var descrTag = GetDbCommandDescriptiveTag(entityCommand);
       var cmdInfo = new DbCommandInfo(entityCommand, cmdName, table, DbExecutionType.Reader, null, descrTag);
       cmdInfo.IsTemplatedSql = true;
@@ -247,7 +247,7 @@ SELECT {0}
       var dbTargetRefKey = DbModel.LookupDbObject<DbKeyInfo>(targetRefKey);
       var linkTable = dbParentRefKey.Table;
       var parentRefColNames = dbParentRefKey.KeyColumns.GetNames(removeUnderscores: true);
-      var cmdName = ModelConfig.NamingPolicy.ConstructDbCommandName(entityCommand, targetTable.TableName, "SelectBy", parentRefColNames);
+      var cmdName = ModelConfig.NamingPolicy.GetDbCommandName(entityCommand, targetTable.TableName, "SelectBy", parentRefColNames);
       // var cmdInfo = CreateDbCommandInfo(entityCommand, cmdName, targetTable, DbExecutionType.Reader, null);
       var cmdInfo = CreateDbCommandInfo(entityCommand, cmdName, linkTable, DbExecutionType.Reader, null);
       var outColumns = targetTable.Columns.GetSelectable();
@@ -339,7 +339,7 @@ SELECT {0}
       var prmPrefix = GetParameterPrefix();
       for(int i=0; i< entityCommand.Parameters.Count; i++) {
         var entParam = entityCommand.Parameters[i];
-        var paramName = prmPrefix + policy.ConstructDbParameterName(entParam.Name);
+        var paramName = prmPrefix + policy.GetDbParameterName(entParam.Name);
         DbParamInfo prmInfo;
         if (entParam.SourceMember != null) {
           var col = mainTable.Columns.FirstOrDefault(c => c.Member == entParam.SourceMember);

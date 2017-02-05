@@ -88,7 +88,7 @@ namespace Vita.Data.Model {
         Kind = Entity.Kind;
       else if (objectType == DbObjectType.View)
         Kind = EntityKind.View; // when loading from database
-      FullName = model.Driver.GetFullName(Schema, tableName);
+      FullName = model.Driver.FormatFullName(Schema, tableName);
       base.GlobalName = DbModelHelper.GetGlobalName(Schema, TableName);
       model.AddTable(this); 
     }
@@ -377,7 +377,7 @@ namespace Vita.Data.Model {
       Description = EntityCommand.Description;
       DescriptiveTag = tag;
       //derived entities
-      FullCommandName = Table.DbModel.Driver.GetFullName(Schema, CommandName);
+      FullCommandName = Table.DbModel.Driver.FormatFullName(Schema, CommandName);
       Kind = entityCommand.Kind;
       var dbModel = table.DbModel; 
       dbModel.AddCommand(this);
@@ -392,7 +392,7 @@ namespace Vita.Data.Model {
       CommandName = commandName;
       StoredProcText = text;
       DescriptiveTag = tag;
-      FullCommandName = model.Driver.GetFullName(Schema, CommandName);
+      FullCommandName = model.Driver.FormatFullName(Schema, CommandName);
       model.AddCommand(this);
       base.GlobalName = DbModelHelper.GetGlobalName(Schema, commandName);
     }
@@ -445,7 +445,7 @@ namespace Vita.Data.Model {
       DbType = dbType;
       StartValue = startValue;
       Increment = increment;
-      FullName = model.Driver.GetFullName(schema, name); 
+      FullName = model.Driver.FormatFullName(schema, name); 
     }
 
     public DbSequenceInfo(DbModel model, SequenceDefinition definition) 
@@ -455,7 +455,7 @@ namespace Vita.Data.Model {
       StartValue = definition.StartValue;
       Increment = definition.Increment;
       Definition = definition;
-      FullName = model.Driver.GetFullName(Schema, Name);
+      FullName = model.Driver.FormatFullName(Schema, Name);
     }
 
     private static string GetSchema(DbModel model, SequenceDefinition sequence) {
@@ -477,7 +477,7 @@ namespace Vita.Data.Model {
       : base(model, schema, DbObjectType.UserDefinedType) {
       Name = name;
       Kind = kind;
-      FullName = model.Driver.GetFullName(Schema, Name);
+      FullName = model.Driver.FormatFullName(Schema, Name);
     }
   }
 

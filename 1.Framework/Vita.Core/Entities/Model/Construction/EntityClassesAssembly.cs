@@ -17,16 +17,9 @@ namespace Vita.Entities.Model.Construction {
       var assemblyName = "__Vita_EntityClasses";
       var asmName = new AssemblyName(assemblyName);
       asmName.Version = new Version(1, 0, 0, 0);
-      AssemblyBuilder = System.AppDomain.CurrentDomain.DefineDynamicAssembly(asmName, AssemblyBuilderAccess.RunAndSave);
+      AssemblyBuilder = System.AppDomain.CurrentDomain.DefineDynamicAssembly(asmName, AssemblyBuilderAccess.Run);
       ModuleBuilder = AssemblyBuilder.DefineDynamicModule(assemblyName);
     }
-
-    public void SaveAssembly() {
-      AssemblyBuilder.Save(AssemblyBuilder.FullName + ".dll");
-      AssemblyBuilder = null;
-      ModuleBuilder = null;
-    }
-
   
   }//class
 

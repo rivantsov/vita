@@ -20,7 +20,7 @@ namespace Vita.Modules.WebClient {
 
   /// <summary>A handy wrapper around HttpClient class. Provides a number of convenient methods to call remote web points. </summary>
   /// <remarks>See unit tests in Vita.UnitTests.WebTests project for example of use. </remarks>
-  public class WebApiClient {
+  public partial class WebApiClient {
 
     // Note on multi-threading, and reuse of HttpClient: Async methods are thread-safe, see Remarks section here: 
     // https://msdn.microsoft.com/en-us/library/system.net.http.httpclient(v=vs.110).aspx
@@ -173,8 +173,13 @@ namespace Vita.Modules.WebClient {
         Settings.ResponseSpy?.Invoke(response);
         //check error
         if (!response.IsSuccessStatusCode) {
-          exception = await Settings.ErrorHandler.HandleErrorAsync(response);
+          exception = await this.ReadErrorResponseAsync(response);
           serRespContent = new SerializedContent() { Content = response.Content, Raw = await response.Content.SafeReadContent() };
+          if(Error != null) {
+            var errArgs = new WebApiClientErrorEventArgs(this, response, exception);
+            Error(this, errArgs);
+            exception = errArgs.Throw ? errArgs.Exception : null; 
+          }
         }
         if(exception != null)
           return await Task.FromException<TResult>(exception);

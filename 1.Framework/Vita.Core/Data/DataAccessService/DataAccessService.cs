@@ -22,7 +22,8 @@ namespace Vita.Data {
       IDataAccessService
   {
     EntityApp _app;
-    IDictionary<string, DataSource> _dataSources;
+    IDictionary<string, DataSource> _dataSources = 
+        new Dictionary<string, DataSource>(StringComparer.OrdinalIgnoreCase);
     object _lock = new object(); 
 
     public DataAccessService(EntityApp app, EntityCache sharedCache = null) {
@@ -75,7 +76,7 @@ namespace Vita.Data {
           return; 
         //create copy, add to it, and then replace with interlock
         IDictionary<string, DataSource> newDict;
-        if (_dataSources == null)
+        if (_dataSources == null || _dataSources.Count == 0)
           newDict = new Dictionary<string, DataSource>(StringComparer.OrdinalIgnoreCase);
         else
           newDict = new Dictionary<string, DataSource>(_dataSources, StringComparer.OrdinalIgnoreCase);

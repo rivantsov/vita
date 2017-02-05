@@ -35,6 +35,10 @@ namespace Vita.Data {
     /// <summary> Db model is shared between data sources with the same instance of DbModelConfig.</summary>
     ShareDbModel = 1 << 10,
 
+    /// <summary> If set, the schema name is added as prefix to table name; for ex: sch_MyTable.
+    /// Useful for servers that do not support schemas. </summary>
+    AddSchemaToTableNames = 1 << 11, 
+
     /// <summary> Default value.</summary>
     Default = UseStoredProcs | UseRefIntegrity | ShareDbModel,
 

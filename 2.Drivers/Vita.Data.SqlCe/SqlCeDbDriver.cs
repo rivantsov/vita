@@ -15,7 +15,7 @@ using Vita.Entities.Logging;
 namespace Vita.Data.SqlCe {
 
   public class SqlCeDbDriver : DbDriver { 
-    public const DbOptions DefaultDbOptions = DbOptions.Default | DbOptions.AutoIndexForeignKeys;
+    public const DbOptions DefaultSqlCeDbOptions = DbOptions.Default | DbOptions.AutoIndexForeignKeys;
     //SQL CE does not allow multiple SQL statements in one call, so batched updates are not supported.
     public const DbFeatures SqlCeFeatures = DbFeatures.ReferentialConstraints | DbFeatures.Paging | DbFeatures.DefaultCaseInsensitive
                                             | DbFeatures.OrderedColumnsInIndexes | DbFeatures.NoIndexOnForeignKeys 

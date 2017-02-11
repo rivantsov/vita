@@ -1077,7 +1077,7 @@ namespace Vita.Data.Linq.Translation {
               var sqlExpr = opExpr as SqlExpression;
               if(sqlExpr != null) 
                 sqlExpr.Alias = asmt.Member.Name; 
-              return Expression.Bind(binding.Member, opExpr);
+              return ExpressionUtil.SafeBind(binding.Member, opExpr);
 
             case MemberBindingType.ListBinding:
               var listBnd = (MemberListBinding)binding;

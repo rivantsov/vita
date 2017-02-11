@@ -74,8 +74,8 @@ namespace Vita.Samples.BookStore {
                             };
       RegisterView<IBookSales2>(bookSalesQuery2);
 
-      //Fiction books query
-      var fictionBookQuery = bookSet.Where(b => b.Category == BookCategory.Fiction);
+      //Fiction books query; note: order by not supported by MS SQL
+      var fictionBookQuery = bookSet.Where(b => b.Category == BookCategory.Fiction); //.OrderBy(b => b.Title);
       RegisterView<IFictionBook>(fictionBookQuery);
       // AuthorUser view - test for bug fix, reading values from outer join into nullable value (UserType?)
       var authQuery = from a in ViewHelper.EntitySet<IAuthor>()

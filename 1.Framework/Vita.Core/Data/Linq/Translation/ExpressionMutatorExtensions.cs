@@ -7,9 +7,6 @@ using Vita.Data.Linq.Translation.Expressions;
 
 namespace Vita.Data.Linq.Translation {
     
-    /// <summary>
-    /// Extensions to Expression, to enumerate and dynamically change operands in a uniformized way
-    /// </summary>
     internal static class ExpressionMutatorExtensions
     {
         /// <summary>
@@ -62,19 +59,10 @@ namespace Vita.Data.Linq.Translation {
             var executableExpression = expression as IExecutableExpression;
             if (executableExpression != null)
                 return executableExpression.Execute();
-            try
-            {
-                // here, we may have non-evaluable expressions, so we "try"/"catch"
-                // (maybe should we find something better)
-                var lambda = Expression.Lambda(expression);
-                var compiled = lambda.Compile();
-                var value = compiled.DynamicInvoke();
-                return value;
-            }
-            catch
-            {
-                throw new ArgumentException();
-            }
+            var lambda = Expression.Lambda(expression);
+            var compiled = lambda.Compile();
+            var value = compiled.DynamicInvoke();
+            return value;
         }
 
         /// <summary>

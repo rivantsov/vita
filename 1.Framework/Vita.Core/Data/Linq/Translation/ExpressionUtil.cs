@@ -407,5 +407,35 @@ Details: failed converting sub-expression of type {0} to type {1}", expression.T
     }
 
 
+    internal static MemberAssignment SafeBind(MemberInfo member, Expression value) {
+      var memberType = member.GetMemberType();
+      if(memberType != value.Type) {
+        if (value.Type.IsNullableOf(memberType)) {
+          // Default converter fails in this case   
+          //make converter that safely gets underlying value from Nullable type (or Default if null)
+          value = MakeSafeNullableConvert(value, memberType); 
+        } else
+          // Make default conversion
+          value = Expression.Convert(value, memberType);
+      }
+      return Expression.Bind(member, value);
+    }
+
+    private static Expression MakeSafeNullableConvert(Expression expr, Type targetType) {
+      _convertNullableMethod = _convertNullableMethod ??
+        typeof(ExpressionUtil).GetMethod(nameof(ConvertNullableToValueType), BindingFlags.Static | BindingFlags.NonPublic);
+      var meth = _convertNullableMethod.MakeGenericMethod(targetType);
+      var call = Expression.Call(meth, expr);
+      return call; 
+    }
+
+    static MethodInfo _convertNullableMethod;
+    private static T ConvertNullableToValueType<T>(Nullable<T> value) where T: struct {
+      if(value.HasValue)
+        return value.Value;
+      else
+        return default(T);
+    }
+
   }//class
 }

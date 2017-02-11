@@ -532,7 +532,6 @@ namespace Vita.UnitTests.Extended {
       var app = Startup.BooksApp;
       var session = app.OpenSession();
 
-
       var bookOrders = session.EntitySet<IBookOrder>();
       //Note: for debugging use table that is not fully cached, so we use IBookOrder entity
 
@@ -578,6 +577,7 @@ namespace Vita.UnitTests.Extended {
                     select bo;
       var orders2 = qOrders2.ToList();
       Assert.IsTrue(orders2.Count > 0, "No orders by type found.");
+
     }
 
     [TestMethod]
@@ -1116,7 +1116,8 @@ namespace Vita.UnitTests.Extended {
     [TestMethod]
     public void TestLinqReturnCustomObject() {
       var session = Startup.BooksApp.OpenSession();
-      var books = session.EntitySet<IBook>(); 
+      var books = session.EntitySet<IBook>();
+
       // query with custom type in output (not anon type)
       var qBkInfos = from b in books
                      where b.Price > 1
@@ -1130,6 +1131,18 @@ namespace Vita.UnitTests.Extended {
                       select new BookInfo(b.Title, b.Publisher.Name, b.Price) { Title = b.Title };
       var lstBkInfos2 = qBkInfos2.ToList();
       Assert.IsTrue(lstBkInfos2.Count > 0, "BookInfo query failed.");
+
+      // bug fix - Linq with out object filled from GroupBy over nullable key
+      // book.Editor is nullable; b.Editor.Id is translated into Guid? expression. 
+      // Linq engine adds a conversion that return default(Guid) if coming value is null. 
+      // We also test enum and string values
+      var bkCounts = books
+        .Select(b => new EditorObj() {
+          EditorId = b.Editor.Id, UserName = b.Editor.UserName, UserType = b.Editor.Type
+        }
+        ).ToList();
+      Assert.IsTrue(bkCounts.Count > 0, "Expected some objects");
+
     }
 
     //Helper class to use as output in queries - testing LINQ engine with custom (non-anon) output types
@@ -1145,6 +1158,12 @@ namespace Vita.UnitTests.Extended {
         Publisher = publisher;
         Price = price;
       }
+    }
+
+    class EditorObj {
+      public Guid EditorId;
+      public UserType UserType;
+      public string UserName; 
     }
 
 

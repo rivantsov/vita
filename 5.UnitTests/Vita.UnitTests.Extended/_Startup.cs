@@ -89,7 +89,6 @@ namespace Vita.UnitTests.Extended {
         var logDbSettings = new DbSettings(Driver, DbSettings.ModelConfig.Options, LogConnectionString);
         BooksApp.LoggingApp.ConnectTo(logDbSettings);
 
-        Thread.Yield(); 
         CreateSampleData();
 
       } catch(ClientFaultException cfx) {

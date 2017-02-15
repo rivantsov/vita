@@ -91,7 +91,7 @@ namespace Vita.Data {
         var updateMgr = new DbUpgradeManager(dataSource);
         var upgradeInfo = updateMgr.UpgradeDatabase();
         _app.CheckActivationErrors();
-        ApplyMigrations(upgradeInfo); 
+        ApplyPostUpgradeMigrations(upgradeInfo); 
       }
       _events.OnDataSourceStatusChanging(new DataSourceEventArgs(dataSource, DataSourceEventType.Connected));
     }
@@ -128,7 +128,7 @@ namespace Vita.Data {
     }
 
 
-    private void ApplyMigrations(DbUpgradeInfo upgradeInfo) {
+    private void ApplyPostUpgradeMigrations(DbUpgradeInfo upgradeInfo) {
       if (upgradeInfo.PostUpgradeMigrations == null || upgradeInfo.PostUpgradeMigrations.Count == 0)
         return;
       var session = _app.OpenSystemSession();

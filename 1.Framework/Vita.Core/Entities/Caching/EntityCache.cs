@@ -142,7 +142,9 @@ namespace Vita.Entities.Caching {
     void Events_SavedChanges(object sender, EntitySessionEventArgs args) {
       var session = (EntitySession)args.Session; 
       bool fullSetCacheUpdated = false; 
-      foreach(var rec in session.RecordsChanged) {
+      // important - use for-i loop here
+      for(int i=0; i < session.RecordsChanged.Count; i++) {
+        var rec = session.RecordsChanged[i];
         switch(rec.EntityInfo.CacheType) {
           case CacheType.FullSet:
             fullSetCacheUpdated = true; 

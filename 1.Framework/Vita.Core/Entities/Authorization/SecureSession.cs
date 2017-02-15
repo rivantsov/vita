@@ -175,7 +175,9 @@ namespace Vita.Entities.Authorization {
       // One example from books module: user creates BookReview record - he is granted the rights to do so. 
       // But then the code assigns other user as review owner - so user tries to create a review mascarading 
       // as another user. This situation must be caught here. 
-      foreach (var rec in RecordsChanged) {
+      // important - use for-i loop here, in case records are added to the list in process
+      for(int i = 0; i < RecordsChanged.Count; i++) {
+        var rec = RecordsChanged[i]; 
         rec.UserPermissions = null; //reset rights and force new rights evaluation
         CheckRecordAccess(rec, rec.Status.GetRequiredAccessType());
         // verify write permissions for modified fields

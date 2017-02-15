@@ -575,8 +575,9 @@ namespace Vita.Entities.Runtime {
 
     #region Validation
     public virtual void ValidateChanges() {
-      foreach(var rec in RecordsChanged)
-        ValidateRecord(rec);
+      // important - use for-i loop; validation may modify records (and add to this list)
+      for( int i = 0; i < RecordsChanged.Count; i++)
+        ValidateRecord(RecordsChanged[i]);
       Context.ClientFaults.Throw();
     }
 

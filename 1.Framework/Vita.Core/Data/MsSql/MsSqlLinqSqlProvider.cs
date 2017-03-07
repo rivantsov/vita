@@ -193,6 +193,13 @@ namespace Vita.Data.MsSql {
         //System.Data.SqlClient.SqlException : Difference of two datetime columns caused overflow at runtime.
     }
 
+    // We need to cast to date explicitly; reported bug: in expr like WHERE tbl.SmallDateTimeCol > dateTimeConst' the conversion fails if dateTimeConst is quoted string
+    public override SqlStatement GetLiteral(DateTime literal) {
+      var dateTimeStr = base.GetLiteral(literal).ToString();
+      var result = string.Format("CAST({0} AS DATE)", dateTimeStr);
+      return result; 
+    }
+
     protected override SqlStatement GetLiteralDateTimePart(SqlStatement dateExpression, SqlFunctionType operationType) {
       switch(operationType) {
         case SqlFunctionType.Week:

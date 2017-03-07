@@ -51,7 +51,8 @@ namespace Vita.Web {
         webContext = callInfo.WebContext;
         PreprocessRequest(callInfo);
         OnWebCallStarting(callInfo); // Fire WebCallStarting event - UserSession service will handle it and attach user session and setup UserInfo in OperationContext
-        callInfo.Response = await base.SendAsync(request, cancellationToken);
+        if (callInfo.Response == null)
+          callInfo.Response = await base.SendAsync(request, cancellationToken);
         OnWebCallEnding(callInfo);
         PostProcessResponse(callInfo);
         await LogWebCallInfo(callInfo);
@@ -309,9 +310,14 @@ namespace Vita.Web {
     private void OnWebCallStarting(WebCallInfo callInfo) {
       var evt = WebCallStarting;
       if (evt != null) {
-        evt(this, new WebCallEventArgs(callInfo.WebContext));
+        var webCtx = callInfo.WebContext; 
+        evt(this, new WebCallEventArgs(webCtx));
+        if(webCtx.ResponseMessage != null)
+          callInfo.Response = webCtx.ResponseMessage as HttpResponseMessage;
       }
     }
+
+
     private void OnWebCallEnding(WebCallInfo callInfo) {
       var evt = WebCallCompleting;
       if (evt != null)

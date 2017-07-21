@@ -288,7 +288,7 @@ namespace Vita.Entities {
     /// <summary>Creates a data source (database) using provided DB setttings and registers it with data access service.</summary>
     /// <param name="dbSettings">Database settings.</param>
     public void ConnectTo(DbSettings dbSettings) {
-      if(this.Status == EntityAppStatus.Initializing)
+      if(this.Status != EntityAppStatus.Initialized)
         this.Init();
       var db = new Database(this, dbSettings); //this will construct DbModel for Database
       var ds = new DataSource(dbSettings.DataSourceName, db, this.CacheSettings);

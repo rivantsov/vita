@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 using Vita.Common;
 using Vita.Entities;
 using Vita.Entities.Services.Implementations;
-using Vita.Modules.Email;
+using Vita.Modules.Smtp;
 using Vita.Modules.Logging;
 
 namespace Vita.Modules.Notifications {
@@ -29,12 +29,6 @@ namespace Vita.Modules.Notifications {
     #region IEntityService
     public void Init(Entities.EntityApp app) {
       _log = app.GetService<INotificationLogService>(); 
-      //Create default email notification provider, if there's IEmailSendService registered
-      if (_providers.Count == 0) {
-        var smtp = _app.GetService<IEmailSendService>();
-        if (smtp != null)
-          _providers.Add(new EmailNotificationProvider(_app));
-      }
       //init providers
       foreach (var prov in _providers)
         prov.Init(app); 

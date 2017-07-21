@@ -196,7 +196,7 @@ namespace Vita.Data.MsSql {
     // We need to cast to date explicitly; reported bug: in expr like WHERE tbl.SmallDateTimeCol > dateTimeConst' the conversion fails if dateTimeConst is quoted string
     public override SqlStatement GetLiteral(DateTime literal) {
       var dateTimeStr = base.GetLiteral(literal).ToString();
-      var result = string.Format("CAST({0} AS DATE)", dateTimeStr);
+      var result = string.Format("CAST({0} AS DATETIME2)", dateTimeStr);
       return result; 
     }
 

@@ -32,9 +32,9 @@ namespace Vita.Modules.Login {
       //We search by hash first, then decrypt and compare value
       var hash = Util.StableHash(factor);
       var session = context.OpenSystemSession(); 
-      var hashMatches = session.EntitySet<ILoginExtraFactor>().Where(ef => ef.FactorType == factorType && ef.InfoHash == hash).ToList();
+      var hashMatches = session.EntitySet<ILoginExtraFactor>().Where(ef => ef.FactorType == factorType && ef.FactorValueHash == hash).ToList();
       foreach(var match in hashMatches) {
-        var recFactor = match.Info.DecryptString(_settings.EncryptionChannelName);
+        var recFactor = match.FactorValue;
         if(recFactor == factor) {
           VerifyExpirationSuspensionDates(match.Login);
           return match;
@@ -45,14 +45,8 @@ namespace Vita.Modules.Login {
     public ILoginExtraFactor FindLoginExtraFactor(ILogin login, string factor) {
       //We search by hash first, then decrypt and compare value
       VerifyExpirationSuspensionDates(login); 
-      var hash = Util.StableHash(factor);
-      var hashMatches = login.ExtraFactors.Where(f => f.InfoHash == hash).ToList();
-      foreach(var match in hashMatches) {
-        var recFactor = match.Info.DecryptString(_settings.EncryptionChannelName);
-        if(recFactor == factor)
-          return match;
-      }
-      return null;
+      var match = login.ExtraFactors.FirstOrDefault(f => f.FactorValue.Equals(factor, StringComparison.OrdinalIgnoreCase));
+      return match; 
     }
 
     public ILoginProcess StartProcess(ILogin login, LoginProcessType processType, string token) {
@@ -129,8 +123,9 @@ namespace Vita.Modules.Login {
         //do not generate or send pin
       } else {
         pin = pin ?? _settings.PinGenerator(process, factor);
+        //login factor may be coming from user (password reset), or from factor record (verify email)
         if (string.IsNullOrWhiteSpace(factorValue))
-          factorValue = factor.Info.DecryptString(_settings.EncryptionChannelName);
+          factorValue = factor.FactorValue;
         process.CurrentPin = pin;
         SendPin(process, factor.FactorType, factorValue, pin);
       }
@@ -148,7 +143,7 @@ namespace Vita.Modules.Login {
       session.Context.ThrowIfNull(process.CurrentFactor, ClientFaultCodes.InvalidAction, "Pin", "Current factor is not set in login process.");
       bool match;
       if (process.CurrentFactor.FactorType == ExtraFactorTypes.GoogleAuthenticator) {
-        var secret = process.CurrentFactor.Info.DecryptString(_settings.EncryptionChannelName);
+        var secret = process.CurrentFactor.FactorValue;
         match = GoogleAuthenticator.GoogleAuthenticatorUtil.CheckPasscode(secret, pin);
       } else {
         match = process.CurrentPin == pin;

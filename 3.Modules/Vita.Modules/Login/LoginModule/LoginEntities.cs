@@ -2,8 +2,7 @@
 using System.Collections.Generic;
 
 using Vita.Entities;
-using Vita.Modules.EncryptedData;
-using Vita.Modules.Logging;
+//using Vita.Modules.Logging;
 
 namespace Vita.Modules.Login {
 
@@ -105,9 +104,16 @@ namespace Vita.Modules.Login {
 
     ILogin Login { get; set; }
     ExtraFactorTypes FactorType { get; set; }
-    IEncryptedData Info { get; set; } // phone or email or whatever
-    [Index]
-    int InfoHash { get; set; } // stable hash for info, for quick search
+
+    // deprecated, will be gone in next version
+    Guid? Info_Id { get; set; } // 
+    [Size(100), Nullable] //temporarily nullable
+    string FactorValue { get; set; }
+
+    [Index, HashFor("FactorValue")]
+    int FactorValueHash { get; } // stable hash for info, for quick search
+
+
     DateTime? VerifiedOn { get; set; }
   }
 
@@ -127,7 +133,7 @@ namespace Vita.Modules.Login {
   }
 
   //Used for controlling multi-step processes like 2-Factor login, or password reset.
-  [Entity, DoNotTrack]
+  [Entity]
   public interface ILoginProcess {
     [PrimaryKey, Auto]
     Guid Id { get; set; }

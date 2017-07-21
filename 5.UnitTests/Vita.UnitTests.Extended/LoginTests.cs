@@ -19,7 +19,7 @@ namespace Vita.UnitTests.Extended {
 
 
   [TestClass]
-  public class LoginTests {
+  public partial class LoginTests {
 
     [TestInitialize]
     public void TestInit() {

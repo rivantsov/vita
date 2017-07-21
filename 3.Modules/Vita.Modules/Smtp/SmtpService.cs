@@ -5,15 +5,13 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Net;
 using System.Net.Mail;
-using System.Diagnostics;
 
 using Vita.Common; 
 using Vita.Entities;
 using Vita.Entities.Services.Implementations;
 using Vita.Entities.Services;
-using Vita.Modules.Logging;
 
-namespace Vita.Modules.Email {
+namespace Vita.Modules.Smtp {
 
   public class SmtpSettings {
     public string Host; 
@@ -25,7 +23,7 @@ namespace Vita.Modules.Email {
     public string TestRedirectAllTo; 
   }
 
-  public class SmtpService : IEmailSendService, IEntityService {
+  public class SmtpService : ISmtpService, IEntityService {
     EntityApp _app;
     SmtpSettings _settings;
     IErrorLogService _errorLog;
@@ -33,7 +31,7 @@ namespace Vita.Modules.Email {
     public SmtpService(EntityApp app, SmtpSettings settings)  {
       _app = app; 
       _settings = settings;
-      _app.RegisterService<IEmailSendService>(this);
+      _app.RegisterService<ISmtpService>(this);
       _app.RegisterConfig(settings); 
     }
 

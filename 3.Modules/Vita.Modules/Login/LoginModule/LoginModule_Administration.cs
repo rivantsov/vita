@@ -8,11 +8,10 @@ using System.Threading.Tasks;
 using Vita.Common;
 using Vita.Entities;
 using Vita.Entities.Services;
-using Vita.Modules.TextTemplates;
 
 namespace Vita.Modules.Login {
   using Api;
-  using Vita.Modules.Email;
+  using Vita.Modules.Smtp;
   using Vita.Modules.Notifications; 
 
   public partial class LoginModule {
@@ -35,18 +34,29 @@ namespace Vita.Modules.Login {
         .AndIfNotEmpty(search.CreatedBefore, lg => lg.CreatedOn <= search.CreatedBefore.Value)
         .AndIf(search.EnabledOnly, lg => (lg.Flags & LoginFlags.Disabled) == 0)
         .AndIf(search.SuspendedOnly, lg => (lg.Flags & LoginFlags.Suspended) == 0 && lg.SuspendedUntil > utcNow);
-      if (!string.IsNullOrWhiteSpace(search.Email)) {
-        var factorHash = Util.StableHash(search.Email.Trim().ToLowerInvariant());
-        var subQuery = session.EntitySet<ILoginExtraFactor>().Where(f => f.InfoHash == factorHash).Select(f => f.Login.Id);
+      if (!string.IsNullOrWhiteSpace(search.ExtraFactor)) {
+        var subQuery = session.EntitySet<ILoginExtraFactor>()
+            .Where(f => f.FactorValue.StartsWith(search.ExtraFactor)).Select(f => f.Login.Id);
         where = where.And(lg => subQuery.Contains(lg.Id));
       };
       var result = session.ExecuteSearch(where, search);
-      if(LoginExtensions.CheckSuspensionEnded(result.Results, utcNow)) {
-        
-
-      }
+      if(CheckSuspensionEnded(result.Results, utcNow))
+        session.SaveChanges(); 
       return result; 
     }
+
+    private bool CheckSuspensionEnded(IList<ILogin> logins, DateTime utcNow) {
+      var result = false;
+      foreach(var lg in logins) {
+        if(lg.Flags.IsSet(LoginFlags.Suspended) && lg.SuspendedUntil < utcNow) {
+          lg.Flags &= ~LoginFlags.Suspended;
+          lg.SuspendedUntil = null;
+          result = true;
+        }
+      }
+      return result;
+    }
+
 
     public string GenerateTempPassword() {
       if(_settings.Options.IsSet(LoginModuleOptions.GenerateSimpleTempPasswords))

@@ -61,7 +61,9 @@ namespace Vita.Entities.Model {
     LinqDisabled = 1 << 14,
 
     // True if entity/table has identity column
-    HasIdentity = 1 << 16,
+    HasIdentity = 1 << 15,
+    // True if entity references entity with identity PK
+    ReferencesIdentity = 1 << 16,
     // set if there's a RowVersion member
     HasRowVersion = 1 << 17,
     HasClusteredIndex = 1 << 18,
@@ -476,8 +478,9 @@ namespace Vita.Entities.Model {
       ToKey.Entity.Flags |= EntityFlags.IsReferenced;
       var fromEnt = fromMember.Entity;
       //if it is ref from table, register incoming reference
-      if (fromMember.Entity.Kind == EntityKind.Table)
+      if (fromEnt.Kind == EntityKind.Table) {
         ToKey.Entity.IncomingReferences.Add(fromMember);
+      }
       if (fromEnt == ToKey.Entity)
         fromEnt.Flags |= EntityFlags.SelfReferencing;
     }

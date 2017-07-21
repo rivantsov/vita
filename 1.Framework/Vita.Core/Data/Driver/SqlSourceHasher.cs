@@ -30,11 +30,11 @@ namespace Vita.Data.Driver {
     // 2. SQLite removes spaces when it returns view definition; hash line is added as first line of View SQL, so whole view appears as one line. 
     //    To properly extract hash, we enclose hash value into '*' and extract it
     public const string HashPrefix = "-- HASH:*"; 
-    MD5 _md5 = MD5.Create();
+    SHA256CryptoServiceProvider _hasher = new SHA256CryptoServiceProvider(); // using FIPS-compliant provider instead of MD5
 
     public string ComputeHash(params string[] sqls) {
       var sql = string.Join(Environment.NewLine, sqls); 
-      var hash = HexUtil.ByteArrayToHex(_md5.ComputeHash(Encoding.UTF8.GetBytes(sql)));
+      var hash = HexUtil.ByteArrayToHex(_hasher.ComputeHash(Encoding.UTF8.GetBytes(sql)));
       return hash;
     }
 
@@ -58,7 +58,6 @@ namespace Vita.Data.Driver {
       }
       return null; 
     }
-
 
   }
 }

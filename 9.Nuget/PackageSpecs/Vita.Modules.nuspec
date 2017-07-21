@@ -10,7 +10,7 @@
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
     <description>VITA ORM standard modules - Login, Logging, EncryptedData, Party, others.</description>
     <releaseNotes></releaseNotes>
-    <copyright>Copyright Roman Ivantsov 2015</copyright>
+    <copyright>Copyright Roman Ivantsov 2017</copyright>
     <tags>VITA ORM LINQ</tags>
     <dependencies>
        <group>

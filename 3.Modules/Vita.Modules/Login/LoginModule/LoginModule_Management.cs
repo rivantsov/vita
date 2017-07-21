@@ -12,7 +12,6 @@ using Vita.Entities.Authorization;
 using Vita.Entities.Runtime;
 using Vita.Entities.Services;
 using Vita.Modules.Logging;
-using Vita.Modules.EncryptedData;
 
 namespace Vita.Modules.Login {
   using Api; 
@@ -147,8 +146,7 @@ namespace Vita.Modules.Login {
     public IList<LoginExtraFactor> GetUserFactors(ILogin login) {
       var result = new List<LoginExtraFactor>();
       foreach(var f in login.ExtraFactors) 
-        result.Add(new LoginExtraFactor() {Id = f.Id, Type = f.FactorType, Confirmed = f.VerifiedOn != null, 
-          Value = f.Info.DecryptString(_settings.EncryptionChannelName)});
+        result.Add(new LoginExtraFactor() {Id = f.Id, Type = f.FactorType, Confirmed = f.VerifiedOn != null, Value = f.FactorValue});
       return result;      
     }
 
@@ -165,8 +163,7 @@ namespace Vita.Modules.Login {
       var factor = session.EntitySet<ILoginExtraFactor>().Where(f => f.Login == login && f.FactorType == factorType).FirstOrDefault();
       if (factor == null)
         return null;
-      var strFactor = factor.Info.DecryptString(_settings.EncryptionChannelName);
-      return strFactor;
+      return factor.FactorValue;
     }
 
 
@@ -177,8 +174,7 @@ namespace Vita.Modules.Login {
       var factor = session.NewEntity<ILoginExtraFactor>();
       factor.Login = login;
       factor.FactorType = type;
-      factor.Info = session.NewOrUpdate(factor.Info, value, _settings.EncryptionChannelName);
-      factor.InfoHash = Util.StableHash(value);
+      factor.FactorValue = value;
       if (type == ExtraFactorTypes.GoogleAuthenticator)
         factor.SetVerified(App.TimeService.UtcNow);
       return ToModel(factor); 
@@ -188,8 +184,7 @@ namespace Vita.Modules.Login {
       var session = EntityHelper.GetSession(fc);
       if (fc.FactorType == ExtraFactorTypes.GoogleAuthenticator)
         value = GoogleAuthenticator.GoogleAuthenticatorUtil.GenerateSecret();
-      fc.Info = session.NewOrUpdate(fc.Info, value, _settings.EncryptionChannelName);
-      fc.InfoHash = Util.StableHash(value);
+      fc.FactorValue = value; 
       if (fc.FactorType == ExtraFactorTypes.GoogleAuthenticator)
         fc.SetVerified(App.TimeService.UtcNow);
       else 
@@ -199,7 +194,7 @@ namespace Vita.Modules.Login {
 
     public string GetGoogleAuthenticatorQRUrl(ILoginExtraFactor factor) {
       Util.Check(factor.FactorType == ExtraFactorTypes.GoogleAuthenticator, "The extra factor type should be GoogleAuthenticator.");
-      var secret = factor.Info.DecryptString(_settings.EncryptionChannelName);
+      var secret = factor.FactorValue;
       var identity = StringHelper.SafeFormat(_settings.GoogleAuthenticatorIdentityTemplate, App.AppName, factor.Login.UserName);
       var url = GoogleAuthenticator.GoogleAuthenticatorUtil.GetQRUrl(identity, secret);
       return url; 
@@ -309,8 +304,7 @@ namespace Vita.Modules.Login {
     private LoginExtraFactor ToModel(ILoginExtraFactor factor) {
       var objFactor = new LoginExtraFactor() {
         Id = factor.Id, Type = factor.FactorType, Confirmed = factor.VerifiedOn != null,
-        Value = factor.Info.DecryptString(_settings.EncryptionChannelName)
-      };
+        Value = factor.FactorValue };
       return objFactor;
     }
 

@@ -195,6 +195,8 @@ namespace Vita.Data {
       Util.Check(cmdInfo != null, "Failed to find update/insert/delete command for entity {0}, status {1}.", 
                        record.EntityInfo.Name, record.Status);
       try {
+        if(record.Status != EntityStatus.Deleting && record.EntityInfo.Flags.IsSet(EntityFlags.ReferencesIdentity))
+          CheckRecordIdentityReferencesBeforeUpdate(record); 
         var cmd = CreateDbCommand(cmdInfo, connection);
         SetCrudCommandParameterValues(cmdInfo, cmd, record);
         ExecuteDbCommand(cmd, connection, DbExecutionType.NonQuery);
@@ -207,6 +209,23 @@ namespace Vita.Data {
         ex.AddValue("entity-command-name", cmdInfo.EntityCommand.CommandName);
         ex.AddValue("record", record);
         throw;
+      }
+    }
+
+    private void CheckRecordIdentityReferencesBeforeUpdate(EntityRecord record) {
+      var ent = record.EntityInfo; 
+      foreach(var refM in ent.RefMembers) {
+        var targetEnt = record.GetValueDirect(refM);
+        if(targetEnt == null)
+          continue;
+        var targetRec = EntityHelper.GetRecord(targetEnt);
+        if(targetRec.Status != EntityStatus.New)
+          continue;
+        // target should be already saved and must have generated identity value; copy this value
+        var targetPkMember = targetRec.PrimaryKey.KeyInfo.ExpandedKeyMembers[0].Member;
+        var idValue = targetRec.GetValueDirect(targetPkMember);
+        var refFkMember = refM.ReferenceInfo.FromKey.ExpandedKeyMembers[0].Member;
+        record.SetValueDirect(refFkMember, idValue);
       }
     }
 

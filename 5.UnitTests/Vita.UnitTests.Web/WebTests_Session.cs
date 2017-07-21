@@ -15,7 +15,7 @@ using Vita.Entities;
 using Vita.Entities.Services;
 using Vita.Web;
 using Vita.UnitTests.Common;
-using Vita.Modules.Email;
+using Vita.Modules.Smtp;
 using Vita.Modules.Logging;
 using Vita.Samples.BookStore;
 using Vita.Samples.BookStore.Api;

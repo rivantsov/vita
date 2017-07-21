@@ -5,7 +5,6 @@ using System.Text;
 using System.Threading.Tasks;
 
 using Vita.Entities;
-using Vita.Modules.EncryptedData;
 
 namespace Vita.Modules.OAuthClient {
 
@@ -105,8 +104,12 @@ namespace Vita.Modules.OAuthClient {
     string Name { get; set; }
     [Unlimited]
     string ClientIdentifier { get; set; } //client ID is not a secret
-    [GrantAccess]
-    IEncryptedData ClientSecret { get; set; }
+
+    // New column - store unencrypted
+    [Size(250), Nullable]
+    string ClientSecret { get; set; }
+    // Deprecated - old reference to EncryptedData record
+    Guid? ClientSecret_Id { get; set; }
   }
 
   [Entity]
@@ -144,8 +147,6 @@ namespace Vita.Modules.OAuthClient {
     IOAuthRemoteServerAccount Account { get; set; }
     Guid? UserId { get; set; }
     OAuthTokenStatus Status { get; set; }
-    [GrantAccess]
-    IEncryptedData AccessToken { get; set; }
     OAuthTokenType TokenType { get; set; }
     [Unlimited, Nullable]
     string Scopes { get; set; }
@@ -153,12 +154,19 @@ namespace Vita.Modules.OAuthClient {
     DateTime RetrievedOn { get; set; }
     [Utc]
     DateTime ExpiresOn { get; set; }
-    [Nullable, GrantAccess]
-    IEncryptedData RefreshToken { get; set; }
     [Utc]
     DateTime? RefreshedOn { get; set; }
     [Nullable, GrantAccess]
     IOAuthOpenIdToken OpenIdToken { get; set; }
+
+    // Tokens: switching from old schema (storing encrypted in EnryptedData) to new - storing unencrypted value directly
+    [Nullable, Unlimited]
+    string AccessToken { get; set; }
+    [Nullable, Unlimited]
+    string RefreshToken { get; set; }
+    // Deprecated - left for now to keep reference to EncryptedData to use in migrations to unencrypt old data
+    Guid? RefreshToken_Id { get; set; }
+    Guid? AccessToken_Id { get; set; }
   }
 
   [Entity]

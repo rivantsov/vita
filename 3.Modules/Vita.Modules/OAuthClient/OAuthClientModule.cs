@@ -11,7 +11,7 @@ using Vita.Modules.EncryptedData;
 namespace Vita.Modules.OAuthClient {
 
   public partial class OAuthClientModule : EntityModule {
-    public static readonly Version CurrentVersion = new Version("1.2.1.0");
+    public static readonly Version CurrentVersion = new Version("1.3.0.0");
 
     public readonly OAuthClientSettings Settings;
 
@@ -22,12 +22,6 @@ namespace Vita.Modules.OAuthClient {
           typeof(IOAuthClientFlow), typeof(IOAuthOpenIdToken), typeof(IOAuthExternalUser));
       App.RegisterService<IOAuthClientService>(this);
       Requires<EncryptedData.EncryptedDataModule>();
-    }
-
-    public override void RegisterMigrations(DbMigrationSet migrations) {
-      base.RegisterMigrations(migrations);
-      migrations.AddPostUpgradeAction("1.2.1.0", "CreateDefault", "Creates records for popular OAuth servers", 
-          session => OAuthServers.CreateUpdatePopularServers(session));
     }
 
   }

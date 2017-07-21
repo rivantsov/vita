@@ -60,23 +60,24 @@ namespace Vita.Data {
         if (_updateSet.UsesOutParams && col != null && col.Flags.IsSet(DbColumnFlags.IdentityForeignKey)) {
           //Find out parameter that returns the identity of the parent record
           var parentRec = rec.GetValueDirect(col.Member.ForeignKeyOwner) as EntityRecord;
-          if (parentRec != null && parentRec.CustomTag != null) {
-            //parentRec has identity PK, and is already in _identities list
+          if (parentRec != null && parentRec.CustomTag != null) { //it must have customTag already - after recs sorting parent should come first, so it must have idSource already in customTag
+            //parentRec has identity PK 
             var idSource = (IdentitySource) parentRec.CustomTag;
-            if (idSource.BatchCommand == _currentCommand)
+            if(idSource.BatchCommand == _currentCommand) {
               argValues.Add(idSource.Parameter.ParameterName); //if it is the same command, just add ref to parameter
-            else {
+            } else {
               //different command - create new parameter, and add action to copy param value from source
-              // dbCmd.Parameters.Add(idSource.Parameter); //this does not work - parameters cannot be shared between commands
+              //NOte - reusing param not allowed, so ' dbCmd.Parameters.Add(idSource.Parameter); '  -this does not work - parameters cannot be shared between commands
               var dbParam = _driver.AddParameter(dbCmd, prmInfo);
               //override parameter name
               dbParam.ParameterName = _driver.DynamicSqlParameterPrefix + "P" + (dbCmd.Parameters.Count - 1);
               argValues.Add(dbParam.ParameterName);
-              var sourcePrm = idSource.Parameter;
-              idSource.BatchCommand.AddPostAction(() => dbParam.Value = sourcePrm.Value);
+              idSource.BatchCommand.AddPostAction(() => dbParam.Value = idSource.Parameter.Value);
             }
+            // Set value of foreign key  
+            idSource.BatchCommand.AddPostAction(() => rec.SetValueDirect(col.Member, idSource.Parameter.Value));
             continue; //next param
-          }
+          } //if parentRec!=null
         }//if 
 
         //Get the value, analyze it, see if it is ok to use literal or it's better to put the value into parameter

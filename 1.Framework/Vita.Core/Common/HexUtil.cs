@@ -25,7 +25,7 @@ namespace Vita.Common {
     public static byte[] HexToByteArray(string hex) {
       Util.Check (hex.Length % 2 == 0, "The hex string cannot have an odd number of digits. String: '{0}'. ", hex);
       byte[] arr = new byte[hex.Length >> 1];
-      for (int i = 0; i < hex.Length >> 1; ++i) {
+      for (int i = 0; i < (hex.Length >> 1); ++i) {
         arr[i] = (byte)((GetHexVal(hex[i << 1]) << 4) + (GetHexVal(hex[(i << 1) + 1])));
       }
       return arr;

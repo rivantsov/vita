@@ -7,25 +7,24 @@ using System.Threading.Tasks;
 
 using Vita.Common;
 using Vita.Entities;
-using Vita.Modules.Email;
 using Vita.Modules.Notifications;
 using Vita.Modules.TextTemplates;
 
-namespace Vita.Modules.Email {
+namespace Vita.Modules.Smtp {
 
-  public class EmailNotificationProvider : INotificationProvider {
+  public class SmtpNotificationProvider : INotificationProvider {
     EntityApp _app;
-    IEmailSendService _emailService;
+    ISmtpService _smtpService;
     ITemplateTransformService _templateService; 
 
-    public EmailNotificationProvider(EntityApp app) {
+    public SmtpNotificationProvider(EntityApp app) {
       _app = app;
     }
 
     #region INotificationProvider members
     public void Init(EntityApp app) {
-      _emailService = _app.GetService<IEmailSendService>();
-      Util.Check(_emailService != null, "EmailNotificationProvider: failed to retrieve {0} instance.", typeof(IEmailSendService));
+      _smtpService = _app.GetService<ISmtpService>();
+      Util.Check(_smtpService != null, "EmailNotificationProvider: failed to retrieve {0} instance.", typeof(ISmtpService));
       _templateService = _app.GetService<ITemplateTransformService>();
       Util.Check(_templateService != null,
         "EmailNotificationProvider: failed to retrieve {0} instance, add Template module to your app.", typeof(ITemplateTransformService));
@@ -49,7 +48,7 @@ namespace Vita.Modules.Email {
           return; 
         message.Status = MessageStatus.Sending;
         var mail = new MailMessage(message.From, message.Recipients, subject, body);
-        await _emailService.SendAsync(context, mail);
+        await _smtpService.SendAsync(context, mail);
         message.Status = MessageStatus.Sent;
       } catch (Exception ex) {
         message.Status = MessageStatus.Error;

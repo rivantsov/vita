@@ -338,17 +338,9 @@ namespace Vita.UnitTests.Basic {
       ent1Copy.CharNProp = " ";
       session2.SaveChanges(); //just checking it does not blow up
 
-      // Reported LINQ error for smallDateTime; using DAteTime constant against SmallDateTime prop was throwing exc
-      try {
+      // Fixed:  Reported LINQ error for smallDateTime; using DAteTime constant against SmallDateTime prop was throwing exc
         var items = session2.EntitySet<IMsSqlDataTypesEntity>().Where(e => e.SmallDateTimeProp > new DateTime(2017, 1, 1)).ToList();
         Assert.IsTrue(items.Count > 0, "Expected some items returned");
-      } catch(Exception) {
-        var cmdText = session2.GetLastCommand().CommandText; //just for breakpoint
-        throw; 
-      }
-
-
-
     }//test method
 
     private void CheckDataType(DbTable dtColumns, string columnName, string dataType, int size = 0) {

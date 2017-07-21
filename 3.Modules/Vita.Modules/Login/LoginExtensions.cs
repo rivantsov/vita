@@ -133,20 +133,6 @@ namespace Vita.Modules.Login {
       factor.VerifiedOn = now; 
     }
 
-    public static bool CheckSuspensionEnded(IList<ILogin> logins, DateTime utcNow) {
-      var result = false;
-      foreach(var lg in logins)
-        result |= lg.CheckSuspensionEnded(utcNow);
-      return result; 
-    }
 
-    public static bool CheckSuspensionEnded(this ILogin login, DateTime utcNow) {
-      if(login.Flags.IsSet(LoginFlags.Suspended) && login.SuspendedUntil < utcNow) {
-        login.Flags &= ~LoginFlags.Suspended; 
-        login.SuspendedUntil = null;
-        return true; 
-      }
-      return false; 
-    }
   }//class
 }//ns

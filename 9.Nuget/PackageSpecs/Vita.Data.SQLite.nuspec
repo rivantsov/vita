@@ -10,14 +10,15 @@
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
     <description>VITA ORM driver for SQLite. </description>
     <releaseNotes></releaseNotes>
-    <copyright>Copyright Roman Ivantsov 2015</copyright>
+    <copyright>Copyright Roman Ivantsov 2017</copyright>
     <tags>VITA ORM SQLite</tags>
     <dependencies>
        <group>
          <dependency id="Vita" version="$version$"/>
        </group>	
        <group>
-         <dependency id="System.Data.SQLite.Core" version="1.0.96.0" />
+         <dependency id="System.Data.SQLite" version="1.0.103.0" />
+         <dependency id="System.Data.SQLite.Core" version="1.0.103.0" />
        </group>	
     </dependencies>
   </metadata>

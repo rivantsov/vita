@@ -367,7 +367,9 @@ namespace Vita.Entities {
             return; 
           }
           entity.Events.New += EntityEvent_NewEntityHandleIdentity;
-          entity.SaveEvents.SubmittedChanges += EntityEvent_IdentityEntitySubmitted;
+          // Mark all entities referencing This entity with ReferencesIdentity flag
+          foreach(var mr in entity.IncomingReferences)
+            mr.Entity.Flags |= EntityFlags.ReferencesIdentity;
           break;
 
         case AutoType.Sequence:
@@ -474,6 +476,8 @@ namespace Vita.Entities {
       record.SetValueDirect(_member, value);
     }
 
+    /* Disabled for being terribly inefficient for large batches
+    // identities generated in db are copied back to PK members. We need to propagate them to referencing (child) entities
     void EntityEvent_IdentityEntitySubmitted(EntityRecord record, EventArgs args) {
       if (record.Status != EntityStatus.New) return;
       var recs = record.Session.RecordsChanged;
@@ -486,7 +490,7 @@ namespace Vita.Entities {
         }//foreach childRec
       }
     }//method
-
+    */
 
     void EntityEvent_HandleNewGuid(EntityRecord record, EventArgs args) {
       if (record.SuppressAutoValues) return;

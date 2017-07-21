@@ -10,7 +10,7 @@
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
     <description>VITA ORM core library, MS SQL Server driver</description>
     <releaseNotes></releaseNotes>
-    <copyright>Copyright Roman Ivantsov 2015</copyright>
+    <copyright>Copyright Roman Ivantsov 2017</copyright>
     <tags>VITA ORM LINQ MSSQL</tags>
     <dependencies>
     </dependencies>

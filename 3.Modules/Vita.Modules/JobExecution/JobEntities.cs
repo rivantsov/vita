@@ -18,7 +18,7 @@ namespace Vita.Modules.JobExecution {
     Guid CreatedBy { get; }
 
     // Definition
-    [Size(Sizes.Name), Index]
+    [Size(100), Index]
     string Name { get; set; }
 
     // Launch parameters

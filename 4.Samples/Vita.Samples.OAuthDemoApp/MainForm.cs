@@ -58,7 +58,7 @@ namespace Vita.Samples.OAuthDemoApp {
           BeginEditClientInfo();
         } else {
           txtClientId.Text = act.ClientIdentifier;
-          txtClientSecret.Text = act.ClientSecret.DecryptString();
+          txtClientSecret.Text = act.ClientSecret;
           EndEditClientInfo();
           chkRevoke.Enabled = !string.IsNullOrWhiteSpace(act.Server.TokenRevokeUrl);
         }
@@ -152,7 +152,7 @@ namespace Vita.Samples.OAuthDemoApp {
       Log("=== Retrieving access token using authorization code...");
       var tokenId = await _service.RetrieveAccessTokenAsync(session.Context, flow.Id);
       var token = session.GetEntity<IOAuthAccessToken>(tokenId); 
-      var strToken = token.AccessToken.DecryptString();
+      var strToken = token.AccessToken;
       Log("=== Token retrieved: {0}", strToken);
       if (token.OpenIdToken != null) {
         Log("=== {0} supports OpenId Connect, so it also returned id_token. Inside id_token:", server.Name);
@@ -189,7 +189,7 @@ namespace Vita.Samples.OAuthDemoApp {
         Log("=== Server supports refreshing tokens; refreshing token...");
         var success = await _service.RefreshAccessTokenAsync(session.Context, tokenId);
         Util.Check(success, "Failed to refresh token");
-        var strToken2 = token.AccessToken.DecryptString();
+        var strToken2 = token.AccessToken;
         Log("=== Sucess, refreshed token (might be the same): {0}", strToken2);
       }
       if (chkRevoke.Checked && !string.IsNullOrEmpty(server.TokenRevokeUrl)) {
@@ -246,7 +246,7 @@ namespace Vita.Samples.OAuthDemoApp {
         acct = server.NewOAuthAccount(clientId, secret, "TestAccount");
       } else {
         acct.ClientIdentifier = clientId;
-        session.NewOrUpdate(acct.ClientSecret, secret);
+        acct.ClientSecret = secret; 
       }
       session.SaveChanges();
       EndEditClientInfo();

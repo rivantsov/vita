@@ -63,6 +63,7 @@
     <Compile Include="JobExecutionTests_Cron.cs" />
     <Compile Include="DataHistoryTests.cs" />
     <Compile Include="LinqTests\LinqIncludeTests.cs" />
+    <Compile Include="LoginTests_UnencryptFactors.cs" />
     <Compile Include="MiscTests2.cs" />
     <Compile Include="LockSampleCode_Disabled.cs" />
     <Compile Include="LinqTests\LinqSearchTests.cs" />

@@ -56,19 +56,21 @@ namespace Vita.Modules.Login {
 
     //Password strength
     public IPasswordStrengthChecker PasswordChecker;
-    public PasswordStrength RequiredPasswordStrength = PasswordStrength.Strong; 
+    public PasswordStrength RequiredPasswordStrength = PasswordStrength.Medium; 
 
     public LoginModuleSettings(
                  LoginModuleOptions options = LoginModuleOptions.Default,
                  string encryptionChannelName = null, //uses default encryption channel if name is null
                  TimeSpan? passwordExpirationPeriod = null,
                  RecaptchaSettings recaptcha = null,
-                 IPasswordHasher passwordHasher = null, 
+                 IPasswordStrengthChecker passwordChecker = null,
+                 IPasswordHasher passwordHasher = null,
                  int bcryptWorkFactor = 10) {
       Options = options;
       EncryptionChannelName = encryptionChannelName;
       PasswordExpirationPeriod = passwordExpirationPeriod;
-      Recaptcha = recaptcha; 
+      Recaptcha = recaptcha;
+      PasswordChecker = passwordChecker; //if null, default will be created in LoginMOdule.Init
       PasswordHasher = passwordHasher ?? new BCryptPasswordHasher(bcryptWorkFactor);
     }
   }

@@ -6,42 +6,53 @@ using System.Threading.Tasks;
 
 using Vita.Entities; 
 using Vita.Data.Upgrades;
-using Vita.Modules.TextTemplates;
-
+using Vita.Modules.EncryptedData;
 
 namespace Vita.Modules.Login {
   public partial class LoginModule {
 
-    public override void RegisterMigrations(DbMigrationSet migrations) {
-      // In LoginModule v 1.1, email template naming conventions changed; so this migration action renames existing templates
-      var templateRenamingMap = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase) {
-        {"MultiFactorEmailSubject" , LoginMessageTemplates.MultiFactorEmailSubject},
-        {"MultiFactorEmailBody" , LoginMessageTemplates.MultiFactorEmailBody},
-        {"MultiFactorSmsBody" , LoginMessageTemplates.MultiFactorSmsBody},
-        {"OneTimePasswordSubject", LoginMessageTemplates.OneTimePasswordSubject},
-        {"OneTimePasswordBody",LoginMessageTemplates.OneTimePasswordBody},
-        {"PasswordResetCompleteEmailSubject", LoginMessageTemplates.PasswordResetCompleteEmailSubject},
-        {"PasswordResetCompleteEmailBody", LoginMessageTemplates.PasswordResetCompleteEmailBody},
-        {"PasswordResetPinEmailSubject", LoginMessageTemplates.PasswordResetPinEmailSubject},
-        {"PasswordResetPinEmailBody", LoginMessageTemplates.PasswordResetPinEmailBody},
-        {"PasswordResetPinSmsBody", LoginMessageTemplates.PasswordResetPinSmsBody},
-        {"VerifyEmailSubject", LoginMessageTemplates.VerifyEmailSubject},
-        {"VerifyEmailBody", LoginMessageTemplates.VerifyEmailBody},
-        {"VerifyPhoneSmsBody", LoginMessageTemplates.VerifySmsBody},
-      };
+    public static bool SuppressMigrationErrors = false;
 
-      migrations.AddPostUpgradeAction("1.1.0.0", "UpdateTemplateNames", "Updates Login text templates to new names", (session) => {
-        var templateModule = session.Context.App.GetModule<TemplateModule>();
-        if (templateModule == null)
-            return; 
-        var templates = session.GetEntities<ITextTemplate>(take: 100);
-        foreach (var t in templates) {
-          string newName;
-          if (templateRenamingMap.TryGetValue(t.Name.Trim(), out newName))
-            t.Name = newName; 
-        }//foreach
+    public override void RegisterMigrations(DbMigrationSet migrations) {
+      if (!migrations.IsNewInstall()) {
+        migrations.AddPostUpgradeAction("1.2.0.0", "FactorsPlainValue", "Switch extra factors to storing unencrypted values",
+            s => UnencryptFactorValues(s));
+      }
+    }
+
+    // Can be called explicitly outside of migrations to unencrypt existing values
+    public static void UnencryptFactorValues(IEntitySession session) {
+      var loginConfig = session.Context.App.GetConfig<LoginModuleSettings>();
+      var errLog = session.Context.App.ErrorLog;
+      int batchSize = 200;
+      int skip = 0; 
+      try {
+        var factors = session.EntitySet<ILoginExtraFactor>()
+          .Where(f => f.FactorValue == null).OrderBy(f => f.CreatedOn)
+          .Skip(skip).Take(batchSize).ToList();
+        skip += batchSize;
+        if(factors.Count == 0)
+          return;
+        //preload all EncryptedValue records
+        var encrIds = factors.Select(f => f.Info_Id).ToList();
+        var encrRecs = session.EntitySet<IEncryptedData>().Where(ed => encrIds.Contains(ed.Id));
+        foreach(var f in factors) {
+          if(f.Info_Id == null || f.Info_Id.Value == Guid.Empty)
+            continue;
+          var ed = session.GetEntity<IEncryptedData>(f.Info_Id); //should be preloaded
+          if(ed == null)
+            continue;
+          f.FactorValue = ed.DecryptString(loginConfig.EncryptionChannelName);
+          f.Info_Id = null; 
+        }
         session.SaveChanges(); 
-      });
+      } catch(Exception ex) {
+        if(errLog != null)
+          errLog.LogError(ex, session.Context);
+        if(!SuppressMigrationErrors)
+          throw;
+      }
+
     }
 
   }//class

@@ -110,7 +110,7 @@ namespace Vita.Modules.OAuthClient {
       Util.CheckNotEmpty(flow.AuthorizationCode, "Authorization code not retrieved, cannot retrieve access token.");
 
       var apiClient = new WebApiClient(context, flow.Account.Server.TokenRequestUrl, ClientOptions.Default, badRequestContentType: typeof(string));
-      var clientSecret = flow.Account.ClientSecret.DecryptString(this.Settings.EncryptionChannel);
+      var clientSecret = flow.Account.ClientSecret;
       var server = flow.Account.Server;
       var serverOptions = server.Options;
       // Some servers expect clientId/secret in Authorization header
@@ -174,10 +174,10 @@ namespace Vita.Modules.OAuthClient {
       Util.Check(token.RefreshToken != null, "RefreshToken value is empty, cannot refresh access token.");
       var acct = token.Account;
       var apiClient = new WebApiClient(context, acct.Server.TokenRefreshUrl, ClientOptions.Default, badRequestContentType: typeof(string));
-      var clientSecret = acct.ClientSecret.DecryptString(this.Settings.EncryptionChannel);
+      var clientSecret = acct.ClientSecret;
       var server = acct.Server;
       var serverOptions = server.Options;
-      var strRtoken = token.RefreshToken.DecryptString(Settings.EncryptionChannel);
+      var strRtoken = token.RefreshToken;
       // Some servers expect clientId/secret in auth header
       string query;
       if(serverOptions.IsSet(OAuthServerOptions.ClientInfoInAuthHeader)) {
@@ -197,10 +197,10 @@ namespace Vita.Modules.OAuthClient {
         tokenResp = await apiClient.PostAsync<HttpContent, AccessTokenResponse>(formContent, string.Empty);
       }
       // Update token info
-      token.AccessToken = session.NewOrUpdate(token.AccessToken, tokenResp.AccessToken, Settings.EncryptionChannel);
+      token.AccessToken = tokenResp.AccessToken;
       // A new refresh token might be returned (should in fact)
-      if (!string.IsNullOrEmpty(tokenResp.RefreshToken))
-        token.RefreshToken = session.NewOrUpdate(token.RefreshToken, tokenResp.RefreshToken, Settings.EncryptionChannel);
+      if(!string.IsNullOrEmpty(tokenResp.RefreshToken))
+        token.RefreshToken = tokenResp.RefreshToken;
       var utcNow = this.App.TimeService.UtcNow;
       token.ExpiresOn = utcNow.AddSeconds(tokenResp.ExpiresIn);
       token.RefreshedOn = utcNow; 
@@ -220,8 +220,8 @@ namespace Vita.Modules.OAuthClient {
       var acct = token.Account;
       var apiClient = new WebApiClient(context, revokeUrl, ClientOptions.Default,
           badRequestContentType: typeof(string));
-      var clientSecret = acct.ClientSecret.DecryptString(this.Settings.EncryptionChannel);
-      var strToken = token.AccessToken.DecryptString(Settings.EncryptionChannel);
+      var clientSecret = acct.ClientSecret;
+      var strToken = token.AccessToken;
       var server = acct.Server;
       string query = StringHelper.FormatUri("?token={0}", strToken);
       // Some servers expect clientId/secret in auth header or in URL
@@ -267,7 +267,7 @@ namespace Vita.Modules.OAuthClient {
 
     public void SetupOAuthClient(WebApiClient client, IOAuthAccessToken token) {
       var session = EntityHelper.GetSession(token);
-      var tokenValue = token.AccessToken.DecryptString(this.Settings.EncryptionChannel);
+      var tokenValue = token.AccessToken;
       client.AddAuthorizationHeader(tokenValue, scheme: token.TokenType.ToString());
     }
 

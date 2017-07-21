@@ -74,7 +74,7 @@ namespace Vita.Modules.DbInfo {
 
     public bool UpdateDbInfo(Database db, Exception exception = null) {
       //Check that db has module's tables; if not, this module is not included in the solution
-      var tbl = db.DbModel.GetTable(typeof(IDbInfo));
+      var tbl = db.DbModel.GetTable(typeof(IDbInfo), throwIfNotFound: false);
       if (tbl == null)
         return false; 
       try {

@@ -22,7 +22,7 @@ using Vita.Modules.Notifications;
 namespace Vita.Modules.Login {
 
   public partial class LoginModule : EntityModule, ILoginService, ILoginManagementService, ILoginProcessService, ILoginAdministrationService {
-    public static readonly Version CurrentVersion = new Version("1.1.0.0");
+    public static readonly Version CurrentVersion = new Version("1.2.0.0");
     public const string LoginIncidentType = "Login";
 
     LoginModuleSettings _settings;
@@ -38,8 +38,6 @@ namespace Vita.Modules.Login {
     public LoginModule(EntityArea area, LoginModuleSettings settings, string name = null) : base(area, name ?? "LoginModule", "Login module", version: CurrentVersion) {
       _settings = settings;
       App.RegisterConfig(_settings);
-      Requires<EncryptedDataModule>();
-      Requires<TextTemplates.TemplateModule>();
       //Register entities
       RegisterEntities(typeof(ILogin), typeof(ISecretQuestion), typeof(ISecretQuestionAnswer),  typeof(ITrustedDevice),
           typeof(ILoginExtraFactor), typeof(IPasswordHistory), typeof(ILoginProcess));
@@ -71,7 +69,7 @@ namespace Vita.Modules.Login {
       if(_settings.PasswordChecker == null)
         _settings.PasswordChecker = new PasswordStrengthChecker(App);
       IEncryptionService encrService = App.GetService<IEncryptionService>();
-      Util.Check(encrService != null, "Failed to get encryption service."); //never happens, module requires EncryptedDataModule
+      Util.Check(encrService != null, "Failed to get encryption service."); 
       if (!string.IsNullOrWhiteSpace(_settings.EncryptionChannelName))
         Util.Check(encrService.IsRegistered(_settings.EncryptionChannelName), 
           "Encryption channel '{0}' for LoginModule is not registered in EncryptedDataModule.");

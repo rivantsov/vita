@@ -6,14 +6,14 @@ using System.Text;
 using System.Threading.Tasks;
 using Vita.Entities;
 
-namespace Vita.Modules.Email {
+namespace Vita.Modules.Smtp {
 
   // SmtpService implements this interface
-  public interface IEmailSendService {
+  public interface ISmtpService {
     Task SendAsync(OperationContext context, MailMessage message);
     void Send(OperationContext context, MailMessage message); 
   }
-
+  /*
   // There is no default implementation for SMS service - use one of the SMS providers available on the Web. 
   // For a single mobile carrier, you can implement SMS by sending email to specific gateway. 
   // For Verizon, send email to 'phone@vtext.com', where phone is just digits, with dashes (-) removed. Leave subject empty.
@@ -22,5 +22,5 @@ namespace Vita.Modules.Email {
     Task SendSmsAsync(OperationContext context, string phone, string sms);
     void SendSms(OperationContext context, string phone, string sms);
   }
-
+  */
 }

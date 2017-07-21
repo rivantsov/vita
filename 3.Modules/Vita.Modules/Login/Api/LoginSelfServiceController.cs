@@ -244,6 +244,8 @@ namespace Vita.Modules.Login.Api {
       return new DeviceInfo() { Token = deviceEnt.Token, TrustLevel = deviceEnt.TrustLevel, Type = deviceEnt.Type };
     }
 
+    /// <summary>Deletes trusted login device for a current user.</summary>
+    /// <param name="token">Device token.</param>
     [ApiDelete, ApiRoute("device/{token}")]
     public void DeleteDevice(string token) {
       var login = GetCurrentLogin();

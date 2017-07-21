@@ -11,6 +11,7 @@ using Vita.Entities;
 using Vita.Data.Driver;
 using Vita.UnitTests.Common;
 using Vita.Samples.BookStore;
+using Vita.Modules.Login;
 
 namespace Vita.UnitTests.Extended {
 
@@ -38,9 +39,6 @@ namespace Vita.UnitTests.Extended {
       //Obviously it should bring the same book 
       Assert.IsNotNull(bk2, "Expected book");
       Assert.IsTrue(bk2 == bk1, "Expected the same book");
-
-
-
 
       //Bug ConvertHelper.ChangeType fails to convert string->enum, null-> double?
       var bkEd = BookEdition.Paperback | BookEdition.EBook;
@@ -191,6 +189,39 @@ namespace Vita.UnitTests.Extended {
       var upgradeInfo = upgradeMgr.BuildUpgradeInfo(); //.AddDbModelChanges(currentDbModel, modelInDb, DbUpgradeOptions.Default, app.ActivationLog);
       Assert.AreEqual(0, upgradeInfo.TableChanges.Count + upgradeInfo.NonTableChanges.Count, "Expected no changes");
     }
+
+    [TestMethod]
+    public void TestPasswordHashers() {
+      //run it only for MS SQL, to avoid slowing down console run for all servers
+      if(Startup.ServerType != DbServerType.MsSql)
+        return;
+
+      IPasswordHasher hasher;
+      var salt = Guid.NewGuid().ToByteArray();
+      var pwd = "MyPassword_*&^";
+      long start, timeMs;
+      bool match;
+      string hash;
+
+      // You can use this test to approximate the 'difficulty' of hashing algorithm for your computer. 
+      //  It prints the time it took to hash the pasword. This time should not be too low, desirably no less than 100 ms.
+      hasher = new BCryptPasswordHasher(workFactor: 10); //each +1 doubles the effort; on my machine: 10 -> 125ms, 11->242ms
+      start = Util.PreciseTicks;
+      hash = hasher.HashPassword(pwd, salt);
+      timeMs = Util.PreciseTicks - start;
+      match = hasher.VerifyPassword(pwd, salt, hasher.WorkFactor, hash);
+      Assert.IsTrue(match, "BCrypt hasher failed.");
+      Debug.WriteLine("BCrypt hasher time, ms: " + timeMs);
+
+      hasher = new Pbkdf2PasswordHasher(iterationCount: 2000); // on my machine: 2000-> 13ms, 5000->32ms
+      start = Util.PreciseTicks;
+      hash = hasher.HashPassword(pwd, salt);
+      timeMs = Util.PreciseTicks - start;
+      match = hasher.VerifyPassword(pwd, salt, hasher.WorkFactor, hash);
+      Assert.IsTrue(match, "Pbkdf hasher failed.");
+      Debug.WriteLine("Pbkdf hasher time, ms: " + timeMs);
+    }
+
 
   }//class
 }

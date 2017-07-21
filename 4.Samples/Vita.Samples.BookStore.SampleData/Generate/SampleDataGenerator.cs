@@ -6,8 +6,6 @@ using System.Diagnostics;
 
 using Vita.Entities;
 using Vita.Modules.Login;
-using Vita.Modules.TextTemplates;
-using Vita.Modules.JobExecution;
 
 namespace Vita.Samples.BookStore.SampleData {
 
@@ -25,7 +23,6 @@ namespace Vita.Samples.BookStore.SampleData {
     public static void CreateBasicTestData(EntityApp app) {
       var session = app.OpenSystemSession();
       session.EnableCache(false);
-      CreateTextTemplates(session);
       Vita.Modules.Login.LoginModule.ImportDefaultSecretQuestions(session);
       session.SaveChanges();
       //Create users
@@ -163,47 +160,6 @@ Covers c# 4.0.";
       loginMgr.AddSecretQuestionAnswer(login, 1, qFriend, "Diego");
       loginMgr.AddSecretQuestionAnswer(login, 2, qFood, "banana");
       loginMgr.AddSecretQuestionAnswer(login, 3, qColor, "yellow");
-    }
-
-    private static void CreateTextTemplates(IEntitySession session) {
-      //Password reset
-      session.NewTextTemplate(LoginMessageTemplates.PasswordResetPinEmailSubject, 
-        "BookStore password reset pin", TemplateFormat.Text);
-      session.NewTextTemplate(LoginMessageTemplates.PasswordResetPinEmailBody,
-@"Dear BookStore customer <#UserName#>,
-This is a pin for a password reset process recently started on our site: <#Pin#>
-Use this pin on our site to continue the process.", TemplateFormat.Text);
-      session.NewTextTemplate(LoginMessageTemplates.PasswordResetPinSmsBody,
-        "Pin: <#Pin#>", TemplateFormat.Text);
-      session.NewTextTemplate(LoginMessageTemplates.PasswordResetCompleteEmailSubject,
-        "BookStore password changed", TemplateFormat.Text);
-      session.NewTextTemplate(LoginMessageTemplates.PasswordResetCompleteEmailBody,
-@"Dear BookStore customer <#UserName#>,
-This is a notification that your password on our site had been changed.", TemplateFormat.Text);
-      //Verification
-      session.NewTextTemplate(LoginMessageTemplates.VerifyEmailSubject,
-        "BookStore email verification", TemplateFormat.Text);
-      session.NewTextTemplate(LoginMessageTemplates.VerifyEmailBody,
-@"Dear BookStore customer <#UserName#>,
-This is a pin for email verification: <#Pin#>
-Use this pin on our site to confirm the ownership of email account.", TemplateFormat.Text);
-      session.NewTextTemplate(LoginMessageTemplates.VerifySmsBody, "Pin: <#Pin#>", TemplateFormat.Text);
-
-      //multi-factor login
-      session.NewTextTemplate(LoginMessageTemplates.MultiFactorEmailSubject,
-        "BookStore login process", TemplateFormat.Text);
-      session.NewTextTemplate(LoginMessageTemplates.MultiFactorEmailBody,
-@"Dear BookStore customer <#UserName#>,
-This is a pin for multi-factor login: <#Pin#>
-Use this pin on our site to complete the login process.", TemplateFormat.Text);
-      session.NewTextTemplate(LoginMessageTemplates.MultiFactorSmsBody,
-        "Pin: <#Pin#>", TemplateFormat.Text);
-      session.NewTextTemplate(LoginMessageTemplates.OneTimePasswordSubject,
-        "You BookStore password", TemplateFormat.Text);
-      session.NewTextTemplate(LoginMessageTemplates.OneTimePasswordBody,
-@"Dear BookStore customer <#UserName#>,
-Site administrator has set a temporary password for your account: <#Password#>
-Use this password to login to your account. Note that this is one-time password.", TemplateFormat.Text);
     }
 
 

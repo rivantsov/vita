@@ -38,7 +38,7 @@ namespace Vita.Modules.OAuthClient {
       acct.Server = server;
       acct.Name = accountName;
       acct.ClientIdentifier = clientIdentifier;
-      acct.ClientSecret = session.NewOrUpdate(acct.ClientSecret, clientSecret, encryptionChannelName);
+      acct.ClientSecret = clientSecret;
       return acct; 
     }
 
@@ -58,10 +58,10 @@ namespace Vita.Modules.OAuthClient {
       var ent = session.NewEntity<IOAuthAccessToken>();
       ent.Account = account;
       ent.UserId = userId;
-      ent.AccessToken = session.NewOrUpdate(ent.AccessToken, accessToken, encryptionChannelName);
+      ent.AccessToken = accessToken;
       ent.TokenType = tokenType;
-      if (!string.IsNullOrWhiteSpace(refreshToken))
-        ent.RefreshToken = session.NewOrUpdate(ent.RefreshToken, refreshToken, encryptionChannelName);
+      if(!string.IsNullOrWhiteSpace(refreshToken))
+        ent.RefreshToken = refreshToken; 
       //if (!string.IsNullOrWhiteSpace(openIdToken))
       //  ent.OpenIdToken = <Unpack Open Id token> 
       ent.Scopes = scopes;

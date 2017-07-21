@@ -10,7 +10,7 @@
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
     <description>VITA ORM driver for MS SQL Compact Edition. </description>
     <releaseNotes></releaseNotes>
-    <copyright>Copyright Roman Ivantsov 2015</copyright>
+    <copyright>Copyright Roman Ivantsov 2017</copyright>
     <tags>VITA ORM SqlCe</tags>
     <dependencies>
        <group>

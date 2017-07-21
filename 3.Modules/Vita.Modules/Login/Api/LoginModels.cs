@@ -170,7 +170,7 @@ namespace Vita.Modules.Login.Api {
     public Guid? UserId { get; set; }
     public Guid? TenantId { get; set; }
     public string UserName { get; set; }
-    public string Email { get; set; }
+    public string ExtraFactor { get; set; } //email, phone
     public DateTime? CreatedAfter { get; set; }
     public DateTime? CreatedBefore { get; set; }
     public DateTime? ExpiringBefore { get; set; }

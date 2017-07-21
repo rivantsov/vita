@@ -10,13 +10,11 @@ using Vita.Entities;
 using Vita.Entities.Authorization;
 using Vita.Modules.DataHistory;
 using Vita.Modules.DbInfo;
-using Vita.Modules.Email;
 using Vita.Modules.EncryptedData;
 using Vita.Modules.Logging;
 using Vita.Modules.Logging.Api;
 using Vita.Modules.Login;
 using Vita.Modules.Login.Api;
-using Vita.Modules.TextTemplates;
 
 namespace Vita.Samples.BookStore {
 
@@ -47,12 +45,12 @@ namespace Vita.Samples.BookStore {
       MainModule = new BooksModule(booksArea);
       //Standard modules
       var dbInfoModule = new DbInfoModule(infoArea);
-      var cryptModule = new EncryptedDataModule(loginArea); //EncryptedData is used by login module
-      var templateModule = new TemplateModule(booksArea);
+      // Deprecatedl  EncryptedData was used by login module; now only to run migration script
+      var cryptDataModule_Deprecated = new EncryptedDataModule(loginArea); 
       //data history - we track history for book review, it is marked with WithHistory attribute
       var histModule = new DataHistoryModule(booksArea);
 
-      //Calendar module; it requires job execution module
+      // job execution module
       var jobExecModule = new Modules.JobExecution.JobExecutionModule(booksArea);
 
       // LoginModule

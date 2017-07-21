@@ -91,7 +91,8 @@ namespace Vita.UnitTests.Basic {
       // add 50 owners, then 200 cars with random owners
       // our goal is to create update set with inserts of linked entities with identity pk/fk
       // we test how identity values are carried between commands (from IPerson.Id to ICar.OwnerId)
-      var owners = new List<IPerson>(); 
+      var owners = new List<IPerson>();
+      var cars = new List<ICar>(); 
       var rand = new Random();
       for (int i = 0; i < 50; i++) {
         var owner = session.NewEntity<IPerson>();
@@ -102,6 +103,7 @@ namespace Vita.UnitTests.Basic {
         var car = session.NewEntity<ICar>();
         car.Model = "Model" + i;
         car.Owner = owners[rand.Next(owners.Count)];
+        cars.Add(car); 
       }
       try {
         session.SaveChanges(); //we just test that it succeeds
@@ -109,6 +111,12 @@ namespace Vita.UnitTests.Basic {
         //revert max param count back to normal - to avoid disturbing other tests
         Startup.Driver.MaxParamCount = saveParamCount;
       }
+      // check that all FKs had been set (changed from negative to real positive values) 
+      foreach(var car in cars) {
+        var ownerId = (int)EntityHelper.GetProperty(car, "Owner_id");
+        Assert.IsTrue(ownerId > 0, "Expected OwnerId > 0");
+      }
+
     }
   }
 }

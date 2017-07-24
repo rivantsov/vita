@@ -225,6 +225,8 @@ namespace Vita.Entities {
       this.DataAccess = new DataAccessService(this);
       RegisterService<IDataAccessService>(this.DataAccess);
       this.RegisterService<IBackgroundSaveService>(new BackgroundSaveService());
+      RegisterService<IBackgroundTaskService>(new DefaultBackgroundTaskService());
+
       // create the following default services only if they do not exist yet, or not imported from LinkedApps
       // likely is replaced by another implementation writing to database - during modules initialization
       RegisterServiceIfNotFound<IErrorLogService>(() => new TraceErrorLogService());

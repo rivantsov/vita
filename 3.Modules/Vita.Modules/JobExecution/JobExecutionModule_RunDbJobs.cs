@@ -7,6 +7,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Vita.Common;
 using Vita.Entities;
+using Vita.Entities.Services;
 
 namespace Vita.Modules.JobExecution {
   public partial class JobExecutionModule {
@@ -75,16 +76,23 @@ namespace Vita.Modules.JobExecution {
       RegisterJobRun(jobCtx);
       OnJobNotify(jobCtx, JobNotificationType.Starting);
       jobCtx.StartInfo = CreateJobStartInfo(jobRun, jobCtx);
+
+      var runServ = App.GetService<IBackgroundTaskService>();
+      runServ.QueueBackgroundWorkItem(async () => await StartPoolJobRunAsync(jobCtx));
+      /*
+      */
+      /*
       if(jobCtx.StartInfo.ThreadType == JobThreadType.Background) {
         jobCtx.Thread = new Thread(StartBackgroundJobRun);
         jobCtx.Thread.Start(jobCtx);
       } else {
         Task.Run(() => StartPoolJobRunAsync(jobCtx));
       }
+      */
       return jobCtx; 
     }
 
-    private void StartBackgroundJobRun(object data) {
+    private void StartBackgroundJobRun(CancellationToken token, object data) {
       _activitiesCounter.Decrement(); 
       var jobCtx = (JobRunContext)data;
       try {

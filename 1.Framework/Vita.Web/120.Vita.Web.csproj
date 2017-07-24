@@ -82,6 +82,7 @@
     <Compile Include="SlimApi\SlimApiDirectRouteProvider.cs" />
     <Compile Include="SlimApi\SlimApiGhostController.cs" />
     <Compile Include="SwaggerUtil.cs" />
+    <Compile Include="WebBackgroundTaskService.cs" />
     <Compile Include="WebHelper.cs" />
   </ItemGroup>
   <ItemGroup>

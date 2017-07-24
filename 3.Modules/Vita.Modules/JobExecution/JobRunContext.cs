@@ -50,7 +50,7 @@ namespace Vita.Modules.JobExecution {
     public CancellationToken CancellationToken { get { return OperationContext.CancellationToken; } }
 
     internal JobStartInfo StartInfo;
-    internal Thread Thread; //background thread for long-running jobs 
+    //internal Thread Thread; //background thread for long-running jobs 
 
     internal JobRunContext(IJobRun jobRun) {
       var session = EntityHelper.GetSession(jobRun);
@@ -113,8 +113,8 @@ namespace Vita.Modules.JobExecution {
 
     internal void TryCancel() {
       OperationContext.SignalCancellation(); //this will cancel Task
-      if(this.Thread != null)
-        Thread.Abort();
+      // if(this.Thread != null)
+      //  Thread.Abort();
       Thread.Yield();
     }
 

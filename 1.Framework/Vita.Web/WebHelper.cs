@@ -52,6 +52,8 @@ namespace Vita.Web {
       //Api configuration
       if (app.ApiConfiguration.ControllerInfos.Count > 0)
         ConfigureSlimApiControllers(httpConfiguration, app);
+
+      app.RegisterService<IBackgroundTaskService>(new WebBackgroundTaskService(app)); 
     }
 
     public static void ConfigureSlimApiControllers(HttpConfiguration config, EntityApp app) {

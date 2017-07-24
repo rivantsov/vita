@@ -93,6 +93,8 @@
     <Compile Include="Entities\Model\Filters\QueryFilter.cs" />
     <Compile Include="Entities\Model\EntityModelExtensions.cs" />
     <Compile Include="Entities\Model\IEntityModelExtender.cs" />
+    <Compile Include="Entities\Services\IBackgroundTaskService.cs" />
+    <Compile Include="Entities\Services\Implementations\DefaultBackgroundTaskService.cs" />
     <Compile Include="Entities\Services\IUserSessionService.cs" />
     <Compile Include="PublicAPI\Exceptions\AuthenticationRequiredException.cs" />
     <Compile Include="Entities\Services\IDbInfoService.cs" />

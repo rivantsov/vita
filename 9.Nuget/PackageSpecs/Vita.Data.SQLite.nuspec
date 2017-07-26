@@ -17,7 +17,6 @@
          <dependency id="Vita" version="$version$"/>
        </group>	
        <group>
-         <dependency id="System.Data.SQLite" version="1.0.103.0" />
          <dependency id="System.Data.SQLite.Core" version="1.0.103.0" />
        </group>	
     </dependencies>

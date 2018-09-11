@@ -10,12 +10,12 @@ IF /I "%AREYOUSURE%" NEQ "Y" GOTO END
 
 echo Publishing....
 :: When we push bin package, the symbols package is pushed automatically by the nuget util
-nuget push Nupkg\Vita.%pver%.nupkg
-nuget push Nupkg\Vita.Modules.Login.%pver%.nupkg
-nuget push Nupkg\Vita.Data.MsSql.%pver%.nupkg
-nuget push Nupkg\Vita.Data.MySql.%pver%.nupkg
-nuget push Nupkg\Vita.Data.Postgres.%pver%.nupkg
-nuget push Nupkg\Vita.Data.SQLite.%pver%.nupkg
+nuget push Nupkg\Vita.%pver%.nupkg -source https://api.nuget.org/v3/index.json 
+nuget push Nupkg\Vita.Modules.Login.%pver%.nupkg -source https://api.nuget.org/v3/index.json 
+nuget push Nupkg\Vita.Data.MsSql.%pver%.nupkg -source https://api.nuget.org/v3/index.json 
+nuget push Nupkg\Vita.Data.MySql.%pver%.nupkg -source https://api.nuget.org/v3/index.json 
+nuget push Nupkg\Vita.Data.Postgres.%pver%.nupkg -source https://api.nuget.org/v3/index.json 
+nuget push Nupkg\Vita.Data.SQLite.%pver%.nupkg -source https://api.nuget.org/v3/index.json 
 pause
 
 :END

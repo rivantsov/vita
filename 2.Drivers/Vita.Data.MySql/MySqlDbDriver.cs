@@ -3,7 +3,6 @@ using System.Data;
 using System.Diagnostics;
 using System.Linq;
 
-using Vita.Common;
 using Vita.Entities;
 using Vita.Entities.Model;
 using Vita.Data;
@@ -12,6 +11,7 @@ using Vita.Data.Driver;
 using System.Collections.Generic;
 using MySql.Data.MySqlClient;
 using Vita.Entities.Logging;
+using Vita.Data.Linq;
 
 namespace Vita.Data.MySql {
   /* Note:
@@ -22,21 +22,23 @@ namespace Vita.Data.MySql {
    * 3. Connection string must have ' Old Guids=true' to properly handle Guids
    
    */
-
+   // Replace LIKE template (change escape char to / )
   public class MySqlDbDriver : DbDriver {
-    public const DbFeatures MySqlFeatures = DbFeatures.Schemas | DbFeatures.StoredProcedures | DbFeatures.OutputParameters
+    // Note: MySql supports output params only for stored procedures, not for dynamic SQL
+    public const DbFeatures MySqlFeatures = DbFeatures.Schemas | DbFeatures.StoredProcedures
         | DbFeatures.Views | DbFeatures.DefaultCaseInsensitive
-        | DbFeatures.ReferentialConstraints | DbFeatures.Paging | DbFeatures.BatchedUpdates | DbFeatures.TreatBitAsInt;
-    public const DbOptions DefaultMySqlDbOptions = DbOptions.Default | DbOptions.AutoIndexForeignKeys | DbOptions.IgnoreTableNamesCase;
+        | DbFeatures.ReferentialConstraints | DbFeatures.ForeignKeysAutoIndexed //mySql automatically creates supporting index
+        | DbFeatures.Paging | DbFeatures.BatchedUpdates | DbFeatures.TreatBitAsInt;
+    public const DbOptions DefaultMySqlDbOptions = DbOptions.UseRefIntegrity | DbOptions.ShareDbModel 
+                                                 | DbOptions.AutoIndexForeignKeys | DbOptions.IgnoreTableNamesCase;
 
     public MySqlDbDriver() : base(DbServerType.MySql, MySqlFeatures)  {
-      base.StoredProcParameterPrefix = "prm";
-      base.DynamicSqlParameterPrefix = "@";
-      base.CommandCallFormat = "CALL {0} ({1});";
-      // base.CommandCallOutParamFormat = "{0}"; -- MySql does not require 'Out' spec in parameter reference
-      base.BatchBeginTransaction = "START TRANSACTION;";
-      base.BatchCommitTransaction = "COMMIT;";
-      base.DefaultLikeEscapeChar = '/';
+      base.TypeRegistry = new MySqlTypeRegistry(this);
+      base.SqlDialect = new MySqlDialect(this); 
+    }
+
+    public override DbOptions GetDefaultOptions() {
+      return DefaultMySqlDbOptions;
     }
 
     public override bool IsSystemSchema(string schema) {
@@ -55,29 +57,21 @@ namespace Vita.Data.MySql {
 
 
     // overrides
-    protected override DbTypeRegistry CreateTypeRegistry() {
-      return new MySqlTypeRegistry(this); 
-    }
     public override IDbConnection CreateConnection(string connectionString) {
-      return new MySqlConnection(connectionString);
+      return new MySqlConnection(connectionString); 
     }
 
-    public override DbSqlBuilder CreateDbSqlBuilder(DbModel dbModel) {
-      return new MySqlDbSqlBuilder(dbModel); 
-    }
     public override DbModelUpdater CreateDbModelUpdater(DbSettings settings) {
       return new MySqlDbModelUpdater(settings);
     }
-    public override DbModelLoader CreateDbModelLoader(DbSettings settings, SystemLog log) {
+    public override DbModelLoader CreateDbModelLoader(DbSettings settings, IActivationLog log) {
       return new MySqlDbModelLoader(settings, log);
     }
-
-    public override Vita.Data.Driver.LinqSqlProvider CreateLinqSqlProvider(DbModel dbModel) {
-      return new MySqlLinqSqlProvider(dbModel);
+    public override DbSqlBuilder CreateDbSqlBuilder(DbModel dbModel, QueryInfo queryInfo) {
+      return new MySqlBuilder(dbModel, queryInfo);
     }
-
-    public override string FormatFullName(string schema, string name) {
-      return string.Format("\"{0}\".\"{1}\"", schema, name);
+    public override IDbCommand CreateCommand() {
+      return new MySqlCommand(); 
     }
 
     public override object ExecuteCommand(IDbCommand command, DbExecutionType executionType) {
@@ -137,12 +131,14 @@ namespace Vita.Data.MySql {
       }
     }
 
-    public override IDbDataParameter AddParameter(IDbCommand command, DbParamInfo prmInfo) {
-      var prm = (MySqlParameter)base.AddParameter(command, prmInfo);
-      prm.MySqlDbType = (MySqlDbType)prmInfo.TypeInfo.VendorDbType.VendorDbType;
-      return prm;
+    public override void CopyParameterSetup(IDbDataParameter source, IDbDataParameter dest) {
+      ((MySqlParameter)dest).MySqlDbType = ((MySqlParameter)source).MySqlDbType; 
     }
-
+    public override IDbDataParameter AddParameter(IDbCommand command, string name, DbStorageType typeDef, ParameterDirection direction, object value) {
+      var prm = (MySqlParameter) base.AddParameter(command, name, typeDef, direction, value);
+      prm.MySqlDbType = (MySqlDbType) typeDef.CustomDbType;
+      return prm; 
+    }
     public override void OnDbModelConstructed(DbModel dbModel) {
       foreach (var table in dbModel.Tables) {
         // Names of PK constraints in MySql is 'PRIMARY', cannot be changed
@@ -164,7 +160,8 @@ namespace Vita.Data.MySql {
           foreach(var kc in key.KeyColumns)
             kc.Desc = false; 
         }
-        // auto_increment (identity) columns must be associated with key (PK or index). For auto-inc columns that are NOT PKs we create artificial index
+        // auto_increment (identity) columns must be associated with key (PK or index). 
+        // For auto-inc columns that are NOT PKs we create artificial index
         var autoIncCols = table.Columns.Where(c => c.Flags.IsSet(DbColumnFlags.Identity));
         foreach (var col in autoIncCols) {
           if (col.Flags.IsSet(DbColumnFlags.PrimaryKey))
@@ -174,10 +171,6 @@ namespace Vita.Data.MySql {
         }
       
       }     
-      // Remove double-quotes from StoredProcedure names - MySqlDriver does not like it
-      foreach (var cmd in dbModel.Commands) {
-        cmd.FullCommandName = cmd.FullCommandName.Replace("\"", "");
-      }
       base.OnDbModelConstructed(dbModel);
     }
 

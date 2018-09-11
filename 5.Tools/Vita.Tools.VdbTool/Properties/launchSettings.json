@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "Vita.Tools.VdbTool": {
+      "commandName": "Project",
+      "commandLineArgs": "dbfirst /cfg:C:\\MyProjects\\VitaCore\\5.Tools\\Vita.Tools.VdbTool\\ConfigSamples\\db1.mssql.books.cfg"
+    }
+  }
+}

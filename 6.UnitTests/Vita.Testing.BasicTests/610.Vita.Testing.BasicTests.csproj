@@ -1,0 +1,48 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netcoreapp2.0</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <StartupObject>Vita.Testing.BasicTests.Program</StartupObject>
+    <OutputType>Exe</OutputType>
+    <AssemblyName>Vita.Testing.BasicTests</AssemblyName>
+    <RootNamespace>Vita.Testing.BasicTests</RootNamespace>
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Remove="HashCryptTests_MOVETOEXT.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Remove="_errors.log" />
+    <None Remove="_schemas_MsSql.log" />
+    <None Remove="__locksTest.log" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.Configuration" Version="2.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="2.0.0" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="15.3.0-preview-20170517-02" />
+    <PackageReference Include="MSTest.TestAdapter" Version="1.1.17" />
+    <PackageReference Include="MSTest.TestFramework" Version="1.1.17" />
+    <PackageReference Include="System.Data.Common" Version="4.3.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\1.Framework\Vita.Entities.Emit\060.Vita.Entities.Emit.csproj" />
+    <ProjectReference Include="..\..\1.Framework\Vita.Tools\090.Vita.Tools.csproj" />
+    <ProjectReference Include="..\..\1.Framework\Vita\010.Vita.csproj" />
+    <ProjectReference Include="..\..\2.Drivers\Vita.Data.MsSql\210.Vita.Data.MsSql.csproj" />
+    <ProjectReference Include="..\..\2.Drivers\Vita.Data.MySql\220.Vita.Data.MySql.csproj" />
+    <ProjectReference Include="..\..\2.Drivers\Vita.Data.Postgres\230.Vita.Data.Postgres.csproj" />
+    <ProjectReference Include="..\..\2.Drivers\Vita.Data.SQLite\250.Vita.Data.SQLite.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="appSettings.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
+</Project>

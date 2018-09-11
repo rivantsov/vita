@@ -1,0 +1,309 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Linq.Expressions;
+using System.Reflection;
+
+using Vita.Entities.Utilities;
+using Vita.Entities;
+using Vita.Entities.Runtime;
+
+using Vita.Data.Linq.Translation;
+using Vita.Data.Linq.Translation.Expressions;
+using System.Collections;
+using Vita.Data.Driver;
+
+namespace Vita.Data.Linq {
+
+  public static class LinqExpressionHelper {
+    // There are 2 overloads of Select - we are interested in this one:
+    //public static IQueryable<TResult> Select<TSource, TResult>(this IQueryable<TSource> source, Expression<Func<TSource, TResult>> selector);
+    public static MethodInfo QueryableSelectMethod;
+    public static MethodInfo QueryableWhereMethod;
+    public static MethodInfo QueryableAsQueryableMethod;
+    public static MethodInfo QueryableCountMethod;
+    public static MethodInfo QueryableOrderByMethod;
+    public static MethodInfo QueryableOrderByDescMethod;
+
+    public static MethodInfo ListContainsMethod;
+    public static MethodInfo SessionEntitySetMethod;
+
+    static MethodInfo _escapeLikePatternMethod;
+    static MethodInfo _stringConcatMethod;
+    static MethodInfo _convertToStringMethod;
+    static MethodInfo _getUnderlyingValueOrDefaultMethod;
+
+    #region Static constructor
+    static LinqExpressionHelper() {
+      var ti = typeof(LinqExpressionHelper).GetTypeInfo(); 
+      _escapeLikePatternMethod = ti.GetDeclaredMethod(nameof(EscapeLikePattern));
+      _stringConcatMethod = ti.GetDeclaredMethod(nameof(ConcatPattern));
+      _getUnderlyingValueOrDefaultMethod = ti.GetDeclaredMethod(nameof(GetUnderlyingValueOrDefault));
+      _convertToStringMethod = ti.GetDeclaredMethod(nameof(ConvertToString)); 
+      // Find Queryable methods
+      var allMethods = typeof(Queryable).GetTypeInfo().DeclaredMembers.OfType<MethodInfo>().ToList();
+      foreach(var m in allMethods.Where(m => m.Name == nameof(Queryable.Select))) {
+        var arg1 = m.GetParameters()[1];
+        var paramType = arg1.ParameterType;
+        var funcType = paramType.GetGenericArguments()[0];
+        var funcGenDef = funcType.GetGenericTypeDefinition();
+        if(funcGenDef == typeof(Func<,>))
+          QueryableSelectMethod = m;
+      }
+      foreach(var m in allMethods.Where(m => m.Name == nameof(Queryable.Where))) {
+        var arg1 = m.GetParameters()[1];
+        var paramType = arg1.ParameterType;
+        var funcType = paramType.GetGenericArguments()[0];
+        var funcGenDef = funcType.GetGenericTypeDefinition();
+        if(funcGenDef == typeof(Func<,>))
+          QueryableWhereMethod = m;
+      }
+      QueryableOrderByMethod = allMethods.First(m => m.Name == nameof(Queryable.OrderBy) && m.GetParameters().Length == 2);
+      QueryableOrderByDescMethod = allMethods.First(m => m.Name == nameof(Queryable.OrderByDescending) && m.GetParameters().Length == 2);
+      QueryableCountMethod = allMethods.First(m => m.Name == nameof(Queryable.Count) && m.GetParameters().Length == 1);
+      QueryableAsQueryableMethod = allMethods.First(m => m.Name == nameof(Queryable.AsQueryable) && m.IsGenericMethod);
+
+      ListContainsMethod = typeof(ICollection<>).FindMethod(nameof(IList.Contains), paramCount: 1);  
+      SessionEntitySetMethod = typeof(IEntitySession).FindMethod(nameof(IEntitySession.EntitySet));
+    }
+    #endregion 
+
+    public static IList<Type> GetArgumentTypes(this Expression expression) {
+      var mtExpr = expression as MetaTableExpression;
+      if(mtExpr != null)
+        return GetArgumentTypes(mtExpr.SourceExpression);
+      switch(expression.NodeType) {
+        case ExpressionType.New:
+          var newExpr = (NewExpression)expression; 
+          var prms = newExpr.Constructor.GetParameters();
+          return prms.Select(pi => pi.ParameterType).ToList(); 
+        case ExpressionType.Call:
+          //For method call the first operand is object defining the function; 
+          var types = new List<Type>(); 
+          var callExpr = (MethodCallExpression) expression;
+          types.Add(callExpr.Method.DeclaringType);
+          var mprms = callExpr.Method.GetParameters();
+          types.AddRange(mprms.Select(p => p.ParameterType));
+          return types; 
+        default:
+          return expression.GetOperands().Select(op => op.Type).ToList();
+      }
+    }
+
+
+    public static SqlFunctionType ToBitwise(this ExpressionType type) {
+      switch (type) {
+        case ExpressionType.And: return SqlFunctionType.AndBitwise;
+        case ExpressionType.Or: return SqlFunctionType.OrBitwise;
+        case ExpressionType.ExclusiveOr: return SqlFunctionType.XorBitwise;
+        default:
+          Util.Throw("No bitwise form of expression type {0}.", type);
+          return default(SqlFunctionType);
+      }
+    }
+
+    public static bool IsBoolConst(this Expression expression, out bool value) {
+      value = false; 
+      if (expression.NodeType != ExpressionType.Constant || expression.Type != typeof(bool))
+        return false; 
+      var constExpr = (ConstantExpression) expression; 
+      value = (bool) constExpr.Value; 
+      return true; 
+    }
+
+    public static bool IsConstNull(this Expression expression) {
+      if(expression.NodeType == ExpressionType.Constant && ((ConstantExpression)expression).Value == null)
+        return true;
+      if(expression.NodeType == ExpressionType.Convert) {
+        var conv = (UnaryExpression)expression;
+        if(IsConstNull(conv.Operand))
+          return true;
+      }
+      return false;
+    }
+
+    public static bool IsConstZero(this Expression expression) {
+      if (expression.NodeType != ExpressionType.Constant || !expression.Type.IsInt()) return false;
+      var c = (ConstantExpression)expression;
+      var iv = (int)c.Value;
+      return iv == 0;
+    }
+
+    public static bool IsConst<T>(this Expression expression, out T value) {
+      value = default(T);
+      if (expression.NodeType != ExpressionType.Constant || expression.Type != typeof(T)) return false;
+      var c = (ConstantExpression)expression;
+      value = (T)c.Value;
+      return true; 
+    }
+
+    public static Expression CheckNeedConvert(Expression expression, Type toType) {
+      if (expression.Type == toType)
+        return expression;
+      if (toType == typeof(bool)) {
+        //One special case - used for bit columns
+        if (expression.Type.IsInt())
+          return Expression.Equal(expression, Expression.Constant(1));
+      }
+      if (toType.IsValueType && expression.Type.IsNullableValueType()) {
+        return CallGetUnderlyingValueOrDefault(expression);
+      }
+      // One special case, comes up in non-supported GroupBy statements
+      if (toType.IsGenericType && toType.GetGenericTypeDefinition() == typeof(IEnumerable<>))
+        Util.Throw(@"Cannot translate LINQ query into SQL: unsupported expression; try rewriting the query. 
+If you are using GroupBy facility, rewrite the query to return only aggregate values, not grouped lists of original records/entities. 
+Details: failed converting sub-expression of type {0} to type {1}", expression.Type, toType);
+      //don't know what to do, let's hope SQL swallows it 
+      return Expression.Convert(expression, toType);
+    }
+
+    public static MethodInfo GetToStringConverter(Type type) {
+      return _convertToStringMethod.MakeGenericMethod(type); 
+    }
+
+    public static string ConvertToString<T>(T value) {
+      if (value == null)
+        return string.Empty;
+      return value.ToString(); 
+    }
+
+
+    private static Expression CallGetUnderlyingValueOrDefault(Expression argument) {
+      var valueType = argument.Type.GetUnderlyingStorageType();
+      var genMethod = _getUnderlyingValueOrDefaultMethod.MakeGenericMethod(valueType);
+      var result = Expression.Call(null, genMethod, argument);
+      return result; 
+    }
+
+    private static T GetUnderlyingValueOrDefault<T>(Nullable<T> value) where T : struct {
+      return (value == null) ? default(T) : value.Value;
+    }
+
+    public static string EscapeLikePattern(string pattern, char escapeChar) {
+      if(string.IsNullOrEmpty(pattern))
+        return pattern;
+      char[] wildCards = new char[] { '_', '%', '[', ']', escapeChar};
+      var needsEscape = pattern.IndexOfAny(wildCards) >= 0;
+      if(!needsEscape)
+        return pattern;
+      //Do escape
+      var escStr = escapeChar.ToString();
+      var escPattern = pattern
+        .Replace(escStr, escStr + escStr)
+        .Replace("_", escapeChar + "_")
+        .Replace("%", escapeChar + "%")
+        .Replace("[", escapeChar + "[")
+        .Replace("]", escapeChar + "]");
+      return escPattern;
+    }
+
+    // Encode expression representing a dynamic call to Escape method and concatination with before/after segments:
+    //   return before + EscapeLikePattern(patternPrm) + after
+    // This dynamic expr is used when argument of Like (in LINQ calls to string.Contains(s), string.StartsWith(s))
+    //   is a local variable; in this case escaping must be embedded into a LINQ expression. 
+    // For cases when pattern is string literal (ex: where ent.Name.Contains("x")), the escaping is done directly over the literal
+    public static Expression CallEscapeLikePattern(Expression pattern, char escapeChar, string before, string after) {
+      var exprEscChar = Expression.Constant(escapeChar);
+      var exprBefore = Expression.Constant(before, typeof(string));
+      var exprAfter = Expression.Constant(after, typeof(string));
+      var callEscape = Expression.Call(_escapeLikePatternMethod, pattern, exprEscChar);
+      var result = Expression.Call(_stringConcatMethod, exprBefore, callEscape, exprAfter);
+      return result; 
+    }
+
+    // We could use string.Concat, but forming an expr is a trouble - it has a lot of overloads;
+    // So for simplicity we use this trivial method
+    public static string ConcatPattern(string before, string pattern, string after) {
+      return before + pattern + after; 
+    }
+
+    public static bool IsNewConstant(NewExpression expression, out object value) {
+      value = null;
+      if(!expression.Type.IsDbPrimitive())
+        return false; 
+      if(expression.Arguments.Count == 0)
+        return true;
+      if(!expression.Arguments.All(a => a.NodeType == ExpressionType.Constant))
+        return false;
+      value = ExpressionHelper.Evaluate(expression);
+      return true;
+    }
+
+    public static void EvaluateCommandParameters(EntityCommand command, EntitySession session = null) {
+      //We proceed in 2 steps: 
+      // 1. We evaluate external parameters (used in lambdas in authorization filters and QueryFilters);
+      //    values are in current OperationContext
+      // 2. Evaluate local expressions which become final query parameters; they may depend on external params
+      ParameterExpression[] extParamArray = null;
+      object[] extParamValues = null; 
+      if(session != null && command.Info.ExternalParameters.Count > 0) {
+        extParamArray = command.Info.ExternalParameters.ToArray();
+        extParamValues = new object[extParamArray.Length];
+        for(int i = 0; i < extParamArray.Length; i++)
+          extParamValues[i] = EvaluateContextParameterExpression(session, extParamArray[i]);
+      }
+      //Evaluate local expressions
+      var locals = command.Locals;
+      if (locals == null) {
+        command.ParameterValues = new object[] { };
+      } else {
+        var prmValues = new object[locals.Count];
+        for(int i = 0; i < locals.Count; i++)
+          prmValues[i] = ExpressionHelper.Evaluate(locals[i], extParamArray, extParamValues);
+        command.ParameterValues = prmValues;
+      }
+    }
+
+
+
+    public static object EvaluateContextParameterExpression(EntitySession session, ParameterExpression parameter) {
+      if (typeof(IEntitySession).IsAssignableFrom(parameter.Type))
+        return session;
+      var context = session.Context;
+      if (parameter.Type == typeof(OperationContext))
+        return context;
+      var name = parameter.Name.ToLowerInvariant();
+      switch (name) {
+        case "userid":
+          return context.User.UserId;
+        case "altuserid":
+          return context.User.AltUserId;
+        default:
+          object value = null;
+          Util.Check(context.TryGetValue(parameter.Name, out value),
+                      "Expression parameter {0} not set in OperationContext.", parameter.Name);
+          var prmType = parameter.Type;
+          if (value.GetType() == prmType)
+            return value;
+          value = ConvertHelper.ChangeType(value, prmType);
+          return value;
+      }
+    }
+
+    public static bool CheckSubQueryInLocalVariable(MemberExpression node, out IQueryable subQuery) {
+      if(node.Expression != null && node.Expression.NodeType == ExpressionType.Constant && node.Type.IsGenericQueryable()) {
+        var objExpr = (ConstantExpression)node.Expression;
+        subQuery = (IQueryable)node.Member.GetMemberValue(objExpr.Value);
+        return true;
+      }
+      subQuery = null;
+      return false;
+    }
+
+    public static bool IsEntitySetMethod(this MethodInfo method) {
+      if(method.Name != "EntitySet" || !method.ReturnType.IsGenericType)
+        return false;
+      switch(method.DeclaringType.Name) {
+        case "IEntitySession":
+        case "EntitySession":
+        case "ViewHelper":
+        case "LockHelper":
+          return true;
+        default:
+          return false;
+      }
+    }
+
+
+  }//class
+}

@@ -9,34 +9,33 @@ using Npgsql;
 using NpgsqlTypes;
 
 using Vita.Entities;
-using Vita.Common;
-using Vita.Data;
 using Vita.Data.Driver;
 using Vita.Data.Model;
 using Vita.Entities.Logging;
+using Vita.Entities.Utilities;
+using System.Collections;
+using Vita.Data.Linq;
 
 namespace Vita.Data.Postgres {
 
   public class PgDbDriver : DbDriver {
-    public const DbOptions DefaultPgDbOptions = DbOptions.UseRefIntegrity | DbOptions.AutoIndexForeignKeys | DbOptions.UseStoredProcs; 
+    public const DbOptions DefaultPgDbOptions = DbOptions.UseRefIntegrity | DbOptions.AutoIndexForeignKeys; 
     public const DbFeatures PgFeatures =
       DbFeatures.Schemas | DbFeatures.StoredProcedures | DbFeatures.OutputParameters | DbFeatures.DefaultParameterValues
         | DbFeatures.ReferentialConstraints | DbFeatures.ClusteredIndexes 
         | DbFeatures.Views | DbFeatures.MaterializedViews | DbFeatures.Sequences | DbFeatures.ArrayParameters
         | DbFeatures.SkipTakeRequireOrderBy | DbFeatures.AllowsFakeOrderBy
-        | DbFeatures.Paging | DbFeatures.BatchedUpdates | DbFeatures.NoIndexOnForeignKeys
+        | DbFeatures.Paging | DbFeatures.BatchedUpdates
         | DbFeatures.OrderedColumnsInIndexes | DbFeatures.UpdateFromSubQuery;
 
 
     public PgDbDriver()  : base(DbServerType.Postgres, PgFeatures) {
-      base.DynamicSqlParameterPrefix = "@"; // "@";
-      //PG does not require any special prefix for function parameters. But to avoid name collision with reserved words, we add this prefix
-      base.StoredProcParameterPrefix = "p_"; 
-      //Not sure SELECT is appropriate here, but nothing else works (including PERFORM)
-      base.CommandCallFormat = "SELECT {0} ({1});";
-      base.CommandCallOutParamFormat = "{0}";
-      base.BatchBeginTransaction = "START TRANSACTION;";
-      base.BatchCommitTransaction = "COMMIT;";
+      base.TypeRegistry = new PgTypeRegistry(this);
+      base.SqlDialect = new PgDbSqlDialect(this); 
+    }
+
+    public override DbOptions GetDefaultOptions() {
+      return DefaultPgDbOptions;
     }
 
     public override bool IsSystemSchema(string schema) {
@@ -50,77 +49,42 @@ namespace Vita.Data.Postgres {
       }
     }
 
-
-    protected override DbTypeRegistry CreateTypeRegistry() {
-      return new PgTypeRegistry(this); 
-    }
-
     public override IDbConnection CreateConnection(string connectionString) {
       var conn = new NpgsqlConnection(connectionString);
       return conn; 
     }
 
-    public override DbSqlBuilder CreateDbSqlBuilder(DbModel dbModel) {
-      return new PgDbSqlBuilder(dbModel);
-    }
     public override DbModelUpdater CreateDbModelUpdater(DbSettings settings) {
       return new PgDbModelUpdater(settings);
     }
-    public override DbModelLoader CreateDbModelLoader(DbSettings settings, SystemLog log) {
+    public override DbModelLoader CreateDbModelLoader(DbSettings settings, IActivationLog log) {
       return new PgDbModelLoader(settings, log);
     }
 
-    public override LinqSqlProvider CreateLinqSqlProvider(DbModel dbModel) {
-      return new PgLinqSqlProvider(dbModel);
+    public override DbSqlBuilder CreateDbSqlBuilder(DbModel dbModel, QueryInfo queryInfo) {
+      return new PgDbSqlBuilder(dbModel, queryInfo);
     }
-
-    public override string FormatFullName(string schema, string name) {
-      return schema + ".\"" +  name + "\"";
+    public override IDbCommand CreateCommand() {
+      return new NpgsqlCommand();
     }
-
 
     public override void ClassifyDatabaseException(DataAccessException dataException, IDbCommand command = null) {
-      var npExc = dataException.InnerException as NpgsqlException;
-      if (npExc == null) //should never happen
+      var pgExc = dataException.InnerException as PostgresException;// NpgsqlException;
+      if (pgExc == null) //should never happen
         return;
       //npExc.ErrorCode is a strange large number; we use Code (string) instead, converting it to int
-      int iCode;
-      if (int.TryParse(npExc.Code, out iCode))
-        dataException.ProviderErrorNumber = iCode;  
-      switch (iCode) {
-        case 23505: //unique index violation
+      switch (pgExc.SqlState) {
+        case "23505": //unique index violation
           dataException.SubType = DataAccessException.SubTypeUniqueIndexViolation;
-          var indexName = ExtractIndexName(npExc.Message);
+          var indexName = ExtractIndexName(pgExc.Message);
           dataException.Data[DataAccessException.KeyDbKeyName] = indexName;
           break;
-        case 23503: //integrity violation
+        case "23503": //integrity violation
           dataException.SubType = DataAccessException.SubTypeIntegrityViolation;
           break; 
 
       }
     }
-
-    /* For Npgsql version 3.0+
-         public override void ClassifyDatabaseException(DataAccessException dataException, IDbCommand command = null) {
-          var npExc = dataException.InnerException as PostgresException
-          if (npExc == null) //should never happen
-            return;
-          //npExc.ErrorCode is a strange large number; we use Code (string) instead, converting it to int
-          int iCode;
-          if (int.TryParse(npExc.SqlState, out iCode))
-            dataException.ProviderErrorNumber = iCode;  
-          switch (npExc.SqlState) {
-            case "23505": //unique index violation
-              dataException.SubType = DataAccessException.SubTypeUniqueIndexViolation;
-              var indexName = ExtractIndexName(npExc.Message);
-              dataException.Data[DataAccessException.KeyDbKeyName] = indexName;
-              break;
-            case "23503": //integrity violation
-              dataException.SubType = DataAccessException.SubTypeIntegrityViolation;
-              break; 
-          }
-        }
-           */
 
     private string ExtractIndexName(string message) {
       try {
@@ -136,34 +100,12 @@ namespace Vita.Data.Postgres {
     }
 
 
-    public override object ExecuteCommand(IDbCommand command, DbExecutionType executionType) {
-      // this is one strange thing about PostGres - 'select-like' stored proc returns cursor, 
-      // which is immediately disposed after trans is committed. 
-      // As any standalone SQL command is auto-wrapped into transation, then simply calling stored proc (function) returns a deallocated cursor. 
-      // You have to wrap the call in explicit transation, finish reading the data and then commit transaction
-      // Here we only begin transaction, it will be committed after reading the data
-      if(command.CommandType == CommandType.StoredProcedure && executionType == DbExecutionType.Reader && command.Transaction == null) {
-        var conn = command.Connection;
-        if(conn.State != ConnectionState.Open)
-          conn.Open();
-        command.Transaction = conn.BeginTransaction();
-      }
-      return base.ExecuteCommand(command, executionType);
+    public override IDbDataParameter AddParameter(IDbCommand command, string name, DbStorageType typeDef, 
+                                   ParameterDirection direction, object value) {
+      var prm = (NpgsqlParameter)base.AddParameter(command, name, typeDef, direction, value);
+      prm.NpgsqlDbType = (NpgsqlDbType)typeDef.CustomDbType;
+      return prm;
     }
 
-    public override void CommandExecuted(DataConnection connection, IDbCommand command, DbExecutionType executionType) {
-      //If there is transaction started only for this command (see ExecuteCommand method above), then commit it
-      if(command.CommandType == CommandType.StoredProcedure && executionType == DbExecutionType.Reader && 
-        command.Transaction != null && command.Transaction != connection.DbTransaction) {
-        command.Transaction.Commit();
-        command.Transaction = null;
-      }      
-    }
-
-    public override IDbDataParameter AddParameter(IDbCommand command, DbParamInfo prmInfo) {
-      var prm = (NpgsqlParameter) base.AddParameter(command, prmInfo);
-      prm.NpgsqlDbType = (NpgsqlDbType) prmInfo.TypeInfo.VendorDbType.VendorDbType;
-      return prm; 
-    }    
   }//class
 }

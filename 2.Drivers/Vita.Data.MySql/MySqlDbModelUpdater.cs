@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using Vita.Data.Driver;
 using Vita.Data.Model;
 using Vita.Data.Upgrades;
+using Vita.Entities;
 using Vita.Entities.Model;
 
 namespace Vita.Data.MySql {
@@ -21,39 +22,41 @@ namespace Vita.Data.MySql {
         return; 
       }
       
-      var fullTableRef = key.Table.FullName;
+      var tn = key.Table.FullName;
       var pkFields = key.KeyColumns.GetSqlNameList();
       // PK name is always 'PRIMARY'
-      change.AddScript(DbScriptType.PrimaryKeyAdd, "ALTER TABLE {0} ADD CONSTRAINT PRIMARY KEY ({1});", fullTableRef, pkFields);
+      change.AddScript(DbScriptType.PrimaryKeyAdd, $"ALTER TABLE {tn} ADD CONSTRAINT PRIMARY KEY ({pkFields});");
     }
 
     public override void BuildTableRenameSql(DbObjectChange change, DbTableInfo oldTable, DbTableInfo newTable) {
-      change.AddScript(DbScriptType.TableRename, "ALTER TABLE {0} RENAME TO {1};", oldTable.FullName, newTable.FullName);
+      change.AddScript(DbScriptType.TableRename, $"ALTER TABLE {oldTable.FullName} RENAME TO {newTable.FullName};");
     }
 
     public override void BuildRefConstraintDropSql(DbObjectChange change, DbRefConstraintInfo dbRefConstraint) {
       var fromKey = dbRefConstraint.FromKey;
-      change.AddScript(DbScriptType.RefConstraintDrop, "ALTER TABLE {0} DROP FOREIGN KEY {1};", fromKey.Table.FullName, fromKey.Name);
+      var kn = QuoteName(fromKey.Name); 
+      change.AddScript(DbScriptType.RefConstraintDrop, $"ALTER TABLE {fromKey.Table.FullName} DROP FOREIGN KEY {kn};");
     }
 
     public override void BuildTableConstraintDropSql(DbObjectChange change, DbKeyInfo key) {
-      if(key.KeyType == Entities.Model.KeyType.PrimaryKey) {
-        change.AddScript(DbScriptType.RefConstraintDrop, "ALTER TABLE {0} DROP PRIMARY KEY;", key.Table.FullName);
-      }
+      if(key.KeyType == KeyType.PrimaryKey) {
+        change.AddScript(DbScriptType.RefConstraintDrop, $"ALTER TABLE {key.Table.FullName} DROP PRIMARY KEY;");
+      } else
+        base.BuildTableConstraintDropSql(change, key); 
     }
 
     public override void BuildColumnModifySql(DbObjectChange change, DbColumnInfo column, DbScriptOptions options = DbScriptOptions.None) {
       var colSpec = GetColumnSpec(column, options);
       var tbl = column.Table;
       var scriptType = options.IsSet(DbScriptOptions.CompleteColumnSetup) ? DbScriptType.ColumnSetupComplete : DbScriptType.ColumnModify;
-      change.AddScript(scriptType, "ALTER TABLE {0} MODIFY COLUMN {1};", tbl.FullName, colSpec);
+      change.AddScript(scriptType, $"ALTER TABLE {tbl.FullName} MODIFY COLUMN {colSpec};");
     }
 
     public override void BuildColumnRenameSql(DbObjectChange change, DbColumnInfo oldColumn, DbColumnInfo newColumn) {
       var colSpec = GetColumnSpec(newColumn, DbScriptOptions.None);
-      change.AddScript(DbScriptType.ColumnRename, "ALTER TABLE {0} CHANGE COLUMN \"{1}\" {2};", newColumn.Table.FullName, oldColumn.ColumnName, colSpec);
+      var tn = newColumn.Table.FullName;
+      change.AddScript(DbScriptType.ColumnRename, $"ALTER TABLE {tn} CHANGE COLUMN {oldColumn.ColumnNameQuoted} {colSpec};");
     }
-
 
     protected override string GetColumnSpec(DbColumnInfo column, DbScriptOptions options) {
       var typeStr = column.TypeInfo.SqlTypeSpec;
@@ -64,14 +67,18 @@ namespace Vita.Data.MySql {
       if(isNew && column.Flags.IsSet(DbColumnFlags.Identity)) {
         // MySql requires that auto-incr column is supported by a key - either a primary key, or an index
         var strKeyType = column.Flags.IsSet(DbColumnFlags.PrimaryKey) ? "PRIMARY KEY" : "KEY";
-        strAutoInc = string.Format("AUTO_INCREMENT, {0}(\"{1}\")", strKeyType, column.ColumnName);
+        strAutoInc = $"AUTO_INCREMENT, {strKeyType}({column.ColumnNameQuoted})";
       }
       string defaultStr = null;
       //Default constraint can be set only on new columns
       if(!string.IsNullOrWhiteSpace(column.DefaultExpression) && options.IsSet(DbScriptOptions.NewColumn))
         defaultStr = "DEFAULT " + column.DefaultExpression;
-      var spec = string.Format(@" ""{0}"" {1} {2} {3}", column.ColumnName, typeStr, nullStr, strAutoInc);
+      var spec = $" {column.ColumnNameQuoted} {typeStr} {nullStr} {strAutoInc}"; 
       return spec;
+    }
+
+    public override void BuildViewAddSql(DbObjectChange change, DbTableInfo view) {
+      base.BuildViewAddSql(change, view);
     }
 
   }//class

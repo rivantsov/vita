@@ -8,17 +8,29 @@
     <projectUrl>https://github.com/rivantsov/vita</projectUrl>
     <licenseUrl>https://github.com/rivantsov/vita/blob/master/LICENSE</licenseUrl>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
-    <description>VITA ORM core library, MS SQL Server driver</description>
+    <description>VITA ORM core library, .NET Standard platform</description>
     <releaseNotes></releaseNotes>
-    <copyright>Copyright Roman Ivantsov 2017</copyright>
-    <tags>VITA ORM LINQ MSSQL</tags>
+    <copyright>Copyright Roman Ivantsov 2018</copyright>
+    <tags>VITA ORM LINQ</tags>
     <dependencies>
+       <group>
+         <dependency id="Proxemity" version="$version$"/>
+       </group>	
+       <group>
+         <dependency id="System.Data.Common" version="4.3.0"/>
+       </group>    
     </dependencies>
   </metadata>
+  
   <files>
-	 <file src="..\..\1.Framework\Vita.Core\bin\Release\Vita.dll" target="lib\net45" />
-	 <file src="..\..\1.Framework\Vita.Core\bin\Release\Vita.pdb" target="lib\net45" />
-	 <file src="..\..\1.Framework\Vita.Core\bin\Release\Vita.xml" target="lib\net45" />
-	 <file src="..\..\1.Framework\Vita.Core\**\*.cs" target="src\1.Framework\Vita.Core" />
+	 <file src="..\..\1.Framework\Vita\bin\Release\netstandard2.0\Vita.dll" target="lib\netstandard2.0" />
+	 <file src="..\..\1.Framework\Vita\bin\Release\netstandard2.0\Vita.pdb" target="lib\netstandard2.0" />
+	 <file src="..\..\1.Framework\Vita\bin\Release\netstandard2.0\Vita.xml" target="lib\netstandard2.0" />
+	 <file src="..\..\1.Framework\Vita\**\*.cs" target="src\1.Framework\Vita" />
+   <!-- We include Emit project/dll in the main package -->
+	 <file src="..\..\1.Framework\Vita.Entities.Emit\bin\Release\netstandard2.0\Vita.Entities.Emit.dll" target="lib\netstandard2.0" />
+	 <file src="..\..\1.Framework\Vita.Entities.Emit\bin\Release\netstandard2.0\Vita.Entities.Emit.pdb" target="lib\netstandard2.0" />
+	 <file src="..\..\1.Framework\Vita.Entities.Emit\bin\Release\netstandard2.0\Vita.Entities.Emit.xml" target="lib\netstandard2.0" />
+	 <file src="..\..\1.Framework\Vita.Entities.Emit\**\*.cs" target="src\1.Framework\Vita.Entities.Emit" />
   </files>
 </package>

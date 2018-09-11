@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+
 using Vita.Data.Driver;
 using Vita.Data.Model;
 using Vita.Data.Upgrades;
@@ -22,6 +23,8 @@ namespace Vita.Data.SQLite {
     public override void BuildRefConstraintDropSql(DbObjectChange change, DbRefConstraintInfo dbRefConstraint) {
     }
 
+    public override void BuildTableConstraintDropSql(DbObjectChange change, DbKeyInfo key) {
+    }
     //not supported
     public override void BuildColumnModifySql(DbObjectChange change, DbColumnInfo column, DbScriptOptions options = DbScriptOptions.None) {
     }
@@ -34,7 +37,7 @@ namespace Vita.Data.SQLite {
     public override void BuildColumnAddSql(DbObjectChange change, DbColumnInfo column, DbScriptOptions options) {
       var colSpec = GetColumnSpec(column, options);
       if(!column.Flags.IsSet(DbColumnFlags.Nullable)) {
-        var dft = column.TypeInfo.VendorDbType.DefaultColumnInit;
+        var dft = column.TypeInfo.StorageType.DefaultColumnInit;
         if (string.IsNullOrWhiteSpace(dft))
           dft = column.TypeInfo.ToLiteral(new byte[] {0}); 
         colSpec += " DEFAULT " + dft; 
@@ -44,7 +47,7 @@ namespace Vita.Data.SQLite {
       var tbl = column.Table;
       if (tbl.Peer != null)
         tbl = tbl.Peer; //use old table name
-      change.AddScript(DbScriptType.ColumnAdd, "ALTER TABLE {0} ADD {1};", tbl.FullName, colSpec);
+      change.AddScript(DbScriptType.ColumnAdd, $"ALTER TABLE {tbl.FullName} ADD {colSpec};");
     }
 
     //not supported; all we can do is nullify it; so if it is a FK it no longer holds target refs
@@ -52,7 +55,7 @@ namespace Vita.Data.SQLite {
       //Note: the column drop comes after table-rename, so it might be table is already renamed, and we have to get its new name
       var tableName = column.Table.Peer.FullName; //new name if renamed
       if (column.Flags.IsSet(DbColumnFlags.Nullable) && column.Flags.IsSet(DbColumnFlags.ForeignKey)) {
-        change.AddScript(DbScriptType.ColumnInit, "UPDATE {0} SET \"{1}\" = NULL;", tableName, column.ColumnName);
+        change.AddScript(DbScriptType.ColumnInit, $"UPDATE {tableName} SET {column.ColumnNameQuoted} = NULL;");
       }
     }
 
@@ -68,13 +71,15 @@ namespace Vita.Data.SQLite {
     //not supported
     public override void BuildTableRenameSql(DbObjectChange change, DbTableInfo oldTable, DbTableInfo newTable) {
     }
+
+
     //Default impl adds table name to the statement: "DROP INDEX <IndexName> ON <tableName>"; SQLite does not use table name
     public override void BuildIndexDropSql(DbObjectChange change, DbKeyInfo key) {
-      change.AddScript(DbScriptType.IndexDrop, "DROP INDEX \"{0}\"", key.Name);
+      var kn = QuoteName(key.Name);       
+      change.AddScript(DbScriptType.IndexDrop, $"DROP INDEX {kn}");
     }
 
     public override void BuildTableAddSql(DbObjectChange change, DbTableInfo table) {
-      const string SqlTemplate = @"CREATE TABLE {0} (" + "\r\n {1} \r\n); ";
       var specs = table.Columns.Select(c => GetColumnSpec(c)).ToList();
       //Until now it was the same as default impl method in base class. Now we need to add Primary key and Foreign key constraints
       //Primary Key
@@ -84,7 +89,7 @@ namespace Vita.Data.SQLite {
       // Note: looks like we need to declare identity PK in GetColumnSpec - SQLite is quite tricky in this way
       if (!col0.Flags.IsSet(DbColumnFlags.Identity)) {
         var strKeyCols = pk.KeyColumns.GetSqlNameList();
-        var pkSpec = string.Format("PRIMARY KEY({0})", strKeyCols);
+        var pkSpec = $"PRIMARY KEY({strKeyCols})";
         specs.Add(pkSpec);
       }
       //Foreign keys (ref constraints
@@ -92,14 +97,18 @@ namespace Vita.Data.SQLite {
         var strKeyCols = refC.FromKey.KeyColumns.GetSqlNameList();
         //find target table
         var strPkKeyCols = refC.ToKey.KeyColumns.GetSqlNameList();
-        var fkSpec = string.Format("FOREIGN KEY({0}) REFERENCES {1}({2})", strKeyCols, refC.ToKey.Table.TableName, strPkKeyCols);
+        var tn = refC.ToKey.Table.FullName;
+        var fkSpec = $"FOREIGN KEY({strKeyCols}) REFERENCES {tn} ({strPkKeyCols})";
         if(refC.CascadeDelete)
           fkSpec += " ON DELETE CASCADE";
         specs.Add(fkSpec);
       }
       //Build final Table statement
       var columnSpecs = string.Join("," + Environment.NewLine, specs);
-      change.AddScript(DbScriptType.TableAdd, SqlTemplate, table.FullName, columnSpecs);
+      var script = $@"CREATE TABLE {table.FullName} (
+{columnSpecs} 
+); ";
+      change.AddScript(DbScriptType.TableAdd, script);
     }
 
     public override void BuildColumnRenameSql(DbObjectChange change, DbColumnInfo oldColumn, DbColumnInfo newColumn) {
@@ -111,9 +120,9 @@ namespace Vita.Data.SQLite {
       // See https://www.sqlite.org/autoinc.html
       // auto-inc columns is always INT64, but s
       if(column.Flags.IsSet(DbColumnFlags.Identity))
-        return column.ColumnName +  " INTEGER PRIMARY KEY NOT NULL"; //
-      var spec = base.GetColumnSpec(column, options);
-      return spec; 
+        return column.ColumnNameQuoted +  " INTEGER PRIMARY KEY NOT NULL"; //
+      else 
+       return base.GetColumnSpec(column, options);
     }
 
   }

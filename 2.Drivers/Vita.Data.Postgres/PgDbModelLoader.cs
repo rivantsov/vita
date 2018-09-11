@@ -5,29 +5,36 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-using Vita.Common;
 using Vita.Data.Driver;
+using Vita.Data.Driver.InfoSchema;
 using Vita.Data.Model;
 using Vita.Entities;
-using Vita.Entities.Logging; 
+using Vita.Entities.Logging;
+using Vita.Entities.Model;
 
 namespace Vita.Data.Postgres {
   public class PgDbModelLoader : DbModelLoader {
-    public PgDbModelLoader(DbSettings settings, SystemLog log) : base(settings, log) {
+    public PgDbModelLoader(DbSettings settings, IActivationLog log) : base(settings, log) {
       // Value identifying tables in information_schema.Tables view; for Postgres it is 'BASE TABLE'
       base.TableTypeTag = "BASE TABLE";
       // Value identifying routines in information_schema.Routines view
       base.RoutineTypeTag = "FUNCTION";
     }
 
-    public override DbTypeInfo GetDbTypeInfo(DbRow columnRow) {
+    public override DbColumnTypeInfo GetDbTypeInfo(InfoRow columnRow) {
       var typeInfo =  base.GetDbTypeInfo(columnRow);
       if(typeInfo != null && typeInfo.SqlTypeSpec == "text") {
         typeInfo.Size = -1;
       }
       return typeInfo; 
     }
-    public override DbTable GetColumns() {
+
+    public override bool IsUnlimited(string typeName, long charSize, long byteSize) {
+      var OneBln = 1e9;
+      return base.IsUnlimited(typeName, charSize, byteSize) || charSize > OneBln || byteSize > OneBln;
+    }
+
+    public override InfoTable GetColumns() {
       //Postgres does not return mat views' columns in information_schema.columns. 
       // So we retrieve basic column info from raw pg tables/views; 
       // we also join information_schema.columns to be able to get some additional attributes (numeric scale, precision)
@@ -52,61 +59,51 @@ FROM pg_class t
           ON n.nspname = cl.table_schema AND t.relname = cl.table_name AND a.attname = cl.Column_name
    WHERE 
          a.attnum > 0
-         AND t.relkind IN('v', 'm', 'r') -- m: mat view; r:table; v:view; i: index
+         AND t.relkind = 'r'  
          AND {0} 
 ORDER BY table_schema, table_name, ordinal_position;
 ", filter);
+      // t.RelKind values: m: mat view; r:table; v:view; i: index
+      // !!! Note: view columns are too much trouble, we do not load them - we do not need them that much
       var colData = ExecuteSelect(sql); 
-      foreach(DbRow row in colData.Rows) {
-        // for mat views data_type coming from outer join might end up empty; fill it in with default; 
-        //  exact type does not matter, we only use col names in view
-        var dataType = row.GetAsString("DATA_TYPE");
-        if(string.IsNullOrWhiteSpace(dataType))
-          row["DATA_TYPE"] = "character varying";
-      }
       return colData; 
     }
 
+    // Postgres does not save original view definition. The SQL returned in View_definition column 
+    // in information_schema.views is very much modified and refactored version of original script,
+    // so it is pretty much useless for comparison (to detect if view needs to be upgraded)
+    // So we use this only to load list of views to know which to drop when we reset the db in unit tests. 
+    public override InfoTable GetViews() {
+      var filter = GetSchemaFilter("TABLE_SCHEMA");
+      var sql = string.Format(
+@"SELECT TABLE_SCHEMA, TABLE_NAME, VIEW_DEFINITION, 'N' AS IS_MATERIALIZED
+      FROM INFORMATION_SCHEMA.VIEWS
+      WHERE {0};", filter);
+      var dtViews = ExecuteSelect(sql);
+      var dtMatViews = GetMaterializedViews();
+      // just copy rows
+      foreach(var row in dtMatViews.Rows)
+        dtViews.Rows.Add(row); 
+      return dtViews;
+    }
+
     // Postgres does not return materialized views in information_schema.views - they say it's intentional (and stupid!)
-    // so we have to use hand-crafted query; another trouble - Postgres reformats the view SQL substantially - 
-    // the SQL returned as View definition differs from original CREATE VIEW sql. One annoying (and stupid!!!!) 
-    // thing is that it removes all comments from View. 
-    // For other servers we keep view hash in special comment.So for postgres we save hash in view description (special attribute in Postgres),
-    // and for loading views construct artificial definition consisting only of hash comment line
-    public override DbTable GetViews() {
+    // so we have to use hand-crafted query; 
+    private InfoTable GetMaterializedViews() {
       var filter = GetSchemaFilter("n.nspname");
       var sql = string.Format(@"
 SELECT n.nspname AS TABLE_SCHEMA, c.relname as TABLE_NAME,  
-  c.relkind as VIEW_KIND, ' ' as IS_MATERIALIZED, ('{1}' || d.Description || '*') as VIEW_DEFINITION
+  c.relkind as VIEW_KIND, 'Y' as IS_MATERIALIZED, '' as VIEW_DEFINITION
 FROM pg_catalog.pg_class c
 JOIN pg_namespace n ON n.oid = c.relnamespace
 LEFT OUTER JOIN pg_description d on d.objoid = c.oid
-WHERE (c.relkind = 'm' OR c.relkind = 'v') AND {0};", filter, SqlSourceHasher.HashPrefix);
+WHERE (c.relkind = 'm') AND {0};", filter);
       var dt = ExecuteSelect(sql);
-      // set Is_materialized column
-      foreach (DbRow row in dt.Rows) {
-        var kind = row.GetAsString("VIEW_KIND");
-        if (kind == "m")
-          row["IS_MATERIALIZED"] = "Y";
-      }
       return dt; 
     }
 
-    public override DbTable GetRoutines() {
-      var filter = GetSchemaFilter("n.nspname");
-      var sql = string.Format(@"
-SELECT p.proname AS ROUTINE_NAME,
-       n.nspname AS ROUTINE_SCHEMA,
-       p.prosrc AS ROUTINE_DEFINITION,
-       'FUNCTION' AS ROUTINE_TYPE,       
-       pg_get_function_identity_arguments(p.oid) AS ROUTINE_CUSTOM
-  FROM   pg_proc p join pg_namespace n on p.pronamespace = n.oid
-  WHERE {0};", filter);
-      return ExecuteSelect(sql);
-    }
-
     // Expected columns: table_schema, table_name, index_name, primary_key, clustered, unique, disabled 
-    public override DbTable GetIndexes() {
+    public override InfoTable GetIndexes() {
       var filter = GetSchemaFilter("n.nspname");
       var sql = string.Format(@"
 SELECT
@@ -130,7 +127,7 @@ ORDER BY n.nspname,t.relname,a.relname;", filter);
     }
 
     // Output DbTable expected columns: table_schema, table_name, index_name, column_name, column_ordinal_position, is_descending
-    public override DbTable GetIndexColumns() {
+    public override InfoTable GetIndexColumns() {
       var filter = GetSchemaFilter("n.nspname");
       var sql = string.Format(@"
 CREATE EXTENSION IF NOT EXISTS intarray;
@@ -151,7 +148,7 @@ ORDER BY table_schema, table_name, index_name, column_ordinal_position
       var colData = ExecuteSelect(sql);
       // our query returns a flag value from indoption array; this value is 3 for DESC column; 
       // change it to 1 as caller method expects
-      foreach(DbRow row in colData.Rows) {
+      foreach(InfoRow row in colData.Rows) {
         if (row.GetAsInt("is_descending") == 3)
           row["is_descending"] = 1;
       }//foreach indRow

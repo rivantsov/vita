@@ -1,71 +1,70 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Data;
-using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
-using Vita.Common;
+
 using Vita.Data.Driver;
+using Vita.Data.Linq;
+using Vita.Data.Linq.Translation.Expressions;
 using Vita.Data.Model;
+using Vita.Data.Runtime;
+using Vita.Data.SqlGen;
+using Vita.Entities;
 using Vita.Entities.Model;
+using Vita.Entities.Runtime;
+using Vita.Entities.Utilities;
 
 namespace Vita.Data.SQLite {
   public class SQLiteDbSqlBuilder : DbSqlBuilder {
-    public SQLiteDbSqlBuilder(DbModel dbModel)   : base(dbModel) {
+    SQLiteDbSqlDialect _dialect; 
 
+    public SQLiteDbSqlBuilder(DbModel dbModel, QueryInfo queryInfo): base(dbModel, queryInfo) {
+      _dialect = (SQLiteDbSqlDialect)dbModel.Driver.SqlDialect; 
     }
 
-    protected override DbSqlBuilder.SqlLimitClause GetSqlLimitClause(string count) {
-      return new SqlLimitClause() { TopClause = string.Empty };
-    } 
+    protected override SqlFragment BuildLimitSql(SqlFragment limit, SqlFragment offset) {
+      if(limit == null)
+        return _dialect.SqlTemplateOffset.Format(offset);
+      else
+        return _dialect.SqlTemplateLimitOffset.Format(offset, limit);
+    }
 
-    public override DbCommandInfo CreateDbCommandInfo(EntityCommand entityCommand, string name, DbTableInfo mainTable, DbExecutionType executionType, string sql) {
-      var cmdInfo = base.CreateDbCommandInfo(entityCommand, name, mainTable, executionType, sql);
-      var ent = entityCommand.TargetEntityInfo;
-      if (cmdInfo.Kind == EntityCommandKind.Insert && ent.Flags.IsSet(EntityFlags.HasIdentity)) {
-        //Add actions to read identity value
-        var idPrm = cmdInfo.Parameters.FirstOrDefault(p => p.SourceColumn.Flags.IsSet(DbColumnFlags.Identity));
-        if (idPrm != null) 
-          cmdInfo.PostUpdateActions.Add(GetLastRowId); 
+    public override SqlFragment BuildOrderByMember(OrderByExpression obExpr) {
+      var baseFr = base.BuildOrderByMember(obExpr);
+      if (obExpr.ColumnExpression.Type == typeof(string))
+        return new CompositeSqlFragment(baseFr, _dialect.SqlCollateNoCase);
+      return baseFr; 
+    }
+
+    public override SqlStatement BuildCrudInsertOne(DbTableInfo table, EntityRecord record) {
+      var sql = base.BuildCrudInsertOne(table, record);
+      if (table.Entity.Flags.IsSet(EntityFlags.HasIdentity))
+        sql.ResultProcessor = this._identityReader;
+      return sql;
+    }
+
+    // Inserted identity is returned by extra select; command postprocessor IdentityReader gets it from DataReader
+    // and puts it into EntityRecord
+    IdentityReader _identityReader = new IdentityReader();
+
+    class IdentityReader : ISqlResultProcessor {
+      public object ProcessResult(DataCommand command) {
+        command.RowCount = 1;
+        var conn = command.Connection; 
+        var idCmd = conn.DbConnection.CreateCommand();
+        idCmd.CommandText = "SELECT last_insert_rowid();";
+        idCmd.Transaction = conn.DbTransaction;
+        var idValue = idCmd.ExecuteScalar(); //it is Int64
+        Util.Check(idValue != null, "Failed to retrieve identity value for inserted row, returned value: " + idValue);
+        var rec = command.Records[0]; //there must be a single record
+        var idMember = rec.EntityInfo.IdentityMember;
+        if (idValue.GetType() != idMember.DataType)
+          idValue = ConvertHelper.ChangeType(idValue, idMember.DataType);
+        rec.SetValueDirect(idMember, idValue);
+        return 1; 
       }
-      return cmdInfo; 
+
     }
 
-    private static void GetLastRowId(DataConnection conn, IDbCommand cmd, Vita.Entities.Runtime.EntityRecord rec) {
-      var idCmd = conn.DbConnection.CreateCommand();
-      idCmd.CommandText = "SELECT last_insert_rowid();";
-      idCmd.Transaction = conn.DbTransaction;
-      var id = idCmd.ExecuteScalar(); //it is Int64
-      Util.Check(id != null, "Failed to retrieve identity value for inserted row. Command: " + idCmd.CommandText);
-      var member = rec.EntityInfo.Members.First(m => m.Flags.IsSet(EntityMemberFlags.Identity)); //idPrm.SourceColumn.Member;
-      if (member.DataType != id.GetType())
-        id = Convert.ChangeType(id, member.DataType);
-      rec.SetValueDirect(member, id);
-      idCmd.Connection = null; //to dispose prepared command
-    }
 
-    protected override string FormatOrderByEntry(DbKeyColumnInfo colInfo) {
-      return base.FormatOrderByEntry(colInfo) + " COLLATE NOCASE";
-    }
-
-    public override DbCommandInfo BuildSelectAllPagedCommand(EntityCommand entityCommand) {
-      const string SqlSelectAllPaged = @"
-SELECT {0}
-FROM   {1}
-{2}
-LIMIT @__maxRows
-OFFSET @__skipRows
-;";
-      var table = DbModel.LookupDbObject<DbTableInfo>(entityCommand.TargetEntityInfo, throwNotFound: true);
-      //Build column list
-      var outColumns = table.Columns.GetSelectable();
-      var strColumns = outColumns.GetSqlNameList();
-      string strOrderBy = BuildOrderBy(table, table.DefaultOrderBy); //might be empty
-      var sql = string.Format(SqlSelectAllPaged, strColumns, table.FullName, strOrderBy);
-      var cmdName = ModelConfig.NamingPolicy.GetDbCommandName(entityCommand, table.TableName, "SelectAllPaged");
-      var cmdInfo = CreateDbCommandInfo(entityCommand, cmdName, table, DbExecutionType.Reader, sql);
-      cmdInfo.EntityMaterializer = CreateEntityMaterializer(table, outColumns);
-      return cmdInfo;
-    }
-  }//class
+  }
 }

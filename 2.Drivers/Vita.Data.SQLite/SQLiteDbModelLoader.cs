@@ -1,204 +1,208 @@
-﻿using System;
+﻿using Microsoft.Data.Sqlite;
+using System;
 using System.Collections.Generic;
 using System.Data;
-using System.Data.SQLite;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-using Vita.Common;
 using Vita.Data;
 using Vita.Data.Driver;
 using Vita.Data.Model;
 using Vita.Entities;
 using Vita.Entities.Logging;
+using Vita.Entities.Model;
+using Vita.Entities.Utilities;
 
 namespace Vita.Data.SQLite {
   public class SQLiteDbModelLoader : DbModelLoader {
 
-    public SQLiteDbModelLoader(DbSettings settings, SystemLog log) : base(settings, log) {
+    public SQLiteDbModelLoader(DbSettings settings, IActivationLog log) : base(settings, log) {
     }
 
-    public override DbTable GetDatabases() {
-      return null; 
-    }
-
-    public override DbTable GetSchemas() {
-      return null; 
-    }
-
-    //Columns: TABLE_CATALOG	TABLE_SCHEMA	TABLE_NAME	TABLE_TYPE  
-    public override DbTable GetTables() {
-      return GetSchemaCollection("Tables"); 
-    }
-
-    public override bool TableExists(string schema, string tableName) {
-      var tables = GetTables();
-      foreach (DbRow r in tables.Rows) {
-        if (r.GetAsString("TABLE_NAME") == tableName)
-          return true; 
-      }
-      return false; 
-    }
-    //Columns: TABLE_CATALOG	TABLE_SCHEMA	TABLE_NAME VIEW_DEFINITION CHECK_OPTION IS_UPDATABLE  
-    public override DbTable GetViews() {
-      var views = GetSchemaCollection("Views");
-      return views; 
-    }
-
-    public override DbTable GetColumns() {
-      var dtCol = GetSchemaCollection("Columns");
-      // IS_NULLABLE column is bool here, but standard expected arrangement is string (yes/no)
-      // so let's reformat the DbTable
-      dtCol.FindColumn("IS_NULLABLE").Name = "IS_NULLABLE_BOOL";
-      dtCol.AddColumn("IS_NULLABLE", typeof(string));
-      foreach(DbRow row in dtCol.Rows) {
-        var isNull =  (bool) row["IS_NULLABLE_BOOL"];
-        row["IS_NULLABLE"] = isNull ? "YES" : "NO";
-        // for view columns data type string is empty; set it to blob
-        var dataType = row.GetAsString("DATA_TYPE");
-        if (string.IsNullOrWhiteSpace(dataType))
-          row["DATA_TYPE"] = "blob"; 
-      }
-      return dtCol;
-    }
-
-    public override DbTable GetTableConstraints() {
-      var dtAll = GetSchemaCollection("ForeignKeys"); //this gives us only foreign keys
-      // We need to add PKs; Each PK in SQLite is 'supported' by an index named 'sqlite_autoindex_*'
-      // We scan index columns to pick up such names and add PK rows to dtAll.
-      //Add PKs by scanning index columns and finding special-named indexes (starting with sqlite_autoindex)
-      var dtIndexes = GetIndexColumns();
-      var tNames = new StringSet(); //track tables to prevent duplicates
-      foreach(DbRow row in dtIndexes.Rows) {
-        var ixName = row.GetAsString("INDEX_NAME");
-        if(!IsPrimaryKeyIndex(ixName))
+    public override DbModel LoadModel() {
+      Model = new DbModel(Settings.ModelConfig);
+      //tables/views, columns
+      var tblTables = ExecuteSelect("select type, tbl_name, sql from sqlite_master where type='table' OR type='view';");
+      foreach(var tblRow in tblTables.Rows) {
+        var tname = tblRow.GetAsString("tbl_name");
+        var isView = tblRow.GetAsString("type") == "view";
+        var objType = isView ? DbObjectType.View : DbObjectType.Table;
+        var tableSql = tblRow.GetAsString("sql");
+        var tbl = new DbTableInfo(this.Model, string.Empty, tname, null, objType);
+        if (isView) {
+          //do not load columns, it will fail 
+          tbl.ViewSql = tableSql;
           continue;
-        var tblName = row.GetAsString("TABLE_NAME");
-        if (tNames.Contains(tblName)) continue; //don't add duplicates
-        tNames.Add(tblName); 
-        //it is auto-index for PK, create a row for the index
-        var pkRow = dtAll.AddRow();
-        pkRow["TABLE_NAME"] = tblName;
-        pkRow["CONSTRAINT_NAME"] = row.GetAsString("INDEX_NAME");
-        pkRow["CONSTRAINT_TYPE"] = "PRIMARY KEY";
-      }
-      return dtAll; 
-    }
-
-    // Each PK in SQLite is 'supported' by an index named 'sqlite_autoindex_*'; for identity columns index name is 'sqlite_master_PK_*'
-    private bool IsPrimaryKeyIndex(string indexName) {
-      //The 
-      return indexName.StartsWith("sqlite_autoindex_") || indexName.StartsWith("sqlite_master_PK_");
-    }
-
-    // Columns: TABLE_NAME	COLUMN_NAME ORDINAL_POSITION CONSTRAINT_NAME 
-    // Empty: TABLE_CATALOG	TABLE_SCHEMA 	CONSTRAINT_CATALOG CONSTRAINT_SCHEMA			
-    public override DbTable GetTableConstraintColumns() {
-      //We manually construct result table by merging information from 2 sources - for PKs and FKs, separately
-      var dtCols = new DbTable();
-      dtCols.AddColumn("TABLE_NAME", typeof(string));
-      dtCols.AddColumn("COLUMN_NAME", typeof(string));
-      dtCols.AddColumn("CONSTRAINT_NAME", typeof(string));
-      dtCols.AddColumn("ORDINAL_POSITION", typeof(int));
-      dtCols.AddColumn("TABLE_CATALOG", typeof(string));
-      dtCols.AddColumn("TABLE_SCHEMA", typeof(string));
-      dtCols.AddColumn("CONSTRAINT_SCHEMA", typeof(string));
-      dtCols.AddColumn("CONSTRAINT_CATALOG", typeof(string));
-
-      //Add Primary key columns
-      var dtIndexCols = GetIndexColumns();
-      foreach(DbRow pkRow in dtIndexCols.Rows) {
-        var ixName = pkRow.GetAsString("INDEX_NAME");
-        if(IsPrimaryKeyIndex(ixName))
-          AddKeyColumnRow(dtCols, ixName, pkRow.GetAsString("TABLE_NAME"), pkRow.GetAsString("COLUMN_NAME"), pkRow.GetAsInt("COLUMN_ORDINAL_POSITION"));
-      }
-
-      //Add Foreign key columns
-      foreach(var tbl in this.Model.Tables) {
-        var sql = string.Format("pragma foreign_key_list([{0}])", tbl.TableName);
-        // returns id, seq, table, from, to, on_update, on_delete, match
-        var dt = ExecuteSelect(sql);
-        foreach(DbRow fkRow in dt.Rows) {
-          var fromColName = fkRow.GetAsString("from");
-          var fromCol = tbl.Columns.FindByName(fromColName);
-          var id = fkRow.GetAsInt("id");
-          var keyNamePrefix = "FK_" + tbl.TableName + "_" + id + "_";
-          var key = tbl.Keys.FirstOrDefault(k => k.Name.StartsWith(keyNamePrefix));
-          if(key != null)
-            AddKeyColumnRow(dtCols, key.Name, tbl.TableName, fkRow.GetAsString("from"), fkRow.GetAsInt("seq"));
         }
-      }
-      return dtCols;
+
+        //table columns
+        // We detect PKs from the list of indexes. But, for tables with auto-inc columns there's no index
+        // However col is marked as PK in table_info listing. So we collect these columns and use them later
+        // if PK has not been set
+        var pkMarkedCols = new List<DbColumnInfo>();
+        var tblCols = ExecuteSelect("PRAGMA table_info('{0}');", tname);
+        foreach(var colRow in tblCols.Rows) {
+          var colName = colRow.GetAsString("name");
+          var type = colRow.GetAsString("type");
+          var notNull = colRow.GetAsInt("notnull");
+          var dftValue = colRow.GetAsString("dflt_value");
+          var typeInfo = GetSqliteTypeInfo(type, nullable: notNull == 0, dft: dftValue);
+          if (typeInfo == null) {
+            LogError(
+              "Failed to find TypeInfo for SQL data type [{0}]. Table(view) {1}, column {2}.", type, tname, colName);
+            continue;
+          }
+          var colInfo = new DbColumnInfo(tbl, colName, typeInfo);
+          // check PK flag, save the column if the flag is set
+          bool isPk = colRow.GetAsInt("pk") == 1;
+          if(isPk)
+            pkMarkedCols.Add(colInfo); 
+        }// foreach colRow
+
+        // indexes, PKs
+        var tblIndexes = ExecuteSelect("PRAGMA index_list('{0}')", tname);
+        foreach (var indRow in tblIndexes.Rows) {
+          var indName = indRow.GetAsString("name");
+          var origin = indRow.GetAsString("origin");
+          var unique = indRow.GetAsInt("unique");
+          var keyType = KeyType.Index;
+          if(origin == "pk")
+            keyType = KeyType.PrimaryKey;
+          else if(unique == 1)
+            keyType |= KeyType.Unique;
+          var indCols = ExecuteSelect("PRAGMA index_info('{0}')", indName);
+          var indKey = new DbKeyInfo(indName, tbl, keyType);
+          foreach(var colRow in indCols.Rows) {
+            var colName = colRow.GetAsString("name");
+            var col = tbl.Columns.FindByName(colName);
+            Util.Check(col != null, "Building index {0}, table {1}: column {2} not found.", indName, tname, colName);
+            indKey.KeyColumns.Add(new DbKeyColumnInfo(col));
+          }//foreach colRow
+          if(keyType.IsSet(KeyType.PrimaryKey))
+            tbl.PrimaryKey = indKey; 
+        }//foreach indRow
+        // check PK; if not detected, it is identity (auto-inc) col (no pk index in this case)
+        if (tbl.Kind == EntityKind.Table && tbl.PrimaryKey == null) {
+          Util.Check(pkMarkedCols.Count > 0, "Primary key not found on table {0}.", tname);
+          CreateAutoIncPrimaryKey(tbl, pkMarkedCols);
+        }
+      }// foreach tblRow
+
+      // FKs - we need to do it in another loop, after all cols are created. 
+      foreach(var tbl in Model.Tables) {
+        if(tbl.Kind == EntityKind.View)
+          continue;
+        var tname = tbl.TableName;
+        var tblFKs = ExecuteSelect("PRAGMA foreign_key_list('{0}')", tname);
+        var lastKeyId = -1;
+        DbRefConstraintInfo constr = null; 
+        foreach(var fkColRow in tblFKs.Rows) {
+          var fromColName = fkColRow.GetAsString("from");
+          var toTableName = fkColRow.GetAsString("table");
+          var toColName = fkColRow.GetAsString("to");
+          var fromCol = tbl.Columns.FindByName(fromColName);
+          Util.Check(fromCol != null, "Loading FKs, table {0}, error: column {1} not found.", tname, fromColName);
+          var toTable = FindTable(toTableName);
+          Util.Check(toTable != null, "Loading FKs, table {0}, error: target table {1} not found.", tname, toTableName);
+          var toCol = toTable.Columns.FindByName(toColName);
+          // if keyId is the same as previous one, then col belongs to the same (composite) key
+          var keyId = fkColRow.GetAsInt("id");
+          if(keyId != lastKeyId) {
+            bool cascadeDelete = fkColRow.GetAsString("on_delete") == "CASCADE";
+            var keyFrom = new DbKeyInfo("FK_" + tname + "_" + fromColName, tbl, KeyType.ForeignKey);
+            constr = new DbRefConstraintInfo(this.Model, keyFrom, toTable.PrimaryKey, cascadeDelete);
+            lastKeyId = keyId; 
+          }
+          constr.FromKey.KeyColumns.Add(new DbKeyColumnInfo(fromCol));          
+        }//foreach fkColRow
+      }//foreach tbl
+      return Model; 
+    }//method
+
+    private DbColumnTypeInfo GetSqliteTypeInfo(string type, bool nullable, string dft) {
+      var typeDef = Driver.TypeRegistry.FindDbTypeDef(type, false);
+      if(typeDef == null)
+        return null; 
+      var typeInfo = new DbColumnTypeInfo(typeDef, type, nullable, 0, 0, 0, dft);
+      return typeInfo; 
     }
 
-    //helper method
-    private DbRow AddKeyColumnRow(DbTable table, string constrName, string tableName, string columnName, int ordinalPosition) {
-      var row = table.AddRow();
-      row["CONSTRAINT_NAME"] = constrName;
-      row["TABLE_NAME"] = tableName;
-      row["COLUMN_NAME"] = columnName;
-      row["ORDINAL_POSITION"] = ordinalPosition;
-      return row; 
+    // Model.GetTable searches by full name, and full name is quoted (double quotes) in the model.
+    private DbTableInfo FindTable(string name) {
+      var qname = "\"" + name + "\"";
+      return Model.GetTable(qname);
     }
 
+    // SQLite docs do NOT recommend using AUTOINCREMENT explicitly; for any new row an uninitialized PK column
+    // will be auto set to RowID, so it is Auto-inc automatically
+    // http://sqlite.org/autoinc.html
+    private void CreateAutoIncPrimaryKey(DbTableInfo table, IList<DbColumnInfo> columns) {
+      table.PrimaryKey = new DbKeyInfo("PK_" + table.TableName, table, KeyType.PrimaryKey);
+      foreach(var col in columns) {
+        col.Flags |= DbColumnFlags.PrimaryKey | DbColumnFlags.Identity;
+        table.PrimaryKey.KeyColumns.Add(new DbKeyColumnInfo(col));
+      } //foreach
+    } //method
 
-
-    public override DbTable GetReferentialConstraintsExt() {
-      var dt = GetSchemaCollection("ForeignKeys");
-      //adjust column names
-      dt.FindColumn("TABLE_NAME").Name = "C_TABLE";
-      dt.FindColumn("FKEY_TO_SCHEMA").Name = "UNIQUE_CONSTRAINT_SCHEMA";
-      dt.FindColumn("FKEY_TO_TABLE").Name = "U_TABLE";
-      dt.FindColumn("FKEY_ON_DELETE").Name = "DELETE_RULE";
-      return dt;
-    }
-    public override DbTable GetIndexes() {
-      var dt = GetSchemaCollection("Indexes");
-      return dt; 
-    }
-
-    // Rename ORDINAL_POSITION to COLUMN_ORDINAL_POSITION and increment the value (it should be 1-based)
-    // Change SORT_MODE (ASC/DESC: string) into bool column IS_DESCENDING
-    public override DbTable GetIndexColumns() {
-      var colOrdPos = "column_ordinal_position";
-      var dt = GetSchemaCollection("INDEXCOLUMNS");
-      dt.FindColumn("ORDINAL_POSITION").Name = colOrdPos;
-      dt.AddColumn("IS_DESCENDING", typeof(int));
-      foreach(DbRow row in dt.Rows) {
-        var sm = row.GetAsString("SORT_MODE");
-        row["IS_DESCENDING"] = sm == "ASC" ? 0 : -1;
-        //ordinal position is usually 1-based, but SQLite seems to be 0-based; so we increment the value
-        row[colOrdPos] = row.GetAsInt(colOrdPos) + 1;
-      }
-      return dt; 
+    // Used by DbInfo module
+    public override bool TableExists(string schema, string tableName) {
+      // If AppendSchema flag is set, then tableName already includes schema
+      var sql = string.Format("select name from sqlite_master where type='table' AND name = '{0}'", tableName);
+      var tblRes = ExecuteSelect(sql);
+      return tblRes.Rows.Count > 0; 
     }
 
-    // See GetSchema source here: 
-    // https://github.com/OpenDataSpace/System.Data.SQLite/blob/master/System.Data.SQLite/SQLiteConnection.cs
-    // Note that not all standard collections are supported
-    private DbTable GetSchemaCollection(string collectionName) {
-      var conn = new SQLiteConnection(Settings.ConnectionString);
-      try {
-        conn.Open();
-        var coll = conn.GetSchema(collectionName);
-        return ToDbTable(coll);
-      } finally {
-        conn.Close(); 
-      }
+    protected override string NormalizeViewScript(string script) {
+      if(string.IsNullOrEmpty(script))
+        return script;
+      script = script.Trim();
+      // SQLite does not store CREATE VIEW line, just the body; so let's strip off this line from newView
+      if(script.StartsWith("CREATE"))
+        script = StripFirstLine(script);
+      script = script.Trim(_viewTrimChars);
+      return script;
+    }
+    static char[] _viewTrimChars = new char[] { ' ', '\r', '\n', ';' }; //strip ending ;
+
+    protected static string StripFirstLine(string newV) {
+      newV = newV.Substring(newV.IndexOf(Environment.NewLine) + Environment.NewLine.Length);
+      return newV.Trim(_viewTrimChars);
+
     }
 
-    private DbTable ToDbTable(System.Data.DataTable table) {
-      var tbl = new DbTable();
-      foreach(DataColumn col in table.Columns)
-        tbl.AddColumn(col.ColumnName, col.DataType);
-      foreach(DataRow drow in table.Rows) {
-        var row = tbl.AddRow();
-        foreach(var c in tbl.Columns)
-          row[c.Index] = drow[c.Index];
-      }
-      return tbl; 
-    }
   }//class
+
+  //* SQLite Error codes
+  //#define SQLITE_ERROR        1   /* SQL error or missing database */
+  //#define SQLITE_INTERNAL     2   /* Internal logic error in SQLite */
+  //#define SQLITE_PERM         3   /* Access permission denied */
+  //#define SQLITE_ABORT        4   /* Callback routine requested an abort */
+  //#define SQLITE_BUSY         5   /* The database file is locked */
+  //#define SQLITE_LOCKED       6   /* A table in the database is locked */
+  //#define SQLITE_NOMEM        7   /* A malloc() failed */
+  //#define SQLITE_READONLY     8   /* Attempt to write a readonly database */
+  //#define SQLITE_INTERRUPT    9   /* Operation terminated by sqlite3_interrupt()*/
+  //#define SQLITE_IOERR       10   /* Some kind of disk I/O error occurred */
+  //#define SQLITE_CORRUPT     11   /* The database disk image is malformed */
+  //#define SQLITE_NOTFOUND    12   /* Unknown opcode in sqlite3_file_control() */
+  //#define SQLITE_FULL        13   /* Insertion failed because database is full */
+  //#define SQLITE_CANTOPEN    14   /* Unable to open the database file */
+  //#define SQLITE_PROTOCOL    15   /* Database lock protocol error */
+  //#define SQLITE_EMPTY       16   /* Database is empty */
+  //#define SQLITE_SCHEMA      17   /* The database schema changed */
+  //#define SQLITE_TOOBIG      18   /* String or BLOB exceeds size limit */
+  //#define SQLITE_CONSTRAINT  19   /* Abort due to constraint violation */
+  //#define SQLITE_MISMATCH    20   /* Data type mismatch */
+  //#define SQLITE_MISUSE      21   /* Library used incorrectly */
+  //#define SQLITE_NOLFS       22   /* Uses OS features not supported on host */
+  //#define SQLITE_AUTH        23   /* Authorization denied */
+  //#define SQLITE_FORMAT      24   /* Auxiliary database format error */
+  //#define SQLITE_RANGE       25   /* 2nd parameter to sqlite3_bind out of range */
+  //#define SQLITE_NOTADB      26   /* File opened that is not a database file */
+  //#define SQLITE_NOTICE      27   /* Notifications from sqlite3_log() */
+  //#define SQLITE_WARNING     28   /* Warnings from sqlite3_log() */
+  //#define SQLITE_ROW         100  /* sqlite3_step() has another row ready */
+  //#define SQLITE_DONE        101  /* sqlite3_step() has finished executing */   
 
 }

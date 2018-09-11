@@ -5,27 +5,27 @@
     <version>$version$</version>
     <authors>Roman Ivantsov</authors>
     <owners>Roman Ivantsov</owners>
-    <projectUrl>https://github.com/rivantsov/vita</projectUrl>
-    <licenseUrl>https://github.com/rivantsov/vita/blob/master/LICENSE</licenseUrl>
+    <projectUrl>https://github.com/rivantsov/vitacore</projectUrl>
+    <licenseUrl>https://github.com/rivantsov/vitacore/blob/master/LICENSE</licenseUrl>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
     <description>VITA ORM driver for SQLite. </description>
     <releaseNotes></releaseNotes>
-    <copyright>Copyright Roman Ivantsov 2017</copyright>
+    <copyright>Copyright Roman Ivantsov 2018</copyright>
     <tags>VITA ORM SQLite</tags>
     <dependencies>
        <group>
          <dependency id="Vita" version="$version$"/>
        </group>	
        <group>
-         <dependency id="System.Data.SQLite.Core" version="1.0.103.0" />
+         <dependency id="Microsoft.Data.Sqlite" version="2.0.1" />
        </group>	
     </dependencies>
   </metadata>
     <files>
       <file src="..\..\2.Drivers\Vita.Data.SQLite\README.txt" target="" />
-	  <file src="..\..\2.Drivers\Vita.Data.SQLite\bin\Release\Vita.Data.SQLite.dll" target="lib\net45" />
-	  <file src="..\..\2.Drivers\Vita.Data.SQLite\bin\Release\Vita.Data.SQLite.pdb" target="lib\net45" />
-	  <file src="..\..\2.Drivers\Vita.Data.SQLite\bin\Release\Vita.Data.SQLite.XML" target="lib\net45" />
+	  <file src="..\..\2.Drivers\Vita.Data.SQLite\bin\Release\netstandard2.0\Vita.Data.SQLite.dll" target="lib\netstandard2.0" />
+	  <file src="..\..\2.Drivers\Vita.Data.SQLite\bin\Release\netstandard2.0\Vita.Data.SQLite.pdb" target="lib\netstandard2.0" />
+	  <file src="..\..\2.Drivers\Vita.Data.SQLite\bin\Release\netstandard2.0\Vita.Data.SQLite.XML" target="lib\netstandard2.0" />
 	  <file src="..\..\2.Drivers\Vita.Data.SQLite\**\*.cs" target="src\2.Drivers\Vita.Data.SQLite" />
     </files>
 </package>

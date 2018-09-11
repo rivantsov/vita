@@ -6,6 +6,7 @@ using System.Diagnostics;
 
 using Vita.Entities;
 using Vita.Modules.Login;
+using System.Reflection;
 
 namespace Vita.Samples.BookStore.SampleData {
 
@@ -52,7 +53,7 @@ namespace Vita.Samples.BookStore.SampleData {
       session.SaveChanges();
       var userInfo = new UserInfo(dataGenUser.Id, dataGenUser.UserName);
       var dataGenOpCtx = new OperationContext(app, userInfo);
-      session = dataGenOpCtx.OpenSystemSession();
+      session = dataGenOpCtx.OpenSession();
       session.EnableCache(false); 
 
       //Publishers and authors
@@ -181,7 +182,7 @@ Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deseru
                 ImageType type = ImageType.BookCover, string mediaType = "image/jpeg") {
       const int MaxImageSize = 100 * 1024;
       var fileName = "Vita.Samples.BookStore.SampleData.Generate.Images." + name;
-      var thisAsm = typeof(SampleDataGenerator).Assembly;
+      var thisAsm = typeof(SampleDataGenerator).GetTypeInfo().Assembly;
       var stream = thisAsm.GetManifestResourceStream(fileName);
       var reader = new System.IO.BinaryReader(stream);
       var bytes = reader.ReadBytes(MaxImageSize);

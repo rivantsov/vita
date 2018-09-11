@@ -6,21 +6,21 @@ using System.Text;
 using System.Threading.Tasks;
 
 using Vita.Entities;
-using Vita.Entities.Logging;
 using Vita.Entities.Model;
 using Vita.Data.Driver;
 using Vita.Data.Model;
-using Vita.Common;
+using Vita.Entities.Logging;
+using Vita.Data.Driver.InfoSchema;
 
 namespace Vita.Data.MySql {
   class MySqlDbModelLoader : DbModelLoader {
-    public MySqlDbModelLoader(DbSettings settings, SystemLog log) : base(settings, log) {
+    public MySqlDbModelLoader(DbSettings settings, IActivationLog log) : base(settings, log) {
       base.TableTypeTag = "BASE TABLE";
       base.RoutineTypeTag = "PROCEDURE";
     }
 
     //INFORMATION_SCHEMA does not have a view for indexes, so we have to do it through MSSQL special objects
-    public override DbTable GetIndexes() {
+    public override InfoTable GetIndexes() {
       const string getIndexesTemplate = @"
 SELECT DISTINCT TABLE_SCHEMA, TABLE_NAME, INDEX_NAME, (0=1) AS PRIMARY_KEY, '' AS CLUSTERED, 
   (-NON_UNIQUE + 1) AS ""UNIQUE"", 0 AS DISABLED, '' as FILTER_CONDITION  
@@ -34,7 +34,7 @@ ORDER BY TABLE_SCHEMA, TABLE_NAME, INDEX_NAME
       return ExecuteSelect(sql);
     }
 
-    public override DbTable GetIndexColumns() {
+    public override InfoTable GetIndexColumns() {
       const string getIndexColumnsTemplate = @"
 SELECT TABLE_SCHEMA, TABLE_NAME, INDEX_NAME, COLUMN_NAME, 
   SEQ_IN_INDEX AS COLUMN_ORDINAL_POSITION, 0 AS IS_DESCENDING
@@ -48,7 +48,7 @@ ORDER BY TABLE_SCHEMA, TABLE_NAME, INDEX_NAME, COLUMN_ORDINAL_POSITION
       return ExecuteSelect(sql);
     }
 
-    public override DbTypeInfo GetDbTypeInfo(DbRow columnRow) {
+    public override DbColumnTypeInfo GetDbTypeInfo(InfoRow columnRow) {
       // For 'unsigned' types, Data_type column does not show this attribute, but Column_type does. 
       // We search matching by data_type column (and we register names with 'unsigned' included, like 'int unsigned'). 
       // So we just append the unsigned to data_type value, so lookup works. 
@@ -58,9 +58,12 @@ ORDER BY TABLE_SCHEMA, TABLE_NAME, INDEX_NAME, COLUMN_ORDINAL_POSITION
       }
       //auto-set memo
       var dbType = base.GetDbTypeInfo(columnRow);
-      if(dbType != null && dbType.VendorDbType.ClrTypes.Contains(typeof(string)) && dbType.Size > 100 * 1000)
+      if(dbType != null && dbType.StorageType.MapToTypes.Contains(typeof(string)) && dbType.Size > 100 * 1000)
         dbType.Size = -1;
       return dbType; 
+    }
+    public override bool IsUnlimited(string typeName, long charSize, long byteSize) {
+      return base.IsUnlimited(typeName, charSize, byteSize) || byteSize >= 1000 * 1000 * 1000; //1 billion, for ex: longtext is 4bn
     }
 
     public override void OnModelLoaded() {
@@ -70,11 +73,11 @@ ORDER BY TABLE_SCHEMA, TABLE_NAME, INDEX_NAME, COLUMN_ORDINAL_POSITION
     }
 
     private void FixGuidColumnsTypeDefs() {
-      var guidTypeInfo = Driver.TypeRegistry.FindVendorDbTypeInfo(typeof(Guid), false);
+      var guidTypeInfo = Driver.TypeRegistry.FindStorageType(typeof(Guid), false);
       foreach(var table in Model.Tables) {
         foreach(var col in table.Columns) {
           if(col.TypeInfo.SqlTypeSpec == "binary(16)") {
-            col.TypeInfo.VendorDbType = guidTypeInfo; 
+            col.TypeInfo.StorageType = guidTypeInfo; 
           }
         }
       }
@@ -86,7 +89,7 @@ SELECT table_schema, table_name, column_name
   FROM INFORMATION_SCHEMA.Columns 
   WHERE EXTRA = 'auto_increment' AND {0};", filter);
       var data = ExecuteSelect(sql);
-      foreach(DbRow row in data.Rows) {
+      foreach(InfoRow row in data.Rows) {
         var schema = row.GetAsString("TABLE_SCHEMA");
         if(!base.IncludeSchema(schema))
           continue;
@@ -102,7 +105,7 @@ SELECT table_schema, table_name, column_name
 
     // In MySql constraint name is not globally unique, it is unique only in scope of the table. 
     // We have to add matching by table names in joins
-    public override DbTable GetReferentialConstraintsExt() {
+    public override InfoTable GetReferentialConstraintsExt() {
       var filter = GetSchemaFilter("tc1.CONSTRAINT_SCHEMA");
       var sql = string.Format(@"
 SELECT rc.*, tc1.TABLE_NAME as C_TABLE, tc2.TABLE_NAME AS U_TABLE 
@@ -122,49 +125,48 @@ SELECT rc.*, tc1.TABLE_NAME as C_TABLE, tc2.TABLE_NAME AS U_TABLE
 
     protected override void LoadViews() {
       base.LoadViews();
+      /*
       foreach (var t in Model.Tables) {
         if (t.Kind == EntityKind.View && t.ViewHash == null)
           LoadViewHashFromFormFile(t); 
       }
+      */
     }
 
-    // To detect changes in views and routines, we hash sql text and add the hash in comment inside the text. 
-    // This works OK in most cases, for stored procs and views. However, MySql (and Postgres) do not save original view definition 
-    // MySql removes all comments from view definition. So the only way to retrieve the original source and hash value is to load 
-    // it from form file. 
-    private void LoadViewHashFromFormFile(DbTableInfo view) {
-      const string SqlTemplate =
-        "SELECT LOAD_FILE(CONCAT(IFNULL(@@GLOBAL.datadir, CONCAT(@@GLOBAL.basedir, 'data/')), '{0}/{1}.frm')) AS ViewDef;";
-      try {
-        var sql = string.Format(SqlTemplate, view.Schema, view.TableName);
-        var dt = ExecuteSelect(sql);
-        if (dt.Rows.Count < 1)
-          return;
-        // LOAD_FILE should return content as string, but it doesn't, sometimes at least (bug, admitted by MySql team, still not fixed for years)
-        // It might return byte array (as it happens on my machine - RI)
-        var value = dt.Rows[0]["ViewDef"];
-        string viewDef;
-        if (value == null)
-          return;
-        if (value is string)
-          viewDef = (string)value;
-        else if (value.GetType() == typeof(byte[])) {
-          viewDef = Encoding.Default.GetString((byte[])value);
-        } else
-          return;
-        var hashIndex = viewDef.IndexOf(SqlSourceHasher.HashPrefix);
-        if (hashIndex < 0)
-          return;
-        var start = hashIndex + SqlSourceHasher.HashPrefix.Length;
-        var starIndex = viewDef.IndexOf('*', start);
-        if (starIndex < 0)
-          return;
-        var hash = viewDef.Substring(start, starIndex - start);
-        view.ViewHash = hash; 
-      } catch (Exception ex) {
-        //Too many things can go wrong, do not break process, just log warning 
-        Log.Info("Failed to load view hash for view {0}.{1}, error: {2}.", view.Schema, view.TableName, ex.Message);
-      }
+    /*
+     Information_Schema.Views view returns completely reformatted/changed SQL for view.
+     Example. Original view: 
+
+SELECT  a$."FirstName" AS "FirstName", a$."LastName" AS "LastName", t0$."UserName" AS "UserName", t0$."Type" AS "UserType"
+FROM "books"."Author" a$
+     LEFT JOIN "books"."User" t0$ ON t0$."Id" = a$."User_Id";
+
+     Returned by InformationSchema.Views: 
+
+select `a$`.`FirstName` AS `FirstName`,`a$`.`LastName` AS `LastName`,`t0$`.`UserName` AS `UserName`,`t0$`.`Type` AS `UserType` 
+from (`books`.`author` `a$` left join `books`.`user` `t0$` on((`t0$`.`Id` = `a$`.`User_Id`)))
+
+      (linebreak added for readablility)
+
+     */
+    static char[] _viewCharsToIgnore = new[] { '\r', '\n', '`', '"', '(', ')', ';' };
+
+    protected override string NormalizeViewScript(string script) {
+      if(string.IsNullOrEmpty(script))
+        return script;
+      // my sql strips INNER, replaces Count(*) with (0)
+      script = script.Replace("INNER JOIN", "JOIN").Replace("(*)", "(0)");
+      //remove newlines, backquotes, double quotes
+      script = ReplaceChars(script, _viewCharsToIgnore, ' ');
+      script = script.Replace(" ", string.Empty).ToLowerInvariant(); //remove all spaces
+      return script;
     }
+
+    private static string ReplaceChars(string s, char[] chars, char withChar) {
+      return new string(s.Select(c => chars.Contains(c) ? withChar : c).ToArray());
+
+    }
+
+
   }
 }

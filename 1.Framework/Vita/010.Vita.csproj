@@ -1,0 +1,39 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <AssemblyName>Vita</AssemblyName>
+    <RootNamespace>Vita</RootNamespace>
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Remove="4.Internals\Data\SqlGen\Disabled\**" />
+    <EmbeddedResource Remove="4.Internals\Data\SqlGen\Disabled\**" />
+    <None Remove="4.Internals\Data\SqlGen\Disabled\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Remove="1.AppModel\Services\Logging\IErrorLogService_Disabled.cs" />
+    <Compile Remove="4.Internals\ServiceImplementations\DefaultErrorLogService_Disabled.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="1.AppModel\Services\Logging\IErrorLogService_Disabled.cs" />
+    <None Include="4.Internals\Data\SqlGen\IFlatSqlFragment.cs" />
+    <None Include="4.Internals\ServiceImplementations\DefaultErrorLogService_Disabled.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="System.Data.Common" Version="4.3.0" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <NuspecFile>Vita.Entities.nuspec</NuspecFile>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+    <DocumentationFile>bin\Release\netstandard2.0\Vita.xml</DocumentationFile>
+  </PropertyGroup>
+</Project>

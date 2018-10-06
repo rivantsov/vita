@@ -84,7 +84,13 @@ namespace Vita.Entities {
     }
 
     protected virtual void ConnectToDatabase(DbSettings dbSettings) {
-      Util.Check(this.Status == EntityAppStatus.Initialized || Status == EntityAppStatus.Connected, "EntityApp is already initialized, status: {0}.", this.Status);
+      switch(this.Status) {
+        case EntityAppStatus.Created:
+          this.Init();
+          break;
+        case EntityAppStatus.Shutdown:
+          return;
+      } 
       ActivationLog.Info("  Connecting to data source {0}.", dbSettings.DataSourceName);
       dbSettings.CheckConnectivity(rethrow: true);
       var dbModel = GetCreateDbModel(dbSettings, ActivationLog);

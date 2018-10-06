@@ -104,6 +104,15 @@ namespace Vita.Data.MsSql {
         case 547: // FK constraint violation on delete
           dataException.SubType = DataAccessException.SubTypeIntegrityViolation;
           break;
+        case 50000:
+          // We raise error with custom message, this results in error# 50000
+          // RAISEERROR:  When msg_str is specified, RAISERROR raises an error message with an error number of 50000
+          // we put tag into error message
+          dataException.SubType = DataAccessException.SubTypeConcurrentUpdate;
+          var segms = dataException.Message.Split('/');
+          if (segms.Length > 1)
+            dataException.Data[DataAccessException.KeyEntityName] = segms[1];
+          break; 
         default: 
           if (sqlEx.Number >= 50000) {
             //this number is for messages that are NOT registered in SQL server Messages table

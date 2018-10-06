@@ -203,7 +203,7 @@ namespace Vita.Testing.BasicTests.DataTypes {
 
     [TestInitialize]
     public void Init() {
-      Startup.DropSchemaObjects("types");
+      Startup.DropSchemaObjects("types"); 
       _app = new DataTypesTestEntityApp();
       Startup.ActivateApp(_app);
     }
@@ -309,7 +309,7 @@ namespace Vita.Testing.BasicTests.DataTypes {
       switch(Startup.ServerType) {
         case DbServerType.MsSql: 
           TestMsSqlTypes();
-          //TestMsSqlRowVersion(); //not migrated yet
+          TestMsSqlRowVersion(); 
           break; 
       }
     }
@@ -427,14 +427,16 @@ namespace Vita.Testing.BasicTests.DataTypes {
       ent.XmlProp = "<foo/>";
       ent.SmallMoneyProp = 1.23m;
       ent.SqlVariantProp = "xx"; // 1234;
-
       return ent; 
     }
 
     public void TestMsSqlRowVersion() {
       if(Startup.ServerType != DbServerType.MsSql)
         return;
-      Util.Throw("MS SQL RowVersion support not migrated yet. Test disabled.");
+      _app = new DataTypesTestEntityApp();
+      Startup.ActivateApp(_app);
+
+      //Util.Throw("MS SQL RowVersion support not migrated yet. Test disabled.");
       var session = _app.OpenSession();
       var prod = session.NewEntity<IMsSqlRowVersionedProduct>();
       prod.Name = "Coffee Maker 2000";
@@ -474,8 +476,8 @@ namespace Vita.Testing.BasicTests.DataTypes {
         session.SaveChanges();
       });
       Assert.AreEqual(DataAccessException.SubTypeConcurrentUpdate, dex.SubType);
-      var tableName = dex.Data[DataAccessException.KeyTableName];
-      Assert.AreEqual("\"types\".\"MsSqlRowVersionedProduct\"", tableName, "TableName mismatch in concurrent update exception");
+      var entityName = dex.Data[DataAccessException.KeyEntityName];
+      Assert.AreEqual("MsSqlRowVersionedProduct", entityName, "EntityName mismatch in concurrent update exception");
       Debug.WriteLine("Concurrent update conflict - as expected.");
     }
 

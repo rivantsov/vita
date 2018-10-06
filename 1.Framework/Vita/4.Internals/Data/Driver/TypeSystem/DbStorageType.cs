@@ -38,7 +38,7 @@ namespace Vita.Data.Driver {
                             DbValueToLiteralFunc valueToLiteral,
                             int customDbType, string columnInit, string loadTypeName) {
       Registry = registry; 
-      TypeName = typeName;
+      TypeName = typeName.ToLowerInvariant();
       DbType = dbType;
       ArgsTemplate = argsTemplate;
       ColumnOutType = columnOutType;
@@ -47,12 +47,12 @@ namespace Vita.Data.Driver {
         MapToTypes.UnionWith(mapToTypes);
       Flags = flags;
       if(!string.IsNullOrWhiteSpace(aliases))
-        Aliases.AddRange(aliases.SplitNames(',', ';'));
+        Aliases.AddRange(aliases.ToLowerInvariant().SplitNames(',', ';'));
       CustomDbType = customDbType;
       DefaultColumnInit = columnInit;
       ValueToLiteral = valueToLiteral ?? DbValueToLiteralConverters.GetDefaultToLiteralConverter(columnOutType);
       ConvertToTargetType = DefaultConvertToTargetType;
-      LoadTypeName = loadTypeName ?? TypeName; 
+      LoadTypeName = (loadTypeName ?? TypeName).ToLowerInvariant(); 
     }
 
     public override string ToString() {

@@ -149,14 +149,14 @@ namespace Vita.Data.MsSql {
       if (flags.IsSet(EntityFlags.HasIdentity))
         AppendIdentityReturn(sql, table); 
       if (flags.IsSet(EntityFlags.HasRowVersion))
-        AppendRowVersionReturn(sql, table); 
+        AppendRowVersionCheckReturn(sql, table, record); 
       return sql;
     }
 
     public override SqlStatement BuildCrudUpdateOne(DbTableInfo table, EntityRecord rec, ISqlValueFormatter valueFormatter) {
       var sql = base.BuildCrudUpdateOne(table, rec, valueFormatter);
       if (table.Entity.Flags.IsSet(EntityFlags.HasRowVersion))
-        AppendRowVersionReturn(sql, table);
+        AppendRowVersionCheckReturn(sql, table, rec);
       return sql; 
     }
 
@@ -168,8 +168,13 @@ namespace Vita.Data.MsSql {
       sql.Append(SqlTerms.NewLine);
     }
 
-    private void AppendRowVersionReturn(SqlStatement sql, DbTableInfo table) {
+    private void AppendRowVersionCheckReturn(SqlStatement sql, DbTableInfo table, EntityRecord record) {
       var rvCol = table.Columns.First(c => c.Flags.IsSet(DbColumnFlags.RowVersion));
+      // do row count check
+      var tag = new TextSqlFragment($"'ConcurrentUpdate/{table.Entity.Name}/{record.PrimaryKey.ValuesToString()}'");
+      var checkRowsSql = _msDialect.SqlCheckRowCountIsOne.Format(tag);
+      sql.Append(checkRowsSql); 
+      // return RowVersion in parameter
       var rvPrm = sql.PlaceHolders.AddParamRef(rvCol.TypeInfo.StorageType, System.Data.ParameterDirection.Output, rvCol);
       var getRvSql = _msDialect.SqlGetRowVersionTemplate.Format(rvPrm);
       sql.Append(getRvSql);

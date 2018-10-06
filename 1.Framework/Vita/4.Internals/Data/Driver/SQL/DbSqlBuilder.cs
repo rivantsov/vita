@@ -7,6 +7,7 @@ using Vita.Data.Linq;
 using Vita.Data.Model;
 using Vita.Data.SqlGen;
 using Vita.Entities;
+using Vita.Entities.Model;
 using Vita.Entities.Runtime;
 
 namespace Vita.Data.Driver {
@@ -55,7 +56,7 @@ namespace Vita.Data.Driver {
         setExprs.Add(new CompositeSqlFragment(col.SqlColumnNameQuoted, SqlTerms.Equal, valueSql));
       }
       var setList = SqlFragment.CreateList(SqlTerms.Comma, setExprs);
-      var whereCond = BuildWhereConditonForPrimaryKey(table, placeHolders);
+      var whereCond = BuildWhereConditonForUpdateDeleteOne(table, placeHolders);
       var whereClause = new CompositeSqlFragment(SqlTerms.Where, whereCond);
       var sql = SqlDialect.SqlCrudTemplateUpdate.Format(table.SqlFullName, setList, whereClause);
       var stmt = new SqlStatement(sql, placeHolders, DbExecutionType.NonQuery, 
@@ -85,7 +86,7 @@ namespace Vita.Data.Driver {
 
     public virtual SqlStatement BuildCrudDeleteOne(DbTableInfo table) {
       var placeHolders = new List<SqlPlaceHolder>();
-      var whereCond = BuildWhereConditonForPrimaryKey(table, placeHolders);
+      var whereCond = BuildWhereConditonForUpdateDeleteOne(table, placeHolders);
       var whereClause = new CompositeSqlFragment(SqlTerms.Where, whereCond);
       var sql = SqlDialect.SqlCrudTemplateDelete.Format(table.SqlFullName, whereClause);
       var stmt = new SqlStatement(sql, placeHolders, DbExecutionType.NonQuery);
@@ -111,19 +112,26 @@ namespace Vita.Data.Driver {
     }
 
     // -------------- Helper methods -------------------------------------------------------
-    protected SqlFragment BuildWhereConditonForPrimaryKey(DbTableInfo table, IList<SqlPlaceHolder> placeHolders) {
+    protected SqlFragment BuildWhereConditonForUpdateDeleteOne(DbTableInfo table, IList<SqlPlaceHolder> placeHolders) {
       var pkCols = table.PrimaryKey.KeyColumns;
+      var hasRowVersion = table.Entity.Flags.HasFlag(EntityFlags.HasRowVersion);
       // short way for one-column PK
-      if (pkCols.Count == 1) {
+      if (pkCols.Count == 1 && !hasRowVersion) {
         var pkCol = pkCols[0];
         var colValue = placeHolders.AddColumnValueRef(pkCol.Column);
         return new CompositeSqlFragment(pkCol.Column.SqlColumnNameQuoted, SqlTerms.Equal, colValue);
       }
-      //general case
+      //general case: 
+      //  add row version to column list if there's row version. We must compare row version in WHERE clause
+      var allCols = pkCols.Select(kc => kc.Column).ToList();
+      if (hasRowVersion) {
+        var rvCol = table.Columns.First(c => c.Flags.IsSet(DbColumnFlags.RowVersion));
+        allCols.Add(rvCol);
+      }
       var conds = new List<SqlFragment>();
-      foreach (var pkCol in pkCols) {
-        var colValue = placeHolders.AddColumnValueRef(pkCol.Column);
-        conds.Add(new CompositeSqlFragment(pkCol.Column.SqlColumnNameQuoted, SqlTerms.Equal, colValue));
+      foreach (var col in allCols) {
+        var colValue = placeHolders.AddColumnValueRef(col);
+        conds.Add(new CompositeSqlFragment(col.SqlColumnNameQuoted, SqlTerms.Equal, colValue));
       }
       return SqlFragment.CreateList(SqlTerms.And, conds);
     }

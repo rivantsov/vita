@@ -92,7 +92,7 @@ namespace Vita.Data.Upgrades {
       migrSet.CurrentModule = null;
       _upgradeInfo.AddMigrations(migrSet);
       //Update final status
-      _upgradeInfo.VersionsChanged = _database.DbModel.VersionInfo.VersionChanged(oldDbVersion);
+      _upgradeInfo.VersionsChanged = oldDbVersion != null &&  _database.DbModel.VersionInfo.VersionChanged(oldDbVersion);
       if (_upgradeInfo.AllScripts.Count > 0 || _upgradeInfo.VersionsChanged)
         _upgradeInfo.Status = UpgradeStatus.ChangesDetected;
       else

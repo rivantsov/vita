@@ -120,8 +120,10 @@ namespace Vita.Data.Driver {
         return null;
       //create db typeinfo
       //figure out type arguments and format them
-      var typeArgs = DbColumnTypeInfo.GetTypeArgs(forMember.Size, forMember.Precision, forMember.Scale);
-      typeSpec = typeSpec ?? typeDef.FormatTypeSpec(typeArgs);
+      if (typeSpec == null) {
+        var typeArgs = DbColumnTypeInfo.GetTypeArgs(forMember.Size, forMember.Precision, forMember.Scale);
+        typeSpec = typeDef.FormatTypeSpec(typeArgs);
+      }
       var isNullable = forMember.Flags.IsSet(EntityMemberFlags.Nullable);
       var colDefault = forMember.ColumnDefault ?? typeDef.DefaultColumnInit;
       var typeInfo = new DbColumnTypeInfo(typeDef, typeSpec, isNullable, forMember.Size, forMember.Precision, forMember.Scale,

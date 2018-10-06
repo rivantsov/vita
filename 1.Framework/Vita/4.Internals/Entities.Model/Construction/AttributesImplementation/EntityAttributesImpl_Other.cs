@@ -447,7 +447,7 @@ namespace Vita.Entities {
           HostEntity.RowVersionMember = base.HostMember;
           base.HostMember.Flags |= EntityMemberFlags.RowVersion | EntityMemberFlags.NoDbInsert | EntityMemberFlags.NoDbUpdate;
           base.HostEntity.Flags |= EntityFlags.HasRowVersion;
-          base.HostMember.ExplicitDbTypeSpec = "timestamp";
+          base.HostMember.ExplicitDbTypeSpec = "rowversion";
           break;
       }//swith AutoValueType
     }
@@ -796,7 +796,7 @@ namespace Vita.Entities {
       if (this.Size != 0)
         HostMember.Size = this.Size;
       HostMember.ExplicitDbType = this._dbType;
-      HostMember.ExplicitDbTypeSpec = this.DbTypeSpec;
+      HostMember.ExplicitDbTypeSpec = this.DbTypeSpec?.ToLowerInvariant();
     }
 
   }// class

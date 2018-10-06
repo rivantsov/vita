@@ -18,6 +18,13 @@ namespace Vita.Data.MsSql {
     public SqlTemplate InArrayTemplateTyped = new SqlTemplate("({0} IN (SELECT CAST(\"Value\" AS {1} ) FROM {2}))");
     public SqlTemplate SqlGetIdentityTemplate = new SqlTemplate("SET {0} = SCOPE_IDENTITY();");
     public SqlTemplate SqlGetRowVersionTemplate = new SqlTemplate("SET {0} = @@DBTS;");
+    public SqlTemplate SqlCheckRowCountIsOne = new SqlTemplate(
+@"IF @@RowCount = 0
+BEGIN
+  -- DECLARE @msg NVARCHAR(200) = {0};
+  RAISERROR({0}, 11, 111);
+END
+");
 
 
     public MsSqlDialect(MsSqlDbDriver driver) : base(driver) {

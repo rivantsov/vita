@@ -9,6 +9,8 @@ using Microsoft.SqlServer.Server;
 using Vita.Data.Driver;
 using Vita.Data.Model;
 using Vita.Entities;
+using Vita.Entities.Logging;
+using Vita.Entities.Model;
 using Vita.Entities.Utilities;
 
 namespace Vita.Data.MsSql {
@@ -117,6 +119,14 @@ namespace Vita.Data.MsSql {
       if(clrType.IsListOfDbPrimitive())
         return ArrayAsTableTypeDef;
       return null; 
+    }
+
+    public override DbColumnTypeInfo GetColumnTypeInfo(EntityMemberInfo forMember, IActivationLog log) {
+      // timestamp is obsolete, recommended to use rowversion everywhere. However info-schema.columns query still 
+      // returns timestamp, not rowversion. This brings problems in some model comparisons, so we just change it here. 
+      if(forMember.ExplicitDbTypeSpec?.ToLowerInvariant() == "timestamp")
+        forMember.ExplicitDbTypeSpec = "rowversion"; 
+      return base.GetColumnTypeInfo(forMember, log);
     }
 
     // Special converters for literal presentations (used in batch mode). Default converter provides too much precision and it blows up 

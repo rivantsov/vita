@@ -14,7 +14,7 @@
     <tags>VITA ORM LINQ</tags>
     <dependencies>
        <group>
-         <dependency id="Proxemity" version="$version$"/>
+         <dependency id="Proxemity" version="2.0.0"/>
        </group>	
        <group>
          <dependency id="System.Data.Common" version="4.3.0"/>

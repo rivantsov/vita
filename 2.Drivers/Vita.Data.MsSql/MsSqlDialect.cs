@@ -19,12 +19,10 @@ namespace Vita.Data.MsSql {
     public SqlTemplate SqlGetIdentityTemplate = new SqlTemplate("SET {0} = SCOPE_IDENTITY();");
     public SqlTemplate SqlGetRowVersionTemplate = new SqlTemplate("SET {0} = @@DBTS;");
     public SqlTemplate SqlCheckRowCountIsOne = new SqlTemplate(
-@"IF @@RowCount = 0
-BEGIN
-  -- DECLARE @msg NVARCHAR(200) = {0};
-  RAISERROR({0}, 11, 111);
-END
+@"IF @@RowCount <> 1
+      RAISERROR({0}, 11, 11);
 ");
+    // RaiseError(msg, severity, state); 
 
 
     public MsSqlDialect(MsSqlDbDriver driver) : base(driver) {

@@ -129,22 +129,6 @@ namespace Vita.Testing.BasicTests.DataTypes {
       [Column(DbTypeSpec = "SmallDateTime")]
       DateTime SmallDateTimeProp { get; set; }
 
-      [RowVersion]
-      byte[] TimeStampProp { get; set; }
-      /*
-      Udt types NOT Supported in .NET Core (error from ADO.NET: Udt not supported on this platform
-      I can create columns in db but cannot read records
-
-      [Column(DbTypeSpec="geography"), Nullable]
-      byte[] GeographyProp { get; set; }
-
-      [Column(DbTypeSpec = "geometry"), Nullable]
-      byte[] GeometryProp { get; set; }
-
-      [Column(DbTypeSpec = "hierarchyid"), Nullable]
-      byte[] HierarchyIdProp { get; set; }
-      */
-
       [Column(DbTypeSpec = "image")]
       byte[] ImageProp { get; set; }
 
@@ -328,12 +312,6 @@ namespace Vita.Testing.BasicTests.DataTypes {
       CheckDataType(dtColumns, "DateTimeProp", "datetime2");
       CheckDataType(dtColumns, "TimeProp", "time");
       CheckDataType(dtColumns, "SmallDateTimeProp", "smalldatetime");
-      CheckDataType(dtColumns, "TimeStampProp", "timestamp");
-      /*
-      CheckDataType(dtColumns, "GeographyProp", "geography");
-      CheckDataType(dtColumns, "GeometryProp", "geometry");
-      CheckDataType(dtColumns, "HierarchyIdProp", "hierarchyid");
-      */
       CheckDataType(dtColumns, "ImageProp", "image");
       CheckDataType(dtColumns, "NTextProp", "ntext");
       CheckDataType(dtColumns, "TextProp", "text");

@@ -170,10 +170,12 @@ namespace Vita.Data.MsSql {
 
     private void AppendRowVersionCheckReturn(SqlStatement sql, DbTableInfo table, EntityRecord record) {
       var rvCol = table.Columns.First(c => c.Flags.IsSet(DbColumnFlags.RowVersion));
-      // do row count check
-      var tag = new TextSqlFragment($"'ConcurrentUpdate/{table.Entity.Name}/{record.PrimaryKey.ValuesToString()}'");
-      var checkRowsSql = _msDialect.SqlCheckRowCountIsOne.Format(tag);
-      sql.Append(checkRowsSql); 
+      if (record.Status == EntityStatus.Modified) {
+        // update row count check
+        var tag = new TextSqlFragment($"'ConcurrentUpdate/{table.Entity.Name}/{record.PrimaryKey.ValuesToString()}'");
+        var checkRowsSql = _msDialect.SqlCheckRowCountIsOne.Format(tag);
+        sql.Append(checkRowsSql);
+      }
       // return RowVersion in parameter
       var rvPrm = sql.PlaceHolders.AddParamRef(rvCol.TypeInfo.StorageType, System.Data.ParameterDirection.Output, rvCol);
       var getRvSql = _msDialect.SqlGetRowVersionTemplate.Format(rvPrm);

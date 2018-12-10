@@ -2,7 +2,7 @@
   "profiles": {
     "Vita.Tools.VdbTool": {
       "commandName": "Project",
-      "commandLineArgs": "dbfirst /cfg:C:\\MyProjects\\Vita20\\5.Tools\\Vita.Tools.VdbTool\\ConfigSamples\\db1.oracle.books.cfg"
+      "commandLineArgs": "dbfirst /cfg:.\\..\\..\\..\\ConfigSamples\\db1.oracle.books.cfg"
     }
   }
 }

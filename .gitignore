@@ -251,5 +251,4 @@ paket-files/
 .idea/
 *.sln.iml
 *.cache
-4.Samples/Vita.Samples.BookStore.UI/bin/System.Web.Http.dll
 5.Tools/Vita.Tools.VdbTool/Properties/launchSettings.json

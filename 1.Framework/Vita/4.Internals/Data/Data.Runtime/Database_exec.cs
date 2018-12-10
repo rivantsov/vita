@@ -67,11 +67,10 @@ namespace Vita.Data.Runtime {
 
     private void ProcessOutputCommandParams(DataCommand command) {
       foreach(var rec in command.Records) {
-        rec.SubmitCount++;
         if(rec.DbCommandData == null)
           continue;
         foreach(var prmInfo in rec.DbCommandData.OutputParameters) {
-          var value = prmInfo.Column.TypeInfo.ColumnToPropertyConverter(prmInfo.Parameter.Value);
+          var value = prmInfo.Column.Converter.ColumnToProperty(prmInfo.Parameter.Value);
           rec.SetValueDirect(prmInfo.Column.Member, value);
         }
       }

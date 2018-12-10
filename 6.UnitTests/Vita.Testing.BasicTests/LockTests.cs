@@ -119,7 +119,6 @@ ALTER DATABASE {0} SET MULTI_USER;
       }
       if(File.Exists(_logFileName))
         File.Delete(_logFileName);
-      Startup.DropSchemaObjects("lck");
       _app = new LockTestApp();
       _app.LogPath = _logFileName;
       Startup.ActivateApp(_app);

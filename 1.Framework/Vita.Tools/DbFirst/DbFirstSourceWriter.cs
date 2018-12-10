@@ -171,34 +171,31 @@ using Vita.Data;  // used only in console app
       }
       if (member.Flags.IsSet(EntityMemberFlags.PrimaryKey) && _config.Options.IsSet(DbFirstOptions.AutoOnGuidPrimaryKeys) && member.DataType == typeof(Guid))
         member.AutoValueType = AutoType.NewGuid;
-
+      // basic flags
       var dataType = member.DataType;
       var isUnlimited = member.Flags.IsSet(EntityMemberFlags.UnlimitedSize); 
-      var needsSize = dataType == typeof(string) || dataType == typeof(byte[]) || dataType == typeof(Binary);
-      if(isUnlimited)
-        needsSize = false; 
+      var needsSize = (dataType == typeof(string) || dataType == typeof(byte[]) || dataType == typeof(Binary))
+                      && !isUnlimited && member.Size > 0;
       var isNVT = dataType.IsNullableValueType();
       var needsNullable = member.Flags.IsSet(EntityMemberFlags.Nullable) && !isNVT;
+      var needsPrecScale = member.Precision != 0 || member.Scale != 0; //we do not link to specific type (decimal or datetime)
+      // build attr list; first Column and EntityRef attributes
       var attrList = new List<string>();
       switch (member.Kind) {
         case EntityMemberKind.Column:
+
           var colArgs = new List<string>();
           colArgs.Add('"' + member.ColumnName + '"');
           if (!string.IsNullOrEmpty(member.ExplicitDbTypeSpec))
-            colArgs.Add("DbTypeSpec = \"" + member.ExplicitDbTypeSpec + "\"");
-          else if (member.ExplicitDbType != null) 
-            colArgs.Add("DbType = DbType." + member.ExplicitDbType.Value);
-          if (member.DataType == typeof(Decimal)) {
-            if (member.Scale != 0)
+            colArgs.Add($"DbTypeSpec = \"{member.ExplicitDbTypeSpec}\"");
+          if (needsPrecScale) {
+            if(member.Precision != 0)
+              colArgs.Add("Precision = " + member.Precision);
+            if(member.Scale != 0)
               colArgs.Add("Scale = " + member.Scale);
-            if (member.Precision != 0)
-              colArgs.Add("Precision = " + member.Precision); 
           }
-          if (needsSize && member.Size > 0) 
-            colArgs.Add("Size = " + member.Size);
           var colAttr = Util.SafeFormat("Column({0})", string.Join(", ", colArgs)); 
           attrList.Add(colAttr);
-
           break; 
         case EntityMemberKind.EntityRef:
           var fkMembers = member.ReferenceInfo.FromKey.ExpandedKeyMembers;
@@ -214,24 +211,23 @@ using Vita.Data;  // used only in console app
             attrList.Add(Util.SafeFormat("OneToMany(\"{0}\")", member.ChildListInfo.ParentRefMember.MemberName));
           break; 
       }
-      // if (needsSize)  attrList.Add(StringHelper.SafeFormat("Size({0})", member.Size));
-      if (isUnlimited)
+      //Size, unlimited, nullable, identity, utc
+      if(needsSize)
+        attrList.Add($"Size({member.Size})");
+      else if(isUnlimited)
         attrList.Add("Unlimited");
+      if(needsNullable)
+        attrList.Add("Nullable");
+      if((dataType == typeof(DateTime) || dataType == typeof(DateTime?)) && _config.Options.IsSet(DbFirstOptions.UtcDates))
+        attrList.Add("Utc");
+      if(member.Flags.IsSet(EntityMemberFlags.Identity))
+        attrList.Add("Identity");
       // Keys and Indexes. If there is single-column asc index on the column, put it on property directly
       var memberKeys = member.Entity.Keys.Where(key => IsPropertyKey(key) && key.KeyMembers[0].Member == member).ToList();
       foreach (var key in memberKeys) {
         var keyAttr = GetKeyAttribute(key, onProperty: true); 
         attrList.Add(keyAttr);
       }
-      //Misc attributes
-      if (needsNullable)
-        attrList.Add("Nullable");
-      if ((dataType == typeof(DateTime) || dataType == typeof(DateTime?)) && _config.Options.IsSet(DbFirstOptions.UtcDates))
-        attrList.Add("Utc");
-
-      if (member.Flags.IsSet(EntityMemberFlags.Identity))
-        attrList.Add("Identity"); 
-
       //Auto type
       switch (member.AutoValueType) {
         case AutoType.None: break;

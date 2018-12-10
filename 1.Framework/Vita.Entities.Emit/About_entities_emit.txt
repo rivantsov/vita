@@ -1,5 +1,5 @@
 ﻿This is a small project providing a  bridge from Vita.Entiies to Proxemity package. 
 VITA fwk uses Proxemity to IL-generate at runtime the classes behind entity interfaces. 
-All this IL-generation stuff used to be in the Vita.dll, but with .NET Core it is separated. Some platforms (Apple) do not allow code generation at runtime, they don't have IL-emit functionality (System.Reflection.Emit is not available). 
-
+All this IL-generation stuff used to be in the Vita.dll, but with .NET Core it is separated. Some platforms (Apple) do not allow code generation at runtime, 
+    they don't have IL-emit functionality (System.Reflection.Emit is not available). 
 On this platform the alternative would be to generate c# sources of the classes, at design/pre-compile time.

@@ -30,7 +30,7 @@ namespace Vita.Testing.BasicTests {
           Startup.Reset(servType);
           // Check if server is available
           string error;
-          if (ToolHelper.TestConnection(Startup.Driver, Startup.ConnectionString, out error)) 
+          if (DataUtility.TestConnection(Startup.Driver, Startup.ConnectionString, out error)) 
             return true; 
           runner.ConsoleWriteRed("  Connection test failed for connection string: {0}, \r\n   Error: {1}", Startup.ConnectionString, error);
           skipServerCount++;

@@ -11,6 +11,7 @@ using Vita.Entities.Model;
 using Vita.Data.Driver;
 using Vita.Entities.Runtime;
 using Vita.Data.SqlGen;
+using Vita.Data.Driver.TypeSystem;
 
 namespace Vita.Data.Model {
 
@@ -134,18 +135,18 @@ namespace Vita.Data.Model {
     Nullable = 1,
     PrimaryKey = 1 << 1,
     ClusteredIndex = 1 << 2,
-
+    ForeignKey = 1 << 3,
     Identity = 1 << 4,
     RowVersion = 1 << 5,
-    NoUpdate = 1 << 6,  // columns with auto-values
-    NoInsert = 1 << 7,
+    IdentityForeignKey = 1 << 6,
 
-    ForeignKey = 1 << 8,
-    IdentityForeignKey = 1 << 9,
+    NoUpdate = 1 << 8,  // columns with auto-values
+    NoInsert = 1 << 9,
+    UseParamForLongValues = 1 << 10, //string or byte[], Binary data type with size parameter
+
 
     IsChanging = 1 << 16, //set in loaded model, signals that in new version it changes 
-
-    Error = 1 << 16, // column info was loaded with error from database
+    Error = 1 << 17, // column info was loaded with error from database
   }
   
   public class DbColumnInfo : DbModelObjectBase {
@@ -159,7 +160,9 @@ namespace Vita.Data.Model {
 
     public DbColumnFlags Flags;
 
-    public DbColumnTypeInfo TypeInfo;
+    //public DbColumnTypeInfo TypeInfo;
+    public DbTypeInfo TypeInfo;
+    public DbValueConverter Converter;
     public string DefaultExpression;
     public string DefaultConstraintName;
 
@@ -167,7 +170,7 @@ namespace Vita.Data.Model {
     //Used in analyzing changes. In old model, points to the object in new model, and vice versa
     public DbColumnInfo Peer;
 
-    public DbColumnInfo(EntityMemberInfo member, DbTableInfo table, string columnName, DbColumnTypeInfo typeInfo)
+    public DbColumnInfo(EntityMemberInfo member, DbTableInfo table, string columnName, DbTypeInfo typeInfo)
                           : base(table.DbModel, table.Schema, DbObjectType.Column, member) {
       Member = member;
       Table = table;
@@ -183,7 +186,12 @@ namespace Vita.Data.Model {
         if (member.ForeignKeyOwner.ReferenceInfo.ToKey.Entity.Flags.IsSet(EntityFlags.HasIdentity))
           Flags |= DbColumnFlags.IdentityForeignKey;
       }
+      if(_sizableTypes.Contains(member.DataType))
+        Flags |= DbColumnFlags.UseParamForLongValues;
     }
+    static Type[] _sizableTypes = new Type[] { typeof(string), typeof(byte[]), typeof(Binary) };
+
+
     public void SetName(string columnName) {
       ColumnName = columnName;
       ColumnNameQuoted = Table.DbModel.Driver.SqlDialect.QuoteName(columnName);
@@ -192,12 +200,13 @@ namespace Vita.Data.Model {
     }
 
     //constructor loader from the database
-    public DbColumnInfo(DbTableInfo table, string columnName, DbColumnTypeInfo typeInfo)
-      : base(table.DbModel, table.Schema, DbObjectType.Column, null) {
+    public DbColumnInfo(DbTableInfo table, string columnName, DbTypeInfo typeInfo, bool isNullable)
+                            : base(table.DbModel, table.Schema, DbObjectType.Column, null) {
       Table = table;
       SetName(columnName);
+      // TO FIX
       TypeInfo = typeInfo;
-      if (typeInfo.IsNullable)
+      if (isNullable)
         this.Flags |= DbColumnFlags.Nullable; 
       Table.Columns.Add(this);
       base.LogRefName = DbModelHelper.JoinNames(table.Schema, table.TableName, columnName);
@@ -276,17 +285,17 @@ namespace Vita.Data.Model {
 
   public class DbSequenceInfo : DbModelObjectBase {
     public string Name;
-    public DbStorageType DbTypeDef;
+    public string DbTypeName;
     public long StartValue;
     public int Increment;
     public string FullName;
     public SequenceDefinition Definition;
     internal DbSequenceInfo Peer; 
 
-    public DbSequenceInfo(DbModel model, string name, string schema, DbStorageType dbTypeDef, long startValue, int increment) 
+    public DbSequenceInfo(DbModel model, string name, string schema, string dbTypeName, long startValue, int increment) 
                  : base(model, schema, DbObjectType.Sequence, null) {
       Name = name;
-      DbTypeDef = dbTypeDef;
+      DbTypeName = dbTypeName; 
       StartValue = startValue;
       Increment = increment;
       FullName = model.FormatFullName(schema, name); 
@@ -295,7 +304,8 @@ namespace Vita.Data.Model {
     public DbSequenceInfo(DbModel model, SequenceDefinition definition) 
           : base(model, definition.Module.Area.Name, DbObjectType.Sequence, definition) {
       Name = definition.Name;
-      DbTypeDef = model.Driver.TypeRegistry.FindStorageType(definition.DataType, false);
+      var stype = model.Driver.TypeRegistry.GetDbTypeDef(definition.DataType);
+      DbTypeName = stype.Name;
       StartValue = definition.StartValue;
       Increment = definition.Increment;
       Definition = definition;
@@ -305,22 +315,43 @@ namespace Vita.Data.Model {
   }//class
 
   public enum DbCustomTypeKind {
-    Unknown,
-    ArrayAsTable
+    Regular,
+    TableType
   }
   public class DbCustomTypeInfo : DbModelObjectBase {
     public DbCustomTypeKind Kind; 
     public string Name;
     public string FullName;
+    public bool IsNullable;
+    public int Size; 
     public DbCustomTypeInfo Peer; 
 
-    public DbCustomTypeInfo(DbModel model, string schema, string name, DbCustomTypeKind kind = DbCustomTypeKind.Unknown)
-      : base(model, schema, DbObjectType.UserDefinedType) {
+    public DbCustomTypeInfo(DbModel model, string schema, string name, DbCustomTypeKind kind, bool isNullable, int size)
+                             : base(model, schema, DbObjectType.UserDefinedType) {
       Name = name;
       Kind = kind;
+      IsNullable = isNullable;
+      Size = size; 
       FullName = model.FormatFullName(Schema, Name);
+      model.AddCustomType(this); 
     }
   }
+
+  /// <summary>Information for DbModelLoader which objects to load. It is used to limit scope of schema objects loaded 
+  /// and analyzed/compared with new model. 
+  /// </summary>
+  /// <remarks>
+  /// For regular scenario, the filter is derived from DbModel and is a property of the DbModel. 
+  /// For DB-first tool, constructed from configuration data - list of schemas or tables to look at is 
+  /// specified 
+  /// </remarks>
+  public class DbModelLoadFilter {
+    public HashSet<string> Schemas = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+    public List<string> Tables = new List<string>();
+    public List<string> Views = new List<string>();
+    public List<string> Sequences = new List<string>();
+  }
+
 
   public static class DbModelExtensions {
     public static bool IsSet(this DbColumnFlags flags, DbColumnFlags flag) {

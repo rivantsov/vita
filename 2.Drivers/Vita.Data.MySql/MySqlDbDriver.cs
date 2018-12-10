@@ -26,7 +26,7 @@ namespace Vita.Data.MySql {
   public class MySqlDbDriver : DbDriver {
     // Note: MySql supports output params only for stored procedures, not for dynamic SQL
     public const DbFeatures MySqlFeatures = DbFeatures.Schemas | DbFeatures.StoredProcedures
-        | DbFeatures.Views | DbFeatures.DefaultCaseInsensitive
+        | DbFeatures.Views | DbFeatures.DefaultCaseInsensitive | DbFeatures.InsertMany
         | DbFeatures.ReferentialConstraints | DbFeatures.ForeignKeysAutoIndexed //mySql automatically creates supporting index
         | DbFeatures.Paging | DbFeatures.BatchedUpdates | DbFeatures.TreatBitAsInt;
     public const DbOptions DefaultMySqlDbOptions = DbOptions.UseRefIntegrity | DbOptions.ShareDbModel 
@@ -131,14 +131,6 @@ namespace Vita.Data.MySql {
       }
     }
 
-    public override void CopyParameterSetup(IDbDataParameter source, IDbDataParameter dest) {
-      ((MySqlParameter)dest).MySqlDbType = ((MySqlParameter)source).MySqlDbType; 
-    }
-    public override IDbDataParameter AddParameter(IDbCommand command, string name, DbStorageType typeDef, ParameterDirection direction, object value) {
-      var prm = (MySqlParameter) base.AddParameter(command, name, typeDef, direction, value);
-      prm.MySqlDbType = (MySqlDbType) typeDef.CustomDbType;
-      return prm; 
-    }
     public override void OnDbModelConstructed(DbModel dbModel) {
       foreach (var table in dbModel.Tables) {
         // Names of PK constraints in MySql is 'PRIMARY', cannot be changed

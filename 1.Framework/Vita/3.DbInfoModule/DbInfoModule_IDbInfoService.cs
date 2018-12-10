@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Vita.Data;
+using Vita.Data.Driver.InfoSchema;
 using Vita.Data.Model;
 using Vita.Entities;
 using Vita.Entities.Logging;
@@ -17,16 +18,15 @@ namespace Vita.Entities.DbInfo {
     public DbVersionInfo LoadDbVersionInfo(DbModel dbModel, DbSettings settings, IActivationLog log) {
       var tblDbInfo = dbModel.GetTable(typeof(IDbInfo), throwIfNotFound: false);
       Util.Check(tblDbInfo != null, "DbInfo table not defined in DB Model.");
+
       // Empty/zero verson
       var versionInfo = new DbVersionInfo();
       // Check that table actually exists in the database
       var driver = settings.Driver; 
-      var loader = driver.CreateDbModelLoader(settings, log);
-      if(!loader.TableExists(tblDbInfo.Schema, tblDbInfo.TableName))
+      if(!TableExists(settings, tblDbInfo))
         return versionInfo; //zero version
       try {
-        var sql = loader.GetDirectSelectAllSql(tblDbInfo);
-        var dt = driver.ExecuteRawSelect(settings.SchemaManagementConnectionString, sql);
+        var dt = SelectAllFrom(settings, tblDbInfo);
         var appRow = dt.FindRow(nameof(IDbInfo.AppName), dbModel.EntityApp.AppName);
         if(appRow != null) {
           versionInfo.InstanceType = (DbInstanceType)appRow.GetAsInt(nameof(IDbInfo.InstanceType));
@@ -39,8 +39,7 @@ namespace Vita.Entities.DbInfo {
         } //if appRow
         //Read modules
         var tblDbModuleInfo = dbModel.GetTable(typeof(IDbModuleInfo));
-        sql = loader.GetDirectSelectAllSql(tblDbModuleInfo);
-        dt = loader.ExecuteSelect(sql);
+        dt = SelectAllFrom(settings, tblDbModuleInfo);
         foreach(var row in dt.Rows) {
           var moduleName = row.GetAsString(nameof(IDbModuleInfo.ModuleName));
           var schema = row.GetAsString(nameof(IDbModuleInfo.Schema));
@@ -57,14 +56,24 @@ namespace Vita.Entities.DbInfo {
       }
     }
 
+    public virtual bool TableExists(DbSettings settings, DbTableInfo table) {
+      var dialect = settings.Driver.SqlDialect;
+      var sql = dialect.GetTableExistsSql(table); 
+      var result = settings.Driver.ExecuteRawSelect(settings.SchemaManagementConnectionString, sql);
+      return result.Rows.Count > 0;
+    }
+
+    public virtual InfoTable SelectAllFrom(DbSettings settings, DbTableInfo table) {
+      var dialect = settings.Driver.SqlDialect;
+      var sql = dialect.GetTableSelectAllSql(table);
+      var result = settings.Driver.ExecuteRawSelect(settings.SchemaManagementConnectionString, sql);
+      return result;
+    }
+
     public bool UpdateDbInfo(DbModel dbModel, DbSettings settings, IActivationLog log, Exception exception = null) {
       try {
         var app = dbModel.EntityApp;
         var session = App.OpenSystemSession();
-        // Disable stored procs and disable batch mode
-        // session.DisableStoredProcs();
-        // session.DisableBatchMode();
-        // important - should use EntitySet here; otherwise MySql fails
         var ent = session.EntitySet<IDbInfo>().FirstOrDefault(e => e.AppName == app.AppName);
         if(ent == null) {
           ent = session.NewEntity<IDbInfo>();

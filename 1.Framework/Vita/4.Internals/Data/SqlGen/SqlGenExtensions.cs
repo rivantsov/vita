@@ -12,7 +12,6 @@ namespace Vita.Data.SqlGen {
 
   public static partial class SqlGenExtensions {
 
-
     public static bool CheckReferencesNewIdentity(this EntityRecord rec, DbColumnInfo fkCol, out EntityRecord targetRecord) {
       targetRecord = null;
       if(!rec.EntityInfo.Flags.IsSet(EntityFlags.ReferencesIdentity))
@@ -28,25 +27,6 @@ namespace Vita.Data.SqlGen {
       targetRecord = targetRec;
       return true;
     }
-
-
-    // ======================== Placeholder list extensions ======================================================
-
-    public static SqlColumnRefPlaceHolder AddColumnValueRef(this IList<SqlPlaceHolder> placeHolders, DbColumnInfo column, ParameterDirection direction = ParameterDirection.Input) {
-      var ph = new SqlColumnRefPlaceHolder(column);
-      ph.Index = placeHolders.Count;
-      placeHolders.Add(ph);
-      return ph;
-    }
-
-    public static SqlParamPlaceHolder AddParamRef(this IList<SqlPlaceHolder> placeHolders, DbStorageType typeDef, 
-                                       ParameterDirection direction = ParameterDirection.Input, DbColumnInfo targetColumn = null) {
-      var ph = new SqlParamPlaceHolder(typeDef, direction, targetColumn);
-      ph.Index = placeHolders.Count; 
-      placeHolders.Add(ph);
-      return ph;
-    }
-
 
   }
 

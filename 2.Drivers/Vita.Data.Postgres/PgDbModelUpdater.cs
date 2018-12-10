@@ -20,7 +20,8 @@ namespace Vita.Data.Postgres {
       if(ShouldResetNullsToDefault(column))
         BuildColumnSetDefaultValuesSql(change, column);
       // In Pg you modify column one aspect at a time; setting TYPE and Nullable requires 2 calls
-      change.AddScript(DbScriptType.ColumnModify, $"ALTER TABLE {column.Table.FullName} ALTER COLUMN {column.ColumnNameQuoted} TYPE {column.TypeInfo.SqlTypeSpec};");
+      change.AddScript(DbScriptType.ColumnModify, 
+        $"ALTER TABLE {column.Table.FullName} ALTER COLUMN {column.ColumnNameQuoted} TYPE {column.TypeInfo.DbTypeSpec};");
       var nullStr = column.Flags.IsSet(DbColumnFlags.Nullable) ? " DROP NOT NULL" : " SET NOT NULL";
       change.AddScript(DbScriptType.ColumnSetupComplete, $"ALTER TABLE {column.Table.FullName} ALTER COLUMN {column.ColumnNameQuoted}{nullStr};");
     }
@@ -86,7 +87,7 @@ $@"CREATE {matz} VIEW {view.FullName}  AS
 
     protected override string GetColumnSpec(DbColumnInfo column, DbScriptOptions options) {
       if(column.Flags.IsSet(DbColumnFlags.Identity)) {
-        if(column.TypeInfo.SqlTypeSpec == "bigint")
+        if(column.TypeInfo.DbTypeSpec == "bigint")
           return $"{column.ColumnNameQuoted} BIGSERIAL ";
         else
           return $"{column.ColumnNameQuoted} SERIAL ";

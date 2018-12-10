@@ -147,14 +147,14 @@ namespace Vita.Entities.Utilities {
       return result;
     }
 
-    private static Type[] _intTypes = new Type[] {
+    public static Type[] AllIntTypes = new Type[] {
          typeof(Int32), typeof(UInt32),
          typeof(byte), typeof(sbyte),
          typeof(Int16), typeof(UInt16),
          typeof(Int64), typeof(UInt64)};
 
     public static bool IsInt(this Type type) {
-      return _intTypes.Contains(type); 
+      return AllIntTypes.Contains(type); 
     }
 
     public static bool IsListOrArray(this Type type) {

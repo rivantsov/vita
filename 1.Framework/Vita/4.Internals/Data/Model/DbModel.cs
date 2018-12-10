@@ -20,14 +20,13 @@ namespace Vita.Data.Model {
     public DbModelConfig Config;
     public List<DbSchemaInfo> Schemas = new List<DbSchemaInfo>();
     public DbVersionInfo VersionInfo;
-    public EntityModel EntityModel => EntityApp.Model; 
-
-    internal bool CustomCommandsCompiled { get; private set; }
+    public EntityModel EntityModel => EntityApp.Model;
+    public DbModelLoadFilter LoadFilter = new DbModelLoadFilter(); 
 
     IList<DbTableInfo> _tables = new List<DbTableInfo>();
     IDictionary<string, DbTableInfo> _tablesByName = new Dictionary<string, DbTableInfo>(StringComparer.InvariantCultureIgnoreCase);
     IList<DbSequenceInfo> _sequences = new List<DbSequenceInfo>();
-    IList<DbCustomTypeInfo> _customTypes = new List<DbCustomTypeInfo>(); 
+    IList<DbCustomTypeInfo> _customDbTypes = new List<DbCustomTypeInfo>(); 
 
     //Table of all Db objects; accessed by entity-model object as key 
     private Dictionary<object, DbModelObjectBase> _allObjects = new Dictionary<object, DbModelObjectBase>();
@@ -44,14 +43,20 @@ namespace Vita.Data.Model {
       get { return _sequences; }
     }
     public ICollection<DbCustomTypeInfo> CustomDbTypes {
-      get { return _customTypes; }
+      get { return _customDbTypes; }
     }
     public DbDriver Driver { get { return Config.Driver; } }
 
-    // retrieving table by name
+    // retrieving table by name, entity type
+    public DbTableInfo FindTable<TEntity>() {
+      return FindTable(typeof(TEntity));
+    }
+    public DbTableInfo FindTable(Type entityType) {
+      return Tables.FirstOrDefault(t => t.Entity.EntityType == entityType);
+    }
     public DbTableInfo GetTable(string schema, string tableName) {
-      var key = FormatFullName(schema, tableName);
-      if(_tablesByName.TryGetValue(key, out DbTableInfo table))
+      var fullName = FormatFullName(schema, tableName);
+      if(_tablesByName.TryGetValue(fullName, out DbTableInfo table))
         return table;
       return null; 
     }
@@ -84,8 +89,6 @@ namespace Vita.Data.Model {
       VersionInfo = new DbVersionInfo(EntityApp, Config);
       var nullEnt = EntityApp.Model.NullEntityInfo; 
       _nullTable = new DbTableInfo(this, null, "!!NullTable", nullEnt);
-
-      InitSqlParamNames(Driver.SqlDialect.DynamicSqlParameterPrefix, Driver.SqlDialect.MaxParamCount);
     }
 
     /// <summary>Constructs an empty DbModel. This constructor is used for models loaded from database. </summary>
@@ -109,7 +112,7 @@ namespace Vita.Data.Model {
     }
 
     public void AddCustomType(DbCustomTypeInfo type) {
-      _customTypes.Add(type);
+      _customDbTypes.Add(type);
     }
 
     public void RegisterDbObject(object entityModelObject, DbModelObjectBase dbObject) {
@@ -180,21 +183,6 @@ namespace Vita.Data.Model {
       foreach(var tp in this.CustomDbTypes)
         tp.Peer = null; 
     }
-
-    #region Cached SQL param names
-    // We pre-create parameter names to avoid string allocations at runtime
-    string[] _sqlParamNames;
-    protected void InitSqlParamNames(string prefix, int maxParamCount) {
-      // Create array of param names
-      _sqlParamNames = new string[maxParamCount + 100]; // +100 just in case; and to make unit test easier
-      for(int i = 0; i < _sqlParamNames.Length; i++)
-        _sqlParamNames[i] = prefix + i;
-    }
-
-    public string GetSqlParameterName(int index) {
-      return _sqlParamNames[index];
-    }
-    #endregion 
 
 
 

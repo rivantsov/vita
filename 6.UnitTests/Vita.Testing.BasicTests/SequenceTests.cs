@@ -68,7 +68,6 @@ namespace Vita.Testing.BasicTests.Sequences {
         default: return; 
       }
       _app = new SequenceTestApp();
-      Startup.DropSchemaObjects("seq"); 
       Startup.ActivateApp(_app);
       var session = _app.OpenSession();
 

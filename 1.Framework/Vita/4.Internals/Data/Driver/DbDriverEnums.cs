@@ -33,15 +33,17 @@ namespace Vita.Data.Driver {
     DeferredConstraintCheck = 1 << 8,
     DefaultCaseInsensitive = 1 << 9,
     ClusteredIndexes = 1 << 10,
-    ForeignKeysAutoIndexed = 1 << 11, // Foreign keys are indexed by default(always). DbOptions enum has a flag to auto-create indexes on foreign keys
+
+    // If set, foreign keys are indexed by default; 
+    // if otherwise, DbOptions enum has a flag to auto-create indexes on foreign keys
+    ForeignKeysAutoIndexed = 1 << 11,
+
     OrderedColumnsInIndexes = 1 << 12, //supports ordered columns in indexes
     IncludeColumnsInIndexes = 1 << 13, //supports include columns in indexes
     FilterInIndexes = 1 << 14,         // supports filters in indexes
     Views = 1 << 15,         // supports views
     MaterializedViews = 1 << 16,
-
-    ForceNullableMemo = 1 << 17, //Memo columns must be nullable (SQL CE)
-    NoMemoInDistinct = 1 << 18, //Memo columns are not allowed in DISTINCT clause (SQL CE)
+    InsertMany = 1 << 17, // insert many rows in one Insert SQL; supported by all except Oracle
 
     TreatBitAsInt = 1 << 19, //MS SQL - 'bit' type values/expr should not be treated as bool but as ints
 
@@ -58,37 +60,6 @@ namespace Vita.Data.Driver {
     // Server preserves comment lines in stored procs and views (MS SQL); 
     // VITA uses special comment lines in sources to save source hash (to detect need to update view/proc definition), and to save descriptive tag
     ServerPreservesComments = 1 << 27,  
-  }
-
-  [Flags]
-  public enum DbTypeFlags {
-    /// <summary>No flags. </summary>
-    None = 0,
-
-    Unlimited = 1,
-
-    /*
-    /// <summary>Indicates that the storage type is default for CLR type (ColumnOutType)</summary>
-    IsDefault = 1 << 1, 
-    */
-
-    /// <summary>User-defined type (MS SQL Server)</summary>
-    UserDefined = 1 << 4,
-    /// <summary>Type is array.</summary>
-    Array = 1 << 5,
-
-    ObsoleteType = 1 << 6,
-
-    /*
-    /// <summary>Is default for CLR type (ColumnOutType property). </summary>
-    IsDefaultForClrType = 1 << 10,
-    /// <summary></summary>
-    /// <summary>Can handle unlimited (memo/blob) fields (text or binary). </summary>
-    SupportsUnlimited = 1 << 11,
-
-    /// <summary>Is specialization of a db type, for specific CLR type. Ex: binary(16) for Guid</summary>
-    IsSubType = 1 << 12, 
-    */
   }
 
 

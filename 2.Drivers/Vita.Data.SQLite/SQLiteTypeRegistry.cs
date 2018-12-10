@@ -13,6 +13,7 @@ using Vita.Entities.Logging;
 using Vita.Entities.Utilities;
 using System.Globalization;
 using Microsoft.Data.Sqlite;
+using Vita.Data.Driver.TypeSystem;
 
 namespace Vita.Data.SQLite {
 
@@ -20,45 +21,41 @@ namespace Vita.Data.SQLite {
     public static string DateTimeFormat = "yyyy'-'MM'-'dd' 'HH':'mm':'ss.fff";
 
     public SQLiteTypeRegistry(SQLiteDbDriver driver) : base(driver) {
-      var realTypes = new Type[] {typeof(Single), typeof(double), typeof(decimal)};
-      var stringTypes = new Type[] { typeof(string), typeof(char) /* , typeof(DateTime), typeof(TimeSpan)*/  };
-      var binTypes = new Type[] { typeof(Guid), typeof(Vita.Entities.Binary), typeof(byte[]) };
-      var intTypes = new Type[] {
-        typeof(byte), typeof(sbyte), typeof(Int16), typeof(UInt16), typeof(Int32), typeof(UInt32), 
-      };
-      var int64Types = new Type[] { typeof(Int64), typeof(UInt64) };
-
+      
       // Note: we associate multiple int types with single storage class, but intercept in particular cases 
       // (in GetDbTypeInfo below), and provide specific DbType values and converters 
       // For all int types MS SQLite provider returns Int64, not sure about actual storage; so we set ColOutType to Int64 here for Int32 type
-      AddTypeDef("int", SqliteType.Integer, DbType.Int32, typeof(Int64), mapToTypes: intTypes, dbFirstClrType: typeof(Int32),
-                          aliases: "integer");
-      AddTypeDef("int64", SqliteType.Integer,DbType.Int64, typeof(Int64), mapToTypes: int64Types, dbFirstClrType: typeof(Int64));
-      AddTypeDef("real", SqliteType.Real , DbType.Double, typeof(double), mapToTypes: realTypes, dbFirstClrType: typeof(double));
-      AddTypeDef("text", SqliteType.Text, DbType.String, typeof(string), mapToTypes: stringTypes);
-      AddTypeDef("blob", SqliteType.Blob, DbType.Binary, typeof(byte[]), mapToTypes: binTypes,
-          dbFirstClrType: typeof(Vita.Entities.Binary), valueToLiteral: BytesToLiteral);
+      var tdInt = AddDbTypeDef("int", typeof(Int64), mapColumnType: false, aliases: "integer");
+      MapMany(new[] { typeof(byte), typeof(sbyte), typeof(Int16), typeof(UInt16), typeof(Int32), typeof(UInt32) }, tdInt);
 
-      AddTypeDef("date", SqliteType.Text ,DbType.DateTime, typeof(string), mapToTypes: new[] { typeof(DateTime) }, 
-                          valueToLiteral: DateTimeToString ); 
-      AddTypeDef("time", SqliteType.Text,DbType.DateTimeOffset, typeof(TimeSpan));
-      AddTypeDef("bool", SqliteType.Integer,  DbType.Boolean, typeof(Int64), mapToTypes: new[] { typeof(bool) }, 
-                          valueToLiteral: BoolToBitLiteral );
+      var tdInt64 = AddDbTypeDef("int64", typeof(Int64));
+      MapMany(new[] { typeof(Int64), typeof(UInt64) }, tdInt64);
+
+      var tdReal = AddDbTypeDef("real", typeof(double));
+      MapMany(new[] { typeof(Single), typeof(double), typeof(decimal) }, tdReal);
+
+      var tdText = AddDbTypeDef("text", typeof(string));
+      MapMany(new[] { typeof(string), typeof(char) }, tdText);
+      SpecialTypeDefs[DbSpecialType.String] = tdText;
+      SpecialTypeDefs[DbSpecialType.StringAnsi] = tdText;
+      SpecialTypeDefs[DbSpecialType.StringUnlimited] = tdText;
+      SpecialTypeDefs[DbSpecialType.StringAnsiUnlimited] = tdText;
+
+      var tdBlob = AddDbTypeDef("blob", typeof(byte[]), toLiteral: BytesToLiteral);
+      MapMany(new Type[] { typeof(Guid), typeof(Vita.Entities.Binary), typeof(byte[]) }, tdBlob);
+      SpecialTypeDefs[DbSpecialType.Binary] = tdBlob;
+      SpecialTypeDefs[DbSpecialType.BinaryUnlimited] = tdBlob;
+
+      var tdDate = AddDbTypeDef("date", typeof(string), mapColumnType: false, toLiteral: DateTimeToLiteral );
+      Map(typeof(DateTime), tdDate);
+      var tdTime = AddDbTypeDef("time", typeof(string), mapColumnType: false, toLiteral: TimeSpanToLiteral);
+      Map(typeof(TimeSpan), tdTime);
+      var tdBool =  AddDbTypeDef("bool", typeof(Int64), mapColumnType: false, toLiteral: BoolToBitLiteral );
+      Map(typeof(bool), tdBool);
 
       Converters.AddConverter<string, TimeSpan>(x => TimeSpan.Parse((string)x), x => ((TimeSpan)x).ToString("G"));
       Converters.AddConverter<Int64, bool>(x => (Int64)x == 1, null); // x => (bool)x ? 1L : 0L);
-      Converters.AddConverter<string, DateTime>(ConvertStringToDateTime, null); // ConvertDateTimeToString);
-    }
-
-    //Override base method to ignore DbType and isMemo - match only by ClrType
-    public override DbStorageType FindDbTypeDef(DbType dbType, Type clrType, bool isMemo) {
-      var match = StorageTypesAll.FirstOrDefault(td => td.MapToTypes.Contains(clrType));
-      return match;
-    }
-
-    // all db types are registered as non-unlimited, just because there's no difference in SQLite
-    public override DbStorageType FindStorageType(Type clrType, bool unlimited) {
-      return base.FindStorageType(clrType, false);
+      Converters.AddConverter<string, DateTime>(ParseDateTime, DateTimeToString);
     }
 
     public static string BoolToBitLiteral(object value) {
@@ -68,28 +65,14 @@ namespace Vita.Data.SQLite {
       return b ? "1" : "0";
     }
 
-    /*
-    private static string ConvertBinaryToLiteral(object value) {
-      var bytes = (byte[])value;
-      return "x'" + HexUtil.ByteArrayToHex(bytes) + "'";
-    }
-    */
     public static string BytesToLiteral(object value) {
       Util.CheckParam(value, nameof(value));
-      switch(value) {
-        case Guid g:
-          return "x'" + HexUtil.ByteArrayToHex(g.ToByteArray()) + "'";
-        case byte[] bytes:
-          return "x'" + HexUtil.ByteArrayToHex(bytes) + "'";
-        case Binary bin:
-          return "x'" + HexUtil.ByteArrayToHex(bin.GetBytes()) + "'";
-        default:
-          Util.Throw("BytesToLiteral: invalid input value type {0}", value.GetType());
-          return null; //never happends
-      }
+      byte[] bytes = DbDriverUtil.GetBytes(value);
+      Util.Check(bytes != null, "Bytes to literal: invalid input value type {0}", value.GetType());
+      return "x'" + HexUtil.ByteArrayToHex(bytes) + "'";
     }
 
-    public static string DateTimeToString(object value){
+    public static string DateTimeToLiteral(object value){
       if(value == null || value == DBNull.Value)
         return "NULL";
       var dt = (DateTime)value;
@@ -97,10 +80,26 @@ namespace Vita.Data.SQLite {
       return result;
     }
 
-    public static object ConvertStringToDateTime(object v) {
-      if(v == null)
+    public static string TimeSpanToLiteral(object value) {
+      if(value == null || value == DBNull.Value)
+        return "NULL";
+      var ts = (TimeSpan)value;
+      var result = "'" + ts.ToString("G") + "'";
+      return result;
+    }
+
+    public static object DateTimeToString(object value) {
+      if(value == null || value == DBNull.Value)
+        return DBNull.Value;
+      var dt = (DateTime)value;
+      var result = dt.ToString(DateTimeFormat);
+      return result;
+    }
+
+    public static object ParseDateTime(object value) {
+      if(value == null || value == DBNull.Value)
         return null;
-      var str = (string)v;
+      var str = (string)value;
      var result = DateTime.ParseExact(str, DateTimeFormat, null, System.Globalization.DateTimeStyles.None);
       return result; 
     }

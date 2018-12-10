@@ -72,7 +72,8 @@ namespace Vita.Tools.VdbTool {
           Console.WriteLine("COMMAND: dbfirst");
           Console.WriteLine("Generating entity definitions from the database...");
           var dbFirst = new DbFirstProcessor(fback);
-          var success = dbFirst.GenerateEntityModelSources(xmlConfig);
+          var dbFirstConfig = new DbFirstConfig(xmlConfig);
+          var success = dbFirst.GenerateEntityModelSources(dbFirstConfig);
           return success ? 0 : -1;
         case "dbupdate":
           Console.WriteLine("COMMAND: dbupdate");

@@ -274,9 +274,9 @@ namespace Vita.Data.Linq.Translation {
 
     private BinaryExpression MakeEqual(Expression left, Expression right) {
       if (left.Type.IsNullableValueType())
-        left = Expression.Convert(left, left.Type.GetUnderlyingStorageType());
+        left = Expression.Convert(left, left.Type.GetUnderlyingStorageClrType());
       if (right.Type.IsNullableValueType())
-        right = Expression.Convert(right, right.Type.GetUnderlyingStorageType());
+        right = Expression.Convert(right, right.Type.GetUnderlyingStorageClrType());
       return Expression.Equal(left, right);
     }
 

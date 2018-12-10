@@ -30,14 +30,14 @@ namespace Vita.Data.Runtime {
       return sql; 
     }
 
-    public SqlStatement GetCrudNonQuery(DbTableInfo table, EntityRecord record, ISqlValueFormatter valueFormatter) {
+    public SqlStatement GetCrudSqlForSingleRecord(DbTableInfo table, EntityRecord record) {
       SqlStatement sql = null;
       switch(record.Status) {
         case EntityStatus.New:
           sql = _crudSqlBuilder.BuildCrudInsertOne(table, record);
           break;
         case EntityStatus.Modified:
-          sql = _crudSqlBuilder.BuildCrudUpdateOne(table, record, valueFormatter);
+          sql = _crudSqlBuilder.BuildCrudUpdateOne(table, record);
           break;
         case EntityStatus.Deleting:
           sql = _crudSqlBuilder.BuildCrudDeleteOne(table); 
@@ -50,11 +50,11 @@ namespace Vita.Data.Runtime {
       return _linqEngine.TranslateNonQuery(command);
     }
 
-    public SqlStatement GetCrudDeleteMany(DbTableInfo table, IList<EntityRecord> records) {
-      return _crudSqlBuilder.BuildCrudDeleteMany(table, records); 
+    public SqlStatement GetCrudDeleteMany(DbTableInfo table) {
+      return _crudSqlBuilder.BuildCrudDeleteMany(table); 
     }
 
-    public SqlStatement  GetCrudInsertMany(DbTableInfo table, IList<EntityRecord> records, ISqlValueFormatter formatter) {
+    public SqlStatement  GetCrudInsertMany(DbTableInfo table, IList<EntityRecord> records, IColumnValueFormatter formatter) {
       return _crudSqlBuilder.BuildCrudInsertMany(table, records, formatter);
     }
 

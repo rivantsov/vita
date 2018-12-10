@@ -15,6 +15,8 @@ namespace Vita.Entities {
     /// <summary>Gets database schema corresponding to this area.</summary>
     public readonly string Name;
 
+    public string OracleTableSpace; 
+
     // The constructor is internal, use EntityModelSetup.AddArea method 
     internal EntityArea(EntityApp app, string name) {
       App = app;

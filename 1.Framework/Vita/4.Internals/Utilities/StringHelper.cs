@@ -10,7 +10,9 @@ namespace Vita.Entities.Utilities {
   public static class StringHelper {
     public static string Quote(this string value) {
       if (value == null) return "''";
-      return "'" + value.Replace("'", "''") + "'";
+      if (value.Contains('\''))
+        return "'" + value.Replace("'", "''") + "'";
+      return "'" + value + "'";
     }
 
     public static string DoubleQuote(this string value) {
@@ -208,9 +210,13 @@ namespace Vita.Entities.Utilities {
 
     }//method
 
-    public static TEnum ParseEnum<TEnum>(string value) where TEnum: struct, Enum {
-      Util.CheckParamNotEmpty(value, nameof(value));
-      Util.Check(Enum.TryParse<TEnum>(value.Trim(), out TEnum ev), "Invalid value: '{0}' for enum {1}.", value, typeof(TEnum));
+    public static TEnum ParseEnum<TEnum>(string value, TEnum? defaultValue = null) where TEnum: struct, Enum {
+      if (string.IsNullOrWhiteSpace(value)) {
+        if(defaultValue != null)
+          return defaultValue.Value;
+        Util.Throw($"Enum value may not be empty. Enum type: {typeof(TEnum)}.");
+      }
+      Util.Check(Enum.TryParse<TEnum>(value.Trim(), true, out TEnum ev), "Invalid value: '{0}' for enum {1}.", value, typeof(TEnum));
       return ev;
     }
 

@@ -46,7 +46,7 @@ namespace Vita.Testing.ExtendedTests {
     [TestMethod]
     public void TestLinqBasics() {
       var app = Startup.BooksApp;
-      IDbCommand lastCmd; 
+      IDbCommand lastCmd;
 
       //Init
       var session = app.OpenSession();
@@ -58,6 +58,11 @@ namespace Vita.Testing.ExtendedTests {
       var csTitle = "c# Programming";
       var vbTitle = "VB Programming";
 
+      // new + new
+      var idTitles = books.Select(b => new { Id1 = b.Id, Title1 = b.Title })
+                         .Select(b => new { Id2 = b.Id1, Title2 = b.Title1 }).ToList();
+      Assert.IsTrue(idTitles.Count > 0, "Expected Id-Title pairs");
+
       // book by title
       var qBooksByTitle = from b in books
                           where b.Title == csTitle
@@ -68,12 +73,12 @@ namespace Vita.Testing.ExtendedTests {
       // Books by publisher's name; skip, take test
       var msbooks = from b in books
                     where b.Publisher.Name == "MS Books"
-                    orderby b.Title
+                    orderby b.Title.ToUpper() //ToUpper for Oracle, case-sensitive
                     select b;
       var msBookList = msbooks.ToList();
       Assert.AreEqual(3, msBookList.Count, "Invalid number of MS books.");
       var msbook0 = msBookList[0]; //c# book should be the first book when sorted by title
-      Assert.IsTrue(msbook0.Title == "c# Programming", "Invalid title of c# book.");
+      Assert.AreEqual("c# Programming", msbook0.Title, "Invalid title of c# book.");
       //Same with skip, take
       var qSkipTake = msbooks.Skip(1).Take(1);
       var lstSkipTake = qSkipTake.ToList();
@@ -472,7 +477,7 @@ namespace Vita.Testing.ExtendedTests {
         Assert.IsTrue(sql.IndexOf("ORDER BY (SELECT 1)") > 0, "Expected fake OrderBy clause");
       }
       //try with only skip and only take
-      var allOrdCount = bookOrders.Count(); 
+      var allOrdCount = bookOrders.Count();
       someOrders = bookOrders.Skip(1).ToList();
       Assert.AreEqual(allOrdCount - 1, someOrders.Count, "Expected some orders");
       someOrders = bookOrders.Take(2).ToList();
@@ -516,8 +521,8 @@ namespace Vita.Testing.ExtendedTests {
 
       // Empty list, no parameters option - should be 'literal empty list' there, depends on server type
       qNoBooks = from b in session.EntitySet<IBook>().WithOptions(QueryOptions.NoParameters)
-                     where arrEmpty.Contains(b.Id)
-                     select b;
+                 where arrEmpty.Contains(b.Id)
+                 select b;
       noBooks = qNoBooks.ToList();
       cmd = session.GetLastCommand();
       Assert.AreEqual(0, noBooks.Count, "Expected 0 entities, empty-list-contains with literal empty list");
@@ -529,7 +534,7 @@ namespace Vita.Testing.ExtendedTests {
                 where orderIdsList.Contains(bo.Id)
                 select bo;
       orders = qOrders.ToList();
-      Assert.AreEqual(orderIdsList.Count, orders.Count, 
+      Assert.AreEqual(orderIdsList.Count, orders.Count,
           "Test constList.Contains, repeated query failed: order counts do not match.");
 
       // Again with NoParameters options - force using literals
@@ -591,7 +596,7 @@ namespace Vita.Testing.ExtendedTests {
     }
 
     [TestMethod]
-    public void TestLinqBoolBitFields() {
+    public void TestLinqBoolBitColumns() {
       // We test that LINQ engine correctly handles bit fields
       var app = Startup.BooksApp;
       var session = app.OpenSession();
@@ -600,8 +605,8 @@ namespace Vita.Testing.ExtendedTests {
       bool boolParam = true;
       //Bug fix, handling expressions like 'ent.BoolProp & boolValue == ent.BoolProp'
       var q0 = from u in users
-                where (u.IsActive && boolParam) == u.IsActive
-                select u;
+               where (u.IsActive && boolParam) == u.IsActive
+               select u;
       var lstUsers0 = q0.ToList();
 
       // MS SQL, MySql : bit field is integer, so
@@ -628,10 +633,31 @@ namespace Vita.Testing.ExtendedTests {
       var lstUsers3 = q3.ToList();
       Assert.IsTrue(lstUsers3.Count > 0, "Bit field - use in anon object failed.");
 
-      Startup.BooksApp.Flush(); 
+      Startup.BooksApp.Flush();
     }
 
 
+    [TestMethod]
+    public void TestLinqBoolOutputColumns() {
+      // We test that LINQ engine correctly handles bool values in return columns
+      var app = Startup.BooksApp;
+      var session = app.OpenSession();
+
+      // Some servers (MS SQL, Oracle) do not support bool as valid output type
+      //   So SQL like "SELECT (2 > 1) As BoolValue" fails
+      // LINQ engine automatically adds IIF(<boolValue>, 1, 0)
+      // Another trouble: MySql stores bools as UInt64, but comparison results in Int64
+      // Oracle does not allow queries without FROM, so engine automatically adds 'FROM dual' which if fake FROM clause
+      session = app.OpenSession();
+      var hasFiction = session.EntitySet<IBook>().Any(b => b.Category == BookCategory.Fiction);
+      Assert.IsTrue(hasFiction, "Expected hasFiction to be true");
+
+      // another variation
+      var books = session.EntitySet<IBook>().Where(b => b.Authors.All(a => a.LastName != null)).ToArray();
+      Assert.IsTrue(books.Length > 0, "Expected all books");
+
+
+    }
     [TestMethod]
     public void TestLinqContains() {
 
@@ -679,22 +705,26 @@ namespace Vita.Testing.ExtendedTests {
       IDbCommand cmd;
 
       // Join/Distinct/Count combinations. Encountered error: The column 'Id' was specified multiple times for 'X'. 
-      var qJoin = from b in books.WithOptions(QueryOptions.ForceIgnoreCase)
-              join p in pubs on b.Publisher equals p
-              where p.Name == "MS Books"
-              select new { B = b, P = p }; //
-      var joinDistinct = qJoin.Distinct().ToList();
-      Assert.IsTrue(joinDistinct.Count > 0, "JoinDistinct query failed.");
-      var joinCount = qJoin.Count();
-      Assert.IsTrue(joinCount > 0, "JoinCount query failed.");
-      var joinDistinctCount = qJoin.Distinct().Count();
-      Assert.IsTrue(joinDistinctCount > 0, "JoinDistinctCount query failed.");
-      var joinDistinctTake = qJoin.Distinct().Take(3).ToList();
-      Assert.IsTrue(joinDistinctTake.Count > 0, "JoinDistinctTake query failed.");
-      //var joinDistinctSkipTake = qJoin.Distinct().Skip(1).Take(3).ToList();
-      var joinDistinctSkipTake = qJoin.Distinct().Skip(1).Take(2).ToList();
-      cmd = session.GetLastCommand();
-      Assert.IsTrue(joinDistinctSkipTake.Count > 0, "JoinDistinctSkipTake query failed.");
+      // does not work for Oracle - the produced SQL has GroupBy with all output columns; book.Abstract is blob text, a
+      // and Oracle does not allow such columns in GroupBy
+      if(Startup.ServerType != DbServerType.Oracle) {
+        var qJoin = from b in books.WithOptions(QueryOptions.ForceIgnoreCase)
+                    join p in pubs on b.Publisher equals p
+                    where p.Name == "MS Books"
+                    select new { B = b, P = p }; //
+        var joinDistinct = qJoin.Distinct().ToList();
+        Assert.IsTrue(joinDistinct.Count > 0, "JoinDistinct query failed.");
+        var joinCount = qJoin.Count();
+        Assert.IsTrue(joinCount > 0, "JoinCount query failed.");
+        var joinDistinctCount = qJoin.Distinct().Count();
+        Assert.IsTrue(joinDistinctCount > 0, "JoinDistinctCount query failed.");
+        var joinDistinctTake = qJoin.Distinct().Take(3).ToList();
+        Assert.IsTrue(joinDistinctTake.Count > 0, "JoinDistinctTake query failed.");
+        //var joinDistinctSkipTake = qJoin.Distinct().Skip(1).Take(3).ToList();
+        var joinDistinctSkipTake = qJoin.Distinct().Skip(1).Take(2).ToList();
+        cmd = session.GetLastCommand();
+        Assert.IsTrue(joinDistinctSkipTake.Count > 0, "JoinDistinctSkipTake query failed.");
+      } // if !Oracle
 
       // New operator hidden inside Count(). Added special handling of New in SqlBuilder
       var qJoin2 = from b in books
@@ -736,8 +766,8 @@ namespace Vita.Testing.ExtendedTests {
 
       // Embedding subquery for max price inside another query. 
       var qBookWMaxPrice = from b in session.EntitySet<IBook>()
-                            where b.Price == session.EntitySet<IBook>().Max(b1 => b1.Price)
-                            select b;
+                           where b.Price == session.EntitySet<IBook>().Max(b1 => b1.Price)
+                           select b;
       var lmax = qBookWMaxPrice.ToList();
       Assert.IsTrue(lmax.Count > 0, "Expected non-empty list.");
 
@@ -749,13 +779,15 @@ namespace Vita.Testing.ExtendedTests {
       Assert.IsTrue(lmax2.Count > 0, "Expected non-empty list.");
 
       // Test ForceIgnoreCase option
-      session = app.OpenSession();
-      var q = session.EntitySet<IBook>().Where(b => b.Title == "vb pRogramming" && b.Title.StartsWith("vb"))
-        .WithOptions(QueryOptions.ForceIgnoreCase);
-      var vbBk = q.FirstOrDefault();
-      Assert.IsTrue(vbBk != null, "Case-insensitive match failed");
-
-
+      // does not work for Oracle, no way to force case-insensitive on query level - 
+      // only by explicitly using Title.ToUpper() in linq query
+      if(Startup.ServerType != DbServerType.Oracle) {
+        session = app.OpenSession();
+        var q = session.EntitySet<IBook>().Where(b => b.Title == "vb pRogramming" && b.Title.StartsWith("vb"))
+          .WithOptions(QueryOptions.ForceIgnoreCase);
+        var vbBk = q.FirstOrDefault();
+        Assert.IsTrue(vbBk != null, "Case-insensitive match failed");
+      } // if !Oracle
     }
 
     [TestMethod]
@@ -785,9 +817,9 @@ namespace Vita.Testing.ExtendedTests {
 
       // Nullable entity refs and strings
       IUser someEditor = null;
-      string someAbstract = null;
+      string someCode = null;
       var qNullCompare = from b in session.EntitySet<IBook>()
-                         where b.Editor == someEditor || b.Abstract == someAbstract
+                         where b.SpecialCode == someCode || b.Editor == someEditor  
                          select b;
       var booksNullCompare = qNullCompare.ToList();
       var cmd = session.GetLastCommand();
@@ -866,26 +898,6 @@ namespace Vita.Testing.ExtendedTests {
       LogLastQuery(session);
       Assert.IsTrue(list3.Count > 0, "overload #3 failed.");
 
-      /*
-      //overload #4 - not supported, throws 'Failed to translate, unsupported...' exception
-      //if(!Startup.CacheEnabled) {
-        //These 2 queries run OK if we have entity cache enabled (default for running in Test Explorer in VS)
-        // In this case the query is executed as Linq-2-objects query and it succeeds.
-        var linqEx = TestUtil.ExpectFailWith<Exception>(() => {
-          var query4 = session.EntitySet<IBook>().GroupBy(b => b.Publisher.Id,
-            b => new { Title = b.Title, Price = b.Price }, (id, titles) => new { Id = id, Count = titles.Count() });
-          var list4 = query4.ToList();
-        });
-        Assert.IsTrue(linqEx is Vita.Data.Linq.Translation.LinqTranslationException, "Expected Linq translation failure.");
-
-        // another not supported GroupBy variation
-        linqEx = TestUtil.ExpectFailWith<Exception>(() => {
-          var query3b = session.EntitySet<IBook>().GroupBy(b => b.Publisher.Id, (id, books) => new { PubId = id, Books = books });
-          var list3b = query3b.ToList();
-        });
-        Assert.IsTrue(linqEx is Vita.Data.Linq.Translation.LinqTranslationException, "Expected Linq translation failure.");
-       }// if !CacheEnabled
-       */
 
       // SQL-like syntax Group-By
       var booksByCat = from b in session.EntitySet<IBook>()
@@ -1117,8 +1129,8 @@ namespace Vita.Testing.ExtendedTests {
       Assert.IsTrue(bookList.Count > 0, "Expected some book by CreatedOn.Date");
 
       switch (Startup.ServerType) {
-        //MySql, Postgres TIME() not supported
-        case DbServerType.MySql: case DbServerType.Postgres:
+        //MySql, Postgres, Oracle TIME() not supported
+        case DbServerType.MySql: case DbServerType.Postgres:   case DbServerType.Oracle:
           break; 
         default: 
           bookList = books.Where(b => b.CreatedOn.TimeOfDay == createdOn.TimeOfDay).ToList();

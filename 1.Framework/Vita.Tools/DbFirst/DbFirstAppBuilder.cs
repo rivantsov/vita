@@ -14,6 +14,7 @@ using Vita.Data.Driver;
 using Vita.Entities.Utilities;
 using Vita.Entities.Logging;
 using Vita.Entities.Model.Construction;
+using Vita.Data.Driver.TypeSystem;
 
 namespace Vita.Tools.DbFirst {
 
@@ -38,7 +39,7 @@ namespace Vita.Tools.DbFirst {
     DbModel _dbModel;
     EntityApp _app;
     EntityModel _entityModel;
-    DbTypeRegistry _typeRegistry;
+    IDbTypeRegistry _typeRegistry;
 
     static int _callCount; // artificial counter to generate unique temp namespaces for multiple calls
     string _tempNamespace; //temp namespace for generating interface Types; 
@@ -53,8 +54,14 @@ namespace Vita.Tools.DbFirst {
       _app = new EntityApp();
       var log = new ActivationLog(_app.ActivationLogPath);
       _dbSettings = new DbSettings(_config.Driver, config.Driver.GetDefaultOptions(), _config.ConnectionString);
-      _dbSettings.SetSchemas(_config.Schemas);
+      // create loader and setup filter
       var modelLoader = _config.Driver.CreateDbModelLoader(_dbSettings, log);
+      // TODO: add filtering table list
+      var loadFilter = new DbModelLoadFilter();
+      loadFilter.Schemas.UnionWith(_config.Schemas);
+      loadFilter.Tables.AddRange(_config.TableNames);
+      modelLoader.LoadFilter = loadFilter;
+      //actually load model
       _dbModel = modelLoader.LoadModel();
       Util.Check(_dbModel.Tables.Count() > 0, "No tables found in the database. Code generation aborted.");
       // Prepare type generator
@@ -75,11 +82,11 @@ namespace Vita.Tools.DbFirst {
 
     private void GenerateModulesAndAreas() {
       if( _dbModel.Driver.Supports(DbFeatures.Schemas)) {
-        var schemas = _dbSettings.GetSchemas().ToList();
+       // var schemas = _dbSettings.GetSchemas().ToList();
         foreach(var schInfo in _dbModel.Schemas) {
           var sch = schInfo.Schema;
-          if(schemas.Count > 0 && !schemas.Contains(sch))
-            continue;
+         // if(schemas.Count > 0 && !schemas.Contains(sch))
+         //   continue;
           var area = _app.AddArea(sch);
           var module = new EntityModule(area, "EntityModule" + sch.FirstCap());
         }
@@ -141,29 +148,24 @@ namespace Vita.Tools.DbFirst {
             member.Flags |= EntityMemberFlags.Identity;
             member.AutoValueType = AutoType.Identity;
           }
-          //hack
-          if (col.TypeInfo.StorageType.TypeName == "timestamp")
+          //hack for MS SQL
+          if (col.TypeInfo.TypeDef.Name == "timestamp")
             member.AutoValueType = AutoType.RowVersion;
           member.Size = (int)col.TypeInfo.Size;
           member.Scale = col.TypeInfo.Scale;
           member.Precision = col.TypeInfo.Precision;
           //Check if we need to specify DbType or DbType spec explicitly
-          bool isMemo = member.Size < 0;
-          if(isMemo)
+          bool unlimited = member.Size < 0;
+          if(unlimited)
             member.Flags |= EntityMemberFlags.UnlimitedSize;
-          var typeDef = col.TypeInfo.StorageType;
+          var typeDef = col.TypeInfo.TypeDef;
 
           // Detect if we need to set explicity DbType or DbTypeSpec in member attribute
-          var dftTypeDef = _typeRegistry.FindStorageType(member.DataType, isMemo);
-          if(typeDef == dftTypeDef)
-            continue; //no need for explicit DbType
-          //DbTypeDef is not default for this member - we need to specify DbType or TypeSpec explicitly
-          // Let's see if explicit DbType is enough; let's try to search by DbType and check if it brings the same db type
-          var vendorTypeDef = _typeRegistry.FindDbTypeDef(col.TypeInfo.StorageType.DbType, memberDataType, isMemo);
-          if (vendorTypeDef == typeDef)
-            member.ExplicitDbType = col.TypeInfo.StorageType.DbType; //Explicit db type is enough
-          else
-            member.ExplicitDbTypeSpec = col.TypeInfo.SqlTypeSpec;
+          var dftMapping = _typeRegistry.GetDbTypeInfo(member);
+          if(col.TypeInfo.Matches(dftMapping))
+            continue; //no need for explicit DbTypeSpec
+          //DbTypeMapping is not default for this member - we need to specify DbType or TypeSpec explicitly
+          member.ExplicitDbTypeSpec = col.TypeInfo.DbTypeSpec;
         }
       }//foreach table
     }//method
@@ -368,7 +370,7 @@ namespace Vita.Tools.DbFirst {
     private Type GetMemberType(DbColumnInfo colInfo) {
       var nullable = colInfo.Flags.IsSet(DbColumnFlags.Nullable);
       var typeInfo = colInfo.TypeInfo;
-      var mType = typeInfo.StorageType.ColumnOutType;
+      var mType = typeInfo.ClrType;
       if(mType.IsValueType && nullable)
         mType = ReflectionHelper.GetNullable(mType);
       Type forcedType;

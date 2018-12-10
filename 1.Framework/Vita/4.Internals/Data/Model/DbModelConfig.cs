@@ -22,7 +22,7 @@ namespace Vita.Data.Model {
     public readonly Dictionary<string, string> SchemaMappings 
              = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
     public IDbNamingPolicy NamingPolicy;
-    public string DbViewPrefix = "v"; 
+    public string DbViewPrefix = "v";
     public DbModel SharedDbModel; 
 
     public DbModelConfig(DbDriver driver, DbOptions options, IDbNamingPolicy namingPolicy = null,

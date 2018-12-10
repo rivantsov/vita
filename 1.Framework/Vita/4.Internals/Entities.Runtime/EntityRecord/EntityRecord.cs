@@ -35,10 +35,6 @@ namespace Vita.Entities.Runtime {
     public object UserPermissions; 
     public object ByRefUserPermissions; //delegated permissions
 
-    //Counts # of times record had been submitted to physical database. Should be at least 1 after ApplyUpdates
-    public int SubmitCount;
-
-
     //special secondary index for sorting records that are in non-trivial topological groups
     internal int SortSubIndex; 
 
@@ -244,10 +240,6 @@ namespace Vita.Entities.Runtime {
         Status = EntityStatus.Loaded;
       if (_status == EntityStatus.Loaded || _status == EntityStatus.Stub)
         return;
-      const string msg =
-        "Entity {0} had not been submitted to any persistent store on update. Check that entity area {1} is mapped to a datastore.";
-      Util.Check(SubmitCount > 0, msg, this.EntityInfo.FullName, this.EntityInfo.Area.Name);
-      SubmitCount = 0;
       if (Status == EntityStatus.Deleting) {
         Status = EntityStatus.Fantom;
         return;
@@ -268,7 +260,6 @@ namespace Vita.Entities.Runtime {
       HashSet<EntityMemberInfo> modifiedMembers = null; 
       if (this.PropertyChanged != null)
         modifiedMembers = GetModifiedMembers(); 
-      SubmitCount = 0;
       switch (Status) {
         case EntityStatus.Loaded: return; 
         case EntityStatus.New: Status = EntityStatus.Fantom; break;

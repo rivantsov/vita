@@ -15,11 +15,12 @@ using Vita.Data.Driver;
 using Vita.Entities.Utilities;
 using Vita.Data.Driver.InfoSchema;
 using Vita.Tools.Testing;
+using System.Collections.Generic;
 
 namespace Vita.Testing.BasicTests.DataTypes {
   using Binary = Vita.Entities.Binary;
 
-  [TestClass] 
+  [TestClass]
   public class DataTypesTests {
 
     public enum SimpleEnum {
@@ -45,7 +46,7 @@ namespace Vita.Testing.BasicTests.DataTypes {
       // Guid
       [PrimaryKey]
       Guid Id { get; set; }
-        
+
       // strings
       [Size(20), Nullable]
       string StringProp { get; set; }
@@ -108,22 +109,25 @@ namespace Vita.Testing.BasicTests.DataTypes {
 
       DateTimeOffset DateTimeOffsetProp { get; set; }
 
-      [Column(DbType = DbType.AnsiStringFixedLength, Size = 10)]
+      [Column(DbTypeSpec = "char(10)"), Size(10)]
       string CharNProp { get; set; }
 
-      [Column(DbType = DbType.StringFixedLength, Size = 10)]
+      [Column(DbTypeSpec = "nchar(10)", Size = 10)]
       string NCharNProp { get; set; }
 
-      [Column(DbType = DbType.AnsiString, Size = 10)]
+      [Column(Size = 10, AnsiString = true)]
       string VarCharProp { get; set; }
 
-      [Column(DbType = DbType.Date)]
+      [Column(DbTypeSpec = "Date")]
       DateTime DateProp { get; set; }
 
-      [Column(DbType = DbType.DateTime)] //not DateTime2 which is default
+      [Column(DbTypeSpec = "datetime")] //not DateTime2 which is default
       DateTime DateTimeProp { get; set; }
 
-      [Column(DbType = DbType.Time)]
+      [Column(Precision = 3)] // precision to ms (3 digits), not 7 as default
+      DateTime DateTimeMsProp { get; set; }
+
+      [Column(DbTypeSpec = "time")]
       TimeSpan TimeProp { get; set; }
 
       [Column(DbTypeSpec = "SmallDateTime")]
@@ -144,7 +148,7 @@ namespace Vita.Testing.BasicTests.DataTypes {
       [Column(DbTypeSpec = "smallmoney")]
       Decimal SmallMoneyProp { get; set; }
 
-      [Column(DbTypeSpec = "sql_variant")] 
+      [Column(DbTypeSpec = "sql_variant")]
       object SqlVariantProp { get; set; }
 
       [Column("DisplayUrl", DbTypeSpec = "varchar(max)"), Unlimited, Nullable]
@@ -173,10 +177,13 @@ namespace Vita.Testing.BasicTests.DataTypes {
         var area = AddArea("types");
         var mainModule = new EntityModule(area, "MainModule");
         mainModule.RegisterEntities(typeof(IDataTypesEntity));
+        //Make sure setup is run and ServerType is set
+        if(Startup.Driver == null)
+          Startup.SetupForTestExplorerMode();
         switch(Startup.ServerType) {
-          case DbServerType.MsSql: 
+          case DbServerType.MsSql:
             mainModule.RegisterEntities(typeof(IMsSqlDataTypesEntity), typeof(IMsSqlRowVersionedProduct));
-            break; 
+            break;
 
         }
       }
@@ -187,7 +194,6 @@ namespace Vita.Testing.BasicTests.DataTypes {
 
     [TestInitialize]
     public void Init() {
-      Startup.DropSchemaObjects("types"); 
       _app = new DataTypesTestEntityApp();
       Startup.ActivateApp(_app);
     }
@@ -196,7 +202,6 @@ namespace Vita.Testing.BasicTests.DataTypes {
     public void Cleanup() {
       if(_app != null) {
         _app.Shutdown();
-        System.Threading.Thread.Sleep(100);
       }
     }
 
@@ -219,11 +224,13 @@ namespace Vita.Testing.BasicTests.DataTypes {
     }
 
 
+
     [TestMethod]
     public void TestDataTypes() {
       var ctx = _app.CreateSystemContext(); 
       var session = ctx.OpenSession();
       session.LogMessage("TestDataTypes test started.");
+
 
       //Create 2 entities, to verify how batch updates work for all data types; batch is used only when there's more than 1 update
       var ent1 = CreateDataTypesEntity(session, "abcd", "Unlimited property 1");
@@ -233,6 +240,8 @@ namespace Vita.Testing.BasicTests.DataTypes {
 
       var ent1Id = ent1.Id; 
       session.SaveChanges();
+
+      // OracleTestDataReader(); 
 
       session = ctx.OpenSession();
       var allEntities = session.GetEntities<IDataTypesEntity>(); 
@@ -312,6 +321,11 @@ namespace Vita.Testing.BasicTests.DataTypes {
       CheckDataType(dtColumns, "DateTimeProp", "datetime2");
       CheckDataType(dtColumns, "TimeProp", "time");
       CheckDataType(dtColumns, "SmallDateTimeProp", "smalldatetime");
+      /*
+      CheckDataType(dtColumns, "GeographyProp", "geography");
+      CheckDataType(dtColumns, "GeometryProp", "geometry");
+      CheckDataType(dtColumns, "HierarchyIdProp", "hierarchyid");
+      */
       CheckDataType(dtColumns, "ImageProp", "image");
       CheckDataType(dtColumns, "NTextProp", "ntext");
       CheckDataType(dtColumns, "TextProp", "text");
@@ -348,11 +362,11 @@ namespace Vita.Testing.BasicTests.DataTypes {
       var id = ent.Id = Guid.NewGuid();
       ent.StringProp = strProp;
       ent.MemoProp = memoProp;
-      ent.ByteProp = (byte) rand.Next(255);
+      ent.ByteProp = 234; // (byte) rand.Next(255);
       ent.BoolProp = true;
       ent.Int16Prop = (Int16)rand.Next(Int16.MaxValue);
       ent.Int32Prop = - rand.Next(int.MaxValue - 1);
-      ent.Int64Prop = Int64.MinValue; 
+      ent.Int64Prop = Int64.MinValue + 1; 
       ent.Int32NullProp = 222;
       ent.CharProp = 'X';
 
@@ -405,16 +419,13 @@ namespace Vita.Testing.BasicTests.DataTypes {
       ent.XmlProp = "<foo/>";
       ent.SmallMoneyProp = 1.23m;
       ent.SqlVariantProp = "xx"; // 1234;
+
       return ent; 
     }
 
     public void TestMsSqlRowVersion() {
       if(Startup.ServerType != DbServerType.MsSql)
         return;
-      _app = new DataTypesTestEntityApp();
-      Startup.ActivateApp(_app);
-
-      //Util.Throw("MS SQL RowVersion support not migrated yet. Test disabled.");
       var session = _app.OpenSession();
       var prod = session.NewEntity<IMsSqlRowVersionedProduct>();
       prod.Name = "Coffee Maker 2000";
@@ -454,22 +465,52 @@ namespace Vita.Testing.BasicTests.DataTypes {
         session.SaveChanges();
       });
       Assert.AreEqual(DataAccessException.SubTypeConcurrentUpdate, dex.SubType);
-      var entityName = dex.Data[DataAccessException.KeyEntityName];
-      Assert.AreEqual("MsSqlRowVersionedProduct", entityName, "EntityName mismatch in concurrent update exception");
+      var tableName = dex.Data[DataAccessException.KeyEntityName];
+      Assert.AreEqual("MsSqlRowVersionedProduct", tableName, "Entity name mismatch in concurrent update exception");
       Debug.WriteLine("Concurrent update conflict - as expected.");
     }
 
     //Helper methods to compare 
     private bool Equal(DateTime x, DateTime y) {
       int precMs = 10;
-      if(Startup.ServerType == DbServerType.MySql)
-        precMs = 1000;
+      switch(Startup.ServerType) {
+        case DbServerType.MySql:
+        case DbServerType.Oracle:
+          precMs = 1000;
+          break; 
+      }
       return y > x.AddMilliseconds(-precMs) && y < x.AddMilliseconds(precMs);
     }
 
     private bool Equal(DateTimeOffset x, DateTimeOffset y) {
       return y > x.AddMilliseconds(-10) && y < x.AddMilliseconds(10);
     }
+
+/*
+    public void OracleTestDataReader() {
+      var ctx = _app.CreateSystemContext();
+      var session = ctx.OpenSession();
+
+      // Oracle quick test of output data types
+      var directDb = session.GetDirectDbConnector();
+      var cmd = directDb.DbConnection.CreateCommand();
+      cmd.CommandText = "SELECT * FROM \"DataTypesEntity\"";
+      var reader = directDb.ExecuteSelect(cmd);
+      if (reader.Read()) {
+        var values = new Dictionary<string, object>();
+        for (int i = 0; i < reader.FieldCount; i++) {
+          var colName = reader.GetName(i);
+          var colType = reader.GetFieldType(i);
+          var colValue = reader.GetValue(i);
+          var isNull = reader.IsDBNull(i);
+          Debug.WriteLine($"  Col: {colName}, type: {colType}, value={colValue}");
+          values[colName] = colValue;
+        }
+      }
+      reader.Close();
+      directDb.CloseConnection();
+    }
+*/
 
 
   }

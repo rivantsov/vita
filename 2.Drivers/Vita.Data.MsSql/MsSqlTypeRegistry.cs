@@ -6,127 +6,112 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Microsoft.SqlServer.Server;
-using Vita.Data.Driver;
+
 using Vita.Data.Model;
 using Vita.Entities;
 using Vita.Entities.Logging;
 using Vita.Entities.Model;
 using Vita.Entities.Utilities;
+using Vita.Data.Driver;
+using Vita.Data.Driver.TypeSystem;
 
 namespace Vita.Data.MsSql {
   public class MsSqlTypeRegistry : DbTypeRegistry {
-    // User-defined table type, created by VITA to be used to send array-type parameters to SQLs and stored procedures
-    public static string ArrayAsTableTypeName = "Vita_ArrayAsTable";
-
-    public DbStorageType ArrayAsTableTypeDef;
-
 
     public MsSqlTypeRegistry(MsSqlDbDriver driver) : base(driver) {
       var none = new Type[] { };
       //numerics
-      AddTypeDef("real", SqlDbType.Real, DbType.Single, typeof(Single));
-      AddTypeDef("float", SqlDbType.Float, DbType.Double, typeof(Double));
-      AddTypeDef("decimal", SqlDbType.Decimal, DbType.Decimal, typeof(Decimal), args: "({0},{1})", aliases: "numeric");
+      AddDbTypeDef("real", typeof(Single));
+      AddDbTypeDef("float", typeof(Double));
+      var tsDec = base.AddDbTypeDef("decimal", typeof(Decimal), Data.Driver.TypeSystem.DbTypeFlags.Precision | Data.Driver.TypeSystem.DbTypeFlags.Scale, aliases: "numeric");
+      // we do not have default mapping for decimal; but we set it to (18,4) if not provided
 
       //integers
       // Note: for int types that do not have direct match in database type set, we assign bigger int type in database
       // For example, signed byte (CLR sbyte) does not have direct match, so we use 'smallint' to handle it in the database.
       // For ulong (UInt64) CLR type there's no bigger type, so we handle it using 'bigint' which is signed 64-bit int; as a result there might be overflows 
       // in some cases. 
-      AddTypeDef("int", SqlDbType.Int, DbType.Int32, typeof(int), mapToTypes: new[] { typeof(Int32), typeof(UInt16) });
-      AddTypeDef("smallint", SqlDbType.SmallInt, DbType.Int16, typeof(Int16), mapToTypes: new[] { typeof(Int16), typeof(sbyte) });
-      AddTypeDef("tinyint", SqlDbType.TinyInt, DbType.Byte, typeof(byte));
-      AddTypeDef("bigint", SqlDbType.BigInt, DbType.Int64, typeof(Int64), 
-          mapToTypes: new Type[] { typeof(UInt32), typeof(Int64), typeof(UInt64) });
+      var tsInt = AddDbTypeDef("int", typeof(int));
+      MapMany(new[] { typeof(Int32), typeof(UInt16) }, tsInt);
+      var tsSmallInt = AddDbTypeDef("smallint", typeof(Int16));
+      Map(typeof(sbyte), tsSmallInt);
+      AddDbTypeDef("tinyint", typeof(byte));
+      var tsBigInt = AddDbTypeDef("bigint", typeof(Int64));
+      MapMany(new Type[] { typeof(UInt32), typeof(UInt64) }, tsBigInt);
 
       // Bool
-      AddTypeDef("bit", SqlDbType.Bit, DbType.Boolean, typeof(bool), valueToLiteral: BoolToBitLiteral);
-      // Strings; nvarchar(...) maps to string; the rest are not mapped
-      AddTypeDef("nvarchar", SqlDbType.NVarChar, DbType.String, typeof(string), args: "({0})");
-      AddTypeDef("nvarchar(max)", SqlDbType.NVarChar, DbType.String, typeof(string), flags: DbTypeFlags.Unlimited, loadTypeName: "nvarchar");
+      AddDbTypeDef("bit", typeof(bool), toLiteral: BoolToBitLiteral);
+      base.AddDbTypeDef("nvarchar", typeof(string), Data.Driver.TypeSystem.DbTypeFlags.Size, specialType: DbSpecialType.String);
+      base.AddDbTypeDef("nvarchar(max)", typeof(string), flags: Data.Driver.TypeSystem.DbTypeFlags.Unlimited, specialType: DbSpecialType.StringUnlimited); 
 
-      AddTypeDef("varchar", SqlDbType.VarChar, DbType.AnsiString, typeof(string), args: "({0})", mapToTypes: none);
-      AddTypeDef("varchar(max)", SqlDbType.VarChar, DbType.AnsiString, typeof(string), flags: DbTypeFlags.Unlimited, 
-          mapToTypes: none, loadTypeName: "varchar");
-      AddTypeDef("nchar", SqlDbType.NChar, DbType.StringFixedLength, typeof(string), args: "({0})", mapToTypes: new[] { typeof(char) });
-      AddTypeDef("char", SqlDbType.Char, DbType.AnsiStringFixedLength, typeof(string), args: "({0})", mapToTypes: none);
+      base.AddDbTypeDef("varchar", typeof(string), Data.Driver.TypeSystem.DbTypeFlags.Size | Data.Driver.TypeSystem.DbTypeFlags.Ansi, specialType: DbSpecialType.StringAnsi);
+      base.AddDbTypeDef("varchar(max)", typeof(string), flags: Data.Driver.TypeSystem.DbTypeFlags.Unlimited | Data.Driver.TypeSystem.DbTypeFlags.Ansi, 
+                                specialType: DbSpecialType.StringAnsiUnlimited); 
+      var stNChar = base.AddDbTypeDef("nchar", typeof(string), Data.Driver.TypeSystem.DbTypeFlags.Size);
+      Map(typeof(char), stNChar, size: 1);
+      base.AddDbTypeDef("char", typeof(string), Data.Driver.TypeSystem.DbTypeFlags.Size | Data.Driver.TypeSystem.DbTypeFlags.Ansi);
       //obsolete 
-      AddTypeDef("ntext", SqlDbType.NText, DbType.String, typeof(string), DbTypeFlags.Unlimited | DbTypeFlags.ObsoleteType, mapToTypes: none);
-      AddTypeDef("text", SqlDbType.Text, DbType.AnsiString, typeof(string), DbTypeFlags.Unlimited | DbTypeFlags.ObsoleteType, mapToTypes: none);
+      base.AddDbTypeDef("ntext", typeof(string), Data.Driver.TypeSystem.DbTypeFlags.Unlimited | Data.Driver.TypeSystem.DbTypeFlags.Obsolete);
+      base.AddDbTypeDef("text", typeof(string), Data.Driver.TypeSystem.DbTypeFlags.Unlimited | Data.Driver.TypeSystem.DbTypeFlags.Obsolete);
 
       // Datetime
-      AddTypeDef("datetime2", SqlDbType.DateTime2, DbType.DateTime2, typeof(DateTime));
-      AddTypeDef("date", SqlDbType.Date, DbType.Date, typeof(DateTime), mapToTypes: none);
-      AddTypeDef("time", SqlDbType.Time, DbType.Time, typeof(TimeSpan), mapToTypes: new[] { typeof(TimeSpan) });
-      AddTypeDef("datetime", SqlDbType.DateTime, DbType.DateTime, typeof(DateTime), valueToLiteral: DateTimeToLiteralMsSql, mapToTypes: none);
-      AddTypeDef("smalldatetime", SqlDbType.SmallDateTime, DbType.DateTime, typeof(DateTime),
-                         valueToLiteral: DbValueToLiteralConverters.DateTimeToLiteralNoMs, mapToTypes: none);
+      // datetime2 may have optional #of-digits parameter (scale). Setting ArgsOptional makes allows it to register as default for 
+      var datetime2 = base.AddDbTypeDef("datetime2", typeof(DateTime), Data.Driver.TypeSystem.DbTypeFlags.Precision, defaultPrecision: 7);
+
+      base.AddDbTypeDef("datetime", typeof(DateTime), mapColumnType: false, toLiteral: DateTimeToLiteralMsSql);
+      base.AddDbTypeDef("date", typeof(DateTime), mapColumnType: false);
+      AddDbTypeDef("time", typeof(TimeSpan));
+      base.AddDbTypeDef("smalldatetime", typeof(DateTime), mapColumnType: false,  toLiteral: DbValueToLiteralConverters.DateTimeToLiteralNoMs);
 
       // Binaries
-      var binTypes = new Type[] { typeof(byte[]), typeof(Vita.Entities.Binary) };
-      AddTypeDef("varbinary", SqlDbType.VarBinary, DbType.Binary, typeof(byte[]), DbTypeFlags.None, 
-                              args: "({0})", mapToTypes: binTypes);
-      AddTypeDef("varbinary(max)", SqlDbType.VarBinary, DbType.Binary, typeof(byte[]), DbTypeFlags.Unlimited,
-                              mapToTypes: binTypes, loadTypeName: "varbinary");
-      AddTypeDef("binary", SqlDbType.Binary, DbType.Binary, typeof(byte[]), args: "({0})", mapToTypes: none);
-      AddTypeDef("image", SqlDbType.Image, DbType.Binary, typeof(byte[]), DbTypeFlags.Unlimited, mapToTypes: none);
+      var tbinary = typeof(Vita.Entities.Binary);
+      var stVarBin = base.AddDbTypeDef("varbinary", typeof(byte[]), Data.Driver.TypeSystem.DbTypeFlags.Size, specialType: DbSpecialType.Binary);
+      Map(tbinary, stVarBin);
+      var stVarBinMax = base.AddDbTypeDef("varbinary(max)", typeof(byte[]), Data.Driver.TypeSystem.DbTypeFlags.Unlimited, specialType: DbSpecialType.BinaryUnlimited);
+      Map(tbinary, stVarBinMax);
+      var tsBin = base.AddDbTypeDef("binary", typeof(byte[]), Data.Driver.TypeSystem.DbTypeFlags.Size);
+      Map(tbinary, tsBin);
+      base.AddDbTypeDef("image", typeof(byte[]), Data.Driver.TypeSystem.DbTypeFlags.Unlimited | Data.Driver.TypeSystem.DbTypeFlags.Obsolete);
 
-      AddTypeDef("uniqueidentifier", SqlDbType.UniqueIdentifier, DbType.Guid, typeof(Guid) );
-      AddTypeDef("datetimeoffset", SqlDbType.DateTimeOffset, DbType.DateTimeOffset, typeof(DateTimeOffset));
-      AddTypeDef("money", SqlDbType.Money, DbType.Currency, typeof(Decimal), flags: DbTypeFlags.None, mapToTypes: none);
+      AddDbTypeDef("uniqueidentifier", typeof(Guid));
 
       // MS SQL specific types. 
-      // Note: DbType.Object is for "... general type representing any reference or value type not explicitly represented by another DbType value."
-      // So we use DbType.Object for such cases
-      AddTypeDef("smallmoney", SqlDbType.SmallMoney, DbType.Currency, typeof(Decimal), mapToTypes: none);
+      AddDbTypeDef("datetimeoffset", typeof(DateTimeOffset));
+      base.AddDbTypeDef("money", typeof(Decimal), mapColumnType: false);
+      base.AddDbTypeDef("smallmoney", typeof(Decimal), mapColumnType: false);
 
-      AddTypeDef("rowversion", SqlDbType.Timestamp, DbType.Binary, typeof(byte[]), aliases: "timestamp", mapToTypes: none);
-      AddTypeDef("xml", SqlDbType.Xml, DbType.Object, typeof(string), flags: DbTypeFlags.Unlimited, mapToTypes: none);
-      AddTypeDef("sql_variant", SqlDbType.Variant, DbType.Object, typeof(object), 
-        valueToLiteral: DbValueToLiteralConverters.DefaultValueToLiteral, mapToTypes: none);
+      base.AddDbTypeDef("rowversion", typeof(byte[]), aliases: "timestamp", mapColumnType: false);
+      base.AddDbTypeDef("xml", typeof(string), flags: Data.Driver.TypeSystem.DbTypeFlags.Unlimited);
+      AddDbTypeDef("sql_variant", typeof(object), toLiteral: DbValueToLiteralConverters.DefaultValueToLiteral);
 
       // we register these exotic binary types as unlimited
-      AddTypeDef("hierarchyid", SqlDbType.Binary, DbType.Object, typeof(byte[]), flags: DbTypeFlags.Unlimited, mapToTypes: none);
+      base.AddDbTypeDef("hierarchyid", typeof(byte[]), flags: Data.Driver.TypeSystem.DbTypeFlags.Unlimited);
       // for geography, geometry SqlDbType.Udt does not work
-      AddTypeDef("geography", SqlDbType.Binary, DbType.Object, typeof(byte[]), flags: DbTypeFlags.Unlimited, mapToTypes: none);
-      AddTypeDef("geometry", SqlDbType.Binary, DbType.Object, typeof(byte[]), flags: DbTypeFlags.Unlimited, mapToTypes: none);
+      base.AddDbTypeDef("geography", typeof(byte[]), flags: Data.Driver.TypeSystem.DbTypeFlags.Unlimited);
+      base.AddDbTypeDef("geometry", typeof(byte[]), flags: Data.Driver.TypeSystem.DbTypeFlags.Unlimited);
 
-
-      //Init table type
-      ArrayAsTableTypeDef = AddTypeDef(ArrayAsTableTypeName, SqlDbType.Structured, DbType.Object, columnOutType: typeof(object),
-          mapToTypes: none,
-          dbFirstClrType: typeof(object), flags: DbTypeFlags.UserDefined, valueToLiteral: base.GetListLiteral);
-      ArrayAsTableTypeDef.ConvertToTargetType = ConvertListToRecordList;
-      ArrayAsTableTypeDef.IsList = true;
     }
 
-    public override DbStorageType FindDbTypeDef(string typeName, bool unlimited) {
-      typeName = typeName.ToLowerInvariant(); 
-      switch(typeName) {
-        case "image":
-        case "text":
-        case "ntext":
-        case "xml":
-          unlimited = true;
-          break;
+
+    public override DbTypeInfo GetDbTypeInfo(string typeSpec, EntityMemberInfo forMember) {
+      if (typeSpec.EndsWith("(max)", StringComparison.OrdinalIgnoreCase)) {
+        if(!TypeDefsByName.TryGetValue(typeSpec, out var stype))
+          return null;
+        return stype.DefaultTypeInfo;
       }
-      return base.FindDbTypeDef(typeName, unlimited);
-    }
-    public override DbStorageType FindStorageType(Type clrType, bool isMemo) {
-      var td = base.FindStorageType(clrType, isMemo);
-      if(td != null)
-        return td;
-      if(clrType.IsListOfDbPrimitive())
-        return ArrayAsTableTypeDef;
-      return null; 
+      return base.GetDbTypeInfo(typeSpec, forMember);
     }
 
-    public override DbColumnTypeInfo GetColumnTypeInfo(EntityMemberInfo forMember, IActivationLog log) {
-      // timestamp is obsolete, recommended to use rowversion everywhere. However info-schema.columns query still 
-      // returns timestamp, not rowversion. This brings problems in some model comparisons, so we just change it here. 
-      if(forMember.ExplicitDbTypeSpec?.ToLowerInvariant() == "timestamp")
-        forMember.ExplicitDbTypeSpec = "rowversion"; 
-      return base.GetColumnTypeInfo(forMember, log);
+    public override DbTypeInfo GetDbTypeInfo(string typeName, long size = 0, byte prec = 0, byte scale = 0) {
+      switch(typeName.ToLowerInvariant()) {
+        case "varchar":
+        case "nvarchar":
+        case "varbinary":
+          if(size < 0)
+            typeName += "(max)";
+          break; 
+      }
+      return base.GetDbTypeInfo(typeName, size, prec, scale);
     }
 
     // Special converters for literal presentations (used in batch mode). Default converter provides too much precision and it blows up 
@@ -146,10 +131,8 @@ namespace Vita.Data.MsSql {
     }
 
     // Used for sending lists in SqlParameter, to use in SQL clauses like 'WHERE x IN (@P0)"
-    // @P0 should be declarate as VITA_ArrayAsTable data type. 
-    // We can use DataTable as a container, but DataTable is not supported by .NET core;
-    // we use alternative: IEnumerable<SqlDataRecord>, it is supported. 
-    // TODO: review the method and optimize it. 
+    // @P0 should be declared as VITA_ArrayAsTable data type. 
+    // The values are packed as IEnumerable<SqlDataRecord> 
     internal static object ConvertListToRecordList(object value) {
       var list = value as System.Collections.IEnumerable;
       var valueType = value.GetType();

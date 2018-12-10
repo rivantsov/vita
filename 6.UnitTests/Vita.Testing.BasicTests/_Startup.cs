@@ -53,9 +53,8 @@ namespace Vita.Testing.BasicTests {
         connString = connString.Replace("{bin}", binFolder);
       }
       ConnectionString = connString;
-      Driver = ToolHelper.CreateDriver(ServerType); 
+      Driver = DataUtility.CreateDriver(ServerType); 
       DbOptions = Driver.GetDefaultOptions();
-      //enable stored procs
       //enable batch
       var useBatch = AppConfig["useBatchMode"] == "true";
       if (useBatch && Driver.Supports(DbFeatures.BatchedUpdates))
@@ -64,7 +63,7 @@ namespace Vita.Testing.BasicTests {
         DbOptions &= ~DbOptions.UseBatchMode;
       //check connection
       string error;
-      if(!ToolHelper.TestConnection(Driver, ConnectionString, out error)) {
+      if(!DataUtility.TestConnection(Driver, ConnectionString, out error)) {
         Util.Throw("Failed to connect to the database: {0} \r\n  Connection string: {1}", error, ConnectionString);
       }
     }
@@ -89,7 +88,7 @@ namespace Vita.Testing.BasicTests {
     }
 
     private static void DeleteSqliteDbFile() {
-      var fname = "VitTestSQLite.db";
+      var fname = "VitaTestSQLite.db";
       if (File.Exists(fname))
         File.Delete(fname); 
     }
@@ -99,26 +98,30 @@ namespace Vita.Testing.BasicTests {
         System.IO.File.AppendAllText(LogFilePath, message);
     }
 
-    public static EntityApp ActivateApp(EntityApp app, bool updateSchema = true, bool dropUnknownTables = false) {
-      app.LogPath = LogFilePath;
-      app.ActivationLogPath = ActivationLogPath; 
+    public static EntityApp ActivateApp(EntityApp app, bool dropOldSchema = true, bool dropOldTables = false) {
       //If driver is not set, it means we are running from Test Explorer in VS. Use ServerTypeForTestExplorer
       if(Driver == null)
         SetupForTestExplorerMode();
+      app.LogPath = LogFilePath;
+      app.ActivationLogPath = ActivationLogPath; 
       try {
         //Setup emitter
         app.EntityClassProvider = Vita.Entities.Emit.EntityClassEmitter.CreateEntityClassProvider(); 
         app.Init();
 
-        if (ServerType == DbServerType.SQLite)
-          DeleteSqliteDbFile("VitaTestSqlite.db");
-
-        var upgradeMode = updateSchema ? DbUpgradeMode.Always : DbUpgradeMode.Never;
+        var upgradeMode = DbUpgradeMode.Always;
         var upgradeOptions = DbUpgradeOptions.Default;
-        if(dropUnknownTables)
+        if(dropOldTables)
           upgradeOptions |= DbUpgradeOptions.DropUnknownObjects; 
-        var dbSettings = new DbSettings(Driver, DbOptions, ConnectionString, upgradeMode: upgradeMode, upgradeOptions: upgradeOptions); 
+        var dbSettings = new DbSettings(Driver, DbOptions, ConnectionString, upgradeMode: upgradeMode, upgradeOptions: upgradeOptions);
+        
+        // Drop schema/ delete all
+        if(dropOldSchema) {
+          DropSchemaObjects(app, dbSettings);
+        } 
         app.ConnectTo(dbSettings);
+        if (!dropOldSchema)
+          DeleteAll(app);
         return app;
       } catch (StartupFailureException sx) {
         //Unit test framework shows only ex message, not details; let's write specifics into debug output - it will be shown in test failure report
@@ -130,40 +133,31 @@ namespace Vita.Testing.BasicTests {
       }
     }
 
+    public static void DropSchemaObjects(EntityApp app, DbSettings dbSettings) {
+      // SQLite tests starts with a copy of an empty database, no need to delete (it fails in fact)
+      if(ServerType == DbServerType.SQLite)
+        return;
+      DataUtility.DropSchemaObjects(app, dbSettings); 
+    }
+
+
     private static void DeleteSqliteDbFile(string fname) {
       if (File.Exists(fname))
         File.Delete(fname);
     }
 
 
-    public static void DeleteAll(EntityApp app, params Type[] entitiesToDelete) {
-      TestUtil.DeleteAllData(app, null, entitiesToDelete); 
+    public static void DeleteAll(EntityApp app) {
+      DataUtility.DeleteAllData(app); 
     }
 
-    public static void DropSchemaObjects(string schema) {
-      if (Driver == null)
-        SetupForTestExplorerMode();
-      // SQLite starts with a copy of an empty database, no need to deleate (it fails in fact)
-      switch(ServerType) {
-        case DbServerType.SQLite: 
-          return; 
-      }
-      //SQLite and SqlCe do not support schemas so we effectively wipe out database for each test
+    public static DbModel LoadDbModel(EntityApp app) {
       var dbSettings = new DbSettings(Driver, DbOptions, ConnectionString);
-      dbSettings.SetSchemas(new[] { schema });
-      TestUtil.DropSchemaObjects(dbSettings); 
-    }      
-
-    public static DbModel LoadDbModel(string schema, IActivationLog log) {
-      if (Driver == null)
-        SetupForTestExplorerMode();
-      var dbSettings = new DbSettings(Driver, DbOptions, ConnectionString);
-      dbSettings.SetSchemas(new[] { schema });
-      var loader = Driver.CreateDbModelLoader(dbSettings, log);
-      var dbModel = loader.LoadModel();
-      if (log.HasErrors)
+      var dbModel = DataUtility.LoadDbModel(app, dbSettings);
+      var log = app.ActivationLog;
+      if(log.HasErrors)
         Util.Throw("Model loading errors: \r\n" + log.GetAllAsText());
-      return dbModel;
+      return dbModel; 
     }
 
   }//class

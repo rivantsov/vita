@@ -37,17 +37,19 @@ namespace Vita.Tools.DbFirst {
     public readonly IDictionary<string, AutoType> AutoValues;
     public readonly IDictionary<string, Type> ForceDataTypes;
     public readonly DbDriver Driver;
-    public readonly HashSet<string> IgnoreTables;
+    public readonly HashSet<string> IgnoreTables = new StringSet();
+    public readonly List<string> TableNames = new List<string>();
 
     public DbFirstConfig() { }
 
     public DbFirstConfig(XmlDocument configDoc) {
       var rootEl = configDoc.DocumentElement; 
       ProviderType = rootEl.GetValue(ToolConfigNames.Provider);
-      var serverType = (DbServerType) Enum.Parse(typeof(DbServerType), ProviderType);
+      var serverType = StringHelper.ParseEnum<DbServerType>(ProviderType);
       ConnectionString = rootEl.GetValue(ToolConfigNames.ConnectionString);
-      Driver = ToolHelper.CreateDriver(serverType);
-      Options = StringHelper.ParseEnum<DbFirstOptions>(rootEl.GetValue(ToolConfigNames.Options));
+      Driver = DataUtility.CreateDriver(serverType);
+      var strOptions = rootEl.GetValue(ToolConfigNames.Options);
+      Options = StringHelper.ParseEnum<DbFirstOptions>(strOptions, DbFirstOptions.None);
       Schemas = rootEl.GetValueList(ToolConfigNames.Schemas);
       OutputPath = rootEl.GetValue(ToolConfigNames.OutputPath);
       Namespace = rootEl.GetValue(ToolConfigNames.Namespace);
@@ -57,10 +59,13 @@ namespace Vita.Tools.DbFirst {
       AutoValues = ParseAutoValuesSpec(autoValueSpec);
       var dataTypesSpec = rootEl.GetValue(ToolConfigNames.ForceDataTypes);
       ForceDataTypes = ParseDataTypesSpec(dataTypesSpec);
-      IgnoreTables = new StringSet();
       var ignoreList = rootEl.GetValue(ToolConfigNames.IgnoreTables);
       if(!string.IsNullOrWhiteSpace(ignoreList))
         IgnoreTables.UnionWith(ignoreList.Split(new [] {',', ';'}, StringSplitOptions.RemoveEmptyEntries));
+      // 
+      var tableNames = rootEl.GetValue(ToolConfigNames.TableNames);
+      if(!string.IsNullOrWhiteSpace(tableNames))
+        this.TableNames.AddRange(tableNames.Split(','));
     }
 
     public static DbFirstConfig FromXml(string xml) {

@@ -27,7 +27,7 @@ namespace Vita.Tools.DbUpdate {
       ProviderType = xmlConfig.GetValue(ToolConfigNames.Provider);
       var serverType = (DbServerType) Enum.Parse(typeof(DbServerType), ProviderType); 
       ConnectionString = xmlConfig.GetValue(ToolConfigNames.ConnectionString);
-      Driver = ToolHelper.CreateDriver(serverType);
+      Driver = DataUtility.CreateDriver(serverType);
       ModelUpdateOptions = StringHelper.ParseEnum<DbUpgradeOptions>(xmlConfig.GetValue(ToolConfigNames.ModelUpdateOptions));
       DbOptions = StringHelper.ParseEnum<DbOptions>(xmlConfig.GetValue(ToolConfigNames.DbOptions));
       AssemblyPath = xmlConfig.GetValue(ToolConfigNames.AssemblyPath);

@@ -45,8 +45,10 @@ namespace Vita.Tools.DbUpdate {
       entApp.Init();
       var dbSettings = new DbSettings(_config.Driver, _config.DbOptions, _config.ConnectionString, 
                    upgradeMode: DbUpgradeMode.Always, upgradeOptions: _config.ModelUpdateOptions);
+      /*
       var schemas = entApp.Areas.Select(a => a.Name).ToList();
       dbSettings.SetSchemas(schemas);
+      */
 
       var log = new ActivationLog(null);
       var dbModelBuilder = new DbModelBuilder(entApp.Model, dbSettings.ModelConfig, log);

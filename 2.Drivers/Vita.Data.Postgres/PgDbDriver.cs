@@ -22,7 +22,7 @@ namespace Vita.Data.Postgres {
     public const DbOptions DefaultPgDbOptions = DbOptions.UseRefIntegrity | DbOptions.AutoIndexForeignKeys; 
     public const DbFeatures PgFeatures =
       DbFeatures.Schemas | DbFeatures.StoredProcedures | DbFeatures.OutputParameters | DbFeatures.DefaultParameterValues
-        | DbFeatures.ReferentialConstraints | DbFeatures.ClusteredIndexes 
+        | DbFeatures.ReferentialConstraints | DbFeatures.ClusteredIndexes | DbFeatures.InsertMany
         | DbFeatures.Views | DbFeatures.MaterializedViews | DbFeatures.Sequences | DbFeatures.ArrayParameters
         | DbFeatures.SkipTakeRequireOrderBy | DbFeatures.AllowsFakeOrderBy
         | DbFeatures.Paging | DbFeatures.BatchedUpdates
@@ -99,13 +99,6 @@ namespace Vita.Data.Postgres {
       }
     }
 
-
-    public override IDbDataParameter AddParameter(IDbCommand command, string name, DbStorageType typeDef, 
-                                   ParameterDirection direction, object value) {
-      var prm = (NpgsqlParameter)base.AddParameter(command, name, typeDef, direction, value);
-      prm.NpgsqlDbType = (NpgsqlDbType)typeDef.CustomDbType;
-      return prm;
-    }
 
   }//class
 }

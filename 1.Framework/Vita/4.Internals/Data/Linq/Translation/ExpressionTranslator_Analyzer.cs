@@ -372,7 +372,7 @@ namespace Vita.Data.Linq.Translation {
 
       Expression parameter = parameters.First();
       if(parameter.Type.IsNullableValueType())
-        parameter = Analyze(Expression.Convert(parameter, parameter.Type.GetUnderlyingStorageType()), context);
+        parameter = Analyze(Expression.Convert(parameter, parameter.Type.GetUnderlyingStorageClrType()), context);
 
       var parameterToHandle = Analyze(parameter, context);
       if(parameterToHandle is ExternalValueExpression)
@@ -708,14 +708,14 @@ namespace Vita.Data.Linq.Translation {
         objectExpression = Analyze(entQuery.Expression, context);
       }
       // then see what we can do, depending on object type
-      // - MetaTable --> then the result is a table
+      // - DerivedTable --> then the result is a table
       // - Table --> the result may be a column or a join
       // - Object --> external parameter or table (can this happen here? probably not... to be checked)
 
 
-      if(objectExpression is MetaTableExpression) {
-        var metaTableExpression = (MetaTableExpression)objectExpression;
-        return metaTableExpression.GetMappedExpression(memberInfo);
+      if(objectExpression is DerivedTableExpression) {
+        var derivedTableExpression = (DerivedTableExpression)objectExpression;
+        return derivedTableExpression.GetMappedExpression(memberInfo);
       }
 
       if(objectExpression is GroupExpression) {
@@ -1111,22 +1111,11 @@ namespace Vita.Data.Linq.Translation {
           sqlExpr.Alias = expression.Members[i].Name;
         newValues.Add(sqlExpr);
       }
-      var metaTableExpression = new MetaTableExpression(expression, newValues);
-      context.MetaTables.Add(metaTableExpression);
-      return metaTableExpression;
-      /*
-      //general case
-      var result = AnalyzeOperands(expression, context);
-      return result;
-       */
+      var derivedTableExpression = new DerivedTableExpression(expression, newValues);
+      context.DerivedTables.Add(derivedTableExpression);
+      return derivedTableExpression;
     }
 
-    /// <summary>
-    /// SelectMany() joins tables
-    /// </summary>
-    /// <param name="parameters"></param>
-    /// <param name="context"></param>
-    /// <returns></returns>
     protected virtual Expression AnalyzeSelectMany(IList<Expression> parameters, TranslationContext context) {
       var tableExpression = parameters[0];
       var projectionExpression = Analyze(parameters[1], new[] { tableExpression }, context);
@@ -1134,19 +1123,11 @@ namespace Vita.Data.Linq.Translation {
         case 2:
           return projectionExpression;
         case 3:
-          //var manyPiece = Analyze(parameters[2], new[] { tableExpression, projectionExpression }, context);
-          // from here, our manyPiece is a MetaTable definition
-          //var newExpression = manyPiece as NewExpression;
-          //if (newExpression == null)
-          //    Util.Throw("S0377: Expected a NewExpression as SelectMany() return value");
-          //Type metaTableType;
-          //var associations = GetTypeInitializers<TableExpression>(newExpression, true, out metaTableType);
-          //return RegisterMetaTable(metaTableType, associations, context);
-          var metaTableDefinitionBuilderContext = new TranslationContext(context);
-          //metaTableDefinitionBuilderContext.ExpectMetaTableDefinition = true;
+          var derivedTableContext = new TranslationContext(context);
+          //derivedTableDefinitionBuilderContext.ExpectDerivedTableDefinition = true;
           var expression = Analyze(parameters[2], new[] { tableExpression, projectionExpression },
-                                    metaTableDefinitionBuilderContext);
-          return expression;
+                                    derivedTableContext);
+          return expression; 
       }
       return null; //never happens
     }
@@ -1216,9 +1197,9 @@ namespace Vita.Data.Linq.Translation {
         innerTable.Join(joinType, outerTable, joinExpr,
                         string.Format("join{0}", context.EnumerateAllTables().Count()));
         // last part is lambda, with two tables as parameters
-        var metaTableDefinitionBuilderContext = new TranslationContext(context);
-        //metaTableDefinitionBuilderContext.ExpectMetaTableDefinition = true;
-        var expression = Analyze(parameters[4], new[] { outerExpr, innerTable }, metaTableDefinitionBuilderContext);
+        var derivedTableDefinitionBuilderContext = new TranslationContext(context);
+        //derivedTableDefinitionBuilderContext.ExpectDerivedTableDefinition = true;
+        var expression = Analyze(parameters[4], new[] { outerExpr, innerTable }, derivedTableDefinitionBuilderContext);
         return expression;
       }
       Util.Throw("S0530: Don't know how to handle GroupJoin() with {0} parameters", parameters.Count);
@@ -1252,14 +1233,8 @@ namespace Vita.Data.Linq.Translation {
       return expression;
     }
 
-    //RI: special case. Some providers (SQL CE) do not allow Memo columns in DISTINCT clause
+    // just in case there are specific restrictions for particular server
     private void CheckDistinctClauseColumns(IList<ColumnExpression> columns, TranslationContext context) {
-      var driver = context.DbModel.Driver;
-      if(driver.Supports(DbFeatures.NoMemoInDistinct)) {
-        var memos = columns.Where(c => c.ColumnInfo.Member.Flags.IsSet(EntityMemberFlags.UnlimitedSize)).Select(c => c.Name).ToList();
-        if(memos.Count > 0)
-          Util.Throw("Memo columns are not allowed in DISTINCT clause: {0}", string.Join(", ", memos));
-      }
     }
 
     //RI: adding this to get all child columns in GroupExpression
@@ -1447,17 +1422,19 @@ namespace Vita.Data.Linq.Translation {
       var forceIgnoreCase = context.Command.Info.Options.IsSet(QueryOptions.ForceIgnoreCase);
       //The main goal is to provide automatic escaping of pattern (of wildcard characters)
       var newExpr = Analyze(expr, context);
-      var escapeChar = this._dbModel.Driver.SqlDialect.DefaultLikeEscapeChar;
+      var sqlDialect = _dbModel.Driver.SqlDialect; 
+      var escapeChar = sqlDialect.LikeEscapeChar;
+      var wildcards = sqlDialect.LikeWildCardChars; 
       //Special case - constant 
       if(operand.NodeType == ExpressionType.Constant) {
         var opValue = ((ConstantExpression)operand).Value as string;
-        var escapedOp = Expression.Constant(before + LinqExpressionHelper.EscapeLikePattern(opValue, escapeChar) + after);
+        var escapedOp = Expression.Constant(before + LinqExpressionHelper.EscapeLikePattern(opValue, escapeChar, wildcards) + after);
         return CreateSqlFunction(SqlFunctionType.Like, forceIgnoreCase, newExpr, escapedOp);
       }
       var newOp = Analyze(operand, context);
       if(newOp is ExternalValueExpression) {
         var newOpExt = newOp as ExternalValueExpression;
-        var escapedNewOp = LinqExpressionHelper.CallEscapeLikePattern(newOpExt.SourceExpression, escapeChar, before, after);
+        var escapedNewOp = LinqExpressionHelper.CallEscapeLikePattern(newOpExt.SourceExpression, escapeChar, wildcards, before, after);
         var newParam = DeriveInputParameter(newOpExt, escapedNewOp, context);
         return CreateSqlFunction(SqlFunctionType.Like, forceIgnoreCase, newExpr, newParam);
       }

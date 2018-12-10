@@ -62,7 +62,7 @@ namespace Vita.Entities {
       Increment = increment;
     }
 
-    static Type[] _validTypes = new Type[] { typeof(Int32), typeof(UInt32), typeof(Int64), typeof(UInt64) };
+    static Type[] _validTypes = new Type[] { typeof(Int32), typeof(UInt32), typeof(Int64), typeof(UInt64), typeof(Decimal) };
   }
 
   public static class ViewHelper {

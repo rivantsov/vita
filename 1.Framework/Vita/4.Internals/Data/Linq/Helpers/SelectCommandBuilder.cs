@@ -74,7 +74,7 @@ namespace Vita.Data.Linq {
       var sessionPrm = Expression.Parameter(typeof(IEntitySession), "_session");
       var parentInstance = Expression.Parameter(parent.EntityType, "_parent");
       // Build lambda for WHERE
-      var cPrm = Expression.Parameter(child.EntityType, "_child");
+      var cPrm = Expression.Parameter(child.EntityType, "child_");
       var parentRef = Expression.MakeMemberAccess(cPrm, refMember.ClrMemberInfo);
       var eq = Expression.Equal(parentRef, parentInstance);
       var whereLambda = Expression.Lambda(eq, cPrm);

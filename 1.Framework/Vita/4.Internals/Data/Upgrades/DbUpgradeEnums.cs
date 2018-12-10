@@ -44,6 +44,8 @@ namespace Vita.Data.Upgrades {
     ForceNull = 1 << 1,
     // Finalizing column after adding it
     CompleteColumnSetup = 1 << 2,
+    // Used by Oracle
+    NullabilityChange = 1 << 3,
   }
 
   /// <summary>Identifies script type and determines the default execution order of SQL scripts for changing the DB model. </summary>

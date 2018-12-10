@@ -318,28 +318,30 @@ namespace Vita.Testing.ExtendedTests {
 
     [TestMethod]
     public void TestLinqNonQuery_ScheduledCommands() {
-      const string NewAbstract = "(New abstract)"; 
+      const string NewCode = "(NewCode)"; 
     var app = Startup.BooksApp;
       var session = app.OpenSession();
       session.EnableCache(false);
 
+      // Set descriptions and schedule update of special codes
       var noDescrBooks = session.EntitySet<IBook>().Where(b => b.Description == null).ToList();
       foreach (var bk in noDescrBooks)
         bk.Description = "No description" + new string('.', 100); //to force using parameter in batch
       var booksUpdateQuery = from bk in session.EntitySet<IBook>()
-                        where bk.Abstract == null
-                        select new {Id = bk.Id, Abstract = NewAbstract};
+                        where bk.Category == BookCategory.Programming  && bk.SpecialCode == null
+                        select new {Id = bk.Id, SpecialCode = NewCode};
       //Schedule the query, so it should executed with SaveChanges, at transaction end, right before commit 
       session.ScheduleUpdate<IBook>(booksUpdateQuery, CommandSchedule.TransactionEnd); //TransactionEnd is default
       session.SaveChanges();
-      //Open fresh session and check
+
+      //Open fresh session and check; 
       session = app.OpenSession();
-      var bksWithNewAbstract = session.EntitySet<IBook>().Where(b => b.Abstract == NewAbstract).ToList();
-      Assert.IsTrue(bksWithNewAbstract.Count > 0, "Expected some books with default abstract");
+      var bksWithNewCode = session.EntitySet<IBook>().Where(b => b.SpecialCode == NewCode).ToList();
+      Assert.IsTrue(bksWithNewCode.Count > 0, "Expected some books with new special code");
       //check and revert back
-      foreach (var bk in bksWithNewAbstract) {
-        Assert.AreEqual(NewAbstract, bk.Abstract, "Expected new abstract");
-        bk.Abstract = null;
+      foreach (var bk in bksWithNewCode) {
+        Assert.AreEqual(NewCode, bk.SpecialCode, "Expected new code");
+        bk.SpecialCode = null;
       }
       session.SaveChanges();
     }

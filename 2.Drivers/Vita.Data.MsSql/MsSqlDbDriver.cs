@@ -1,20 +1,18 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Data;
 using System.Data.SqlClient;
-using Microsoft.SqlServer.Server;
 using System.Diagnostics;
 
 using Vita.Entities;
 using Vita.Entities.Model;
 using Vita.Data.Model;
 using Vita.Data.Driver;
-using System.Collections.Generic;
 using Vita.Entities.Locking;
 using Vita.Entities.Logging;
-using Vita.Entities.Utilities;
-using System.Collections;
-using Vita.Data.SqlGen;
 using Vita.Data.Linq;
+using Vita.Data.SqlGen;
+using Vita.Entities.Utilities;
 
 namespace Vita.Data.MsSql {
 
@@ -24,7 +22,7 @@ namespace Vita.Data.MsSql {
     public const DbFeatures MsSql12Features =
       DbFeatures.Schemas | DbFeatures.StoredProcedures | DbFeatures.OutputParameters | DbFeatures.DefaultParameterValues
         | DbFeatures.ReferentialConstraints | DbFeatures.ClusteredIndexes | DbFeatures.DefaultCaseInsensitive
-        | DbFeatures.Views | DbFeatures.MaterializedViews | DbFeatures.ArrayParameters
+        | DbFeatures.Views | DbFeatures.MaterializedViews | DbFeatures.ArrayParameters | DbFeatures.InsertMany
         | DbFeatures.OrderedColumnsInIndexes | DbFeatures.IncludeColumnsInIndexes | DbFeatures.FilterInIndexes
         | DbFeatures.SkipTakeRequireOrderBy | DbFeatures.AllowsFakeOrderBy
         | DbFeatures.BatchedUpdates | DbFeatures.OutParamsInBatchedUpdates
@@ -32,13 +30,15 @@ namespace Vita.Data.MsSql {
         | DbFeatures.HeapTables | DbFeatures.Sequences | DbFeatures.ServerPreservesComments;
 
     public string SystemSchema = "dbo"; //schema used for creating Vita_ArrayAsTable table type
+    // User-defined table type, created by VITA to be used to send array-type parameters to SQLs and stored procedures
+    public static string ArrayAsTableTypeName = "Vita_ArrayAsTable";
 
     public override DbOptions GetDefaultOptions() {
       return DefaultMsSqlDbOptions;
     }
 
     public MsSqlDbDriver() : base(DbServerType.MsSql, MsSql12Features) {
-      base.TypeRegistry = new MsSqlTypeRegistry(this);
+      base.TypeRegistry = new MsSqlTypeRegistry(this); 
       base.SqlDialect = new MsSqlDialect(this); 
     }
 
@@ -70,21 +70,6 @@ namespace Vita.Data.MsSql {
     }
     public override IDbCommand CreateCommand() {
       return new SqlCommand();
-    }
-
-
-    public override IDbDataParameter AddParameter(IDbCommand command, string name, DbStorageType typeDef, ParameterDirection direction, object value) {
-      var prm = (SqlParameter) base.AddParameter(command, name, typeDef, direction, value);
-      prm.SqlDbType = (SqlDbType) typeDef.CustomDbType;
-     // prm.Size = (int) typeDef.Size;
-      if(prm.SqlDbType == SqlDbType.Structured) {
-        prm.TypeName = typeDef.TypeName;//.SqlTypeSpec; //Need TypeName for table-type params
-        // For table-typed parameters, if the parameter contains empty table, it SHOULD be sent as 'null' (not DbNull)
-        // Otherwise server throws exc; so 'null' should NOT be changed to DbNull
-        prm.Value = value; 
-      } else 
-        prm.Value = value == null ? DBNull.Value : value;
-      return prm;
     }
 
     public override void ClassifyDatabaseException(DataAccessException dataException, IDbCommand command = null) {
@@ -123,7 +108,9 @@ namespace Vita.Data.MsSql {
 
     public override void OnDbModelConstructing(DbModel dbModel) {
       base.OnDbModelConstructing(dbModel);
-      dbModel.AddCustomType(new DbCustomTypeInfo(dbModel, SystemSchema, MsSqlTypeRegistry.ArrayAsTableTypeName, DbCustomTypeKind.ArrayAsTable));
+      // it will be added to DbModel by constructor itself
+      var arrAsTable = new DbCustomTypeInfo(dbModel, SystemSchema, ArrayAsTableTypeName, DbCustomTypeKind.TableType, 
+            isNullable: false, size: -1);
     }
 
     private string ExtractIndexNameFromDuplicateErrorMessage(string message) {

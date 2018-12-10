@@ -24,9 +24,8 @@ namespace Vita.Samples.BookStore {
 
     IPublisher Publisher { get; set; }
 
-
     [Index(IncludeMembers = "PublishedOn,Category,Publisher", Filter = "{PublishedOn} IS NOT NULL")]
-    [Size(120)] //explicitly set size
+    [Size(120)]
     string Title { get; set; } 
     
     [Size(Sizes.Description), Nullable]
@@ -46,11 +45,18 @@ namespace Vita.Samples.BookStore {
 
     Decimal Price { get; set; }
 
+    [Column(Precision = 20, Scale = 6)] //testing alternative precision column
+    Decimal? WholeSalePrice { get; set; }
+
     [ManyToMany(typeof(IBookAuthor))] //, OrderBy("LastName")] - does not work with Include, for now not supported
     IList<IAuthor> Authors { get; }
 
     [Nullable]
     IUser Editor { get; set; }
+
+    // nullable string property to test some special queries
+    [Size(10), Nullable]
+    string SpecialCode { get; set; }
 
      // Just to play with model - uncomment this to see column and index appear in the database
     // ISBN should be Unique, but we make it nullable so for existing records (if any) it can be set to null
@@ -176,8 +182,7 @@ namespace Vita.Samples.BookStore {
     [PropagateUpdatedOn] //update Order.UpdatedOn whenever order line is updated/deleted
     IBookOrder Order { get; set; }
     int LineNumber { get; set; } //automatically maintained line order - see IBookOrder.Lines property
-    // Making it byte to test Postgres feature. See comments at the end of the file. 
-    byte Quantity { get; set; }
+    int Quantity { get; set; }
     IBook Book { get; set; }
     Decimal Price { get; set; } //captures price at the time the order was created
   }
@@ -232,7 +237,7 @@ namespace Vita.Samples.BookStore {
 
   // Views ----------------------------------------
   public interface IBookSales {
-    [UniqueClusteredIndex]
+    [UniqueClusteredIndex] //SQL Server - required to define other indexes
     Guid Id { get; set; }
     [Index]
     string Title { get; set; }
@@ -242,6 +247,7 @@ namespace Vita.Samples.BookStore {
   }
 
   public interface IBookSales2 {
+    [PrimaryKey] // does not create PK on view in DB, but allows treat view as entity: GetEntity<>(pk)
     Guid Id { get; set; }
     string Title { get; set; }
     string Publisher { get; set; }
@@ -270,11 +276,5 @@ namespace Vita.Samples.BookStore {
     [Unlimited]
     byte[] Data { get; set; }
   }
-
-  // Notes on IBookOrderLine.Quantity (byte) 
-  // we make it byte to test some behavior in Postgres; Postgres function overloading resolution 
-  // gets into error in batch mode - fails to find overload for a CRUD function call. It assumes 
-  // that literal number in parameter to batched proc call (ex: 5) is Int and fails match to method 
-  // which expects byte. So VITA Postgres driver injects CAST to explicitly cast the number
 
 }

@@ -152,6 +152,7 @@ namespace Vita.Entities {
 
     /// <summary>Executes a SQL insert statement based on LINQ query. </summary>
     /// <typeparam name="TEntity">Entity type for entity(ies) being inserted.</typeparam>
+    /// <param name="session">Entity session.</param>
     /// <param name="baseQuery">Base LINQ query.</param>
     /// <returns>Number of entities inserted.</returns>
     /// <remarks>
@@ -174,6 +175,7 @@ namespace Vita.Entities {
 
     /// <summary>Executes a SQL update statement based on LINQ query. </summary>
     /// <typeparam name="TEntity">Entity type for entity(ies) being updated.</typeparam>
+    /// <param name="session">Entity session.</param>
     /// <param name="baseQuery">Base LINQ query.</param>
     /// <returns>Number of entities updated.</returns>
     /// <remarks>
@@ -197,6 +199,7 @@ namespace Vita.Entities {
 
     /// <summary>Executes a SQL delete statement based on LINQ query. </summary>
     /// <typeparam name="TEntity">Entity type for entity(ies) to delete.</typeparam>
+    /// <param name="session">Entity session.</param>
     /// <param name="baseQuery">Base LINQ query.</param>
     /// <returns>Number of entities deleted.</returns>
     /// <remarks>

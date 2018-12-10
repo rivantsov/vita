@@ -122,41 +122,49 @@ namespace Vita.Data.Linq {
     }
 
     private SqlStatement BuildSelectStatement(TranslationContext context, SelectExpression selectExpr, QueryInfo queryInfo) {
-      var placeHolders = BuildSqlPlaceHolders(queryInfo, context);
       var sqlBuilder = _dbModel.Driver.CreateDbSqlBuilder(_dbModel, selectExpr.QueryInfo);
+      var placeHolders = BuildExternalValuesPlaceHolders(queryInfo, context);
       var sql = sqlBuilder.BuildSelect(selectExpr, queryInfo.LockType);
       var sqlStmt = new SqlStatement(sql, placeHolders, DbExecutionType.Reader, 
-         _dbModel.Driver.SqlDialect.PrecedenceHandler, queryInfo.Options);
+                       _dbModel.Driver.SqlDialect.PrecedenceHandler, queryInfo.Options);
       sqlStmt.Fragments.Add(SqlTerms.Semicolon);
       sqlStmt.Fragments.Add(SqlTerms.NewLine);
       return sqlStmt; 
     }
 
-    private List<SqlPlaceHolder> BuildSqlPlaceHolders(QueryInfo commandInfo, TranslationContext context) {
-      var placeHolders = new List<SqlPlaceHolder>();
+    private SqlPlaceHolderList BuildExternalValuesPlaceHolders(QueryInfo queryInfo, TranslationContext context) {
+      var placeHolders = new SqlPlaceHolderList();
       foreach(var extValue in context.ExternalValues) {
         if(extValue.SqlUseCount == 0)
           continue;
-        var ph = BuildSqlPlaceHolder(commandInfo, extValue); 
-        placeHolders.Add(ph);
+        BuildSqlPlaceHolderForExternalValue(queryInfo, extValue); 
+        placeHolders.Add(extValue.SqlPlaceHolder);
       }//foreach extValue
       return placeHolders;
     }
 
-    private SqlPlaceHolder BuildSqlPlaceHolder(QueryInfo commandInfo, ExternalValueExpression extValue) {
-      var valueReader = BuildParameterValueReader(commandInfo.Lambda.Parameters, extValue.SourceExpression);
+    private void BuildSqlPlaceHolderForExternalValue(QueryInfo queryInfo, ExternalValueExpression extValue) {
       var dataType = extValue.SourceExpression.Type;
-      var typeDef = _dbModel.Driver.TypeRegistry.FindStorageType(dataType, false);
-      if (typeDef == null) {
-        // One case: "x IN (?value)" operator; if server does not support arrays (ex: SQLite), then we
-        // will use literal - use literal values of the list inside parenth
-        if (dataType.IsListOfDbPrimitive(out Type elemType)) {
-          extValue.SqlPlaceHolder = new SqlArrayValuePlaceHolder(elemType, valueReader);
-        } else 
-          Util.Throw("Failed to find DB type for value of type {0}.", dataType.Name);
-      } else 
-        extValue.SqlPlaceHolder = new SqlLinqParamPlaceHolder(typeDef, valueReader);
-      return extValue.SqlPlaceHolder; 
+      var driver = _dbModel.Driver; 
+      var typeRegistry = driver.TypeRegistry;
+      var valueReader = BuildParameterValueReader(queryInfo.Lambda.Parameters, extValue.SourceExpression);
+      if(dataType.IsListOfDbPrimitive(out var elemType)) {
+        // list parameter
+        var elemTypeDef = typeRegistry.GetDbTypeDef(elemType);
+        Util.Check(elemTypeDef != null, "Failed to match DB type for CLR type {0}", elemType);
+        extValue.SqlPlaceHolder = new SqlListParamPlaceHolder(elemType, elemTypeDef, valueReader,
+                   listToDbParamValue: list => driver.SqlDialect.ConvertListParameterValue(list, elemType),
+                   // ToLiteral
+                   listToLiteral: list => driver.SqlDialect.ListToLiteral(list, elemTypeDef)
+                   );
+      } else {
+        //regular linq parameter
+        var typeDef = typeRegistry.GetDbTypeDef(dataType);
+        Util.Check(typeDef != null, "Failed to find DB type for linq parameter of type {0}", dataType);
+        var dbConv = typeRegistry.GetDbValueConverter(typeDef.ColumnOutType, dataType);
+        Util.Check(dbConv != null, "Failed to find converter from type {0} to type {1}", dataType, typeDef.ColumnOutType);
+        extValue.SqlPlaceHolder = new SqlLinqParamPlaceHolder(dataType, valueReader, dbConv.PropertyToColumn, typeDef.ToLiteral);
+      }
     }
 
     private Func<object[], object> BuildParameterValueReader(IList<ParameterExpression> queryParams, Expression valueSourceExpression) {

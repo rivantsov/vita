@@ -73,7 +73,6 @@ namespace Vita.Testing.BasicTests.OneToOne {
     [TestMethod]
     public void TestOneToOneRef() {
       _app = new OneToOneEntityApp();
-      Startup.DropSchemaObjects("one"); 
       Startup.ActivateApp(_app);
       var session = _app.OpenSession();
 

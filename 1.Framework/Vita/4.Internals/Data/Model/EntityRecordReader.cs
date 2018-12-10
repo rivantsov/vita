@@ -71,12 +71,17 @@ namespace Vita.Data.Model {
       for (int i = 0; i < _columns.Count; i++) {
         try {
           colMap = _columns[i];
-          dbValue = dataRecord[colMap.ReaderColumnIndex];
-          //System.Diagnostics.Debug.WriteLine(colMap.DbColumn.ColumnName + " " + dbValue + "(" + dbValue.GetType() + ")");
-          var conv = colMap.DbColumn.TypeInfo.ColumnToPropertyConverter;
-          if(dbValue != null && conv != null)
-            dbValue = conv(dbValue);
-          entRec.SetValue(colMap.DbColumn.Member, dbValue);
+          var isNull = dataRecord.IsDBNull(colMap.ReaderColumnIndex);
+          if(isNull)
+            dbValue = DBNull.Value;
+          else {
+            dbValue = colMap.DbColumn.TypeInfo.ColumnReader(dataRecord, colMap.ReaderColumnIndex);
+            var conv = colMap.DbColumn.Converter.ColumnToProperty;
+            if(dbValue != null && conv != null)
+              dbValue = conv(dbValue);
+          }
+          var member = colMap.DbColumn.Member;
+          entRec.ValuesOriginal[member.ValueIndex] = dbValue; 
         } catch (Exception ex) {
           ex.AddValue("DataRecord", dataRecord);
           ex.AddValue("ColumnName", colMap.DbColumn.ColumnName);

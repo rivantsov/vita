@@ -108,7 +108,7 @@ namespace Vita.Data.Runtime {
     public DbUpdateSet(EntitySession session, DbModel dbModel, DataConnection conn) {
       Session = session;
       Connection = conn; 
-      Records = session.RecordsChanged.Where(rec => DbRuntimeHelper.ShouldUpdate(rec)).ToList();
+      Records = session.RecordsChanged.Where(rec => ShouldUpdate(rec)).ToList();
       BuildRecordGroups(dbModel);
       UseTransaction = Records.Count + session.ScheduledCommands.Count > 1; 
     }
@@ -271,6 +271,15 @@ namespace Vita.Data.Runtime {
     }
 
     #endregion
+
+    public static bool ShouldUpdate(EntityRecord record) {
+      if(record.Status == EntityStatus.Modified && record.EntityInfo.Flags.IsSet(EntityFlags.NoUpdate))
+        return false; //if for whatever reason we have such a record, just ignore it
+      if(record.Status == EntityStatus.Fantom)
+        return false;
+      return true;
+    }
+
 
   }//class
 

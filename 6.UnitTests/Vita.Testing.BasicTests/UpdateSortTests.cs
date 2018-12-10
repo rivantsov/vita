@@ -1,10 +1,4 @@
 ﻿using System;
-using System.ComponentModel;
-using System.Text;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading;
-using System.Diagnostics;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 using Vita.Entities;
@@ -74,8 +68,7 @@ namespace Vita.Testing.BasicTests.UpdateSort {
     [TestInitialize]
     public void Init() {
       _app = new UpdateSortEntityApp();
-      Startup.DropSchemaObjects(UpdateSortEntityApp.Schema);
-      Startup.ActivateApp(_app);
+      Startup.ActivateApp(_app, dropOldSchema: true);
     }
 
     [TestCleanup]

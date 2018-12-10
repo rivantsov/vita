@@ -30,7 +30,7 @@ namespace Vita.Testing.ExtendedTests {
           // Check if server is available
           string error;
           var connString = Startup.CurrentConfig.ConnectionString; 
-          if (ToolHelper.TestConnection(Startup.Driver, connString, out error))
+          if (DataUtility.TestConnection(Startup.Driver, connString, out error))
             return true; 
           runner.ConsoleWriteRed("  Connection test failed for connection string: {0}, \r\n   Error: {1}", connString, error);
           skipServerCount++;

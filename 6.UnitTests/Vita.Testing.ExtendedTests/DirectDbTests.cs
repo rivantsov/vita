@@ -51,20 +51,26 @@ namespace Vita.Testing.ExtendedTests {
       var cmd = directDb.DbConnection.CreateCommand();
       cmd.Connection = directDb.DbConnection;
       cmd.Transaction = directDb.DbTransaction;
+      var prm = cmd.CreateParameter();
       switch(Startup.ServerType) {
         case DbServerType.SQLite:
           // SqlLite does not have schemas; 
           // For SQLite add default DbOptions flag AddSchemaToTableName, so table name is books_Book
           cmd.CommandText = "UPDATE \"books_Book\" SET \"Price\" = \"Price\" + 1 WHERE \"Id\" = @P1;";
-          break; 
+          prm.ParameterName = "@P1";
+          prm.Value = csBook.Id;
+          break;
+        case DbServerType.Oracle:
+          cmd.CommandText = "UPDATE \"Book\" SET \"Price\" = \"Price\" + 1 WHERE \"Id\" = :p;";
+          prm.ParameterName = "p";
+          prm.Value = csBook.Id.ToByteArray();
+          break;
         default:
           cmd.CommandText = "UPDATE \"books\".\"Book\" SET \"Price\" = \"Price\" + 1 WHERE \"Id\" = @P1;";
+          prm.ParameterName = "@P1";
+          prm.Value = csBook.Id;
           break; 
       }
-      var prm = cmd.CreateParameter();
-      prm.ParameterName = "@P1";
-      prm.Value = csBook.Id;
-      prm.DbType = System.Data.DbType.Guid;
       cmd.Parameters.Add(prm);
       session.LogMessage("-------------------- Executing direct SQL statement -------------------------");
       // We could call cmd.ExecuteNonQuery() here, but using ExecuteDbCommand method provides automatic logging of the executed command

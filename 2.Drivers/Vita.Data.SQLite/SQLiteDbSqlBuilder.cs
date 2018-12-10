@@ -46,7 +46,7 @@ namespace Vita.Data.SQLite {
     // and puts it into EntityRecord
     IdentityReader _identityReader = new IdentityReader();
 
-    class IdentityReader : ISqlResultProcessor {
+    class IdentityReader : IDataCommandResultProcessor {
       public object ProcessResult(DataCommand command) {
         command.RowCount = 1;
         var conn = command.Connection; 

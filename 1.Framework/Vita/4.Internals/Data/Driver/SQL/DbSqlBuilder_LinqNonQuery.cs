@@ -45,7 +45,7 @@ namespace Vita.Data.Driver {
       var colList = SqlFragment.CreateList(SqlTerms.Comma, colParts);
       var selectSql = BuildSelect(command.BaseSelect);
       var sqlInsert = this.SqlDialect.SqlLinqTemplateInsertFromSelect.Format(tblName, colList, selectSql);
-      return SqlStatement.CreateLinqNonQuery(sqlInsert, SqlDialect.PrecedenceHandler);
+      return CreateNonQueryStatement(sqlInsert, SqlDialect.PrecedenceHandler);
     }
 
     // Builds one-table update
@@ -68,7 +68,7 @@ namespace Vita.Data.Driver {
            SqlTerms.Empty;
       var tablePart = command.TargetTable.TableInfo.SqlFullName;
       var sqlUpdate = SqlDialect.SqlCrudTemplateUpdate.Format(tablePart, setClause, sqlWhere);
-      return SqlStatement.CreateLinqNonQuery(sqlUpdate, SqlDialect.PrecedenceHandler);
+      return CreateNonQueryStatement(sqlUpdate, SqlDialect.PrecedenceHandler);
     }
 
     private static SqlFragment _fromAlias = new TextSqlFragment("_from");
@@ -102,7 +102,7 @@ namespace Vita.Data.Driver {
       var fromClauseSql = BuildSelect(commandData.BaseSelect);
       var tableNameSql = commandData.TargetTable.TableInfo.SqlFullName;
       var sqlUpdate = SqlDialect.SqlCrudTemplateUpdateFrom.Format(tableNameSql, setClause, fromClauseSql, _fromAlias, whereClause);
-      return SqlStatement.CreateLinqNonQuery(sqlUpdate, SqlDialect.PrecedenceHandler);
+      return CreateNonQueryStatement(sqlUpdate, SqlDialect.PrecedenceHandler);
     }
 
 
@@ -113,7 +113,7 @@ namespace Vita.Data.Driver {
         sqlWhere = this.BuildWhereClause(commandData.BaseSelect, new[] { commandData.TargetTable }, whereList);
       var tblSql = commandData.TargetTable.TableInfo.SqlFullName;
       var deleteSql = SqlDialect.SqlCrudTemplateDelete.Format(tblSql, sqlWhere);
-      return SqlStatement.CreateLinqNonQuery(deleteSql, SqlDialect.PrecedenceHandler);
+      return CreateNonQueryStatement(deleteSql, SqlDialect.PrecedenceHandler);
     }
 
 
@@ -134,7 +134,11 @@ namespace Vita.Data.Driver {
       var tblNameSql = commandData.TargetTable.TableInfo.SqlFullName;
       var subQuerySql = BuildSelect(commandData.BaseSelect);
       var deleteSql = SqlDialect.SqlCrudTemplateDeleteMany.Format(tblNameSql, pkColSql, subQuerySql);
-      return SqlStatement.CreateLinqNonQuery(deleteSql, SqlDialect.PrecedenceHandler);
+      return CreateNonQueryStatement(deleteSql, SqlDialect.PrecedenceHandler);
+    }
+
+    private SqlStatement CreateNonQueryStatement(SqlFragment sql, SqlPrecedenceHandler precHandler) {
+      return new SqlStatement(sql, null, DbExecutionType.NonQuery, precHandler, QueryOptions.NoQueryCache);
     }
 
   } //class

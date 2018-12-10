@@ -86,17 +86,6 @@ namespace Vita.Testing.ExtendedTests {
       var exc = TestUtil.ExpectFailWith<Exception>(() => count = query.Count());
       Assert.IsTrue(exc.Message.Contains("does not support COUNT"));
 
-      //Fix for bug with MS SQL - operations like ">" in SELECT list are not supported;
-      // LINQ engine automatically adds IIF(<boolValue>, 1, 0)
-      // Another trouble: MySql stores bools as UInt64, but comparison results in Int64
-      session = app.OpenSession();
-      var hasFiction = session.EntitySet<IBook>().Any(b => b.Category == BookCategory.Fiction);
-      Assert.IsTrue(hasFiction, "Expected hasFiction to be true");
-
-      session.EnableCache(false); //don't mess with cache here
-      var books = session.EntitySet<IBook>().Where(b => b.Authors.All(a => a.LastName != null)).ToArray();
-      Assert.IsTrue(books.Length > 0, "Expected all books");
-
       //Test for bug fix - loading DateTime? property from SQLite db
       var allBooks = session.GetEntities<IBook>();
       var bkNotPublished = allBooks.FirstOrDefault(bk => bk.PublishedOn == null);

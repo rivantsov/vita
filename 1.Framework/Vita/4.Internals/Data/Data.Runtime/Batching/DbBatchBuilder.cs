@@ -36,7 +36,7 @@ namespace Vita.Data.Runtime {
 
     public DbBatch Build(DbUpdateSet updateSet) {
       _batch = new DbBatch() { UpdateSet = updateSet };
-      _commandBuilder = new DataCommandBuilder(_dbModel, batchMode: true);
+      _commandBuilder = new DataCommandBuilder(_dbModel, batchMode: true, mode: SqlGenMode.PreferLiteral);
 
       var commandsBefore = updateSet.Session.ScheduledCommands.Where(c => c.Schedule == CommandSchedule.TransactionStart).ToList();
       AddScheduledCommands(commandsBefore);
@@ -56,7 +56,7 @@ namespace Vita.Data.Runtime {
       foreach(var lcmd in commands) {
         CheckCurrentCommand();
         var sql = _commandRepo.GetLinqNonQuery(lcmd);
-        _commandBuilder.AddLinqSql(sql, lcmd.ParameterValues); 
+        _commandBuilder.AddLinqStatement(sql, lcmd.ParameterValues); 
       }//foreach schCmd
     }
 
@@ -82,38 +82,59 @@ namespace Vita.Data.Runtime {
       switch(group.Operation) {
         case EntityOperation.Insert:
           if(_db.CanProcessMany(group)) {
-            // TODO: handle the case when there are too many records (too many params) within 1 insert command
-            sql = _commandRepo.GetCrudInsertMany(group.Table, group.Records, _commandBuilder);
-            _commandBuilder.AddSql(sql);
+            // TODO: handle the case when there are too many params within 1 insert command
+            var recGroups = GroupRecordsForInsertMany(group.Records, _driver.SqlDialect.MaxRecordsInInsertMany);
+            foreach(var recGroup in recGroups) {
+              sql = _commandRepo.GetCrudInsertMany(group.Table, recGroup, _commandBuilder);
+              _commandBuilder.AddUpdates(sql, recGroup);
+            } //foreach
           } else {
             foreach(var rec in group.Records) {
               CheckCurrentCommand();
-              sql = sql ?? _commandRepo.GetCrudNonQuery(group.Table, rec, _commandBuilder);
-              _commandBuilder.AddSql(sql, rec);
-            }
-          }
-          break;
-        case EntityOperation.Update:
-          foreach(var rec in group.Records) {
-            CheckCurrentCommand();
-            sql = _commandRepo.GetCrudNonQuery(group.Table, rec, _commandBuilder);
-            _commandBuilder.AddSql(sql, rec);
-          }
-          break;
-        case EntityOperation.Delete:
-          if(_db.CanProcessMany(group)) {
-            sql = _commandRepo.GetCrudDeleteMany(group.Table, group.Records);
-            _commandBuilder.AddSql(sql);
-          } else {
-            foreach(var rec in group.Records) {
-              CheckCurrentCommand();
-              sql = sql ?? _commandRepo.GetCrudNonQuery(group.Table, rec, _commandBuilder);
-              _commandBuilder.AddSql(sql, rec);
+              sql = sql ?? _commandRepo.GetCrudSqlForSingleRecord(group.Table, rec);
+              _commandBuilder.AddUpdate(sql, rec);
             }
           }
           break;
 
+        case EntityOperation.Update:
+          foreach(var rec in group.Records) {
+            CheckCurrentCommand();
+            sql = _commandRepo.GetCrudSqlForSingleRecord(group.Table, rec);
+            _commandBuilder.AddUpdate(sql, rec);
+          }
+          break;
+
+        case EntityOperation.Delete:
+          if(_db.CanProcessMany(group)) {
+            sql = _commandRepo.GetCrudDeleteMany(group.Table);
+            _commandBuilder.AddUpdates(sql, group.Records, new object[] { group.Records });  
+          } else {
+            foreach(var rec in group.Records) {
+              CheckCurrentCommand();
+              sql = sql ?? _commandRepo.GetCrudSqlForSingleRecord(group.Table, rec);
+              _commandBuilder.AddUpdate(sql, rec);
+            }
+          }
+          break;
       }//switch
+    }
+
+    // # of records in one insert is limited (1000 for MS SQL), so we have to group them 
+    private IList<IList<EntityRecord>> GroupRecordsForInsertMany(IList<EntityRecord> records, int maxInGroup) {
+      // shortcut
+      if (records.Count < maxInGroup)
+        return new[] { records };
+      var groups = new List<IList<EntityRecord>>();
+      IList<EntityRecord> currGroup = null;
+      foreach (var rec in records) {
+        if (currGroup == null || currGroup.Count >= maxInGroup) {
+          currGroup = new List<EntityRecord>();
+          groups.Add(currGroup);
+        }
+        currGroup.Add(rec);
+      }// foreach rec
+      return groups;
     }
 
   }//class

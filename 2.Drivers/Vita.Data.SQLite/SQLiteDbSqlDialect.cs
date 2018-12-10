@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using Vita.Data.Driver;
 using Vita.Data.Linq.Translation.Expressions;
+using Vita.Data.Model;
 using Vita.Data.SqlGen;
 
 namespace Vita.Data.SQLite {
@@ -27,6 +28,8 @@ namespace Vita.Data.SQLite {
 
     public override void InitTemplates() {
       base.InitTemplates();
+      AddTemplate("Upper({0})", SqlFunctionType.ToUpper);
+      AddTemplate("Lower({0})", SqlFunctionType.ToLower);
       AddTemplate("Length({0})", SqlFunctionType.StringLength);
       AddTemplate("{0}", SqlFunctionType.ConvertBoolToBit);
 
@@ -43,6 +46,11 @@ namespace Vita.Data.SQLite {
       return base.GetSqlFunctionTemplate(expr);
     }
 
+    // Used by DbInfo module
+    public override string GetTableExistsSql(DbTableInfo table) {
+      var sql = string.Format("select name from sqlite_master where type='table' AND name = '{0}'", table.TableName);
+      return sql; 
+    }
 
   }
 }

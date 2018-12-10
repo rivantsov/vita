@@ -8,6 +8,18 @@ using Vita.Entities;
 
 namespace Vita.Data.SqlGen {
 
+  public interface ISqlPrecedenceHandler {
+    int GetPrecedence(ExpressionType type);
+    int GetPrecedence(SqlFunctionType type);
+    bool NeedsParenthesis(SqlFragment parent, SqlFragment child, bool isFirst);
+  }
+
+  public static class SqlPrecedence {
+    public const int NoPrecedence = -1;
+    public const int HighestPrecedence = 1000;
+    public const int LowestPrecedence = 10;
+  }
+
   public class SqlPrecedenceHandler : ISqlPrecedenceHandler {
     protected Dictionary<ExpressionType, int> ExpressionPrecedences = new Dictionary<ExpressionType, int>();
     protected Dictionary<SqlFunctionType, int> SqlFunctionPrecedences = new Dictionary<SqlFunctionType, int>();

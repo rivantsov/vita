@@ -12,7 +12,6 @@ namespace Vita.Entities.Runtime {
   // this does NOT work! You need explicit association of a record with db command output parameters
   public class EntityRecordDBCommandData {
     public IDbCommand DbCommand;
-    public IDataParameter IdentityParameter; // parameter returning identity on record insert
     public IList<OutParamInfo> OutputParameters = new List<OutParamInfo>();
   }
 

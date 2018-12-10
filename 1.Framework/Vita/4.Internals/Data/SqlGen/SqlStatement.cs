@@ -13,21 +13,18 @@ namespace Vita.Data.SqlGen {
 
   public class SqlStatement { 
     public List<IFlatSqlFragment> Fragments = new List<IFlatSqlFragment>();
-    public List<SqlPlaceHolder> PlaceHolders = new List<SqlPlaceHolder>();
+    public SqlPlaceHolderList PlaceHolders = new SqlPlaceHolderList();
     public QueryOptions Options;
     internal bool IsCompacted;
 
     public DbExecutionType ExecutionType;
-    public ISqlResultProcessor ResultProcessor;
+    public IDataCommandResultProcessor ResultProcessor;
     // Note: this is intentional, these lists are null, the consuming code must check for null before using them
     public List<CommandAction> PreActions;
     public List<CommandAction> PostActions;
 
-    public static SqlStatement CreateLinqNonQuery(SqlFragment sql, SqlPrecedenceHandler precHandler) {
-      return new SqlStatement(sql, null, DbExecutionType.NonQuery, precHandler, QueryOptions.NoQueryCache); 
-    }
 
-    public SqlStatement(SqlFragment sql, IList<SqlPlaceHolder> placeHolders, DbExecutionType executionType,
+    public SqlStatement(SqlFragment sql, SqlPlaceHolderList placeHolders, DbExecutionType executionType,
             SqlPrecedenceHandler precedenceHandler = null, QueryOptions options = QueryOptions.None) {
       ExecutionType = executionType; 
       Options = options;
@@ -36,7 +33,7 @@ namespace Vita.Data.SqlGen {
         DiscoverPlaceholders(); 
     }
 
-    public void Append(SqlFragment sql, IList<SqlPlaceHolder> placeHolders = null, SqlPrecedenceHandler precedenceHandler = null) {
+    public void Append(SqlFragment sql, SqlPlaceHolderList placeHolders = null, SqlPrecedenceHandler precedenceHandler = null) {
       Fragments.Add(SqlTerms.NewLine);
       sql.Flatten(Fragments, precedenceHandler);
       if (placeHolders != null && placeHolders.Count > 0) {
@@ -113,6 +110,12 @@ namespace Vita.Data.SqlGen {
       PostActions.Add(action);
     }
 
+    public void TrimEndingSemicolon() {
+      var last = this.Fragments[this.Fragments.Count - 1]; 
+      var lastText = last as TextSqlFragment;
+      Util.Check(lastText?.Text == ";", "Failed to trim ending semicolon, last fragment ({0}) is not semicolon.", last);
+      this.Fragments.RemoveAt(this.Fragments.Count - 1);
+    }
 
   }//class
 }

@@ -75,6 +75,21 @@ namespace Vita.Data {
       }
     }
 
+    public static DbType GetIntDbType(this Type type) {
+      switch(type.Name) {
+        case "Int32":
+          return DbType.Int32;
+        case "UInt32":
+          return DbType.UInt32;
+        case "Int64":
+          return DbType.Int64;
+        case "UInt64":
+          return DbType.UInt64;
+        default:
+          Util.Throw($"Function Unsupported for type {type}, must be int32 or int64.");
+          return DbType.Object; //never happens
+      }
+    }
 
 
   }//class

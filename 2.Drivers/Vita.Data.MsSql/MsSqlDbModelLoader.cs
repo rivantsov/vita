@@ -21,16 +21,39 @@ namespace Vita.Data.MsSql {
       base.RoutineTypeTag = "PROCEDURE";
     }
 
+    // Load custom types
+    /*
+select T."name", S."name",  is_table_type, max_length SIZE, is_nullable
+ from sys.types T inner join sys.schemas S on S."schema_id" = T."schema_id"
+where is_user_defined = 1
+      
+     */
+
     //Columns:CATALOG_NAME	SCHEMA_NAME	SCHEMA_OWNER	DEFAULT_CHARACTER_SET_CATALOG	DEFAULT_CHARACTER_SET_SCHEMA 
     //	DEFAULT_CHARACTER_SET_NAME  
     public override InfoTable GetSchemas() {
       var filter = GetSchemaFilter("SCHEMA_NAME");
       var sql = string.Format(
-@"SELECT * FROM INFORMATION_SCHEMA.SCHEMATA 
+@"SELECT CATALOG_NAME,	SCHEMA_NAME,	SCHEMA_OWNER 
+FROM INFORMATION_SCHEMA.SCHEMATA 
 WHERE SCHEMA_NAME NOT IN ('sys', 'INFORMATION_SCHEMA', 'guest') 
 AND {0};",   filter);
       return ExecuteSelect(sql);
     }
+
+    //Columns: TYPE_SCHEMA	TYPE_NAME	IS_TABLE_TYPE IS_NULLABLE SIZE 
+    public override InfoTable GetCustomTypes() {
+      // We are adding dbo schema, to catch shared types like Vita_ArrayAsTable
+      var filter = GetSchemaFilter("S.[Name]");
+      var sqlTemplate = @"
+SELECT T.""Name"" TYPE_NAME, S.""name"" TYPE_SCHEMA, T.is_table_type, T.is_nullable, T.max_length SIZE
+  FROM sys.types T INNER JOIN sys.schemas S ON S.schema_id = T.schema_id
+  WHERE T.is_user_defined = 1 AND ({0} OR S.""Name"" = 'dbo')
+";
+      var sql = string.Format(sqlTemplate, filter);
+      return ExecuteSelect(sql);
+    }
+
 
 
     //INFORMATION_SCHEMA does not have a view for indexes, so we have to do it through MSSQL special objects
@@ -112,15 +135,6 @@ ORDER BY table_schema, table_name, index_name, column_ordinal_position; ", filte
       LoadDefaultConstraintNames();
     }
 
-    public override InfoTable GetUserDefinedTypes() {
-      var sql = @"
-Select s.[name] AS TYPE_SCHEMA, tt.[Name] AS TYPE_NAME  
-From sys.table_types tt 
-   INNER JOIN sys.schemas s on tt.schema_id = s.schema_id; ";
-      var data = ExecuteSelect(sql);
-      return data;
-    }
-
     private void LoadIdentityColumnsInfo() {
       var filter = GetSchemaFilter("s.name");
       var sql = string.Format(@"
@@ -176,11 +190,6 @@ WHERE {0};
       }
     }//method
 
-    // image shows length int.MaxValue; for ntext it is int.MaxValue-1
-    // we need to mark these types as Unlimited
-    public override bool IsUnlimited(string typeName, long charSize, long byteSize) {
-      return charSize < 0 || byteSize < 0 || charSize >= int.MaxValue - 1 || byteSize >= int.MaxValue - 1;
-    }
   }//class
 
 }

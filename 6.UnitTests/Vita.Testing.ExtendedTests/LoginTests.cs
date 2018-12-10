@@ -134,7 +134,7 @@ namespace Vita.Testing.ExtendedTests {
         duffyLogin = loginService.Login(context, "Duffy", "not-a-pass");
         Assert.IsFalse(duffyLogin.Status == LoginAttemptStatus.Success);
       }
-      //account shoud be suspended by LoginFailedTrigger
+      //account shoud be suspended 
       duffyLogin = loginService.Login(context, "Duffy", password);
       Assert.IsFalse(duffyLogin.Status == LoginAttemptStatus.Success, "Duffy should be suspended");
    

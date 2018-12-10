@@ -11,6 +11,7 @@ using Vita.Data.Driver;
 using Vita.Data.Model;
 using Vita.Entities.Logging;
 using Vita.Data.Driver.InfoSchema;
+using Vita.Data.Driver.TypeSystem;
 
 namespace Vita.Data.MySql {
   class MySqlDbModelLoader : DbModelLoader {
@@ -48,7 +49,7 @@ ORDER BY TABLE_SCHEMA, TABLE_NAME, INDEX_NAME, COLUMN_ORDINAL_POSITION
       return ExecuteSelect(sql);
     }
 
-    public override DbColumnTypeInfo GetDbTypeInfo(InfoRow columnRow) {
+    public override DbTypeInfo GetColumnDbTypeInfo(InfoRow columnRow) {
       // For 'unsigned' types, Data_type column does not show this attribute, but Column_type does. 
       // We search matching by data_type column (and we register names with 'unsigned' included, like 'int unsigned'). 
       // So we just append the unsigned to data_type value, so lookup works. 
@@ -57,13 +58,10 @@ ORDER BY TABLE_SCHEMA, TABLE_NAME, INDEX_NAME, COLUMN_ORDINAL_POSITION
         columnRow["DATA_TYPE"] += " unsigned";
       }
       //auto-set memo
-      var dbType = base.GetDbTypeInfo(columnRow);
-      if(dbType != null && dbType.StorageType.MapToTypes.Contains(typeof(string)) && dbType.Size > 100 * 1000)
-        dbType.Size = -1;
-      return dbType; 
-    }
-    public override bool IsUnlimited(string typeName, long charSize, long byteSize) {
-      return base.IsUnlimited(typeName, charSize, byteSize) || byteSize >= 1000 * 1000 * 1000; //1 billion, for ex: longtext is 4bn
+      var dbTypeInfo = base.GetColumnDbTypeInfo(columnRow);
+      if(dbTypeInfo != null && dbTypeInfo.ClrType == typeof(string) && dbTypeInfo.Size > 100 * 1000)
+        dbTypeInfo.Size = -1;
+      return dbTypeInfo; 
     }
 
     public override void OnModelLoaded() {
@@ -72,16 +70,6 @@ ORDER BY TABLE_SCHEMA, TABLE_NAME, INDEX_NAME, COLUMN_ORDINAL_POSITION
       //FixGuidColumnsTypeDefs();
     }
 
-    private void FixGuidColumnsTypeDefs() {
-      var guidTypeInfo = Driver.TypeRegistry.FindStorageType(typeof(Guid), false);
-      foreach(var table in Model.Tables) {
-        foreach(var col in table.Columns) {
-          if(col.TypeInfo.SqlTypeSpec == "binary(16)") {
-            col.TypeInfo.StorageType = guidTypeInfo; 
-          }
-        }
-      }
-    }
     private void LoadIdentityColumnsInfo() {
       var filter = GetSchemaFilter("TABLE_SCHEMA");
       var sql = string.Format(@"
@@ -105,7 +93,7 @@ SELECT table_schema, table_name, column_name
 
     // In MySql constraint name is not globally unique, it is unique only in scope of the table. 
     // We have to add matching by table names in joins
-    public override InfoTable GetReferentialConstraintsExt() {
+    public override InfoTable GetReferentialConstraints() {
       var filter = GetSchemaFilter("tc1.CONSTRAINT_SCHEMA");
       var sql = string.Format(@"
 SELECT rc.*, tc1.TABLE_NAME as C_TABLE, tc2.TABLE_NAME AS U_TABLE 
@@ -167,6 +155,18 @@ from (`books`.`author` `a$` left join `books`.`user` `t0$` on((`t0$`.`Id` = `a$`
 
     }
 
+    /*
+        private void FixGuidColumnsTypeDefs() {
+          var guidTypeInfo = Driver.TypeRegistry.FindStorageType(typeof(Guid), false);
+          foreach(var table in Model.Tables) {
+            foreach(var col in table.Columns) {
+              if(col.TypeInfo.SqlTypeSpec == "binary(16)") {
+                col.TypeInfo.TypeDef = guidTypeInfo; 
+              }
+            }
+          }
+        }
+    */
 
   }
 }

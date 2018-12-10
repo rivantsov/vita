@@ -7,6 +7,10 @@ using Vita.Data.Linq;
 
 namespace Vita.Data.SqlGen {
 
+  public interface IFlatSqlFragment {
+    void AddFormatted(IList<string> strings, IList<string> placeHolderArgs);
+  }
+
   public abstract class SqlFragment {
 
     public int Precedence;
@@ -33,7 +37,12 @@ namespace Vita.Data.SqlGen {
       return new CompositeSqlFragment(newList);
     }
 
+    public string GetSql() {
+      var flatList = new List<IFlatSqlFragment>();
+      Flatten(flatList, null);
+      return string.Join(string.Empty, flatList); 
 
+    }
   } //class
 
   public class TextSqlFragment : SqlFragment, IFlatSqlFragment {

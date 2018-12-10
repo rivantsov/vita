@@ -10,8 +10,8 @@ namespace Vita.Data.Linq.Translation.Expressions {
   /// <summary>Special Expression types for Sql expressions. </summary>
   public enum SqlExpressionType {
     Select,  
-    MetaTable,
     Table,
+    DerivedTable,
     SubSelect,
     Column,
     ExternalValue, // Query parameter or value derived from it

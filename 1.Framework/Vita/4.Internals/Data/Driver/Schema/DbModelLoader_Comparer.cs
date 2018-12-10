@@ -17,8 +17,8 @@ namespace Vita.Data.Driver {
       if(newColumn.Member.Flags.IsSet(EntityMemberFlags.AsIs))
         return true;
       bool result = true;
-      var oldSpec = oldColumn.TypeInfo.SqlTypeSpec;
-      var newSpec = newColumn.TypeInfo.SqlTypeSpec;
+      var oldSpec = oldColumn.TypeInfo.DbTypeSpec;
+      var newSpec = newColumn.TypeInfo.DbTypeSpec;
       if(!oldSpec.Equals(newSpec, StringComparison.OrdinalIgnoreCase)) {
         description = string.Format("SQL data type change from {0} to {1}." + Environment.NewLine, oldSpec, newSpec);
         result = false;

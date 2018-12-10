@@ -13,11 +13,15 @@ using Vita.Entities.Runtime;
 
 namespace Vita.Data.Runtime {
 
+  public interface IDataCommandResultProcessor {
+    object ProcessResult(DataCommand command);
+  }
+
   public class DataCommand {
     public DataConnection Connection;
     public IDbCommand DbCommand;
     public DbExecutionType ExecutionType; 
-    public ISqlResultProcessor ResultProcessor;
+    public IDataCommandResultProcessor ResultProcessor;
     public IList<EntityRecord> Records; // input records
     //batch commands only
     public IList<BatchParamCopy> ParamCopyList;
@@ -29,7 +33,7 @@ namespace Vita.Data.Runtime {
     public int TimeMs; 
 
     public DataCommand(DataConnection connection, IDbCommand dbCommand, DbExecutionType executionType, 
-                                ISqlResultProcessor resultsProcessor, IList<EntityRecord> records,
+                                IDataCommandResultProcessor resultsProcessor, IList<EntityRecord> records,
                                 IList<BatchParamCopy> paramCopyList = null) {
       Connection = connection;
       DbCommand = dbCommand;

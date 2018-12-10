@@ -31,7 +31,7 @@ namespace Vita.Data.Linq {
       //Analyze/transform base select query
       var selectExpr = TranslateSelectExpression(queryInfo.Lambda.Body, translCtx);
       // Analyze external values (parameters?), create DbParameters
-      var cmdParams = BuildSqlPlaceHolders(queryInfo, translCtx);
+      var cmdParams = BuildExternalValuesPlaceHolders(queryInfo, translCtx);
       // If there's at least one parameter that must be converted to literal (ex: value list), we cannot cache the query
       /*
       bool canCache = !translCtx.ExternalValues.Any(v => v.SqlMode == SqlValueMode.Literal);

@@ -1,10 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Data;
+using System.Data.SqlClient;
 using System.Text;
-
+using Microsoft.SqlServer.Server;
 using Vita.Data.Driver;
 using Vita.Data.Linq.Translation.Expressions;
 using Vita.Data.SqlGen;
+using Vita.Entities.Utilities;
 
 namespace Vita.Data.MsSql {
   public class MsSqlDialect : DbSqlDialect {
@@ -14,19 +17,19 @@ namespace Vita.Data.MsSql {
     public SqlTemplate OffsetTemplate = new SqlTemplate("OFFSET {0} ROWS");
     public SqlTemplate TopTemplate = new SqlTemplate("TOP({0})");
     public SqlTemplate ConcatTemplate = new SqlTemplate("CONCAT({0})"); // for multiple args, > 2
-    public SqlTemplate InArrayTemplateUntyped = new SqlTemplate("({0} IN (SELECT \"Value\" FROM {1}))");
-    public SqlTemplate InArrayTemplateTyped = new SqlTemplate("({0} IN (SELECT CAST(\"Value\" AS {1} ) FROM {2}))");
     public SqlTemplate SqlGetIdentityTemplate = new SqlTemplate("SET {0} = SCOPE_IDENTITY();");
     public SqlTemplate SqlGetRowVersionTemplate = new SqlTemplate("SET {0} = @@DBTS;");
     public SqlTemplate SqlCheckRowCountIsOne = new SqlTemplate(
 @"IF @@RowCount <> 1
-      RAISERROR({0}, 11, 11);
+      RAISERROR({0}, 11, 111);
 ");
-    // RaiseError(msg, severity, state); 
 
+    public MsSqlDbDriver Driver; 
 
     public MsSqlDialect(MsSqlDbDriver driver) : base(driver) {
-      base.MaxParamCount = 2100; 
+      this.Driver = driver; 
+      base.MaxParamCount = 2100;
+      base.MaxRecordsInInsertMany = 500; //actual is 1000, but just to be careful
       base.DynamicSqlParameterPrefix = "@P";
       base.BatchBeginTransaction = new TextSqlFragment("BEGIN TRANSACTION;");
       base.BatchCommitTransaction = new TextSqlFragment("COMMIT TRANSACTION;");
@@ -48,8 +51,8 @@ namespace Vita.Data.MsSql {
 
       //AddTemplate("CHARACTER_LENGTH({0})", SqlFunctionType.StringLength);
       AddTemplate("LEN({0})", SqlFunctionType.StringLength);
-      AddTemplate("UCASE({0})", SqlFunctionType.ToUpper);
-      AddTemplate("LCASE({0})", SqlFunctionType.ToLower);
+      AddTemplate("UPPER({0})", SqlFunctionType.ToUpper);
+      AddTemplate("LOWER({0})", SqlFunctionType.ToLower);
       AddTemplate("TRIM({0})", SqlFunctionType.Trim);
       AddTemplate("LTRIM({0})", SqlFunctionType.LTrim);
       AddTemplate("RTRIM({0})", SqlFunctionType.RTrim);
@@ -77,6 +80,65 @@ namespace Vita.Data.MsSql {
           return typeof(long);
       }
       return base.GetAggregateResultType(aggregateType, opTypes);
+    }
+
+
+    public override IDbDataParameter AddDbParameter(IDbCommand command, SqlPlaceHolder ph, object value) {
+      var parameter = base.AddDbParameter(command, ph, value); 
+      switch(ph) {
+        case SqlListParamPlaceHolder lph:
+          // it is a list value
+          var sqlPrm = (SqlParameter)parameter;
+          sqlPrm.SqlDbType = SqlDbType.Structured;
+          sqlPrm.TypeName = this.Driver.SystemSchema + "." + MsSqlDbDriver.ArrayAsTableTypeName;
+          // format reference to parameter as sub-select. In MS SQL you cannot do: 'WHERE id IN @P0'
+          //   the correct format: WHERE Id in (SELECT Value from @P0)
+          // additionally we need to make cast to target element type - for efficiency
+          var subSelectTemplate = GetSelectFromListParamTemplate(lph.ElementType);
+          ph.FormatParameter = prm => string.Format(subSelectTemplate, prm.ParameterName);
+          // Table-valued parameters cannot be DBNull
+          if(sqlPrm.Value == DBNull.Value)
+            sqlPrm.Value = null; 
+          break; 
+      }
+
+      // force DbType to datetime2
+      switch (parameter.Direction) {
+        case ParameterDirection.Input:
+        case ParameterDirection.InputOutput:
+          if(parameter.DbType == DbType.DateTime)
+            parameter.DbType = DbType.DateTime2;
+          break;
+      } //switch direction
+      return parameter; 
+    }
+
+    private string GetSelectFromListParamTemplate(Type elemType) {
+      if(elemType.IsInt())
+        return "SELECT CAST(\"Value\" AS INT) FROM {0}";
+      else if(elemType == typeof(Guid))
+        return "SELECT CAST(\"Value\" AS UNIQUEIDENTIFIER) FROM {0}";
+      else if(elemType == typeof(string))
+        return "SELECT CAST(\"Value\" AS NVARCHAR) FROM {0}";
+      else
+        return "SELECT \"Value\" FROM {0}";
+    }
+
+
+    public override object ConvertListParameterValue(object value, Type elemType) {
+      var list = value as System.Collections.IEnumerable; 
+      bool isEnum = elemType.IsEnum;
+      var records = new List<SqlDataRecord>();
+      var rowMetaData = new SqlMetaData("Value", SqlDbType.Variant);
+      foreach(object elem in list) {
+        var rec = new SqlDataRecord(rowMetaData);
+        var v1 = isEnum ? ConvertHelper.EnumValueToInt(elem, elemType) : elem;
+        rec.SetValue(0, v1);
+        records.Add(rec);
+      }
+      if(records.Count == 0)
+        return null; // with 0 rows throws error, advising to send NULL
+      return records;
     }
 
 

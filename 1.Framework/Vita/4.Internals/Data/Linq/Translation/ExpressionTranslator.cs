@@ -111,9 +111,9 @@ namespace Vita.Data.Linq.Translation {
         newOperands.Add(newOp);
       }
       Expression newExpr;
-      if(expression is MetaTableExpression)
+      if(expression is DerivedTableExpression)
         //Joins go here
-        newExpr = ((MetaTableExpression)expression).ConvertToNew(newOperands);
+        newExpr = ((DerivedTableExpression)expression).ConvertToNew(newOperands);
       else
         newExpr = expression.ChangeOperands(newOperands, operands);
       return newExpr;

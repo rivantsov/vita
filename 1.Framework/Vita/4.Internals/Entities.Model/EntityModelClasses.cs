@@ -245,6 +245,7 @@ namespace Vita.Entities.Model {
     public string ColumnDefault;
 
     // DbType, typespec specified explicitly in Column attribute
+    [Obsolete]
     public DbType? ExplicitDbType = null;
     public string ExplicitDbTypeSpec;
 
@@ -308,6 +309,9 @@ namespace Vita.Entities.Model {
       return attr != null; 
     }
 
+    public string FullName {
+      get { return $"{Entity.Name}.{MemberName}"; }
+    }
   }//class
 
   // Container member+order info, for ordered column lists in attributes: Index("LastName:desc,FirstName:asc"); 

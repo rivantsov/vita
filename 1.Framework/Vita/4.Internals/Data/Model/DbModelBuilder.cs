@@ -14,6 +14,7 @@ using Vita.Data.Linq;
 using Vita.Data.SqlGen;
 using Vita.Data.Runtime;
 using Vita.Entities.Runtime;
+using Vita.Data.Driver.TypeSystem;
 
 namespace Vita.Data.Model {
 
@@ -45,7 +46,8 @@ namespace Vita.Data.Model {
       FinalizeObjectNames();
       CompleteTablesSetup(); 
       CompileViews();
-      BuildSequences(); 
+      BuildSequences();
+      BuildDbModelLoadFilter(); 
       _driver.OnDbModelConstructed(_dbModel);
       CheckErrors();
       return _dbModel;
@@ -83,9 +85,10 @@ namespace Vita.Data.Model {
         LinqExpressionHelper.EvaluateCommandParameters(viewCmd); //in case there are any local variables
 
         var sqlStmt = engine.Translate(viewCmd);
-        var cmdBuilder = new DataCommandBuilder(this._dbModel, formatOptions: SqlFormatOptions.NoParameters);
-        cmdBuilder.AddLinqSql(sqlStmt, viewCmd.ParameterValues);
-        viewTbl.ViewSql = cmdBuilder.GetSqlText().Trim(' ', '\r', '\n');  
+        var cmdBuilder = new DataCommandBuilder(this._dbModel, mode: SqlGenMode.NoParameters);
+        cmdBuilder.AddLinqStatement(sqlStmt, viewCmd.ParameterValues);
+        // ';' is important for Oracle
+        viewTbl.ViewSql = cmdBuilder.GetSqlText().Trim(' ', '\r', '\n', ';');  
       }
     }
 
@@ -143,21 +146,20 @@ namespace Vita.Data.Model {
     }
 
     private DbColumnInfo CreateDbColumn(DbTableInfo table, EntityMemberInfo member) {
-      bool isError = false;
       var colName = member.ColumnName;
       string colDefault = member.ColumnDefault; //comes from attribute
       if(colDefault != null && member.DataType == typeof(string) && !colDefault.StartsWith("'"))
         colDefault = colDefault.Quote();
 
-      var dbTypeInfo = _driver.TypeRegistry.GetColumnTypeInfo(member, _log);
-      if(dbTypeInfo == null) {
-        isError = true;
-        LogError("Driver failed to match db type for data type {0}, member {1}.{2}", member.DataType, member.Entity.FullName, member.MemberName);
-        // do not throw, continue to find more errors
-        //Util.Throw("Driver failed to match db type for data type {0}, member {1}.{2}", member.DataType, member.Entity.FullName, member.MemberName);
+      var dbTypeInfo = GetDBTypeMapping(member);
+      if(dbTypeInfo == null)
         return null;
-      }
       var dbColumn = new DbColumnInfo(member, table, colName, dbTypeInfo);
+      dbColumn.Converter = _driver.TypeRegistry.GetDbValueConverter(dbTypeInfo, member.DataType); 
+      if (dbColumn.Converter == null) {
+        LogError($"Member {member}, type {member.DataType}: failed to find DbConverter to db type {dbTypeInfo.DbTypeSpec}");
+        return null; 
+      }
       if(!string.IsNullOrEmpty(colDefault))
         dbColumn.DefaultExpression = colDefault;
       if(member.AutoValueType == AutoType.Identity)
@@ -170,12 +172,24 @@ namespace Vita.Data.Model {
         dbColumn.Flags |= DbColumnFlags.NoInsert;
       if(member.Flags.IsSet(EntityMemberFlags.NoDbUpdate))
         dbColumn.Flags |= DbColumnFlags.NoUpdate;
-      if(isError)
-        dbColumn.Flags |= DbColumnFlags.Error;
-      if (member.Flags.IsSet(EntityMemberFlags.UnlimitedSize) && _driver.Supports(DbFeatures.ForceNullableMemo)) //case for SQL CE
-        dbColumn.Flags |= DbColumnFlags.Nullable;
       return dbColumn;
     }//method
+
+    private DbTypeInfo GetDBTypeMapping(EntityMemberInfo member) {
+      DbTypeInfo typeInfo; 
+      try {
+        if(string.IsNullOrEmpty(member.ExplicitDbTypeSpec))
+          typeInfo = _driver.TypeRegistry.GetDbTypeInfo(member);
+        else
+          typeInfo = _driver.TypeRegistry.GetDbTypeInfo(member.ExplicitDbTypeSpec, member);
+        if (typeInfo == null)
+          _log.Error($"Failed to map member type {member.DataType} to DB type; member {member.FullName}");
+        return typeInfo; 
+      } catch (Exception ex) {
+        _log.Error($"Failed to map member type {member.DataType} to DB type; member {member.FullName} -  error: {ex.Message}");
+        return null; 
+      }
+    }
 
     private void CreateTableKeys() {
       var supportsClustedIndex = _driver.Supports(DbFeatures.ClusteredIndexes);
@@ -402,6 +416,29 @@ namespace Vita.Data.Model {
       if(_dbModelConfig.Options.IsSet(DbOptions.AddSchemaToTableNames))
         tname = entity.Area.Name + "_" + tname;
       return tname;
+    }//method
+
+    private void BuildDbModelLoadFilter() {
+      var loadFilter = new DbModelLoadFilter();
+      foreach(var tbl in _dbModel.Tables) {
+        loadFilter.Schemas.Add(tbl.Schema);
+        switch(tbl.Kind) {
+          case EntityKind.View:
+            loadFilter.Views.Add(tbl.TableName);
+            break;
+          case EntityKind.Table:
+            loadFilter.Tables.Add(tbl.TableName);
+            // add all old table names - in case we are about to rename the table
+            var oldNames = tbl.Entity.OldNames;
+            if(oldNames != null)
+              loadFilter.Tables.AddRange(oldNames); 
+            break;
+        }//switch
+      }//foreach
+      foreach(var seq in _dbModel.Sequences)
+        loadFilter.Sequences.Add(seq.Name);
+
+      _dbModel.LoadFilter = loadFilter;
     }//method
 
   }//class

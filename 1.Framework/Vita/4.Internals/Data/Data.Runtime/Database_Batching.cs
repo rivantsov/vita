@@ -57,7 +57,6 @@ namespace Vita.Data.Runtime {
       //execute post-execute actions; it is usually handling output parameter values
       // Finalize records after update
       foreach (var rec in updateSet.Records) {
-        rec.SubmitCount++;
         rec.EntityInfo.SaveEvents.OnSubmittedChanges(rec);
       }
     }

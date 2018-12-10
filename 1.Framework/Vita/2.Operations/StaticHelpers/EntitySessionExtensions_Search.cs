@@ -34,6 +34,7 @@ namespace Vita.Entities {
     /// <param name="searchParams">Search parameters object containing extra options for the query: order by, skip, take.</param>
     /// <param name="include">Include expression.</param>
     /// <param name="nameMapping">A name mapping dictionary, to map names in order-by expression to actual properties of the entity.</param>
+    /// <param name="options">Query options.</param>
     /// <returns>An instance of the <c>SearchResults</c> class, with selected rows and total count for the query condition.</returns>
     public static SearchResults<TEntity> ExecuteSearch<TEntity>(
                   this IEntitySession session,

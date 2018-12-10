@@ -22,8 +22,8 @@ namespace Vita.Data.Driver {
     public ConvertFunc ColumnToPropertyUnsafe; // FromType -> ToType
     public ConvertFunc PropertyToColumnUnsafe;
     //Safe, wrapped versions
-    public ConvertFunc ColumnToProperty; // FromType -> ToType
-    public ConvertFunc PropertyToColumn;
+    public ConvertFunc ColumnToProperty { get; set; } // FromType -> ToType
+    public ConvertFunc PropertyToColumn { get; set; }
 
     public DbValueConverter(Type columnType, Type propertyType, ConvertFunc columnToProperty, ConvertFunc propertyToColumn) {
       ColumnType = columnType;
@@ -37,8 +37,7 @@ namespace Vita.Data.Driver {
       try {
         if (value == DBNull.Value || value == null)
           return DBNull.Value;
-        else
-          return ColumnToPropertyUnsafe(value);
+        return ColumnToPropertyUnsafe(value);
       } catch (Exception ex) {
         //value is not null here, garanteed
         var msg = Util.SafeFormat(
@@ -65,9 +64,12 @@ namespace Vita.Data.Driver {
     public override string ToString() {
       return ColumnType + "->" + PropertyType;
     }
+
+    public static DbValueConverter NoConvert = new DbValueConverter(typeof(object), typeof(object), NoConvertFunc, NoConvertFunc);
+
   }
 
-  public class DbValueConverterRegistry {
+  public class DbValueConverterRegistryNew {
 
     #region nested classes
     public class TypeTuple : IEquatable<TypeTuple> {
@@ -95,13 +97,17 @@ namespace Vita.Data.Driver {
 
     IDictionary<TypeTuple, DbValueConverter> _converters = new ConcurrentDictionary<TypeTuple, DbValueConverter>();
 
-    public DbValueConverterRegistry() {
+    public DbValueConverterRegistryNew() {
       BuildDefaultConverters(typeof(byte), typeof(sbyte), typeof(Int16), typeof(UInt16), typeof(Int32), typeof(UInt32),
         typeof(Int64), typeof(UInt64));
       BuildDefaultConverters(typeof(Single), typeof(double), typeof(decimal));
       AddConverter<byte[], Binary>(ByteArrayToBinary, BinaryToByteArray);
       AddConverter<byte[], Guid>(ByteArrayToGuid, GuidToByteArray);
       AddConverter<string, char>(x => x == null ? '\0' : ((string)x)[0], x => ((char)x).ToString());
+      // decimal -> int
+      BuildDefaultConverters(typeof(Int64), typeof(UInt64), typeof(Int32), typeof(UInt32),
+          typeof(Int16), typeof(UInt16), typeof(byte), typeof(sbyte),
+          typeof(decimal));
     }
 
     public DbValueConverter AddConverter<TColumn, TProperty>(ConvertFunc columnToProperty, ConvertFunc propertyToColumn) {
@@ -114,31 +120,34 @@ namespace Vita.Data.Driver {
       return conv; 
     }
 
-    public DbValueConverter GetConverter(Type fromType, Type toType) {
-      var types = new TypeTuple(fromType, toType);
+    public DbValueConverter GetConverter(Type columnType, Type memberType) {
+      // do not use one no-convert instance; conv should have Type properties set
+      if(columnType == memberType)
+        return DbValueConverter.NoConvert;
+      var types = new TypeTuple(columnType, memberType);
       DbValueConverter conv;
       if(_converters.TryGetValue(types, out conv))
         return conv; 
       //if it is enum or nullable, create converter on the fly
-      if (toType.IsNullableValueType()) {
-        var toTypeBase = Nullable.GetUnderlyingType(toType);
-        if (toTypeBase == fromType) {
+      if (memberType.IsNullableValueType()) {
+        var toTypeBase = Nullable.GetUnderlyingType(memberType);
+        if (toTypeBase == columnType) {
           //Build T->Nullable<T> converter
-          conv = BuildNullableValueConverter(toType);
+          conv = BuildNullableValueConverter(memberType);
           AddConverter(conv);
           return conv; 
         }
         //Otherwise try to get base converter
-        var baseConv = GetConverter(fromType, toTypeBase);
+        var baseConv = GetConverter(columnType, toTypeBase);
         if (baseConv == null)
           return null;
         //Build combined converter
-        var nullConv = BuildNullableValueConverter(toType, baseConv);
+        var nullConv = BuildNullableValueConverter(memberType, baseConv);
         AddConverter(nullConv); 
         return nullConv;
       } //if IsNullableValueType
-      if (toType.IsEnum) {
-        conv = BuildEnumValueConverter(fromType, toType);
+      if (memberType.IsEnum) {
+        conv = BuildEnumValueConverter(columnType, memberType);
         AddConverter(conv);
         return conv; 
       }
@@ -146,9 +155,9 @@ namespace Vita.Data.Driver {
     }//method
 
 
-    private void AddConverter(DbValueConverter convertInfo) {
-      var types = new TypeTuple(convertInfo.ColumnType, convertInfo.PropertyType);
-      _converters[types] = convertInfo;
+    private void AddConverter(DbValueConverter converter) {
+      var types = new TypeTuple(converter.ColumnType, converter.PropertyType);
+      _converters[types] = converter;
     }
 
     #region some standard converters
@@ -224,19 +233,19 @@ namespace Vita.Data.Driver {
 
     #region Building derived converters - for nullable types and enums
     private DbValueConverter BuildNullableValueConverter(Type nullablePropertyType, DbValueConverter baseConv = null) {
-      var valueFromNullable = BuildNullableValueReader(nullablePropertyType);
+      var valueFromNullable = BuildNullableGetValueFunc(nullablePropertyType);
       Type colType;
       ConvertFunc propToColFunc;
       ConvertFunc colToPropFunc; 
       if (baseConv == null) {
-        colType = baseConv == null ? nullablePropertyType.GetUnderlyingStorageType() : baseConv.ColumnType;
+        colType = baseConv == null ? nullablePropertyType.GetUnderlyingStorageClrType() : baseConv.ColumnType;
         propToColFunc =
           x => x == null || x == DBNull.Value ?
                        DBNull.Value :
                        x.GetType().IsValueType ? x : valueFromNullable(x);
         colToPropFunc = x => x; 
       } else {
-        colType = nullablePropertyType.GetUnderlyingStorageType();
+        colType = nullablePropertyType.GetUnderlyingStorageClrType();
         propToColFunc =
           x => x == null || x == DBNull.Value ?
                      DBNull.Value :
@@ -248,14 +257,13 @@ namespace Vita.Data.Driver {
       return convObj;
     }
     private DbValueConverter BuildEnumValueConverter(Type columnType, Type enumType) {
-      var colToEnum = BuildIntToEnum(columnType, enumType);
-      var enumToCol = BuildEnumToInt(columnType, enumType);
-      ConvertFunc entToDbFunc =  x => Convert.ChangeType(x, columnType);
+      var colToEnum = BuildIntToEnumFunc(columnType, enumType);
+      var enumToCol = BuildEnumToIntFunc(columnType, enumType);
       var convObj = new DbValueConverter(columnType, enumType, (ConvertFunc)colToEnum, (ConvertFunc)enumToCol);
       return convObj;
     }
 
-    private Func<object, object> BuildNullableValueReader(Type nullableType) {
+    private Func<object, object> BuildNullableGetValueFunc(Type nullableType) {
       var prm = Expression.Parameter(typeof(object));
       var typedPrm = Expression.Convert(prm, nullableType);
       var valueProp = nullableType.GetProperty("Value");
@@ -266,7 +274,7 @@ namespace Vita.Data.Driver {
       return (Func<object, object>)func;
     }
 
-    public static Func<object, object> BuildIntToEnum(Type intType, Type enumType) {
+    public static Func<object, object> BuildIntToEnumFunc(Type intType, Type enumType) {
       var baseEnumType = Enum.GetUnderlyingType(enumType); 
       var prm = Expression.Parameter(typeof(object));
       // var unboxed = Expression.Unbox(prm, intType);
@@ -281,7 +289,7 @@ namespace Vita.Data.Driver {
       return (Func<object, object>)func; 
     }
 
-    public static Func<object, object> BuildEnumToInt(Type intType, Type enumType) {
+    public static Func<object, object> BuildEnumToIntFunc(Type intType, Type enumType) {
       var baseEnumType = Enum.GetUnderlyingType(enumType);
       var prm = Expression.Parameter(typeof(object));
       var enumValue = Expression.Convert(prm, enumType);

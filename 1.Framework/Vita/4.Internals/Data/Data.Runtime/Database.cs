@@ -55,10 +55,10 @@ namespace Vita.Data.Runtime {
 
     public object ExecuteEntitySelect(EntitySession session, EntityCommand command, DataConnection conn) {
       var sql = CommandRepo.GetSelect(command); 
-      var fmtOptions = command.Info.Options.IsSet(QueryOptions.NoParameters) ? 
-                             SqlFormatOptions.NoParameters : SqlFormatOptions.PreferParam;
-      var cmdBuilder = new DataCommandBuilder(this.DbModel, batchMode: false, formatOptions: fmtOptions);
-      cmdBuilder.AddLinqSql(sql, command.ParameterValues);
+      var genMode = command.Info.Options.IsSet(QueryOptions.NoParameters) ? 
+                             SqlGenMode.NoParameters : SqlGenMode.PreferParam;
+      var cmdBuilder = new DataCommandBuilder(this.DbModel, batchMode: false, mode: genMode);
+      cmdBuilder.AddLinqStatement(sql, command.ParameterValues);
       var dataCmd = cmdBuilder.CreateCommand(conn, DbExecutionType.Reader, sql.ResultProcessor);
       ExecuteDataCommand(dataCmd);
       return dataCmd.ProcessedResult;
@@ -67,9 +67,9 @@ namespace Vita.Data.Runtime {
     private object ExecuteEntityNonQuery(EntitySession session, EntityCommand command, DataConnection conn) {
       var sql = CommandRepo.GetLinqNonQuery(command);
       var fmtOptions = command.Info.Options.IsSet(QueryOptions.NoParameters) ?
-                             SqlFormatOptions.NoParameters : SqlFormatOptions.Auto;
+                             SqlGenMode.NoParameters : SqlGenMode.PreferParam;
       var cmdBuilder = new DataCommandBuilder(this.DbModel);
-      cmdBuilder.AddLinqSql(sql, command.ParameterValues);
+      cmdBuilder.AddLinqStatement(sql, command.ParameterValues);
       var dataCmd = cmdBuilder.CreateCommand(conn, DbExecutionType.NonQuery, sql.ResultProcessor);
       ExecuteDataCommand(dataCmd);
       return dataCmd.ProcessedResult ?? dataCmd.Result;
@@ -115,7 +115,7 @@ namespace Vita.Data.Runtime {
                 if (CanProcessMany(tableGrp)) {
                   var cmdBuilder = new DataCommandBuilder(this.DbModel);
                   var sql = CommandRepo.GetCrudInsertMany(tableGrp.Table, tableGrp.Records, cmdBuilder);
-                  cmdBuilder.AddSql(sql, tableGrp.Records);
+                  cmdBuilder.AddUpdates(sql, tableGrp.Records);
                   var cmd = cmdBuilder.CreateCommand(conn, sql.ExecutionType, sql.ResultProcessor);
                   ExecuteDataCommand(cmd);
                 } else
@@ -127,8 +127,8 @@ namespace Vita.Data.Runtime {
               case EntityOperation.Delete:
                 if (CanProcessMany(tableGrp)) {
                   var cmdBuilder = new DataCommandBuilder(this.DbModel);
-                  var sql = CommandRepo.GetCrudDeleteMany(tableGrp.Table, tableGrp.Records);
-                  cmdBuilder.AddSql(sql, tableGrp.Records);
+                  var sql = CommandRepo.GetCrudDeleteMany(tableGrp.Table);
+                  cmdBuilder.AddUpdates(sql, tableGrp.Records, new object[] { tableGrp.Records });
                   var cmd = cmdBuilder.CreateCommand(conn, DbExecutionType.NonQuery, sql.ResultProcessor);
                   ExecuteDataCommand(cmd);
                 } else
@@ -153,8 +153,8 @@ namespace Vita.Data.Runtime {
         if(updateSet.InsertsIdentity && rec.EntityInfo.Flags.IsSet(EntityFlags.ReferencesIdentity))
           rec.RefreshIdentityReferences(); 
         var cmdBuilder = new DataCommandBuilder(this.DbModel);
-        var sql = CommandRepo.GetCrudNonQuery(tableGrp.Table, rec, valueFormatter: cmdBuilder);
-        cmdBuilder.AddSql(sql, rec);
+        var sql = CommandRepo.GetCrudSqlForSingleRecord(tableGrp.Table, rec);
+        cmdBuilder.AddUpdate(sql, rec);
         var cmd = cmdBuilder.CreateCommand(conn, sql.ExecutionType, sql.ResultProcessor);
         ExecuteDataCommand(cmd);
       }
@@ -180,7 +180,9 @@ namespace Vita.Data.Runtime {
         case EntityOperation.Delete:
           return group.Table.PrimaryKey.KeyColumns.Count == 1;
         case EntityOperation.Insert:
-          if (group.Table.Entity.Flags.IsSet(EntityFlags.HasIdentity | EntityFlags.HasRowVersion))
+          if(!_driver.Supports(DbFeatures.InsertMany))
+            return false;
+          if(group.Table.Entity.Flags.IsSet(EntityFlags.HasIdentity | EntityFlags.HasRowVersion))
             return false;
           return true;
         default:

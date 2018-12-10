@@ -111,7 +111,6 @@ namespace Vita.Testing.BasicTests.ModuleIntegration {
       [TestMethod]
       public void TestModuleIntegration() {
         var schema = "usr";
-        Startup.DropSchemaObjects(schema); //start from scratch
 
         // Runs integrated app by Randy
         _app = new EntityApp();

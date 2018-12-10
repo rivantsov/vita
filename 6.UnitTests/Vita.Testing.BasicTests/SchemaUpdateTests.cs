@@ -14,6 +14,7 @@ using Vita.Entities.DbInfo;
 using Vita.Data.Upgrades;
 using Vita.Entities.Logging;
 using System.Collections.Generic;
+using Vita.Tools;
 
 namespace Vita.Testing.BasicTests.SchemaUpdates {
 
@@ -177,13 +178,12 @@ namespace Vita.Testing.BasicTests.SchemaUpdates {
 
     [TestMethod]
     public void TestSchemaUpdate() {
+      if(Startup.Driver == null)
+        Startup.SetupForTestExplorerMode();
       // SQLite: too many troubles because SQLite does not support modifying tables
       if(Startup.ServerType == DbServerType.SQLite)
         return;
       try {
-        //Make sure config file is loaded and ServerType is set
-        if(Startup.Driver == null)
-          Startup.SetupForTestExplorerMode();
         TestSchemaUpdateImpl(); 
       } catch (Exception ex) {
         // write to debug stream - it will appear in test report
@@ -193,27 +193,31 @@ namespace Vita.Testing.BasicTests.SchemaUpdates {
     }
 
     private void TestSchemaUpdateImpl() {
+      // Prepare Db settings, wipe out old tables - we have to do it this way, because of complexities with Oracle
+      var dbSettings = new DbSettings(Startup.Driver, Startup.DbOptions, 
+          Startup.ConnectionString, upgradeMode: DbUpgradeMode.Always, upgradeOptions: DbUpgradeOptions.Default);
+      DataUtility.DropTablesSafe(dbSettings, SchemaName, "ChildEntity", "ChildEntityRenamed", "ParentEntity", 
+          "Table", "NewTable", "DbInfo", "DbModuleInfo");
 
-      Startup.DropSchemaObjects(SchemaName);
       var supportsClustIndex = Startup.Driver.Supports(DbFeatures.ClusteredIndexes);
 
       //version 1 of model/schema
       {
         var app = new EntityAppV1();
 
-        Startup.ActivateApp(app); //updates schema
+        SpecialActivateApp(app, dbSettings, true); 
 
         // Load DbModel and verify it is correct
-        var dbModel = Startup.LoadDbModel(SchemaName, app.ActivationLog);
-        Assert.AreEqual(6, dbModel.Tables.Count(), "Expected 6 tables."); //2 tables in DbInfo + 4 tables in our module
-        var parTable = dbModel.GetTable(SchemaName, "ParentEntity");
+        var dbModel = Startup.LoadDbModel(app);
+        Assert.AreEqual(6, dbModel.Tables.Count, "Expected 6 tables."); //2 tables in DbInfo + 4 tables in our module
+        var parTable = FindTable(dbModel, SchemaName, "ParentEntity");
         Assert.AreEqual(8, parTable.Columns.Count, "Invalid number of columns in parent table.");
         var keyCount = CountKeys(parTable);
         //Keys: PK, FK to IEntityToDelete, index on FK to IEntityToDelete, index on IntProp,StringProp 
         Assert.AreEqual(4, keyCount, "Invalid # of keys in parent table.");
 
         //child entity
-        var childTable = dbModel.GetTable(SchemaName, "ChildEntity");
+        var childTable = FindTable(dbModel, SchemaName, "ChildEntity");
         Assert.AreEqual(5, childTable.Columns.Count, "Invalid number of columns in child table.");
         // some servers like MySql create FK and Index on it under the same name. When loading, such a key should be marked with 2 flags
         // so let's count these separately; should be 3: PK + 2 foreign keys
@@ -247,13 +251,17 @@ namespace Vita.Testing.BasicTests.SchemaUpdates {
       //Now change to version 2 ================================================================
       {
         var app = new EntityAppV2();
-        Startup.ActivateApp(app, dropUnknownTables: true);
+        // use fresh dbSettings to avoid sharing db model (we could drop the DbOptions.ShareDbModel flag instead)
+        dbSettings = new DbSettings(Startup.Driver, Startup.DbOptions,
+            Startup.ConnectionString, upgradeMode: DbUpgradeMode.Always, upgradeOptions: DbUpgradeOptions.Default | DbUpgradeOptions.DropUnknownObjects);
+        SpecialActivateApp(app, dbSettings, false);
 
         //At this point the schema should have been updated; let's check it      
         // Load DbModel and verify it is correct
-        var dbModel = Startup.LoadDbModel(SchemaName, app.ActivationLog);
-        Assert.AreEqual(6, dbModel.Tables.Count(), "Expected 6 tables after update.");
-        var parTable = dbModel.GetTable(SchemaName, "ParentEntity");
+        var dbModel = Startup.LoadDbModel(app);
+        // 2 tables in DbInfo module, 4 tables in test app
+        Assert.AreEqual(6, dbModel.Tables.Count, "Expected 6 tables after update.");
+        var parTable = FindTable(dbModel, SchemaName, "ParentEntity");
         Assert.AreEqual(7, parTable.Columns.Count, "Invalid number of columns in parent table after schema update.");
         Assert.AreEqual(3, parTable.Keys.Count, //PK, Clustered index, index on IntProp,StringProp
            "Invalid # of keys in parent table after update.");
@@ -263,7 +271,7 @@ namespace Vita.Testing.BasicTests.SchemaUpdates {
           Assert.AreEqual(2, parCI.KeyColumns.Count, "Invalid number of fields in clustered index."); //
         }
         //child entity
-        var childTable = dbModel.GetTable(SchemaName, "ChildEntityRenamed");
+        var childTable = FindTable(dbModel, SchemaName, "ChildEntityRenamed");
         Assert.AreEqual(5, childTable.Columns.Count, "Invalid number of columns in child table after update.");
         var keyCount = CountKeys(childTable); // = 3:  Clustered PK, FK to parent, FK to OtherParent; (indexes on FKs are not auto-created)
         // For MySql, for every FK a supporting index is created (automatically), so we have 2 extra indexes on FKs
@@ -297,6 +305,35 @@ namespace Vita.Testing.BasicTests.SchemaUpdates {
 
     private int CountKeys(DbTableInfo table, KeyType keyType) {
       return table.Keys.Count(k => k.KeyType.IsSet(keyType));
+    }
+
+    private DbTableInfo FindTable(DbModel dbModel, string schema, string tableName) {
+      return dbModel.GetTable(schema, tableName); 
+    }
+
+    // This test requies its own activation process, complications with drop schema and renaming tables - especially in Oracle
+     
+    private EntityApp SpecialActivateApp(EntityApp app, DbSettings dbSettings, bool dropOldSchema) {
+      app.LogPath = Startup.LogFilePath;
+      app.ActivationLogPath = Startup.ActivationLogPath;
+      try {
+        //Setup emitter
+        app.EntityClassProvider = Vita.Entities.Emit.EntityClassEmitter.CreateEntityClassProvider();
+        app.Init();
+        if(dropOldSchema) {
+          Startup.DropSchemaObjects(app, dbSettings);
+        }
+
+        app.ConnectTo(dbSettings);
+        return app;
+      } catch(StartupFailureException sx) {
+        //Unit test framework shows only ex message, not details; let's write specifics into debug output - it will be shown in test failure report
+        app.ActivationLog.Error(sx.Message);
+        app.ActivationLog.Info(sx.Log);
+        Debug.WriteLine("EntityApp init exception: ");
+        Debug.WriteLine(sx.Log);
+        throw;
+      }
     }
 
 

@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 
 using Vita.Data;
 using Vita.Data.Driver;
+using Vita.Data.Driver.TypeSystem;
 using Vita.Data.Model;
 using Vita.Entities;
 using Vita.Entities.Logging;
@@ -25,11 +26,11 @@ namespace Vita.Data.SQLite {
       //tables/views, columns
       var tblTables = ExecuteSelect("select type, tbl_name, sql from sqlite_master where type='table' OR type='view';");
       foreach(var tblRow in tblTables.Rows) {
-        var tname = tblRow.GetAsString("tbl_name");
+        var tblName = tblRow.GetAsString("tbl_name");
         var isView = tblRow.GetAsString("type") == "view";
         var objType = isView ? DbObjectType.View : DbObjectType.Table;
         var tableSql = tblRow.GetAsString("sql");
-        var tbl = new DbTableInfo(this.Model, string.Empty, tname, null, objType);
+        var tbl = new DbTableInfo(this.Model, string.Empty, tblName, null, objType);
         if (isView) {
           //do not load columns, it will fail 
           tbl.ViewSql = tableSql;
@@ -41,19 +42,20 @@ namespace Vita.Data.SQLite {
         // However col is marked as PK in table_info listing. So we collect these columns and use them later
         // if PK has not been set
         var pkMarkedCols = new List<DbColumnInfo>();
-        var tblCols = ExecuteSelect("PRAGMA table_info('{0}');", tname);
+        var tblCols = ExecuteSelect("PRAGMA table_info('{0}');", tblName);
         foreach(var colRow in tblCols.Rows) {
           var colName = colRow.GetAsString("name");
-          var type = colRow.GetAsString("type");
+          var typeName = colRow.GetAsString("type");
           var notNull = colRow.GetAsInt("notnull");
           var dftValue = colRow.GetAsString("dflt_value");
-          var typeInfo = GetSqliteTypeInfo(type, nullable: notNull == 0, dft: dftValue);
+          var typeInfo = GetSqliteTypeInfo(typeName, nullable: notNull == 0, dft: dftValue);
           if (typeInfo == null) {
             LogError(
-              "Failed to find TypeInfo for SQL data type [{0}]. Table(view) {1}, column {2}.", type, tname, colName);
+              "Failed to find TypeInfo for SQL data type [{0}]. Table(view) {1}, column {2}.", typeName, tblName, colName);
             continue;
           }
-          var colInfo = new DbColumnInfo(tbl, colName, typeInfo);
+          var isNullable = notNull == 0; 
+          var colInfo = new DbColumnInfo(tbl, colName, typeInfo, isNullable);
           // check PK flag, save the column if the flag is set
           bool isPk = colRow.GetAsInt("pk") == 1;
           if(isPk)
@@ -61,7 +63,7 @@ namespace Vita.Data.SQLite {
         }// foreach colRow
 
         // indexes, PKs
-        var tblIndexes = ExecuteSelect("PRAGMA index_list('{0}')", tname);
+        var tblIndexes = ExecuteSelect("PRAGMA index_list('{0}')", tblName);
         foreach (var indRow in tblIndexes.Rows) {
           var indName = indRow.GetAsString("name");
           var origin = indRow.GetAsString("origin");
@@ -76,7 +78,7 @@ namespace Vita.Data.SQLite {
           foreach(var colRow in indCols.Rows) {
             var colName = colRow.GetAsString("name");
             var col = tbl.Columns.FindByName(colName);
-            Util.Check(col != null, "Building index {0}, table {1}: column {2} not found.", indName, tname, colName);
+            Util.Check(col != null, "Building index {0}, table {1}: column {2} not found.", indName, tblName, colName);
             indKey.KeyColumns.Add(new DbKeyColumnInfo(col));
           }//foreach colRow
           if(keyType.IsSet(KeyType.PrimaryKey))
@@ -84,7 +86,7 @@ namespace Vita.Data.SQLite {
         }//foreach indRow
         // check PK; if not detected, it is identity (auto-inc) col (no pk index in this case)
         if (tbl.Kind == EntityKind.Table && tbl.PrimaryKey == null) {
-          Util.Check(pkMarkedCols.Count > 0, "Primary key not found on table {0}.", tname);
+          Util.Check(pkMarkedCols.Count > 0, "Primary key not found on table {0}.", tblName);
           CreateAutoIncPrimaryKey(tbl, pkMarkedCols);
         }
       }// foreach tblRow
@@ -120,11 +122,8 @@ namespace Vita.Data.SQLite {
       return Model; 
     }//method
 
-    private DbColumnTypeInfo GetSqliteTypeInfo(string type, bool nullable, string dft) {
-      var typeDef = Driver.TypeRegistry.FindDbTypeDef(type, false);
-      if(typeDef == null)
-        return null; 
-      var typeInfo = new DbColumnTypeInfo(typeDef, type, nullable, 0, 0, 0, dft);
+    private DbTypeInfo GetSqliteTypeInfo(string dbTypeName, bool nullable, string dft) {
+      var typeInfo = Driver.TypeRegistry.GetDbTypeInfo(dbTypeName);
       return typeInfo; 
     }
 
@@ -144,14 +143,6 @@ namespace Vita.Data.SQLite {
         table.PrimaryKey.KeyColumns.Add(new DbKeyColumnInfo(col));
       } //foreach
     } //method
-
-    // Used by DbInfo module
-    public override bool TableExists(string schema, string tableName) {
-      // If AppendSchema flag is set, then tableName already includes schema
-      var sql = string.Format("select name from sqlite_master where type='table' AND name = '{0}'", tableName);
-      var tblRes = ExecuteSelect(sql);
-      return tblRes.Rows.Count > 0; 
-    }
 
     protected override string NormalizeViewScript(string script) {
       if(string.IsNullOrEmpty(script))

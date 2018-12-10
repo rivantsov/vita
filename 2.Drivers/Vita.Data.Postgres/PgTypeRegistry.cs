@@ -10,86 +10,80 @@ using Vita.Data.Model;
 using NpgsqlTypes;
 using Vita.Entities;
 using Vita.Entities.Utilities;
+using Vita.Data.Driver.TypeSystem;
 
 namespace Vita.Data.Postgres {
   public class PgTypeRegistry : DbTypeRegistry {
     public PgTypeRegistry(PgDbDriver driver)  : base(driver) {
       var none = new Type[] { };
-
-      AddTypeDef("real", NpgsqlDbType.Real, DbType.Single, typeof(Single), aliases: "float4");
-      AddTypeDef("double precision", NpgsqlDbType.Double, DbType.Double, typeof(Double), aliases: "float8");
-      AddTypeDef("numeric", NpgsqlDbType.Numeric, DbType.Decimal, typeof(Decimal), args: "({0},{1})");
+      
+      AddDbTypeDef("real", typeof(Single), aliases: "float4", providerDbType: NpgsqlDbType.Real);
+      AddDbTypeDef("double precision", typeof(Double), aliases: "float8", providerDbType: NpgsqlDbType.Double);
+      AddDbTypeDef("numeric", typeof(Decimal), DbTypeFlags.PrecisionScale, providerDbType: NpgsqlDbType.Numeric);
       //Just to handle props marked with DbType=DbType.Currency
-      AddTypeDef("money", NpgsqlDbType.Money, DbType.Currency, typeof(Decimal), mapToTypes: none,
-            valueToLiteral: CreateFuncNumToLiteralWithCast("money"));
+      AddDbTypeDef("money", typeof(Decimal), mapColumnType: false, providerDbType: NpgsqlDbType.Money, 
+        toLiteral: CreateFuncNumToLiteralWithCast("money"));
 
       //integers
-      // Note: We have to provide explicit cast for certain int and currency types; otherwise, function overload resolution does not match the intended function 
-      // (it works by function name and arg types match). Quite annoying. 
-      AddTypeDef("int", NpgsqlDbType.Integer, DbType.Int32, typeof(int), aliases: "integer,oid,int4", 
-                             mapToTypes: new Type[] { typeof(Int32), typeof(UInt16) });
-      AddTypeDef("smallint", NpgsqlDbType.Smallint, DbType.Int16, typeof(Int16),  
-                             mapToTypes: new Type[] { typeof(Int16), typeof(byte), typeof(sbyte) }, 
-                             valueToLiteral: CreateFuncNumToLiteralWithCast("smallint"));
-      AddTypeDef("bigint", NpgsqlDbType.Bigint,  DbType.Int64, typeof(Int64),  aliases: "int8",
-                             mapToTypes: new Type[] { typeof(Int64), typeof(UInt32), typeof(UInt64) }, 
-                             valueToLiteral: CreateFuncNumToLiteralWithCast("bigint"));
+      var tdInt = AddDbTypeDef("int", typeof(Int32), aliases: "integer,oid,int4", providerDbType: NpgsqlDbType.Integer);
+      Map(typeof(UInt16), tdInt);
+
+      var tdSmallInt = AddDbTypeDef("smallint", typeof(Int16), providerDbType: NpgsqlDbType.Smallint, 
+           toLiteral: CreateFuncNumToLiteralWithCast("smallint"));
+      Map(typeof(byte), tdSmallInt);
+      Map(typeof(sbyte), tdSmallInt);  
+                             
+      var tdBigInt = AddDbTypeDef("bigint", typeof(Int64), aliases: "int8", providerDbType: NpgsqlDbType.Bigint,
+                                    toLiteral: CreateFuncNumToLiteralWithCast("bigint"));
+      Map(typeof(UInt32), tdBigInt);
+      Map(typeof(UInt64), tdBigInt);
 
       // Bool
-      AddTypeDef("boolean", NpgsqlDbType.Boolean, DbType.Boolean, typeof(bool));
+      AddDbTypeDef("boolean", typeof(bool), providerDbType: NpgsqlDbType.Boolean);
       //Bit
       //TODO: finish Bit data types : http://www.postgresql.org/docs/8.4/static/datatype-bit.html
 
       // Strings
-      AddTypeDef("character varying", NpgsqlDbType.Varchar, DbType.String, typeof(string),  args: "({0})", aliases: "varchar");
-      AddTypeDef("character", NpgsqlDbType.Char, DbType.StringFixedLength, typeof(string),  args: "({0})",
-                          mapToTypes: new Type[] { typeof(char) }, aliases: "char");
-      AddTypeDef("text", NpgsqlDbType.Text, DbType.String, typeof(string), flags: DbTypeFlags.Unlimited);
+      var tdVarChar = AddDbTypeDef("character varying", typeof(string), DbTypeFlags.Size, 
+                   aliases: "varchar", providerDbType: NpgsqlDbType.Varchar);
+      SpecialTypeDefs[DbSpecialType.String] = tdVarChar; 
+      SpecialTypeDefs[DbSpecialType.StringAnsi] = tdVarChar; 
+
+      var tdChar = AddDbTypeDef("character", typeof(string), DbTypeFlags.Size, providerDbType: NpgsqlDbType.Char);
+      Map( typeof(char), tdChar, size: 1);
+
+      var tdText = AddDbTypeDef("text", typeof(string), flags: DbTypeFlags.Unlimited, providerDbType: NpgsqlDbType.Text);
+      SpecialTypeDefs[DbSpecialType.StringUnlimited] = tdText;
+      SpecialTypeDefs[DbSpecialType.StringAnsiUnlimited] = tdText; 
+
       // Datetime
-      AddTypeDef("timestamp without time zone", NpgsqlDbType.Timestamp, DbType.DateTime, typeof(DateTime));
-      AddTypeDef("timestamp with time zone", NpgsqlDbType.TimestampTz,  DbType.Date, typeof(DateTimeOffset));
-      AddTypeDef("date without time zone", NpgsqlDbType.Date, DbType.Date, typeof(DateTime), mapToTypes: none);
-      AddTypeDef("time without time zone", NpgsqlDbType.Time, DbType.Time, typeof(TimeSpan));
-      AddTypeDef("interval", NpgsqlDbType.Interval, DbType.Object, typeof(TimeSpan), mapToTypes: none);
+      AddDbTypeDef("timestamp without time zone", typeof(DateTime), providerDbType: NpgsqlDbType.Timestamp);
+      AddDbTypeDef("timestamp with time zone", typeof(DateTimeOffset), providerDbType: NpgsqlDbType.TimestampTz);
+      AddDbTypeDef("date without time zone", typeof(DateTime), mapColumnType: false, providerDbType: NpgsqlDbType.Date);
+      AddDbTypeDef("time without time zone", typeof(TimeSpan), providerDbType: NpgsqlDbType.TimeTz);
+      AddDbTypeDef("interval", typeof(TimeSpan), mapColumnType: false, providerDbType: NpgsqlDbType.Interval);
 
       // Binaries
       // Note: Postgres has special way of presenting binary blobs, so we provide special BytesToLiteral converter
-      var binTypes = new Type[] { typeof(byte[]), typeof(Vita.Entities.Binary) };
-      AddTypeDef("bytea", NpgsqlDbType.Bytea, DbType.Binary, typeof(byte[]), 
-                    mapToTypes: binTypes, valueToLiteral: BytesToLiteral);
-      AddTypeDef("bytea", NpgsqlDbType.Bytea, DbType.Binary, typeof(byte[]), flags: DbTypeFlags.Unlimited,
-                    mapToTypes: binTypes, valueToLiteral: BytesToLiteral);
-      // AddTypeDef("array", NpgsqlDbType.Array, DbType.Binary, typeof(byte[]), mapToTypes: binTypes, flags: DbTypeFlags.Unlimited,
-         //              valueToLiteral: BytesToLiteral);
+      var tdByteA = AddDbTypeDef("bytea", typeof(byte[]), mapColumnType: false, providerDbType: NpgsqlDbType.Bytea,
+            toLiteral: BytesToLiteral);
+      Map(typeof(Binary), tdByteA);
 
       // Guid 
-      AddTypeDef("uuid", NpgsqlDbType.Uuid, DbType.Guid, typeof(Guid));
+      AddDbTypeDef("uuid", typeof(Guid), toLiteral: GuidToLiteral, providerDbType: NpgsqlDbType.Uuid);
     }
 
-    public override DbStorageType FindDbTypeDef(DbType dbType, Type clrType, bool isMemo) {
-      var pgDbType = dbType; 
-      switch(dbType) {
-        case DbType.AnsiString: pgDbType = DbType.String; break;
-        case DbType.AnsiStringFixedLength: pgDbType = DbType.StringFixedLength; break;           
-      }
-      return base.FindDbTypeDef(pgDbType, clrType, isMemo);
+    private static string GuidToLiteral(object value) {
+      if(value == null || value == DBNull.Value)
+        return "NULL";
+      var g = (Guid)value; ;
+      return "uuid('" + g.ToString() + "')";
     }
-
-    public override DbStorageType FindStorageType(Type clrType, bool isMemo) {
-      var typeDef = base.FindStorageType(clrType, isMemo);
-      if(typeDef != null)
-        return typeDef; 
-      if (clrType.IsListOfDbPrimitive(out Type elemType)) {
-        typeDef = ConstructArrayTypeDef(elemType);
-      }
-      return typeDef; 
-    }
-
 
     private static string BytesToLiteral(object value) {
       if(value == null || value == DBNull.Value)
         return "NULL";
-      var bytes = (byte[])value;
+      var bytes = DbDriverUtil.GetBytes(value);
       return @"E'\\x" + HexUtil.ByteArrayToHex(bytes) + "'";
     }
 
@@ -106,26 +100,6 @@ namespace Vita.Data.Postgres {
       if(type == typeof(bool))
         return "false";
       return base.GetDefaultColumnInitExpression(type);
-    }
-
-    public override string GetEmptyListLiteral(DbStorageType elemTypeDef) {
-      var pgDbType = (NpgsqlDbType) elemTypeDef.CustomDbType;
-      var emptyList = string.Format("SELECT CAST(NULL AS {0}) WHERE 1=0", pgDbType);
-      return emptyList;
-    }
-
-    private DbStorageType ConstructArrayTypeDef(Type elemType) {
-      var elemTypeDef = this.FindStorageType(elemType, false);
-      if(elemTypeDef == null)
-        return null;
-      //array
-      var objArrType = typeof(object[]);
-      var arrTypeDef = new DbStorageType(this, "array", DbType.Object, objArrType, null, mapToTypes: new[] { objArrType },
-        dbFirstClrType: objArrType, flags: DbTypeFlags.Array, columnInit: null, loadTypeName: "array",
-        aliases: "object[]", valueToLiteral: GetListLiteral, customDbType: (int)NpgsqlDbType.Array | elemTypeDef.CustomDbType);
-      arrTypeDef.ConvertToTargetType = x => x;
-      arrTypeDef.IsList = true;
-      return arrTypeDef;
     }
 
   }

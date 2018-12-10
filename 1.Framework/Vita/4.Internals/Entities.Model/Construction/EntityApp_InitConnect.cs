@@ -108,9 +108,6 @@ namespace Vita.Entities {
 
     protected virtual DbModel GetCreateDbModel(DbSettings settings, IActivationLog log) {
       DbModel dbModel = null; 
-      //Set list of all schemas
-      var allSchemas = Areas.Select(a => settings.ModelConfig.GetSchema(a));
-      settings.SetSchemas(allSchemas);
       //Check if model is shared
       var dbModelConfig = settings.ModelConfig;
       bool modelIsShared = dbModelConfig.Options.IsSet(DbOptions.ShareDbModel);
@@ -127,7 +124,6 @@ namespace Vita.Entities {
       return dbModel;      
     }//method
 
-
     public void CheckUpgradeDatabase(Database db) {
       //Invoke upgrade
       // Update db model
@@ -138,7 +134,7 @@ namespace Vita.Entities {
       // upgrade
       var updateMgr = new DbUpgradeManager(db, ActivationLog);
       var upgradeInfo = updateMgr.UpgradeDatabase(); //it might throw exception
-      //_events.OnDataSourceStatusChanging(new DataSourceEventArgs(dataSource, DataSourceEventType.Connected));
+      // _events.OnDataSourceStatusChanging(new DataSourceEventArgs(dataSource, DataSourceEventType.Connected));
     }
 
   }//class

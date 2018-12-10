@@ -12,7 +12,7 @@ using Vita.Entities.Runtime;
 
 namespace Vita.Data.Runtime {
 
-  public class DataReaderProcessor : ISqlResultProcessor {
+  public class DataReaderProcessor : IDataCommandResultProcessor {
     public Func<IList> RowListCreator; //Creates empty generic List<T> list to fill up the results
     public RowListProcessor RowListProcessor;
     public Func<IDataRecord, EntitySession, object> RowReader;
@@ -26,10 +26,8 @@ namespace Vita.Data.Runtime {
         if(row != null)
           resultList.Add(row);
       }
-      //Important! it should be Dispose here, not Close (for .NET core) - otherwise LockTest fails
       reader.Close();
       command.RowCount = resultList.Count; 
-      //reader.Dispose(); 
       if(RowListProcessor == null)
         return resultList; 
       else 

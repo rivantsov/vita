@@ -12,11 +12,10 @@ using Vita.Entities;
 namespace Vita.Data.Linq.Translation.Expressions {
     
     /// <summary>
-    /// A MetaTableExpression contains property/constructor parameter mapping for New expressions resulting in new virtual tables
+    /// A DerivedTableExpression contains property/constructor parameter mapping for New expressions resulting in new virtual tables
     /// </summary>
-    public class MetaTableExpression : SqlExpression  {
+    public class DerivedTableExpression : SqlExpression  {
       public NewExpression SourceExpression; 
-        //Order is important, that's why we have 2 arrays instead of one dictionary
       public IList<SqlExpression> Values; 
 
         public SqlExpression GetMappedExpression(MemberInfo memberInfo) {
@@ -27,7 +26,7 @@ namespace Vita.Data.Linq.Translation.Expressions {
           return Values[index];
         }
 
-        public MetaTableExpression(NewExpression newExpression, IList<SqlExpression> values) : base(SqlExpressionType.MetaTable, newExpression.Type)
+        public DerivedTableExpression(NewExpression newExpression, IList<SqlExpression> values) : base(SqlExpressionType.DerivedTable, newExpression.Type)
         {
           SourceExpression = newExpression;
           Values = values;

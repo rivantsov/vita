@@ -69,7 +69,7 @@ namespace Vita.Data.Linq {
     #endregion 
 
     public static IList<Type> GetArgumentTypes(this Expression expression) {
-      var mtExpr = expression as MetaTableExpression;
+      var mtExpr = expression as DerivedTableExpression;
       if(mtExpr != null)
         return GetArgumentTypes(mtExpr.SourceExpression);
       switch(expression.NodeType) {
@@ -169,7 +169,7 @@ Details: failed converting sub-expression of type {0} to type {1}", expression.T
 
 
     private static Expression CallGetUnderlyingValueOrDefault(Expression argument) {
-      var valueType = argument.Type.GetUnderlyingStorageType();
+      var valueType = argument.Type.GetUnderlyingStorageClrType();
       var genMethod = _getUnderlyingValueOrDefaultMethod.MakeGenericMethod(valueType);
       var result = Expression.Call(null, genMethod, argument);
       return result; 
@@ -179,22 +179,18 @@ Details: failed converting sub-expression of type {0} to type {1}", expression.T
       return (value == null) ? default(T) : value.Value;
     }
 
-    public static string EscapeLikePattern(string pattern, char escapeChar) {
+    public static string EscapeLikePattern(string pattern, char escapeChar, char[] wildCards) {
       if(string.IsNullOrEmpty(pattern))
         return pattern;
-      char[] wildCards = new char[] { '_', '%', '[', ']', escapeChar};
-      var needsEscape = pattern.IndexOfAny(wildCards) >= 0;
-      if(!needsEscape)
+      var toEscape = wildCards.Where(wc => pattern.Contains(wc)).ToList();
+      if(toEscape.Count == 0)
         return pattern;
       //Do escape
       var escStr = escapeChar.ToString();
-      var escPattern = pattern
-        .Replace(escStr, escStr + escStr)
-        .Replace("_", escapeChar + "_")
-        .Replace("%", escapeChar + "%")
-        .Replace("[", escapeChar + "[")
-        .Replace("]", escapeChar + "]");
-      return escPattern;
+      var escaped = pattern;
+      foreach(var wc in toEscape)
+        escaped = escaped.Replace(wc.ToString(), escStr + wc);
+      return escaped; 
     }
 
     // Encode expression representing a dynamic call to Escape method and concatination with before/after segments:
@@ -202,11 +198,12 @@ Details: failed converting sub-expression of type {0} to type {1}", expression.T
     // This dynamic expr is used when argument of Like (in LINQ calls to string.Contains(s), string.StartsWith(s))
     //   is a local variable; in this case escaping must be embedded into a LINQ expression. 
     // For cases when pattern is string literal (ex: where ent.Name.Contains("x")), the escaping is done directly over the literal
-    public static Expression CallEscapeLikePattern(Expression pattern, char escapeChar, string before, string after) {
+    public static Expression CallEscapeLikePattern(Expression pattern, char escapeChar, char[] wildCards, string before, string after) {
       var exprEscChar = Expression.Constant(escapeChar);
+      var exprWildCards = Expression.Constant(wildCards);
       var exprBefore = Expression.Constant(before, typeof(string));
       var exprAfter = Expression.Constant(after, typeof(string));
-      var callEscape = Expression.Call(_escapeLikePatternMethod, pattern, exprEscChar);
+      var callEscape = Expression.Call(_escapeLikePatternMethod, pattern, exprEscChar, exprWildCards);
       var result = Expression.Call(_stringConcatMethod, exprBefore, callEscape, exprAfter);
       return result; 
     }

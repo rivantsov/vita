@@ -8,17 +8,24 @@ using System.Threading.Tasks;
 using Vita.Entities.Utilities;
 using Vita.Data.Model;
 using Vita.Data.Driver.InfoSchema;
+using Vita.Data.Driver.TypeSystem;
 
 namespace Vita.Data.Driver {
 
   //Methods actually loading info from the database. Might be overridden in vendor-specific subclass. 
   public partial class DbModelLoader {
 
-    //Builds schema filter from schemas listed in DbSettings. If this list is empty (which means 'all schemas), returns '1=1' expression
+    //Builds schema filter from schemas in LoadFilter. If this list is empty (which means 'all schemas), returns '1=1' expression
+    string _schemaList;
     protected virtual string GetSchemaFilter(string schemaColumn) {
-      if (string.IsNullOrEmpty(_schemasListForFilter))
+      if (!Driver.Supports(DbFeatures.Schemas))
         return "(1=1)";
-      return schemaColumn + " IN " + _schemasListForFilter;  
+      if( LoadFilter == null || LoadFilter.Schemas.Count == 0)
+        return "(1=1)";
+      if (_schemaList == null) {
+        _schemaList = "(" + string.Join(", ", LoadFilter.Schemas.Select(s => s.Quote())) + ")";
+      }
+      return schemaColumn + " IN " + _schemaList;  
     }
 
     public virtual InfoTable GetDatabases() {
@@ -34,6 +41,11 @@ namespace Vita.Data.Driver {
       return ExecuteSelect(sql);
     }
 
+    //Columns: TYPE_SCHEMA	TYPE_NAME	IS_TABLE_TYPE IS_NULLABLE SIZE 
+    public virtual InfoTable GetCustomTypes() {
+      return EmptyTable; 
+    }
+
     //Columns: TABLE_CATALOG	TABLE_SCHEMA	TABLE_NAME	TABLE_TYPE  
     public virtual InfoTable GetTables() {
       var filter = GetSchemaFilter("TABLE_SCHEMA");
@@ -44,23 +56,6 @@ ORDER BY TABLE_SCHEMA, TABLE_NAME;";
       var sql = string.Format(sqlTemplate, TableTypeTag, filter);
       return ExecuteSelect(sql);
     }
-
-    //Used by DbInfo loader
-    public virtual bool TableExists(string schema, string tableName) {
-      var sqlTemplate = @"
-SELECT * FROM INFORMATION_SCHEMA.TABLES 
-WHERE TABLE_NAME='{0}' AND TABLE_SCHEMA = '{1}'";
-      var sql = string.Format(sqlTemplate, tableName, schema);
-      var dt = ExecuteSelect(sql);
-      return dt.Rows.Count > 0;
-    }
-
-    // Returns select-all SQL statement for a given table. Used in low-level, early access in system modules like DbInfo
-    public virtual string GetDirectSelectAllSql(DbTableInfo table) {
-      var sql = string.Format("SELECT * FROM {0};", table.FullName);
-      return sql;
-    }
-
 
     //Columns: TABLE_CATALOG	TABLE_SCHEMA	TABLE_NAME VIEW_DEFINITION CHECK_OPTION IS_UPDATABLE  
     public virtual InfoTable GetViews() {
@@ -84,9 +79,11 @@ ORDER BY TABLE_SCHEMA, TABLE_NAME;";
     //COLLATION_SCHEMA	COLLATION_NAME	DOMAIN_CATALOG	DOMAIN_SCHEMA	DOMAIN_NAME
     public virtual InfoTable GetColumns() {
       var filter = GetSchemaFilter("TABLE_SCHEMA");
-      var sql = string.Format(@"SELECT * FROM INFORMATION_SCHEMA.COLUMNS 
-  WHERE {0}
-  ORDER BY TABLE_SCHEMA, TABLE_NAME, ORDINAL_POSITION;", filter);
+      var sql = string.Format(
+@"SELECT *
+    FROM INFORMATION_SCHEMA.COLUMNS 
+    WHERE {0}
+    ORDER BY TABLE_SCHEMA, TABLE_NAME, ORDINAL_POSITION;", filter);
       return ExecuteSelect(sql);
     }
 
@@ -110,20 +107,10 @@ ORDER BY TABLE_SCHEMA, TABLE_NAME;";
       return ExecuteSelect(sql);
     }
 
-    //Columns: CONSTRAINT_CATALOG, CONSTRAINT_SCHEMA, CONSTRAINT_NAME, UNIQUE_CONSTRAINT_CATALOG, UNIQUE_CONSTRAINT_SCHEMA, 
-    //  UNIQUE_CONSTRAINT_NAME, MATCH_OPTION, UPDATE_RULE, DELETE_RULE
-    // Not used, we use ext version below
-    public virtual InfoTable GetReferentialConstraints() {
-      var filter = GetSchemaFilter("CONSTRAINT_SCHEMA");
-      var sql = string.Format(@"SELECT * FROM INFORMATION_SCHEMA.REFERENTIAL_CONSTRAINTS
-  WHERE {0}", filter);
-      return ExecuteSelect(sql);
-    }
-
     // Extended version with joins to bring Table names for both constraints
     //Columns: CONSTRAINT_CATALOG, CONSTRAINT_SCHEMA, CONSTRAINT_NAME, UNIQUE_CONSTRAINT_CATALOG, UNIQUE_CONSTRAINT_SCHEMA, 
     //  UNIQUE_CONSTRAINT_NAME, MATCH_OPTION, UPDATE_RULE, DELETE_RULE, C_TABLE, U_TABLE
-    public virtual InfoTable GetReferentialConstraintsExt() {
+    public virtual InfoTable GetReferentialConstraints() {
       var filter = GetSchemaFilter("rc.CONSTRAINT_SCHEMA");
       var sql = string.Format(@"
 SELECT rc.*, tc1.TABLE_NAME as C_TABLE, tc2.TABLE_NAME AS U_TABLE 
@@ -138,6 +125,17 @@ WHERE {0};", filter);
       return ExecuteSelect(sql);
     }
 
+    /*
+    // Not used, we use ext version below
+    //Columns: CONSTRAINT_CATALOG, CONSTRAINT_SCHEMA, CONSTRAINT_NAME, UNIQUE_CONSTRAINT_CATALOG, UNIQUE_CONSTRAINT_SCHEMA, 
+    //  UNIQUE_CONSTRAINT_NAME, MATCH_OPTION, UPDATE_RULE, DELETE_RULE
+    public virtual InfoTable GetReferentialConstraints() {
+      var filter = GetSchemaFilter("CONSTRAINT_SCHEMA");
+      var sql = string.Format(@"SELECT * FROM INFORMATION_SCHEMA.REFERENTIAL_CONSTRAINTS
+  WHERE {0}", filter);
+      return ExecuteSelect(sql);
+    }
+    */
 
     //INFORMATION_SCHEMA does not have a view for indexes, column defaults and identity columns -------------------
 
@@ -161,36 +159,25 @@ WHERE {0};", filter);
       return ExecuteSelect(sql);
     }
 
-    // columns: TYPE_SCHEMA, TYPE_NAME
-    //currently used on by MS SQL to load array-as-table user type, used for sending array as parameter
-    public virtual InfoTable GetUserDefinedTypes() {
-      return EmptyTable; 
-    }
-
-    public virtual DbColumnTypeInfo GetDbTypeInfo(InfoRow columnRow) {
+    public virtual DbTypeInfo GetColumnDbTypeInfo(InfoRow columnRow) {
       var charSize = columnRow.GetAsLong("CHARACTER_MAXIMUM_LENGTH");
       var byteSize = columnRow.GetAsLong("CHARACTER_OCTET_LENGTH");
+      long size = charSize != 0 ? charSize : byteSize; 
       var dataTypeString = columnRow.GetAsString("DATA_TYPE").ToLowerInvariant();
       var prec = (byte) columnRow.GetAsInt("NUMERIC_PRECISION");
       var scale = (byte) columnRow.GetAsInt("NUMERIC_SCALE");
-      var isNullable = (columnRow.GetAsString("IS_NULLABLE") == "YES");
-      bool isUnlimited = IsUnlimited(dataTypeString, charSize, byteSize);
-      var typeDef = Driver.TypeRegistry.FindDbTypeDef(dataTypeString, isUnlimited);
-      // if(typeDef == null)
-      //    typeDef = Driver.TypeRegistry.Types.FirstOrDefault(td => td.Aliases.Contains(dataTypeString));
-      if(typeDef == null)
-        return null;
-      var size = (charSize != 0 ? charSize : byteSize);
-      var args = DbColumnTypeInfo.GetTypeArgs(size, prec, scale);
-      var typeSpec = typeDef.FormatTypeSpec(args);
-      var typeInfo = new DbColumnTypeInfo(typeDef, typeSpec, isNullable, size, prec, scale, typeDef.DefaultColumnInit);
-      // AssignValueConverters(typeInfo); - no need for value converters
+      var DT_PREC = "DATETIME_PRECISION";
+      if (columnRow.Table.HasColumn(DT_PREC) && columnRow[DT_PREC] != DBNull.Value) {
+        var dateTimePrec = columnRow.GetAsInt(DT_PREC);
+        if(prec == 0)
+          prec = (byte)dateTimePrec;
+      }
+      var isNullStr = columnRow.GetAsString("IS_NULLABLE");
+      var isNullable = (isNullStr == "YES" || isNullStr == "Y"); //Oracle->Y
+      var typeInfo = Driver.TypeRegistry.GetDbTypeInfo(dataTypeString, size, prec, scale);
       return typeInfo;
     }
 
-    public virtual bool IsUnlimited(string typeName, long charSize, long byteSize) {
-      return charSize < 0 || byteSize < 0;
-    }
     // A chance for a driver to add vendor-specific information to the loaded column. 
     public virtual void OnColumnLoaded(DbColumnInfo column, InfoRow columnRow) {
 

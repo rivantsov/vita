@@ -29,6 +29,6 @@ Works with MS SQL Server, MySql, PostgreSQL, SQLite.
 
 ### System Requirements
 * .NET Standard 2.0, Visual Studio 2017. 
-* MS SQL Server 2017; MySql 5.5, PostgreSQL 10, SQLite
+* MS SQL Server 2017; MySql 5.5, PostgreSQL, Oracle, SQLite
 
 

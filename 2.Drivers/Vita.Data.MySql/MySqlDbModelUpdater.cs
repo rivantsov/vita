@@ -59,11 +59,11 @@ namespace Vita.Data.MySql {
     }
 
     protected override string GetColumnSpec(DbColumnInfo column, DbScriptOptions options) {
-      var typeStr = column.TypeInfo.SqlTypeSpec;
+      var typeStr = column.TypeInfo.DbTypeSpec;
       var nullable = options.IsSet(DbScriptOptions.ForceNull) || column.Flags.IsSet(DbColumnFlags.Nullable);
       var nullStr = nullable ? "NULL" : "NOT NULL";
       var strAutoInc = string.Empty;
-      bool isNew = column.Peer == null;
+      bool isNew = options.IsSet(DbScriptOptions.NewColumn);
       if(isNew && column.Flags.IsSet(DbColumnFlags.Identity)) {
         // MySql requires that auto-incr column is supported by a key - either a primary key, or an index
         var strKeyType = column.Flags.IsSet(DbColumnFlags.PrimaryKey) ? "PRIMARY KEY" : "KEY";
@@ -75,10 +75,6 @@ namespace Vita.Data.MySql {
         defaultStr = "DEFAULT " + column.DefaultExpression;
       var spec = $" {column.ColumnNameQuoted} {typeStr} {nullStr} {strAutoInc}"; 
       return spec;
-    }
-
-    public override void BuildViewAddSql(DbObjectChange change, DbTableInfo view) {
-      base.BuildViewAddSql(change, view);
     }
 
   }//class

@@ -349,11 +349,11 @@ namespace Vita.Data.Linq.Translation {
                                                       ParameterExpression sessionParameter, TranslationContext context) {
       expectedType = expectedType ?? expression.Type;
       int valueIndex = RegisterOutputValue(expression, context);
-      Func<object, object> conv = x => x;
+      DbValueConverter conv = null;
       if(expression is ColumnExpression) {
         //With column everything is simple
         var colExpr = (ColumnExpression)expression;
-        conv = colExpr.ColumnInfo.TypeInfo.ColumnToPropertyConverter;
+        conv = colExpr.ColumnInfo.Converter;
       } else {
         //Otherwise get converter from type registry;
         // Why we need converters for non-column values. 
@@ -363,9 +363,9 @@ namespace Vita.Data.Linq.Translation {
         // Example : 'Max(decimalCol)' in SQLite. SQLite stores decimals as doubles (we do), so SQL will return double; 
         // we need an extra converter to cast to Decimal expected by c# code. We must go through TypeRegistry anyway, 
         // to verify how type is supported.
-        conv = _dbModel.Driver.TypeRegistry.GetLinqValueConverter(expression.Type, expectedType);
+        conv = _dbModel.Driver.TypeRegistry.GetDbValueConverter(expression.Type, expectedType);
       }
-      var reader = ColumnReaderHelper.GetColumnValueReader(dataRecordParameter, valueIndex, expectedType, conv);
+      var reader = ColumnReaderHelper.GetColumnValueReader(dataRecordParameter, valueIndex, expectedType, conv.ColumnToProperty);
       return reader;
     }
   }

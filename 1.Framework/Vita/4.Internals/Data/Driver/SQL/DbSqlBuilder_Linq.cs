@@ -89,7 +89,7 @@ namespace Vita.Data.Driver {
       var sqlArgs = args.Select(a => BuildLinqExpressionSql(a)).ToArray();
       switch(expr) {
         case ConstantExpression ce:
-          return GetLiteral(ce.Value);
+          return GetConstantLiteral(ce.Value, ce.Type);
         case NewExpression ne:
           //RI: We might have NewExpression here! Query: (from b in books select new {b.Title}).Count();
           // in this case the NewExpression is 'hidden' inside subquery and it is not visible to CutOutOperands
@@ -157,9 +157,10 @@ namespace Vita.Data.Driver {
           return CompositeSqlFragment.Parenthesize(selectSql);
 
 
-        case SqlExpressionType.MetaTable:
+        case SqlExpressionType.DerivedTable:
+          // Looks like we never come here
           //!!! investigate this
-          //TODO: investigate MetaTable SQL
+          //TODO: investigate DerivedTable SQL
           return new TextSqlFragment("*");
 
         default:
@@ -237,19 +238,18 @@ namespace Vita.Data.Driver {
       return result;
     }
 
-    public virtual SqlFragment GetLiteral(object value) {
+    public virtual SqlFragment GetConstantLiteral(object value, Type type) {
       if(value == null)
         return SqlTerms.Null;
-      var type = value.GetType();
       if (type == typeof(SequenceDefinition)) {
+        // TODO: see if it ever happens
+        //Util.Throw("Investigate: literal for sequence value");
         var seq = (SequenceDefinition)value;
         var dbSeq = this.Model.GetSequence(seq);
         return new TextSqlFragment(dbSeq.FullName);
       }
-      //var dbTypeInfo = Driver.TypeRegistry.GetDbTypeInfo(type, 0);
-      //var literal = dbTypeInfo.ToLiteral(value); 
-      var dbTypeDef = Driver.TypeRegistry.FindStorageType(type, false);
-      var literal = dbTypeDef.ValueToLiteral(value); 
+      var stype = Driver.TypeRegistry.GetDbTypeDef(type);
+      var literal = stype.ToLiteral(value);
       return new TextSqlFragment(literal); 
     }
 

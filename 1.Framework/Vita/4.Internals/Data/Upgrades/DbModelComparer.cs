@@ -122,12 +122,12 @@ namespace Vita.Data.Upgrades {
 
     private DbKeyInfo FindOldKey(DbTableInfo oldTable, DbKeyInfo newKey) {
       // raw match by type, and column list
-      // we cannot match just by name: for SQLite, PK has fixed name: sqlite_autoindex_<table>_1
       foreach(var oldKey in oldTable.Keys) {
+        // we cannot match just by name: for SQLite, PK has fixed name: sqlite_autoindex_<table>_1
+        // also Oracle - max key len is 30, not enough to include all table/col names
+        // if(NamesMatch(oldKey.Name, newKey.Name)) return oldKey;
         if(oldKey.KeyType != newKey.KeyType || oldKey.KeyColumns.Count != newKey.KeyColumns.Count)
           continue;
-        if(NamesMatch(oldKey.Name, newKey.Name))
-          return oldKey;
         //check cols
         bool match = true; 
         for(int i = 0; i < oldKey.KeyColumns.Count; i++) {
@@ -154,12 +154,6 @@ namespace Vita.Data.Upgrades {
       foreach (var oldN in entity.OldNames) {
         var oldName = prefix + oldN; 
         oldT = _oldModel.GetTable(newTable.Schema, oldName);
-        if (oldT != null)  return oldT;
-        //if old name starts with "I" (like all interfaces), then try without I
-        if (oldN.StartsWith("I")) {
-          oldName = prefix + oldN.Substring(1);
-          oldT = _oldModel.GetTable(newTable.Schema, oldName);
-        }
         if (oldT != null)
           return oldT;
       }//foreach oldName
@@ -326,18 +320,21 @@ namespace Vita.Data.Upgrades {
       //Detect all changed keys, indexes; skip Foreign keys - they're not real keys
       // We do not modify keys, only drop/create them if anything mismatches; 
       // key.Peer is set only if the keys did not change and non of the columns changed
-      foreach (var key in oldTable.Keys) {
-        bool changed = key.Peer == null || !_comparer.KeysMatch(key.Peer, key);
+      foreach (var oldKey in oldTable.Keys) {
+        bool changed = oldKey.Peer == null || !_comparer.KeysMatch(oldKey, oldKey.Peer);
         if (!changed)
           continue; 
-        _changedKeys.Add(key); 
-        if (key.KeyType.IsSet(KeyType.ForeignKey) || IsPureIndex(key) && !_compareIndexes)
+        _changedKeys.Add(oldKey); 
+        if (oldKey.KeyType.IsSet(KeyType.ForeignKey) || IsPureIndex(oldKey) && !_compareIndexes)
            continue; 
-        tableChangeGrp.AddChange(key, key.Peer);
+        tableChangeGrp.AddChange(oldKey, oldKey.Peer);
       }
       foreach (var key in newTable.Keys) {
         if (key.Peer != null)
           continue; //if Peer != null, it is already included in previous loop
+        //ignore primary key on Views - this is artificial attribute, used on CLR side only
+        if (newTable.Kind == EntityKind.View && key.KeyType.IsSet(KeyType.PrimaryKey))
+          continue; 
         if (key.KeyType.IsSet(KeyType.ForeignKey) || IsPureIndex(key) && !_compareIndexes)
            continue; 
         tableChangeGrp.AddChange(null, key);

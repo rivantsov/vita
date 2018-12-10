@@ -792,7 +792,8 @@ namespace Vita.Entities {
       if (!string.IsNullOrWhiteSpace(this.Default))
         HostMember.ColumnDefault = this.Default;
       HostMember.Scale = this.Scale;
-      if (this.Precision > 0) HostMember.Precision = this.Precision;
+      if (this.Precision > 0)
+        HostMember.Precision = this.Precision;
       if (this.Size != 0)
         HostMember.Size = this.Size;
       HostMember.ExplicitDbType = this._dbType;
@@ -842,7 +843,13 @@ namespace Vita.Entities {
 
   public partial class OldNamesAttribute {
     public override void ApplyOnEntity(EntityModelBuilder builder) {
-      HostEntity.OldNames = StringHelper.SplitNames(this.OldNames);
+      var names = StringHelper.SplitNames(this.OldNames);
+      // add variation without leading 'I'
+      var allNames = new List<string>(names);
+      foreach(var n in names)
+        if(n.Length > 1 && n.StartsWith("I"))
+          allNames.Add(n.Substring(1));
+      HostEntity.OldNames = allNames.ToArray(); 
     }
 
     public override void ApplyOnMember(EntityModelBuilder builder) {

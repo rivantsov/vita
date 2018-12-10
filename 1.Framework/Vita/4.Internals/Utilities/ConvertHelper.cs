@@ -16,6 +16,14 @@ namespace Vita.Entities.Utilities {
       return (T)ChangeType(value, type);
     }
 
+    public static int EnumValueToInt(object enumValue, Type enumType) {
+      if(Enum.GetUnderlyingType(enumType) == typeof(int))
+        return (int) enumValue;
+      // this might need to be fixed
+      return (int)enumValue;
+    }
+
+
     public static string ValueToString(object value) {
       if(value == null)
         return string.Empty;

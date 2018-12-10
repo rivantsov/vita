@@ -1,4 +1,4 @@
-SET pver=2.0.2
+SET pver=2.1.0
 Echo Version: "%pver%"
 dir Nupkg\*.nupkg
 @echo off
@@ -15,6 +15,7 @@ nuget push Nupkg\Vita.Modules.Login.%pver%.nupkg -source https://api.nuget.org/v
 nuget push Nupkg\Vita.Data.MsSql.%pver%.nupkg -source https://api.nuget.org/v3/index.json 
 nuget push Nupkg\Vita.Data.MySql.%pver%.nupkg -source https://api.nuget.org/v3/index.json 
 nuget push Nupkg\Vita.Data.Postgres.%pver%.nupkg -source https://api.nuget.org/v3/index.json 
+nuget push Nupkg\Vita.Data.Oracle.%pver%.nupkg -source https://api.nuget.org/v3/index.json 
 nuget push Nupkg\Vita.Data.SQLite.%pver%.nupkg -source https://api.nuget.org/v3/index.json 
 pause
 

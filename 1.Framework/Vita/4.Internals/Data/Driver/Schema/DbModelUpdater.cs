@@ -108,10 +108,11 @@ namespace Vita.Data.Driver {
         case DbObjectType.Key:
           var oldKey = (DbKeyInfo) change.OldObject;
           var newKey = (DbKeyInfo) change.NewObject;
+          var table = (newKey ?? oldKey).Table; 
           var keyType = (oldKey == null) ? newKey.KeyType : oldKey.KeyType;
           if(keyType.IsSet(KeyType.ForeignKey)) {
             //nothing to do, we handle it in constraints
-          } else if(keyType.IsSet(KeyType.PrimaryKey)) {
+          } else if(keyType.IsSet(KeyType.PrimaryKey) && table.Kind == EntityKind.Table) {
             if (oldKey != null)
               BuildTableConstraintDropSql(change, oldKey);
             if (newKey != null)
@@ -186,7 +187,7 @@ namespace Vita.Data.Driver {
     }//method
 
     public virtual void BuildTableAddSql(DbObjectChange change, DbTableInfo table) {
-      var colSpecList = table.Columns.Select(c => GetColumnSpec(c));
+      var colSpecList = table.Columns.Select(c => GetColumnSpec(c, DbScriptOptions.NewColumn));
       var columnSpecs = string.Join("," + Environment.NewLine, colSpecList);
       var script =
 $@"CREATE TABLE {table.FullName} (
@@ -203,9 +204,11 @@ $@"CREATE TABLE {table.FullName} (
       var isIdentity = column.Flags.IsSet(DbColumnFlags.Identity);
       var forceNull = !nullable && noDefault && !isIdentity;
       var options = forceNull ? DbScriptOptions.ForceNull : DbScriptOptions.None;
+      options |= DbScriptOptions.NewColumn;
       BuildColumnAddSql(change, column, options);
       if(forceNull) {
-        BuildColumnSetDefaultValuesSql(change, column);
+        if (ShouldResetNullsToDefault(column))
+          BuildColumnSetDefaultValuesSql(change, column);
         BuildColumnModifySql(change, column, DbScriptOptions.CompleteColumnSetup);
       }
     }
@@ -225,7 +228,7 @@ $@"CREATE TABLE {table.FullName} (
     public virtual void BuildColumnSetDefaultValuesSql(DbObjectChange change, DbColumnInfo column) {
       var fullTableRef = column.Table.FullName;
       var cn = column.ColumnNameQuoted;
-      var init = column.TypeInfo.InitExpression;
+      var init = column.TypeInfo.TypeDef.ColumnInit;
       change.AddScript(DbScriptType.ColumnInit, $"UPDATE {fullTableRef} SET {cn} = {init} WHERE {cn} IS NULL;");
     }
 
@@ -257,7 +260,7 @@ CREATE {unique} INDEX {qKeyName}
       var pkFields = key.KeyColumns.GetSqlNameList();
       var tname = key.Table.FullName;
       var keyName = QuoteName(key.Name); 
-      change.AddScript(DbScriptType.PrimaryKeyAdd, $"ALTER TABLE {tname} ADD CONSTRAINT {keyName} PRIMARY KEY ({pkFields});");
+      change.AddScript(DbScriptType.PrimaryKeyAdd, $"ALTER TABLE {tname} ADD CONSTRAINT {keyName} PRIMARY KEY ({pkFields})");
     }
 
     public virtual void BuildRefConstraintAddSql(DbObjectChange change, DbRefConstraintInfo refConstraint) {
@@ -314,9 +317,9 @@ $@"CREATE VIEW {view.FullName} AS
     protected bool ShouldResetNullsToDefault(DbColumnInfo column) {
       if(column.Flags.IsSet(DbColumnFlags.Nullable | DbColumnFlags.ForeignKey))
         return false;
-      if(string.IsNullOrWhiteSpace(column.TypeInfo.InitExpression)) //no init expression
+      if(string.IsNullOrWhiteSpace(column.TypeInfo.TypeDef.ColumnInit)) //no init expression
         return false; 
-      // (new) column is not nullable
+      // (new) column or it is not nullable
       if(column.Peer == null) // it is new column
         return true;
       if(column.Peer.Flags.IsSet(DbColumnFlags.Nullable)) //old was nullable, but new is not nullable
@@ -367,7 +370,7 @@ $@"CREATE VIEW {view.FullName} AS
     //Helper methods
     protected virtual void BuildColumnRenameSqlWithAddDrop(DbObjectChange change, DbColumnInfo oldColumn, DbColumnInfo newColumn) {
       //Add new column
-      BuildColumnAddSql(change, newColumn, DbScriptOptions.ForceNull);
+      BuildColumnAddSql(change, newColumn, DbScriptOptions.ForceNull | DbScriptOptions.NewColumn);
       // copy data
       change.AddScript(DbScriptType.ColumnCopyValues, $"UPDATE {oldColumn.Table.FullName} SET {newColumn.ColumnNameQuoted} = {oldColumn.ColumnNameQuoted};");
       // finalize added column
@@ -378,7 +381,7 @@ $@"CREATE VIEW {view.FullName} AS
 
 
     protected virtual string GetColumnSpec(DbColumnInfo column, DbScriptOptions options = DbScriptOptions.None) {
-      var typeStr = column.TypeInfo.SqlTypeSpec;
+      var typeStr = column.TypeInfo.DbTypeSpec;
       var nullable = options.IsSet(DbScriptOptions.ForceNull) || column.Flags.IsSet(DbColumnFlags.Nullable);
       var nullStr = nullable ? "NULL" : "NOT NULL";
       string defaultStr = null;

@@ -71,7 +71,14 @@ namespace Vita.Testing.ExtendedTests {
         BooksApp.LogPath = LogFilePath;
         BooksApp.ActivationLogPath = ActivationLogFilePath;
         BooksApp.Init();
-        
+
+        // Oracle - uncomment this to see tablespace use, but you must pre-create the tablespace in SQL-Developer
+        /* 
+        if(ServerType == DbServerType.Oracle)
+          foreach(var area in BooksApp.Areas)
+             area.OracleTableSpace = "Books";
+        */
+
         // Setup mock messaging service
         LoginMessagingService = new MockLoginMessagingService(); 
         var loginConfig = BooksApp.GetConfig<Modules.Login.LoginModuleSettings>();
@@ -81,8 +88,7 @@ namespace Vita.Testing.ExtendedTests {
         //Reset Db and drop schema objects; first set schema list 
         var resetDb = AppSettings["ResetDatabase"] == "true";
         if(resetDb) {
-          DbSettings.SetSchemas(BooksApp.Areas.Select(a => a.Name));
-          TestUtil.DropSchemaObjects(DbSettings);
+          DataUtility.DropSchemaObjects(BooksApp, DbSettings);
         }
 
         //Now connect the main app
@@ -134,7 +140,7 @@ namespace Vita.Testing.ExtendedTests {
       //Check connection string
       Util.Check(!string.IsNullOrEmpty(config.ConnectionString), "Connection string not found for server: {0}.", ServerType);
 
-      Driver = ToolHelper.CreateDriver(ServerType);
+      Driver = DataUtility.CreateDriver(ServerType);
       var dbOptions = Driver.GetDefaultOptions(); 
 
       if (config.UseBatchMode)
@@ -200,8 +206,7 @@ namespace Vita.Testing.ExtendedTests {
     private static void CreateSampleData() {
       // We create sample data multiple times, so later test wipes out data from previous test. 
       // We do not wipe out certain tables
-      TestUtil.DeleteAllData(BooksApp, exceptEntities: 
-        new Type[] {typeof(IDbInfo), typeof(IDbModuleInfo)}); 
+      DataUtility.DeleteAllData(BooksApp, exceptEntities: new Type[] {typeof(IDbInfo), typeof(IDbModuleInfo)}); 
       SampleDataGenerator.CreateUnitTestData(BooksApp);
     }
 

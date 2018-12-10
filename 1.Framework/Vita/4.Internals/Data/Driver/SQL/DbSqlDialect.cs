@@ -1,7 +1,10 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
+using System.Data;
 using System.Linq;
 using System.Linq.Expressions;
+using Vita.Data.Driver.TypeSystem;
 using Vita.Data.Linq;
 using Vita.Data.Linq.Translation.Expressions;
 using Vita.Data.Model;
@@ -18,11 +21,16 @@ namespace Vita.Data.Driver {
 
     // Parameter prefix. For MS SQL, it is '@' for both. For MySql, we need to use '@' for dynamic SQLs but no prefix or smth like 'prm' for stored procs
     public int MaxLiteralLength = 100;
+    public int MaxRecordsInInsertMany = 200; 
+
     public string DynamicSqlParameterPrefix = "p";
     public string LeftSafeQuote = "\"";
     public string RightSafeQuote = "\"";
     public string DDLSeparator = Environment.NewLine;
-    public char DefaultLikeEscapeChar = '\\';
+    public char LikeEscapeChar = '\\';
+    public char[] LikeWildCardChars = new char[] { '_', '%', '[', ']', '\\' };
+
+
     public SqlFragment SqlCountStar = new TextSqlFragment("COUNT(*)");
     public SqlFragment SqlNullAsEmpty = new TextSqlFragment("NULL AS \"EMPTY\"");
     public SqlFragment SqlFakeOrderByClause = new TextSqlFragment("ORDER BY (SELECT 1)");
@@ -33,11 +41,14 @@ namespace Vita.Data.Driver {
     public SqlTemplate SqlTemplateColumnAssignValue = new SqlTemplate("{0} = {1}");
     public SqlTemplate SqlTemplateColumnAssignAliasValue = new SqlTemplate("{0} = {1}.{2}");
     public SqlTemplate SqlTemplateOrderBy = new SqlTemplate("ORDER BY {0}");
+
+    public TextSqlFragment BatchBegin = SqlTerms.Empty;
+    public TextSqlFragment BatchEnd = SqlTerms.Empty;
     public TextSqlFragment BatchBeginTransaction = new TextSqlFragment("BEGIN TRANSACTION;\r\n");
     public TextSqlFragment BatchCommitTransaction = new TextSqlFragment("COMMIT TRANSACTION;\r\n");
 
     public int MaxParamCount = 2000;
-    protected Dictionary<ExpressionType, SqlTemplate> StandardExprTemplates = new Dictionary<ExpressionType, SqlTemplate>();
+    protected Dictionary<ExpressionType, SqlTemplate> StandardExpressionTemplates = new Dictionary<ExpressionType, SqlTemplate>();
     protected Dictionary<SqlFunctionType, SqlTemplate> SqlFunctionTemplates = new Dictionary<SqlFunctionType, SqlTemplate>();
     protected Dictionary<AggregateType, SqlTemplate> AggregateTemplates = new Dictionary<AggregateType, SqlTemplate>();
 
@@ -49,11 +60,12 @@ namespace Vita.Data.Driver {
       InitTemplates();
     }
     // Linq Non-query templates
+    //important - semicolon at the end should be just like that, no spaces or new-line around; we strip it to add id-return clause 
     public SqlTemplate SqlCrudTemplateInsert = new SqlTemplate(
 @"INSERT INTO {0} 
     ({1})
     VALUES 
-    {2};");
+    {2};"); 
 
     public SqlTemplate SqlLinqTemplateInsertFromSelect = new SqlTemplate(
 @"INSERT INTO {0} 
@@ -99,7 +111,7 @@ namespace Vita.Data.Driver {
       return null;
     }
     public virtual SqlTemplate GetTemplate(ExpressionType nodeType) {
-      if(StandardExprTemplates.TryGetValue(nodeType, out SqlTemplate template))
+      if(StandardExpressionTemplates.TryGetValue(nodeType, out SqlTemplate template))
         return template;
       return null;
     }
@@ -171,7 +183,7 @@ namespace Vita.Data.Driver {
       var prec = PrecedenceHandler.GetPrecedence(types[0]); //we assume prec is the same for all types
       var sqlTemplate = new SqlTemplate(template, prec);
       foreach(var type in types)
-        StandardExprTemplates[type] = sqlTemplate;
+        StandardExpressionTemplates[type] = sqlTemplate;
       return sqlTemplate;
     }
 
@@ -227,7 +239,7 @@ namespace Vita.Data.Driver {
           case SqlExpressionType.SqlFunction:
             return true;
           case SqlExpressionType.Group:
-          case SqlExpressionType.MetaTable:
+          case SqlExpressionType.DerivedTable:
             return false;
           default:
             return true;
@@ -371,12 +383,12 @@ namespace Vita.Data.Driver {
         return false;
       // second, nullable to non-nullable for the same type
       if(expression.Type.IsNullableValueType() && !expression.Operand.Type.IsNullableValueType()) {
-        if(expression.Type.GetUnderlyingStorageType() == expression.Operand.Type)
+        if(expression.Type.GetUnderlyingStorageClrType() == expression.Operand.Type)
           return false;
       }
       // third, non-nullable to nullable
       if(!expression.Type.IsNullableValueType() && expression.Operand.Type.IsNullableValueType()) {
-        if(expression.Type == expression.Operand.Type.GetUnderlyingStorageType())
+        if(expression.Type == expression.Operand.Type.GetUnderlyingStorageClrType())
           return false;
       }
       // found no excuse not to convert? then convert
@@ -387,6 +399,72 @@ namespace Vita.Data.Driver {
       return x.IsEnum && Enum.GetUnderlyingType(x) == y ||
              y.IsEnum && Enum.GetUnderlyingType(y) == x;
     }
+
+    // Used by DbInfo module
+    public virtual string GetTableExistsSql(DbTableInfo table) {
+      var template = @"
+SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME='{0}' AND TABLE_SCHEMA = '{1}'";
+      var sql = string.Format(template, table.TableName, table.Schema);
+      return sql;
+    }
+    public virtual string GetTableSelectAllSql(DbTableInfo table) {
+      var template = @"SELECT * FROM {0};";
+      var sql = string.Format(template, table.FullName);
+      return sql;
+    }
+
+    public virtual object ConvertListParameterValue(object value, Type elemType) {
+      return value;
+    }
+
+    public virtual IDbDataParameter AddDbParameter(IDbCommand command, SqlPlaceHolder ph, object value) {
+      var prmIndex = command.Parameters.Count;
+      var prm = command.CreateParameter();
+      prm.ParameterName = GetSqlParameterName(prmIndex);
+      prm.Direction = ph.ParamDirection;
+      prm.Value = value ?? DBNull.Value;
+      ph.PreviewParameter?.Invoke(prm, ph);
+      command.Parameters.Add(prm);
+      return prm;
+    }
+
+    public virtual string ListToLiteral(object value, DbTypeDef elemTypeDef) {
+      var list = value as IList;
+      if (list.Count == 0)
+        return GetEmptyListLiteral(elemTypeDef);
+      var strList = new List<string>(list.Count);
+      foreach (var item in list) {
+        strList.Add(elemTypeDef.ToLiteral(item));
+      }
+      return string.Join(", ", strList);
+    }
+
+    // Used in 't.Col IN (<list>)' expressions when list is empty; does not work for all providers
+    public virtual string GetEmptyListLiteral(DbTypeDef elemTypeDef) {
+      return "SELECT NULL WHERE 1=0"; //works OK for MS SQL, SQLite
+    }
+
+
+
+    #region Cached SQL param names
+    // We pre-create parameter names to avoid string allocations at runtime
+    string[] _sqlParamNames;
+    protected void InitSqlParamNames() {
+      // Create array of param names
+      _sqlParamNames = new string[this.MaxParamCount + 100]; // +100 just in case; and to make unit test easier
+      for(int i = 0; i < _sqlParamNames.Length; i++)
+        _sqlParamNames[i] = this.DynamicSqlParameterPrefix + i;
+    }
+
+    public string GetSqlParameterName(int index) {
+      if(_sqlParamNames == null)
+        InitSqlParamNames(); //we don't need lock here
+      return _sqlParamNames[index];
+    }
+    #endregion 
+
+
+
 
   } //class
 }

@@ -92,20 +92,6 @@ namespace Vita.Data.MsSql {
 
     public override SqlFragment BuildSqlForSqlFunctionExpression(SqlFunctionExpression expr) {
       switch(expr.FunctionType) {
-        case SqlFunctionType.InArray:
-          // When array value is sent in parameter for IN expr (ex: 'SomeCol IN (@P)'), it is sent as table-type param,
-          // and IN expr should be written like '.. IN (SELECT V FROM @P). We do it ONLY if array is actually sent 
-          // as parameter, and not replaced by literal comma-list of values; this can happen if special Options flag is set;
-          //  this flag is used when translating DB Views which cannot have parameters
-          var forceLiterals = this.QueryInfo.Options.IsSet(QueryOptions.NoParameters);
-          if(forceLiterals)
-            break; //do not do special form
-          // check special form is needed
-          var pv = expr.Operands[0];
-          var parameter = expr.Operands[1] as ExternalValueExpression;
-          if (parameter != null && parameter.IsList)
-            return BuildValueInArrayParamSql(pv, parameter);
-          break;
         case SqlFunctionType.Concat:
           // there can be multiple args, > 2, can't use template here
           var argSqls = BuildSqls(expr.Operands);
@@ -115,20 +101,22 @@ namespace Vita.Data.MsSql {
       return base.BuildSqlForSqlFunctionExpression(expr);
     }
 
-    private SqlFragment BuildValueInArrayParamSql(Expression value, ExternalValueExpression parameter) {
+    /*
+    private SqlFragment BuildValueInArrayParamSql(Expression value, SqlLinqParamPlaceHolder listPrmPh) {
       var valueSql = BuildLinqExpressionSql(value); 
-      var prmSql = BuildLinqExpressionSql(parameter);
       // We use Sql_variant column in table UDT that holds list. It was found that it causes index scan instead of seek
       // So we add CAST here
-      var elType = parameter.ListElementType;
+      var elType = listPrmPh.ElementType;
       var typeDef = base.Driver.TypeRegistry.FindStorageType(elType, false);
       if (typeDef != null) {
-        var sqlDbType = (SqlDbType)typeDef.CustomDbType;
-        var typeName = new TextSqlFragment(sqlDbType.ToString());
-        return _msDialect.InArrayTemplateTyped.Format(valueSql, typeName, prmSql);
+        // With a CAST
+        var typeName = new TextSqlFragment(typeDef.TypeName);
+        return _msDialect.InArrayTemplateTyped.Format(valueSql, typeName, listPrmPh);
       } else
-        return _msDialect.InArrayTemplateUntyped.Format(valueSql, prmSql);
+        //without CAST
+        return _msDialect.InArrayTemplateUntyped.Format(valueSql, listPrmPh);
     }
+    */
 
     public override SqlFragment BuildLimitClause(SelectExpression selectExpression) {
       if (selectExpression.Flags.IsSet(SelectExpressionFlags.MsSqlUseTop))
@@ -153,8 +141,8 @@ namespace Vita.Data.MsSql {
       return sql;
     }
 
-    public override SqlStatement BuildCrudUpdateOne(DbTableInfo table, EntityRecord rec, ISqlValueFormatter valueFormatter) {
-      var sql = base.BuildCrudUpdateOne(table, rec, valueFormatter);
+    public override SqlStatement BuildCrudUpdateOne(DbTableInfo table, EntityRecord rec) {
+      var sql = base.BuildCrudUpdateOne(table, rec);
       if (table.Entity.Flags.IsSet(EntityFlags.HasRowVersion))
         AppendRowVersionCheckReturn(sql, table, rec);
       return sql; 
@@ -162,7 +150,9 @@ namespace Vita.Data.MsSql {
 
     private void AppendIdentityReturn(SqlStatement sql, DbTableInfo table) {
       var idCol = table.Columns.First(c => c.Flags.IsSet(DbColumnFlags.Identity));
-      var idPrmPh = sql.PlaceHolders.AddParamRef(idCol.TypeInfo.StorageType, System.Data.ParameterDirection.Output, idCol);
+      var dbType = idCol.Member.DataType.GetIntDbType();
+      var idPrmPh = new SqlColumnValuePlaceHolder(idCol, ParameterDirection.Output);
+      sql.PlaceHolders.Add(idPrmPh);
       var getIdSql = _msDialect.SqlGetIdentityTemplate.Format(idPrmPh);
       sql.Append(getIdSql);
       sql.Append(SqlTerms.NewLine);
@@ -170,15 +160,20 @@ namespace Vita.Data.MsSql {
 
     private void AppendRowVersionCheckReturn(SqlStatement sql, DbTableInfo table, EntityRecord record) {
       var rvCol = table.Columns.First(c => c.Flags.IsSet(DbColumnFlags.RowVersion));
+      // do row count check for update only, not for insert
       if (record.Status == EntityStatus.Modified) {
-        // update row count check
         var tag = new TextSqlFragment($"'ConcurrentUpdate/{table.Entity.Name}/{record.PrimaryKey.ValuesToString()}'");
         var checkRowsSql = _msDialect.SqlCheckRowCountIsOne.Format(tag);
         sql.Append(checkRowsSql);
       }
       // return RowVersion in parameter
-      var rvPrm = sql.PlaceHolders.AddParamRef(rvCol.TypeInfo.StorageType, System.Data.ParameterDirection.Output, rvCol);
-      var getRvSql = _msDialect.SqlGetRowVersionTemplate.Format(rvPrm);
+      var rvPrmPholder = new SqlColumnValuePlaceHolder(rvCol, ParameterDirection.InputOutput);
+      sql.PlaceHolders.Add(rvPrmPholder);
+      rvPrmPholder.PreviewParameter = (prm, ph) => {
+        prm.DbType = DbType.Binary;
+        prm.Size = 8;
+      };
+      var getRvSql = _msDialect.SqlGetRowVersionTemplate.Format(rvPrmPholder);
       sql.Append(getRvSql);
       sql.Append(SqlTerms.NewLine);
     }

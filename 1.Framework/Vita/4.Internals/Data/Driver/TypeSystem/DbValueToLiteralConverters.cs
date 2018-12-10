@@ -43,16 +43,12 @@ namespace Vita.Data.Driver {
     public static string BytesToLiteral(object value) {
       Util.CheckParam(value, nameof(value));
       switch(value) {
-        /*
         case Guid g:
           return "0x" + HexUtil.ByteArrayToHex(g.ToByteArray());
-          */
         case byte[] bytes:
           return "0x" + HexUtil.ByteArrayToHex(bytes);
-        /*
         case Binary bin:
           return "0x" + HexUtil.ByteArrayToHex(bin.GetBytes()); 
-          */
 
         default:
           Util.Throw("BytesToLiteral: invalid input value type {0}", value.GetType());

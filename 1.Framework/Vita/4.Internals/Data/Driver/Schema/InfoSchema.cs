@@ -40,8 +40,9 @@ namespace Vita.Data.Driver.InfoSchema {
     public void Load(IDataReader reader) {
       while(reader.Read()) {
         var row = AddRow(); 
-        foreach(var col in Columns) 
+        foreach(var col in Columns) {
           row[col.Index] = reader[col.Index];
+        }
       }
     }
 
@@ -129,10 +130,10 @@ namespace Vita.Data.Driver.InfoSchema {
       return (long) Convert.ChangeType(value, typeof(long));
     }
 
-    public int GetAsInt(string name) {
+    public int GetAsInt(string name, int nullValue = 0) {
       var value = this[name];
       if(value == DBNull.Value)
-        return 0;
+        return nullValue;
       return (int)Convert.ChangeType(value, typeof(int));
     }
 

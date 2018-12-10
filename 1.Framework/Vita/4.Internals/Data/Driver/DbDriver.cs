@@ -18,6 +18,7 @@ using System.Threading;
 using Vita.Data.SqlGen;
 using Vita.Data.Runtime;
 using Vita.Data.Linq;
+using Vita.Data.Driver.TypeSystem;
 
 namespace Vita.Data.Driver {
 
@@ -28,10 +29,10 @@ namespace Vita.Data.Driver {
 
     public abstract DbOptions GetDefaultOptions();
 
-    // Must be created in derived constructor!
-    public DbTypeRegistry TypeRegistry { get; protected set; }
+    // Must be created in derived constructor
     public DbSqlDialect SqlDialect { get; protected set; }
     public int MaxKeyNameLength = 40;
+    public IDbTypeRegistry TypeRegistry; 
 
     public DbDriver(DbServerType serverType, DbFeatures features) {
       ServerType = serverType;
@@ -108,32 +109,6 @@ namespace Vita.Data.Driver {
     }
 
     public virtual void CommandExecuted(DataConnection connection, IDbCommand command, DbExecutionType executionType) {
-    }
-
-    public virtual IDbDataParameter AddParameter(IDbCommand command, string name, DbStorageType typeDef, ParameterDirection direction, object value) {
-      var prm = command.CreateParameter();
-      prm.ParameterName = name;
-      prm.DbType = typeDef.DbType;
-      prm.Direction = direction;
-      /*
-      prm.Size = (int)typeInfo.Size;
-      if (typeInfo.Precision > 0)
-        prm.Precision = typeInfo.Precision;
-      if (typeInfo.Scale > 0)
-        prm.Scale = typeInfo.Scale;
-        */
-      prm.Value = value; 
-      command.Parameters.Add(prm); 
-      return prm; 
-    }
-
-    public virtual void CopyParameterSetup(IDbDataParameter source, IDbDataParameter dest) {
-      dest.ParameterName = source.ParameterName;
-      dest.Direction = source.Direction;
-      dest.DbType = source.DbType;
-      dest.Precision = source.Precision;
-      dest.Scale = source.Scale;
-      dest.SourceColumn = source.SourceColumn; 
     }
 
     // The method should check specific exception types.

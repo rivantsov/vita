@@ -32,14 +32,14 @@ namespace Vita.Data.SQLite {
     //Safe add by default adds column as nullable, initializes it with default value, then changes to non-nullable(it necessary)
     // SQLite does not support modifying columns, so we add column directly with DEFAULT clause for non-nullable columns
     protected override void BuildColumnAddSqlSafe(DbObjectChange change, DbColumnInfo column) {
-      this.BuildColumnAddSql(change, column, DbScriptOptions.None);
+      this.BuildColumnAddSql(change, column, DbScriptOptions.NewColumn);
     }
     public override void BuildColumnAddSql(DbObjectChange change, DbColumnInfo column, DbScriptOptions options) {
       var colSpec = GetColumnSpec(column, options);
       if(!column.Flags.IsSet(DbColumnFlags.Nullable)) {
-        var dft = column.TypeInfo.StorageType.DefaultColumnInit;
+        var dft = column.TypeInfo.TypeDef.ColumnInit;
         if (string.IsNullOrWhiteSpace(dft))
-          dft = column.TypeInfo.ToLiteral(new byte[] {0}); 
+          dft = column.TypeInfo.TypeDef.ToLiteral(new byte[] {0}); 
         colSpec += " DEFAULT " + dft; 
           
       }

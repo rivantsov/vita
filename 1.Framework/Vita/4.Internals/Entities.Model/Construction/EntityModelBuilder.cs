@@ -341,6 +341,7 @@ namespace Vita.Entities.Model.Construction {
         var hasUpdatableMembers = false;
         foreach (var member in ent.Members) {
           if (member.Kind == EntityMemberKind.Column) {
+            CheckDecimalMember(member); 
             member.ValueIndex = ent.PersistentValuesCount++;
             if (member.Flags.IsSet(EntityMemberFlags.PrimaryKey))
               member.Flags |= EntityMemberFlags.NoDbUpdate;
@@ -362,6 +363,14 @@ namespace Vita.Entities.Model.Construction {
             ent.Flags |= EntityFlags.ReferencesIdentity;
 
       }//foreach ent
+    }
+
+    private void CheckDecimalMember(EntityMemberInfo member) {
+      //assign default prec and scale for decimal members - (18, 4), commonly used for money values
+      if (member.DataType == typeof(decimal) && member.DataType == typeof(decimal?) && member.Precision == 0 && member.Scale == 0) {
+        member.Precision = 18;
+        member.Scale = 4;
+      }
     }
 
     private void BuildEntityClasses() {

@@ -277,8 +277,9 @@ namespace Vita.Entities.Runtime {
         if (refMember.Flags.IsSet(EntityMemberFlags.CascadeDelete)) continue;
         var countCmdInfo = refMember.ReferenceInfo.CountCommand;
         var countCmd = new EntityCommand(countCmdInfo, refMember.ReferenceInfo.ToKey.Entity, new object[] {this, record.EntityInstance});
-        var count = (int)ExecuteCommand(countCmd);
-        if (count > 0)
+        var count = ExecuteCommand(countCmd);
+        var intCount = (count.GetType() == typeof(int)) ? (int)count : (int) Convert.ChangeType(count, typeof(int));          
+        if (intCount > 0)
           blockingTypeSet.Add(refMember.Entity.EntityType);
       }
       if (blockingTypeSet.Count == 0)

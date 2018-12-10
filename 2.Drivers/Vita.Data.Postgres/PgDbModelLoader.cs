@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 
 using Vita.Data.Driver;
 using Vita.Data.Driver.InfoSchema;
+using Vita.Data.Driver.TypeSystem;
 using Vita.Data.Model;
 using Vita.Entities;
 using Vita.Entities.Logging;
@@ -21,17 +22,12 @@ namespace Vita.Data.Postgres {
       base.RoutineTypeTag = "FUNCTION";
     }
 
-    public override DbColumnTypeInfo GetDbTypeInfo(InfoRow columnRow) {
-      var typeInfo =  base.GetDbTypeInfo(columnRow);
-      if(typeInfo != null && typeInfo.SqlTypeSpec == "text") {
+    public override DbTypeInfo GetColumnDbTypeInfo(InfoRow columnRow) {
+      var typeInfo =  base.GetColumnDbTypeInfo(columnRow);
+      if(typeInfo != null && typeInfo.DbTypeSpec == "text") {
         typeInfo.Size = -1;
       }
       return typeInfo; 
-    }
-
-    public override bool IsUnlimited(string typeName, long charSize, long byteSize) {
-      var OneBln = 1e9;
-      return base.IsUnlimited(typeName, charSize, byteSize) || charSize > OneBln || byteSize > OneBln;
     }
 
     public override InfoTable GetColumns() {

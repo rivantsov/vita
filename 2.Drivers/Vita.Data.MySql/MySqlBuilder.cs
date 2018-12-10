@@ -64,7 +64,7 @@ namespace Vita.Data.MySql {
 
     IdentityReader _identityReader = new IdentityReader(); 
 
-    class IdentityReader : ISqlResultProcessor {
+    class IdentityReader : IDataCommandResultProcessor {
       public object ProcessResult(DataCommand command) {
         var reader = command.Result as IDataReader;
         Util.Check(reader.Read(), "Identity reader error: command did not return a record with identity.");
@@ -82,7 +82,7 @@ namespace Vita.Data.MySql {
     public override SqlFragment BuildLockClause(SelectExpression selectExpression, LockType lockType) {
       switch(lockType) {
         case LockType.ForUpdate:
-          return _myDialect.SqlTermForUpdate;
+          return _myDialect.SqlTermLockForUpdate;
         case LockType.SharedRead:
           return _myDialect.SqlTermLockInShareMode;
         default:
@@ -96,7 +96,6 @@ namespace Vita.Data.MySql {
       else
         return _myDialect.OffsetLimitTemplate.Format(offset, limit);
     }
-
 
   }
 }

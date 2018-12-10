@@ -71,7 +71,7 @@ namespace Vita.Samples.BookStore.Api {
     public Guid Id;
     public Guid OrderId; 
     public Book Book;
-    public byte Quantity; // byte? - see comment for IBookOrderLine.Quantity property
+    public int Quantity; 
   }
 
   [DebuggerDisplay("{UserName}")]

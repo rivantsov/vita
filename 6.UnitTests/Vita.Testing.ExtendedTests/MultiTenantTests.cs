@@ -16,6 +16,7 @@ using Vita.Modules.Login.Api;
 using Vita.Data.Driver;
 using Vita.Data;
 using Vita.Tools.Testing;
+using Vita.Tools;
 
 namespace Vita.Testing.ExtendedTests {
 
@@ -53,7 +54,7 @@ namespace Vita.Testing.ExtendedTests {
       var connString2 = Startup.CurrentConfig.ConnectionString.Replace("VitaBooks", Books2);
       var mainDbStt = Startup.DbSettings; 
       var dbSettings2 = new DbSettings(mainDbStt.ModelConfig,  connString2, upgradeMode: DbUpgradeMode.Always, dataSourceName: Books2);
-      TestUtil.DropSchemaObjects(dbSettings2);
+      DataUtility.DropSchemaObjects(app, dbSettings2);
       app.ConnectTo(dbSettings2);
 
       //read from new store

@@ -17,13 +17,10 @@ namespace Vita.Data {
     public readonly DbUpgradeMode UpgradeMode;
     public DbUpgradeOptions UpgradeOptions;
 
-
     /// <summary>A DB server role to grant execute permissions for SELECT stored procedures (MS SQL only).</summary>
     public string GrantExecReadToRole = "public";
     /// <summary>A DB server role to grant execute permissions for Insert, Update, Delete stored procedures (MS SQL only).</summary>
     public string GrantExecWriteToRole = "public";
-
-    private HashSet<string> _schemas = new StringSet();
 
     // Connection strings
     public readonly string ConnectionString;
@@ -57,16 +54,6 @@ namespace Vita.Data {
     public DbDriver Driver {
       get { return ModelConfig.Driver; }
     }
-
-    public IEnumerable<string> GetSchemas() {
-      return _schemas; 
-    }
-    //Used by DbModelLoader in DbFirst scenario, to limit list of schemas to load from
-    public void SetSchemas(IEnumerable<string> schemas) {
-      _schemas.Clear();
-      _schemas.UnionWith(schemas); 
-    }
-
 
   }//class
 

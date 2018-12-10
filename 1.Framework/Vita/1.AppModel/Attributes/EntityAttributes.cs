@@ -27,7 +27,9 @@ namespace Vita.Entities {
     public int Size { get; set; }
     public byte Scale { get; set; }
     public byte Precision { get; set; }
+    public bool AnsiString { get; set; }
 
+    [Obsolete("Use DbTypeSpec property.")]
     /// <summary>Explicit DbType for a column. </summary>
     public DbType DbType {
       // Nullable types are not allowed in attributes, so we have to wrap nullable<DbType> field into property.

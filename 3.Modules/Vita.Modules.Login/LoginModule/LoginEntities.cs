@@ -67,7 +67,7 @@ namespace Vita.Modules.Login {
     SecretQuestionFlags Flags { get; set; } 
   }
 
-  [Entity, PrimaryKey("Login,Question"), ClusteredIndex("Login,Question"), OrderBy("Number")]
+  [Entity, PrimaryKey("Login,Question", Clustered = true), OrderBy("Number")]
   public interface ISecretQuestionAnswer {
     [CascadeDelete]
     ILogin Login { get; set; }

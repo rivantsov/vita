@@ -49,7 +49,6 @@ namespace Vita.Testing.BasicTests.IdentityTests {
     [TestMethod]
     public void TestIdentityColumns() {
       _app = new IdentityTestsEntityApp();
-      Startup.DropSchemaObjects("ident"); 
       Startup.ActivateApp(_app);
       if(Startup.ServerType == Data.Driver.DbServerType.SQLite)
         DeleteAllData(); 
@@ -84,7 +83,6 @@ namespace Vita.Testing.BasicTests.IdentityTests {
     [TestMethod]
     public void TestIdentityInLargeBatch() {
       _app = new IdentityTestsEntityApp();
-      Startup.DropSchemaObjects("ident");
       Startup.ActivateApp(_app);
       // For SQLite objects are not dropped (FK problems), so we need to instead delete all data
       if(Startup.ServerType == Data.Driver.DbServerType.SQLite)

@@ -40,20 +40,14 @@ namespace Vita.Testing.ExtendedTests {
       var session = app.OpenSession();
       session.LogMessage("----------- Books Search Tests -------------------------");
 
-      //We use catalog controller's SearchBooks method to invoke search method. 
-      // This is also a demo of using Api controllers outside Web server environment
-      var contr = new CatalogController() ;
-      contr.InitController(session.Context); 
-
-      //User search helper method with all possible search terms. Let's find c# book
+      //Use search helper method with all possible search terms. Let's find c# book
       var searchParams = new BookSearch() {
-        Title = "C#", Categories = "Programming,Fiction", MaxPrice = 100.0, Publisher = "MS",
+        Title = "c#", Categories = "Programming,Fiction", MaxPrice = 100.0, Publisher = "MS",
           PublishedAfter = new DateTime(2000, 1, 1), PublishedBefore = DateTime.Now, 
           AuthorLastName = "Sharp", OrderBy = "Price-desc,pubname,PublishedOn-desc",
           Skip = 0, Take = 5
       };
-      var bookResults = contr.SearchBooks(searchParams);
-      Startup.BooksApp.Flush(); 
+      var bookResults = session.SearchBooks(searchParams);
       //PrintLastSql(session);
       Assert.AreEqual(1, bookResults.Results.Count, "Failed to find c# book");
       /* Here's the resulting SQL for MS SQL Server:
@@ -78,7 +72,7 @@ OFFSET @P4 ROWS FETCH NEXT @P5 ROWS ONLY;
 
       // run with empty terms, 'get-any-top-10' 
       searchParams = new BookSearch() {Take = 10};
-      bookResults = contr.SearchBooks(searchParams);
+      bookResults = session.SearchBooks(searchParams);
       Assert.IsTrue(bookResults.Results.Count > 3, "Must return all books");
 
     }

@@ -18,7 +18,7 @@ namespace Vita.Data.SQLite {
   public class SQLiteDbDriver : DbDriver {
 
     public const DbFeatures SQLiteFeatures = DbFeatures.TreatBitAsInt | DbFeatures.Views |
-                                             DbFeatures.ReferentialConstraints | DbFeatures.Paging |
+                                             DbFeatures.ReferentialConstraints | DbFeatures.Paging | DbFeatures.InsertMany |
                                              DbFeatures.ServerPreservesComments /*views*/
                                              ;
     public const DbOptions DefaultSQLiteDbOptions = DbOptions.UseRefIntegrity | DbOptions.ShareDbModel
@@ -79,11 +79,6 @@ namespace Vita.Data.SQLite {
       return new SqliteCommand();
     }
 
-    public override IDbDataParameter AddParameter(IDbCommand command, string name, DbStorageType typeDef, ParameterDirection direction, object value) {
-      var prm =  (SqliteParameter) base.AddParameter(command, name, typeDef, direction, value);
-      prm.SqliteType = (SqliteType)typeDef.CustomDbType;
-      return prm; 
-    }
 
     /*
       public enum SQLiteErrorCode {

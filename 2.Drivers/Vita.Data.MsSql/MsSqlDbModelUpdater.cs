@@ -107,12 +107,19 @@ CREATE {unique} {clustered} INDEX {qKeyName}
     public override void BuildSequenceAddSql(DbObjectChange change, DbSequenceInfo sequence) {
       const string sqlCreateTemplate = "CREATE Sequence {0} AS {1} START WITH {2} INCREMENT BY {3};";
       const string sqlGrantTemplate = "Grant  UPDATE on {0} to {1};";
-      change.AddScript(DbScriptType.SequenceAdd, sqlCreateTemplate, sequence.FullName, sequence.DbTypeDef.TypeName,
+      var typeName = GetIntDbTypeName(sequence.Definition.DataType);
+      change.AddScript(DbScriptType.SequenceAdd, sqlCreateTemplate, sequence.FullName, typeName,
           sequence.StartValue, sequence.Increment);
       //Grant permission to UPDATE
       var updateRole = this.Settings.GrantExecWriteToRole;
       if (!string.IsNullOrWhiteSpace(updateRole))
         change.AddScript(DbScriptType.Grant, sqlGrantTemplate, sequence.FullName, updateRole); 
+    }
+    private string GetIntDbTypeName(Type type) {
+      if(type == typeof(long) || type == typeof(ulong))
+        return "BIGINT";
+      else
+        return "INT";
     }
 
     public override void BuildCustomTypeAddSql(DbObjectChange change, DbCustomTypeInfo typeInfo) {
@@ -131,7 +138,7 @@ CREATE {unique} {clustered} INDEX {qKeyName}
     }
 
     protected override string GetColumnSpec(DbColumnInfo column, DbScriptOptions options = DbScriptOptions.None) {
-      var typeStr = column.TypeInfo.SqlTypeSpec;
+      var typeStr = column.TypeInfo.DbTypeSpec;
       var nullable = options.IsSet(DbScriptOptions.ForceNull) || column.Flags.IsSet(DbColumnFlags.Nullable);
       var nullStr = nullable ? "NULL" : "NOT NULL";
       var idStr = string.Empty;

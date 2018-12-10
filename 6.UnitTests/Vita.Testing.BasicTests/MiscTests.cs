@@ -116,13 +116,12 @@ namespace Vita.Testing.BasicTests.Misc {
     EntityApp _app;
 
     public void DeleteAll() {
-      Startup.DeleteAll(_app, typeof(IVehicle), typeof(IDriver));
+      Startup.DeleteAll(_app);
     }
 
     [TestInitialize]
     public void Init() {
       if(_app == null) {
-        Startup.DropSchemaObjects("misc");
         _app = new MiscTestsEntityApp();
         Startup.ActivateApp(_app);
       }
@@ -133,6 +132,8 @@ namespace Vita.Testing.BasicTests.Misc {
       if(_app != null)
         _app.Flush();
     }
+
+
 
     [TestMethod]
     public void TestMisc_EntityReferences() {
@@ -156,6 +157,7 @@ namespace Vita.Testing.BasicTests.Misc {
       var veh2 = session.NewVehicle("Explorer", 2005, john, john);
       var car2Id = veh2.Id;
       session.SaveChanges();
+
       //test for a bug fix - New entities were not tracked after save
       var john2 = session.GetEntity<IDriver>(johnId);
       Assert.IsTrue(john == john2, "new/saved entity is not tracked.");
@@ -177,8 +179,8 @@ namespace Vita.Testing.BasicTests.Misc {
       veh2.Driver = null;
       session.SaveChanges();
       //immediately verify that vehicle lists in persons are refreshed
-      Assert.IsTrue(john.Vehicles.Count == 1, "Invlid Vehicle count for John");
-      Assert.IsTrue(jane.Vehicles.Count == 1, "Invlid Vehicle count for Jane");
+      Assert.AreEqual(1, john.Vehicles.Count, "Invlid Vehicle count for John");
+      Assert.AreEqual(1, jane.Vehicles.Count, "Invlid Vehicle count for Jane");
 
 
       session = _app.OpenSession();
@@ -194,6 +196,7 @@ namespace Vita.Testing.BasicTests.Misc {
       session = _app.OpenSession();
       if(Startup.ServerType == DbServerType.MySql) {
         // MySQL fails without this wait. Looks like we need to give some time to DB engine to settle the update. any ideas?!  
+        Thread.Sleep(200);
         Thread.Sleep(200);
         Thread.Sleep(200);
         veh1 = session.GetEntity<IVehicle>(car1Id);
@@ -302,8 +305,6 @@ namespace Vita.Testing.BasicTests.Misc {
       // 1. Submit 2 drivers with the same license in one update
       session = _app.OpenSession();
 
-      //var dr1 = session.NewDriver("X001", "Jessy", "Jones");
-      //var dr2 = session.NewDriver("X001", "JessyJr", "Jones");
       var dr1 = session.NewDriver("X001", "Jessy", "Jones");
       var dr2 = session.NewDriver("X001", "Jim", "Jackson");
 
@@ -389,21 +390,29 @@ namespace Vita.Testing.BasicTests.Misc {
       DeleteAll();
       IEntitySession session;
 
-      // Try 2 cases
-      // 1. Submit 2 drivers with the same license in one update
+      // create 10 drivers with the same license in one update
       session = _app.OpenSession();
       var drivers = new List<IDriver>(); 
       for(int i = 0; i < 10; i++) {
         drivers.Add(session.NewDriver("L" + i, "F" + i, "L" + i));
       }
       session.SaveChanges();
+      // Using parameter
       // now delete all - should be one command
       foreach(var dr in drivers)
         session.DeleteEntity(dr);
       session.SaveChanges(); 
       var cmd = session.GetLastCommand();
-      Assert.IsTrue(cmd.CommandText.Contains(" IN "), "Expected delete command with IN clause");
+      // make sure it is delete-many, in one statement
+      if (Startup.ServerType == DbServerType.Postgres)
+        Assert.IsTrue(cmd.CommandText.Contains(" ANY("), "Expected delete command with IN clause");
+      else 
+        Assert.IsTrue(cmd.CommandText.Contains(" IN "), "Expected delete command with IN clause");
+
+      // 
 
     }
+
+
   }//class
 }

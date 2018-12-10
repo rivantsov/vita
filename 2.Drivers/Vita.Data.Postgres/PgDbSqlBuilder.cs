@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Linq;
 using System.Text;
 
@@ -16,19 +17,19 @@ using Vita.Entities.Runtime;
 namespace Vita.Data.Postgres {
 
   public class PgDbSqlBuilder : DbSqlBuilder {
-    PgDbSqlDialect _dialect; 
+    PgDbSqlDialect _pgDialect; 
 
     public PgDbSqlBuilder(DbModel dbModel, QueryInfo queryInfo): base(dbModel, queryInfo) {
-      _dialect = (PgDbSqlDialect)dbModel.Driver.SqlDialect; 
+      _pgDialect = (PgDbSqlDialect)dbModel.Driver.SqlDialect;
     }
 
 
     public override SqlFragment BuildLockClause(SelectExpression selectExpression, LockType lockType) {
       switch(lockType) {
         case LockType.ForUpdate:
-          return _dialect.SqlLockForUpdate;
+          return _pgDialect.SqlLockForUpdate;
         case LockType.SharedRead:
-          return _dialect.SqlLockInShareMode;
+          return _pgDialect.SqlLockInShareMode;
         default:
           return null;
       }
@@ -38,31 +39,30 @@ namespace Vita.Data.Postgres {
     // it sounds logical to use 'Returning id INTO @P', but this does not work
     // SqlTemplate SqlTemplateReturnIdentity = new SqlTemplate(" RETURNING {0} INTO {1};");
     // Note: using @p = LastVal(); -does not work, gives error: Commands with multiple queries cannot have out parameters
-
     public override SqlStatement BuildCrudInsertOne(DbTableInfo table, EntityRecord record) {
-      if(!table.Entity.Flags.IsSet(EntityFlags.HasIdentity)) 
-        return base.BuildCrudInsertOne(table, record);
-      // slightly modified base Insert method, with added 'RETURNING IdCol'
-      // list of column names
-      var insertCols = GetColumnsToInsert(table, record);
-      var insertColsSqls = insertCols.Select(c => c.SqlColumnNameQuoted).ToList();
-      var colListSql = SqlFragment.CreateList(SqlTerms.Comma, insertColsSqls);
-      // values
-      var placeHolders = new List<SqlPlaceHolder>();
-      var colValues = insertCols.Select(c => placeHolders.AddColumnValueRef(c)).ToArray();
-      var valuesFragm = CompositeSqlFragment.Parenthesize(SqlFragment.CreateList(SqlTerms.Comma, colValues));
+      var sql = base.BuildCrudInsertOne(table, record);
+      var flags = table.Entity.Flags;
+      if(flags.IsSet(EntityFlags.HasIdentity))
+        AppendIdentityReturn(sql, table);
+      return sql;
+    }
+
+    private void AppendIdentityReturn(SqlStatement sql, DbTableInfo table) {
+      sql.TrimEndingSemicolon();
+      // Append returning clause
       var idCol = table.Columns.First(c => c.Flags.IsSet(DbColumnFlags.Identity));
-      var sql = _dialect.SqlCrudTemplateInsertReturnIdentity.Format(table.SqlFullName, colListSql, 
-                     valuesFragm, idCol.SqlColumnNameQuoted);
-      var stmt = new SqlStatement(sql, placeHolders, DbExecutionType.NonQuery);
-      // add output parameter that will return the id value
-      var idPrmPh = stmt.PlaceHolders.AddParamRef(idCol.TypeInfo.StorageType, System.Data.ParameterDirection.Output, idCol);
-      return stmt;
+      var dbType = idCol.Member.DataType.GetIntDbType();
+      // we create placeholder based on Id column, only with OUTPUT direction - this results in parameter to return value
+      var idPrmPh = new SqlColumnValuePlaceHolder(idCol, ParameterDirection.Output);
+      sql.PlaceHolders.Add(idPrmPh);
+      var getIdSql = _pgDialect.SqlCrudTemplateReturningIdentity.Format(idCol.SqlColumnNameQuoted);
+      sql.Append(getIdSql);
+      sql.Append(SqlTerms.NewLine);
     }
 
     protected override SqlFragment BuildLimitSql(SqlFragment limit, SqlFragment offset) {
-      var sqlLimit = limit == null ? null : _dialect.SqlLimitTemplate.Format(limit);
-      var sqlOffset = offset == null ? null : _dialect.SqlOffsetTemplate.Format(offset);
+      var sqlLimit = limit == null ? null : _pgDialect.SqlLimitTemplate.Format(limit);
+      var sqlOffset = offset == null ? null : _pgDialect.SqlOffsetTemplate.Format(offset);
       if(sqlLimit == null)
         return sqlOffset;
       if(sqlOffset == null)

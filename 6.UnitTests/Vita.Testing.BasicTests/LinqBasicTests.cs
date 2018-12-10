@@ -46,13 +46,12 @@ namespace Vita.Testing.BasicTests.LinqBasic {
     #endregion 
 
     public void DeleteAll() {
-      Startup.DeleteAll(_app,  typeof(IArithmData)); 
+      Startup.DeleteAll(_app); 
     }
 
     [TestInitialize]
     public void Init() {
       if(_app == null) {
-        Startup.DropSchemaObjects(MiscLinqEntityApp.Schema);
         _app = new MiscLinqEntityApp();
         Startup.ActivateApp(_app);
       }

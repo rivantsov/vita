@@ -1,8 +1,12 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
+using System.Data;
 using System.Text;
-
+using Npgsql;
+using NpgsqlTypes;
 using Vita.Data.Driver;
+using Vita.Data.Driver.TypeSystem;
 using Vita.Data.Linq.Translation.Expressions;
 using Vita.Data.SqlGen;
 
@@ -12,12 +16,8 @@ namespace Vita.Data.Postgres {
     public SqlFragment SqlLockInShareMode = new TextSqlFragment("  FOR SHARE");
     public SqlTemplate SqlOffsetTemplate = new SqlTemplate("OFFSET {0} ");
     public SqlTemplate SqlLimitTemplate = new SqlTemplate("LIMIT {0} ");
-    public SqlTemplate SqlCrudTemplateInsertReturnIdentity = new SqlTemplate(
-@"INSERT INTO {0} 
-    ({1})
-    VALUES 
-    {2} 
-    RETURNING {3};");
+
+    public SqlTemplate SqlCrudTemplateReturningIdentity = new SqlTemplate(@" RETURNING {0};");
 
 
     public PgDbSqlDialect(PgDbDriver driver) : base(driver) {
@@ -25,10 +25,19 @@ namespace Vita.Data.Postgres {
       base.DynamicSqlParameterPrefix = "@P"; 
       base.BatchBeginTransaction = new TextSqlFragment("START TRANSACTION;");
       base.BatchCommitTransaction = new TextSqlFragment("COMMIT;");
+      // we are using ANY instead of IN, works for parameters and list literals
+      base.SqlCrudTemplateDeleteMany = new SqlTemplate(
+      @"DELETE FROM {0} 
+    WHERE {1} = ANY({2})");
     }
 
     public override void InitTemplates() {
       base.InitTemplates();
+
+      AddTemplate("UPPER({0})", SqlFunctionType.ToUpper);
+      AddTemplate("LOWER({0})", SqlFunctionType.ToLower);
+      AddTemplate("LENGTH({0})", SqlFunctionType.StringLength);
+
 
       AddTemplate("DATE({0})", SqlFunctionType.Date);
       AddTemplate("DATE_PART('time', {0})", SqlFunctionType.Time);
@@ -41,8 +50,10 @@ namespace Vita.Data.Postgres {
       //sequence name in double quotes inside single-quote argument
       AddTemplate("nextval('{0}')", SqlFunctionType.SequenceNextValue);
       AddTemplate("uuid_generate_v1()", SqlFunctionType.NewGuid);
-      AddTemplate("{0} IN ({1})", SqlFunctionType.InArray);
       AddTemplate("char_length({0})", SqlFunctionType.StringLength);
+
+      //we use ANY function for IN operator, it works both for parameter or literal list
+      AddTemplate("{0} = ANY({1})", SqlFunctionType.InArray);
     }
 
     // schema should not be quoted
@@ -68,6 +79,34 @@ namespace Vita.Data.Postgres {
     }
 
 
+    public override string ListToLiteral(object value, DbTypeDef elemTypeDef) {
+      var list = value as IList;
+      if(list.Count == 0)
+        return GetEmptyListLiteral(elemTypeDef);
+      var strList = new List<string>(list.Count);
+      foreach(var item in list) {
+        strList.Add(elemTypeDef.ToLiteral(item));
+      }
+      return "ARRAY[" + string.Join(", ", strList) + "]";
+    }
+
+    public override string GetEmptyListLiteral(DbTypeDef elemTypeDef) {
+      var pgDbType = elemTypeDef.Name;
+      var emptyList = string.Format("SELECT CAST(NULL AS {0}) WHERE 1=0", pgDbType); 
+      return emptyList;
+    }
+
+    public override IDbDataParameter AddDbParameter(IDbCommand command, SqlPlaceHolder ph, object value) {
+      var prm = (NpgsqlParameter) base.AddDbParameter(command, ph, value);
+      switch(ph) {
+        case SqlListParamPlaceHolder lph:
+          // For array parameters PG requires setting NpgsqlDbType to combination of Array and pg-dbType for element
+          var pgDbType = (NpgsqlDbType)lph.ElementTypeDef.ProviderDbType; 
+          prm.NpgsqlDbType = NpgsqlDbType.Array | pgDbType;
+          break; 
+      }
+      return prm; 
+    }
 
   }
 }

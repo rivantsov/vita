@@ -16,13 +16,10 @@
 
   <ItemGroup>
     <Compile Remove="1.AppModel\Services\Logging\IErrorLogService_Disabled.cs" />
-    <Compile Remove="4.Internals\ServiceImplementations\DefaultErrorLogService_Disabled.cs" />
   </ItemGroup>
 
   <ItemGroup>
     <None Include="1.AppModel\Services\Logging\IErrorLogService_Disabled.cs" />
-    <None Include="4.Internals\Data\SqlGen\IFlatSqlFragment.cs" />
-    <None Include="4.Internals\ServiceImplementations\DefaultErrorLogService_Disabled.cs" />
   </ItemGroup>
 
   <ItemGroup>
@@ -35,5 +32,6 @@
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
     <DocumentationFile>bin\Release\netstandard2.0\Vita.xml</DocumentationFile>
+    <NoWarn>1701;1702;1591</NoWarn>
   </PropertyGroup>
 </Project>

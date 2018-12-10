@@ -18,6 +18,7 @@ namespace Vita.Data.Driver {
 
   /// <summary>Loads DB model from database. </summary>
   public partial class DbModelLoader {
+    public DbModelLoadFilter LoadFilter;
     //returned by information_schema.Tables view as Table_type; for some db vendors it is different (postgres: BASE TABLE)
     protected string TableTypeTag = "TABLE";
     protected string ViewTypeTag = "VIEW";
@@ -26,42 +27,33 @@ namespace Vita.Data.Driver {
     protected DbSettings Settings;
     protected DbDriver Driver;
     protected IActivationLog Log;
-
     protected DbModel Model;
 
     //Static empty table, to use as return object for methods that return 'nothing' (not supported aspects)
     protected InfoTable EmptyTable = new InfoTable();
 
-    //Schemas are initially copied from Settings. But app can reset them to desired list later.  
-    //note: if _schemas is empty, it means - load all.
-    private StringSet _schemasSubSet = new StringSet(); 
-    private string _schemasListForFilter;
 
 
     public DbModelLoader(DbSettings settings, IActivationLog log) {
       Settings = settings;
       Log = log;
       Driver = Settings.ModelConfig.Driver;
-      // if Settings.Schemas set is not empty, set these as restriction/filter
-      var schemas = Settings.GetSchemas().ToList();
-      if (schemas.Count > 0)
-        SetSchemasSubSet(schemas);
     }
 
     public virtual DbModel LoadModel() {
       Model = new DbModel(Settings.ModelConfig);
       LoadSchemas();
+      LoadCustomTypes(); 
       LoadTables();
       if (Driver.Supports(DbFeatures.Views))
         LoadViews();
       LoadTableColumns();
       LoadTableConstraints();
-      LoadTableConstaintColumns();
+      LoadTableConstraintColumns();
       LoadReferentialConstraints();
       LoadIndexes();
       LoadIndexColumns();
       LoadSequences();
-      LoadUserDefinedTypes(); 
       OnModelLoaded(); 
       return Model; 
     }//method
@@ -72,23 +64,10 @@ namespace Vita.Data.Driver {
       Log.Error(message, args);
     }
 
-    public void SetSchemasSubSet(IEnumerable<string> schemas) {
-      _schemasSubSet.Clear();
-      _schemasListForFilter = null;
-      if (schemas == null || !SupportsSchemas())
-        return;
-      _schemasSubSet.UnionWith(schemas.Where(s => !Driver.IsSystemSchema(s)));
-      if (_schemasSubSet.Count > 0) {
-        _schemasListForFilter = "('" + string.Join("', '", _schemasSubSet) + "')";
-      }
-    }
-
     protected virtual bool IncludeSchema(string schema) {
-      if(Driver.IsSystemSchema(schema))
-        return false; 
-      if (!SupportsSchemas() || _schemasSubSet.Count == 0)
+      if(!Driver.Supports(DbFeatures.Schemas) || LoadFilter == null)
         return true;
-      return _schemasSubSet.Contains(schema);
+      return LoadFilter.Schemas.Contains(schema); 
     }
 
     protected bool SupportsSchemas() {
@@ -105,6 +84,21 @@ namespace Vita.Data.Driver {
         var schema = row.GetAsString("SCHEMA_NAME");
         if(IncludeSchema(schema)) //add only schemas that are relevant to the model
           Model.Schemas.Add(new DbSchemaInfo(Model, schema));
+      }
+    }
+
+    protected virtual void LoadCustomTypes() {
+      var data = GetCustomTypes();
+      foreach (InfoRow row in data.Rows) {
+        var schema = row.GetAsString("TYPE_SCHEMA");
+        // if (!IncludeSchema(schema)) continue; -- do not filter by schema here, filter already applied in GetCustomTypes
+        //   For MS SQL case, Vita_ArrayAsTable is in dbo schema (type is shared)
+        var typeName = row.GetAsString("TYPE_NAME");
+        var kind = row.GetAsInt("IS_TABLE_TYPE") == 1 ? DbCustomTypeKind.TableType : DbCustomTypeKind.Regular;
+        var isNullable = row.GetAsInt("IS_NULLABLE") == 1;
+        var size = row.GetAsInt("SIZE");
+        var typeInfo = new DbCustomTypeInfo(Model, schema, typeName, kind, isNullable, size);
+        //constructor adds it to Model.CustomTypes
       }
     }
 
@@ -148,13 +142,16 @@ namespace Vita.Data.Driver {
           continue; //it is a view
         var colName = row.GetAsString("COLUMN_NAME");
         var dataTypeString = row.GetAsString("DATA_TYPE");
-        var typeInfo = GetDbTypeInfo(row);
+        var isNullStr = row.GetAsString("IS_NULLABLE");
+        var isNullable = (isNullStr == "YES" || isNullStr == "Y"); //Oracle->Y
+        var typeInfo = GetColumnDbTypeInfo(row);
         if (typeInfo == null) {
           LogError(
-            "Failed to find TypeInfo for SQL data type {0}. Table {1}, column {2}.", dataTypeString, tableName, colName);
+            "DbModelLoader: failed to find type mapping for DB data type '{0}'. Table {1}, column {2}.", 
+                 dataTypeString, tableName, colName);
           continue;
         }
-        var column = new DbColumnInfo(currTblInfo, colName, typeInfo);
+        var column = new DbColumnInfo(currTblInfo, colName, typeInfo, isNullable);
         column.DefaultExpression = row.GetAsString("COLUMN_DEFAULT");
         // Let schema manager add any provider-specific info
         OnColumnLoaded(column, row);
@@ -188,7 +185,7 @@ namespace Vita.Data.Driver {
           System.Diagnostics.Debug.WriteLine("DBModelLoader warning: Table without PK:" + table.TableName);
         }
     }
-    protected virtual void LoadTableConstaintColumns() {
+    protected virtual void LoadTableConstraintColumns() {
       var data = GetTableConstraintColumns();
       foreach (InfoRow row in data.Rows) {
         var schema = row.GetAsString("TABLE_SCHEMA");
@@ -201,7 +198,10 @@ namespace Vita.Data.Driver {
         var key = table.Keys.FirstOrDefault(k => k.Name == keyName); 
         if(key == null) continue;
         var col = key.Table.Columns.FirstOrDefault(c => c.ColumnName == colName);
-        key.KeyColumns.Add(new DbKeyColumnInfo(col));
+        if(col == null)
+          LogError($"Failed to locate column {colName} in table {tableName}.");
+        else 
+          key.KeyColumns.Add(new DbKeyColumnInfo(col));
       }
       //Mark PK columns as no update
       foreach (var t in Model.Tables)
@@ -211,7 +211,7 @@ namespace Vita.Data.Driver {
     }
 
     protected virtual void LoadReferentialConstraints() {
-      var data = GetReferentialConstraintsExt();
+      var data = GetReferentialConstraints();
       foreach (InfoRow row in data.Rows) {
         //Load names for Foreign key and Unique key
         var fkSchema = row.GetAsString("CONSTRAINT_SCHEMA");
@@ -225,16 +225,10 @@ namespace Vita.Data.Driver {
 
         var toTableName = row.GetAsString("U_TABLE");
         var toTable = Model.GetTable(toSchema, toTableName);
-        Util.Check(toTable != null, "Target table {0}.{1} not found in DB Model.", toSchema, toTableName);
+        if(toTable == null)
+          continue; // target table is being deleted, ignore this constraint
+
         var toKey = toTable.PrimaryKey; 
-/*        
-        if (toKey == null) {
-          //catch special case - foreign key to non-key set of fields
-          if (fromKey != null && fromKey.KeyType.IsSet(KeyType.ForeignKey))
-            fromKey.NotSupported = true; 
-          continue; //it is not ref constraint
-        }
- */ 
         bool cascadeDelete = row.GetAsString("DELETE_RULE") == "CASCADE";
         var refConstraint = new DbRefConstraintInfo(Model, fromKey, toKey, cascadeDelete); //will be added to list by constr
       }
@@ -328,24 +322,11 @@ namespace Vita.Data.Driver {
         var dataTypeName = row.GetAsString("DATA_TYPE");
         var startValue = row.GetAsLong("START_VALUE");
         var incr = row.GetAsInt("INCREMENT");
-        //find type def
-        var typeDef = Driver.TypeRegistry.FindDbTypeDef(dataTypeName, unlimited: false);
         // add sequence
-        var seq = new DbSequenceInfo(this.Model, name, schema, typeDef, startValue, incr);
+        var seq = new DbSequenceInfo(this.Model, name, schema, dataTypeName, startValue, incr);
         Model.AddSequence(seq); 
       }
     }
-
-    protected virtual void LoadUserDefinedTypes() {
-      var data = GetUserDefinedTypes();
-      foreach (InfoRow row in data.Rows) {
-        var schema = row.GetAsString("TYPE_SCHEMA");
-        var name = row.GetAsString("TYPE_NAME");
-        var typeInfo = new DbCustomTypeInfo(this.Model, schema, name);
-        this.Model.AddCustomType(typeInfo);
-      }
-    }
-
 
     protected static bool IsTrueOrNonZero(InfoRow row, string columnName) {
       var value = row[columnName];
@@ -356,6 +337,11 @@ namespace Vita.Data.Driver {
       if (t.IsInt()) {
         var iv = Convert.ToInt32(value);
         return iv != 0;
+      }
+      if (t == typeof(string)) {
+        var sv = ((string)value).ToUpperInvariant();
+        if(sv == "Y" || sv == "YES")
+          return true; 
       }
       return false;
     }

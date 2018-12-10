@@ -29,15 +29,14 @@ namespace Vita.Tools.DbFirst {
     }
 
 
-    public bool GenerateEntityModelSources(XmlDocument xmlConfig) {
-      var config = new DbFirstConfig(xmlConfig);
+    public bool GenerateEntityModelSources(DbFirstConfig config) {
       _feedback.WriteLine("  Provider: " + config.ProviderType);
       _feedback.WriteLine("  Connection string: " + config.ConnectionString);
       _feedback.WriteLine();
 
       // create driver and check connection
       string error;
-      if(!ToolHelper.TestConnection(config.Driver, config.ConnectionString, out error)) {
+      if(!DataUtility.TestConnection(config.Driver, config.ConnectionString, out error)) {
         _feedback.WriteError(error);
         return false; 
       }
@@ -113,7 +112,7 @@ Note: Non-empty update action list represents the delta between the original dat
                                       upgradeMode: DbUpgradeMode.Always,  
                                       upgradeOptions : DbUpgradeOptions.UpdateTables | DbUpgradeOptions.UpdateIndexes
                                       );
-      dbSettings.SetSchemas(config.Schemas);
+      //dbSettings.SetSchemas(config.Schemas);
       var log = new ActivationLog(null);
       var dbModelBuilder = new DbModelBuilder(entApp.Model, dbSettings.ModelConfig, log);
       var dbModel = dbModelBuilder.Build();

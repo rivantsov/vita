@@ -26,15 +26,16 @@ namespace Vita.Data.Linq.Translation.Expressions {
     public string JoinID { get; private set; }
     public TableExpression JoinedTable { get; private set; }
 
-    public TableExpression(DbTableInfo tableInfo, LockType lockType = LockType.None)
-        : this(tableInfo, tableInfo.Entity.EntityType, tableInfo.FullName, lockType) { }
+    public TableExpression(DbTableInfo tableInfo, LockType lockType = LockType.None, string joinId = null)
+        : this(tableInfo, tableInfo.Entity.EntityType, tableInfo.FullName, lockType, joinId) { }
 
-    public TableExpression(DbTableInfo tableInfo, Type type, string name, LockType lockType = LockType.None)
+    public TableExpression(DbTableInfo tableInfo, Type type, string name, LockType lockType = LockType.None, string joinId = null)
             : base(SqlExpressionType.Table, type) {
       Util.Check(type != null, "TableExpression (name: {0}) - type may not be null.", name);
       TableInfo = tableInfo;
       Name = name;
       LockType = lockType;
+      JoinID = joinId; 
     }
 
 

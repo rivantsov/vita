@@ -319,7 +319,7 @@ namespace Vita.Testing.BasicTests.Misc {
         default:
           indexAlias = dex.Data[DataAccessException.KeyIndexAlias];
           memberNames = dex.Data[DataAccessException.KeyMemberNames];
-          Assert.AreEqual("LicenseNumber", indexAlias, "Unexpected key name in Unique index violation.");
+          Assert.AreEqual("LicenseNumber", indexAlias, "Unexpected key alias in Unique index violation.");
           Assert.AreEqual("LicenseNumber", memberNames, "Unexpected member name in Unique index violation.");
           break;
       }
@@ -408,10 +408,31 @@ namespace Vita.Testing.BasicTests.Misc {
         Assert.IsTrue(cmd.CommandText.Contains(" ANY("), "Expected delete command with IN clause");
       else 
         Assert.IsTrue(cmd.CommandText.Contains(" IN "), "Expected delete command with IN clause");
-
-      // 
-
     }
+
+
+    [TestMethod]
+    public void TestMisc_MatchBy2Refs() {
+      // test for a bug - matching properties of 2 references to the same table (v.Owner and v.Driver); 
+      DeleteAll();
+      var session = _app.OpenSession();
+      var john = session.NewDriver("D001", "John", "Dow");
+      var jane = session.NewDriver("D002", "Jane", "Crane");
+      var veh = session.NewVehicle("Ford", 2000, john, jane);
+
+      var veh2 = session.NewVehicle("Nissan", 2000, jane, john);
+      var veh3 = session.NewVehicle("Chevy", 2000, john, null);
+      session.SaveChanges();
+
+      var session2 = _app.OpenSession();
+      var qry = session2.EntitySet<IVehicle>().Where(v => v.Owner.FirstName == "Jane" && v.Driver.FirstName == "John");
+      var ford = qry.FirstOrDefault();
+      var cmd = session2.GetLastCommand();
+      Debug.WriteLine(cmd.CommandText); 
+      Assert.AreEqual("Jane", ford.Owner.FirstName, "2-ref test: owner name does not match");
+      Assert.AreEqual("John", ford.Driver.FirstName, "2-ref test: driver name does not match");
+    }
+
 
 
   }//class

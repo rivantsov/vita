@@ -101,7 +101,7 @@ namespace Vita.Data.Linq.Translation {
         case ExpressionType.Constant:
           return AnalyzeConstant((ConstantExpression)expression, context);
         case ExpressionType.Invoke:
-          return AnalyzeInvoke(expression, parameters, context);
+          return AnalyzeInvoke((InvocationExpression)expression, parameters, context);
         case ExpressionType.MemberInit:
           return AnalyzeMemberInit((MemberInitExpression)expression, context);
         case ExpressionType.Conditional: //RI: added this
@@ -153,138 +153,123 @@ namespace Vita.Data.Linq.Translation {
         return null;
       // all methods to handle are listed here:
       // ms-help://MS.VSCC.v90/MS.MSDNQTR.v90.en/fxref_system.core/html/2a54ce9d-76f2-81e2-95bb-59740c85386b.htm
-      try {
-        context.CallStack.Push(method);
-        switch(method.Name) {
-          case "AsQueryable":
-            return AnalyzeAsQueryable(parameters, context);
-          case "All":
-            return AnalyzeAll(parameters, context);
-          case "Any":
-            return AnalyzeAny(parameters, context);
-          case "DefaultIfEmpty":
-            return AnalyzeOuterJoin(parameters, context);
-          case "Distinct":
-            return AnalyzeDistinct(parameters, context);
-          case "First":
-          case "FirstOrDefault":
-            return AnalyzeScalar(method.Name, 1, parameters, context);
-          case "GroupBy":
-            return AnalyzeGroupBy(method, parameters, context);
-          case "GroupJoin":
-            return AnalyzeGroupJoin(parameters, context);
-          case "Join":
-            return AnalyzeJoin(parameters, context);
-          case "Last":
-          case "LastOrDefault":
-            return AnalyzeScalar(method.Name, null, parameters, context);
-          case "OrderBy":
-          case "ThenBy":
-            return AnalyzeOrderBy(parameters, false, context);
-          case "OrderByDescending":
-          case "ThenByDescending":
-            return AnalyzeOrderBy(parameters, true, context);
-          case "Select":
-            return AnalyzeSelect(parameters, context);
-          case "SelectMany":
-            return AnalyzeSelectMany(parameters, context);
-          case "Single":
-          case "SingleOrDefault":
-            return AnalyzeScalar(method.Name, 2, parameters, context);
-          case "Skip":
-            return AnalyzeSkip(parameters, context);
-          case "Take":
-            return AnalyzeTake(parameters, context);
-          case "Where":
-            return AnalyzeWhere(parameters, context);
-          // Aggregates
-          case "Average":
-            return AnalyzeProjectionQuery(AggregateType.Average, parameters, context, canHaveFilter: false);
-          case "Contains":
-            return AnalyzeContains(parameters, context);
-          case "Count":
-            return AnalyzeProjectionQuery(AggregateType.Count, parameters, context);
-          case "Sum":
-            return AnalyzeProjectionQuery(AggregateType.Sum, parameters, context, canHaveFilter: false);
-          case "Max":
-            return AnalyzeProjectionQuery(AggregateType.Max, parameters, context, canHaveFilter: false);
-          case "Min":
-            return AnalyzeProjectionQuery(AggregateType.Min, parameters, context, canHaveFilter: false);
+      switch(method.Name) {
+        case "AsQueryable":
+          return AnalyzeAsQueryable(parameters, context);
+        case "All":
+          return AnalyzeAll(parameters, context);
+        case "Any":
+          return AnalyzeAny(parameters, context);
+        case "DefaultIfEmpty":
+          return AnalyzeOuterJoin(parameters, context);
+        case "Distinct":
+          return AnalyzeDistinct(parameters, context);
+        case "First":
+        case "FirstOrDefault":
+          return AnalyzeScalar(method.Name, 1, parameters, context);
+        case "GroupBy":
+          return AnalyzeGroupBy(method, parameters, context);
+        case "GroupJoin":
+          return AnalyzeGroupJoin(parameters, context);
+        case "Join":
+          return AnalyzeJoin(parameters, context);
+        case "Last":
+        case "LastOrDefault":
+          return AnalyzeScalar(method.Name, null, parameters, context);
+        case "OrderBy":
+        case "ThenBy":
+          return AnalyzeOrderBy(parameters, false, context);
+        case "OrderByDescending":
+        case "ThenByDescending":
+          return AnalyzeOrderBy(parameters, true, context);
+        case "Select":
+          return AnalyzeSelect(parameters, context);
+        case "SelectMany":
+          return AnalyzeSelectMany(parameters, context);
+        case "Single":
+        case "SingleOrDefault":
+          return AnalyzeScalar(method.Name, 2, parameters, context);
+        case "Skip":
+          return AnalyzeSkip(parameters, context);
+        case "Take":
+          return AnalyzeTake(parameters, context);
+        case "Where":
+          return AnalyzeWhere(parameters, context);
+        // Aggregates
+        case "Average":
+          return AnalyzeAggregate(AggregateType.Average, parameters, context);
+        case "Contains":
+          return AnalyzeContains(parameters, context);
+        case "Count":
+          return AnalyzeAggregate(AggregateType.Count, parameters, context);
+        case "Sum":
+          return AnalyzeAggregate(AggregateType.Sum, parameters, context);
+        case "Max":
+          return AnalyzeAggregate(AggregateType.Max, parameters, context);
+        case "Min":
+          return AnalyzeAggregate(AggregateType.Min, parameters, context);
 
 
-          default:
-            if(IsQueryable(method.DeclaringType))
-              Util.Throw("Queryable method {0} not supported.", method.Name);
-            return null;
-        }
-      } finally {
-        context.CallStack.Pop();
+        default:
+          if(IsQueryable(method.DeclaringType))
+            Util.Throw("Queryable method {0} not supported.", method.Name);
+          return null;
       }
     }
 
     private Expression AnalyzeStringCall(MethodInfo method, IList<Expression> parameters, TranslationContext context) {
       if(method.DeclaringType != typeof(string))
         return null;
-      try {
-        context.CallStack.Push(method);
-        switch(method.Name) {
-          case "Contains":
-            return AnalyzeLike(parameters, context);
-          case "EndsWith":
-            return AnalyzeLikeEnd(parameters, context);
-          case "StartsWith":
-            return AnalyzeLikeStart(parameters, context);
-          case "Substring":
-            return AnalyzeSubString(parameters, context);
-          case "ToLower":
-            return AnalyzeToLower(parameters, context);
-          case "ToString":
-            return AnalyzeToString(method, parameters, context);
-          case "ToUpper":
-            return AnalyzeToUpper(parameters, context);
-          case "Trim":
-            return AnalyzeSqlFunctionExpression(SqlFunctionType.Trim, parameters, context);
-          case "TrimEnd":
-            return AnalyzeSqlFunctionExpression(SqlFunctionType.RTrim, parameters, context);
-          case "TrimStart":
-            return AnalyzeSqlFunctionExpression(SqlFunctionType.LTrim, parameters, context);
-          default:
-            Util.Throw("Method not supported in LINQ: String.{0}.", method.Name);
-            return null;
-        }
-      } finally {
-        context.CallStack.Pop();
+      switch(method.Name) {
+        case "Contains":
+          return AnalyzeLike(parameters, context);
+        case "EndsWith":
+          return AnalyzeLikeEnd(parameters, context);
+        case "StartsWith":
+          return AnalyzeLikeStart(parameters, context);
+        case "Substring":
+          return AnalyzeSubString(parameters, context);
+        case "ToLower":
+          return AnalyzeToLower(parameters, context);
+        case "ToString":
+          return AnalyzeToString(method, parameters, context);
+        case "ToUpper":
+          return AnalyzeToUpper(parameters, context);
+        case "Trim":
+          return AnalyzeSqlFunctionExpression(SqlFunctionType.Trim, parameters, context);
+        case "TrimEnd":
+          return AnalyzeSqlFunctionExpression(SqlFunctionType.RTrim, parameters, context);
+        case "TrimStart":
+          return AnalyzeSqlFunctionExpression(SqlFunctionType.LTrim, parameters, context);
+        default:
+          Util.Throw("Method not supported in LINQ: String.{0}.", method.Name);
+          return null;
       }
     }
 
     private Expression AnalyzeMathCall(MethodInfo method, IList<Expression> parameters, TranslationContext context) {
       if(method.DeclaringType != typeof(System.Math))
         return null;
-      try {
-        context.CallStack.Push(method);
-        switch(method.Name) {
-          case "Abs":
-            return AnalyzeSqlFunctionExpression(SqlFunctionType.Abs, parameters, context);
-          case "Exp":
-            return AnalyzeSqlFunctionExpression(SqlFunctionType.Exp, parameters, context);
-          case "Floor":
-            return AnalyzeSqlFunctionExpression(SqlFunctionType.Floor, parameters, context);
-          case "Round":
-            return AnalyzeSqlFunctionExpression(SqlFunctionType.Round, parameters, context);
-          case "Sign":
-            return AnalyzeSqlFunctionExpression(SqlFunctionType.Sign, parameters, context);
-          case "Sqrt":
-            return AnalyzeSqlFunctionExpression(SqlFunctionType.Sqrt, parameters, context);
-          case "Log":
-            return AnalyzeLog(parameters, context);
-          case "Log10":
-            return AnalyzeSqlFunctionExpression(SqlFunctionType.Log, parameters, context);
-          default:
-            Util.Throw("S0133: Implement QueryMethod Math.{0}.", method.Name);
-            return null;
-        }
-      } finally {
-        context.CallStack.Pop();
+      switch(method.Name) {
+        case "Abs":
+          return AnalyzeSqlFunctionExpression(SqlFunctionType.Abs, parameters, context);
+        case "Exp":
+          return AnalyzeSqlFunctionExpression(SqlFunctionType.Exp, parameters, context);
+        case "Floor":
+          return AnalyzeSqlFunctionExpression(SqlFunctionType.Floor, parameters, context);
+        case "Round":
+          return AnalyzeSqlFunctionExpression(SqlFunctionType.Round, parameters, context);
+        case "Sign":
+          return AnalyzeSqlFunctionExpression(SqlFunctionType.Sign, parameters, context);
+        case "Sqrt":
+          return AnalyzeSqlFunctionExpression(SqlFunctionType.Sqrt, parameters, context);
+        case "Log":
+          return AnalyzeLog(parameters, context);
+        case "Log10":
+          return AnalyzeSqlFunctionExpression(SqlFunctionType.Log, parameters, context);
+        default:
+          Util.Throw("S0133: Implement QueryMethod Math.{0}.", method.Name);
+          return null;
       }
     }
 
@@ -377,12 +362,12 @@ namespace Vita.Data.Linq.Translation {
       var parameterToHandle = Analyze(parameter, context);
       if(parameterToHandle is ExternalValueExpression)
         Util.Throw("ToString() method is not supported for query parameter.");
+      /*
       bool insideWhere = context.CallStack.Count > 0 && context.CallStack.Peek().Name == "Where";
       if(insideWhere)
         Util.Throw("ToString() method is not supported inside WHERE clause.");
+        */
       bool canHandle = parameter.Type.IsDbPrimitive() || parameterToHandle.Type == typeof(string);
-
-      //if (!parameter.Type.IsPrimitive && parameterToHandle.Type != typeof(string))
       if(!canHandle)
         Util.Throw("ToString() can only be translated for primitive types. Type {0} is not primitive.", parameter.Type);
       // RI: new method, based on object.ToString 
@@ -452,7 +437,10 @@ namespace Vita.Data.Linq.Translation {
       if(limit.HasValue)
         AddLimit(Expression.Constant(limit.Value), context);
       var table = Analyze(parameters[0], context);
-      CheckWhere(table, parameters, 1, context);
+      if (parameters.Count > 1) {
+        var predicate = Analyze(parameters[1], parameters, context);
+        RegisterWhere(predicate, context); 
+      }
       //Create query results processor
       var rowType = parameters[0].Type;
       //Special case, when First is used on List property: book.Authors.First() inside more complex query - this is not supported.
@@ -462,25 +450,11 @@ namespace Vita.Data.Linq.Translation {
       return table;
     }
 
-    /// <summary>
-    /// Some methods, like Single(), Count(), etc. can get an extra parameter, specifying a restriction.
-    /// This method checks if the parameter is specified, and adds it to the WHERE clauses
-    /// </summary>
-    /// <param name="table"></param>
-    /// <param name="parameters"></param>
-    /// <param name="extraParameterIndex"></param>
-    /// <param name="context"></param>
-    private void CheckWhere(Expression table, IList<Expression> parameters, int extraParameterIndex, TranslationContext context) {
-      if(extraParameterIndex >= 0 && extraParameterIndex < parameters.Count) // a lambda can be specified here, this is a restriction
-        RegisterWhere(Analyze(parameters[extraParameterIndex], table, context), context);
-    }
-
-    protected virtual Expression AnalyzeProjectionQuery(AggregateType aggregateType, IList<Expression> parameters,
-                                                        TranslationContext context, bool canHaveFilter = true) {
+    protected virtual Expression AnalyzeAggregate(AggregateType aggregateType, IList<Expression> parameters,
+                                                        TranslationContext context) {
 
       if(context.IsExternalInExpressionChain) {
         var operand0 = Analyze(parameters[0], context);
-        Expression functionOperand = null;
         Expression projectionOperand;
 
         if(context.CurrentSelect.Operands.Count() > 0 || context.CurrentSelect.Group.Count > 0 ) {
@@ -490,7 +464,7 @@ namespace Vita.Data.Linq.Translation {
           context.CurrentSelect.Tables.Add(operand0 as TableExpression);
         }
 
-        // basically, we have three options for projection methods:
+        // basically, we have three options for aggregate methods:
         // - projection on grouped table (1 operand, a GroupExpression)
         // - projection on grouped column (2 operands, GroupExpression and ColumnExpression)
         // - projection on table/column, with optional restriction
@@ -501,11 +475,14 @@ namespace Vita.Data.Linq.Translation {
           else
             projectionOperand = Analyze(groupOperand0.GroupedExpression, context);
         } else {
-          projectionOperand = operand0;
           if(parameters.Count > 1)
-            functionOperand = Analyze(parameters[1], operand0, context);
-          int filterIndex = canHaveFilter ? 1 : -1; //special case for Average - its second parameter is NOT filter
-          CheckWhere(projectionOperand, parameters, filterIndex, context);
+            projectionOperand = Analyze(parameters[1], operand0, context);
+          else 
+            projectionOperand = operand0;
+            if(aggregateType == AggregateType.Count && parameters.Count > 1) {
+              RegisterWhere(projectionOperand, context);
+              projectionOperand = null; 
+            }
         }
 
         if(projectionOperand is TableExpression)
@@ -517,13 +494,13 @@ namespace Vita.Data.Linq.Translation {
         }
 
         var opList = new List<Expression>();
-        // opList.Add(projectionOperand); // RI: 12/17, do not add table as operand, predicate only
-        if(functionOperand != null)
-          opList.Add(functionOperand);
+        //opList.Add(projectionOperand); // RI: 12/17, do not add table as operand, predicate only
+        if(aggregateType != AggregateType.Count && projectionOperand != null)
+          opList.Add(projectionOperand);
         return CreateAggregate(aggregateType, opList.ToArray());
+        // end if ExternalInExprChain
       } else {
         var subQueryContext = context.NewSelect();
-
         var tableExpression = Analyze(parameters[0], subQueryContext);
 
         //RI: new stuff - handling grouping with aggregates
@@ -533,7 +510,12 @@ namespace Vita.Data.Linq.Translation {
         AggregateExpression specialExpr;
         if(parameters.Count > 1) {
           var predicate = Analyze(parameters[1], srcTable, subQueryContext);
-          specialExpr = CreateAggregate(aggregateType, predicate);
+          if(aggregateType == AggregateType.Count) {
+            RegisterWhere(predicate, context);
+            predicate = null;
+            specialExpr = CreateAggregate(aggregateType);
+          } else 
+            specialExpr = CreateAggregate(aggregateType, predicate);
         } else {
           specialExpr = CreateAggregate(aggregateType);
         }
@@ -694,7 +676,7 @@ namespace Vita.Data.Linq.Translation {
       var memberType = memberInfo.GetMemberReturnType();
       var memberName = memberInfo.Name;
       if(!isStaticMemberAccess && memberName == "Count")
-        return AnalyzeProjectionQuery(AggregateType.Count, new[] { expression.Expression }, context);
+        return AnalyzeAggregate(AggregateType.Count, new[] { expression.Expression }, context);
 
       if(!isStaticMemberAccess)
         objectExpression = Analyze(expression.Expression, context);
@@ -1112,7 +1094,6 @@ namespace Vita.Data.Linq.Translation {
         newValues.Add(sqlExpr);
       }
       var derivedTableExpression = new DerivedTableExpression(expression, newValues);
-      context.DerivedTables.Add(derivedTableExpression);
       return derivedTableExpression;
     }
 
@@ -1557,22 +1538,13 @@ namespace Vita.Data.Linq.Translation {
     /// <param name="parameters"></param>
     /// <param name="context"></param>
     /// <returns></returns>
-    protected virtual Expression AnalyzeInvoke(Expression expression, IList<Expression> parameters,
+    protected virtual Expression AnalyzeInvoke(InvocationExpression expr, IList<Expression> parameters,
                                                TranslationContext context) {
-      var invocationExpression = (InvocationExpression)expression;
-      var lambda = invocationExpression.Expression as LambdaExpression;
-      if(lambda != null) {
-        var localBuilderContext = context.NewQuote();
-        //for (int parameterIndex = 0; parameterIndex < lambda.Parameters.Count; parameterIndex++)
-        //{
-        //    var parameter = lambda.Parameters[parameterIndex];
-        //    localBuilderContext.Parameters[parameter.Name] = Analyze(invocationExpression.Arguments[parameterIndex], context);
-        //}
-        //return Analyze(lambda, localBuilderContext);
-        return Analyze(lambda, invocationExpression.Arguments, localBuilderContext);
-      }
-      // TODO: see what we must do here
-      return expression;
+      var lambda = expr.Expression as LambdaExpression;
+      if(lambda == null)
+        Util.Throw("The invocation/call not supported: {0}", expr.Expression);
+      var localBuilderContext = context.NewQuote();
+      return Analyze(lambda, expr.Arguments, localBuilderContext);
     }
   }
 }

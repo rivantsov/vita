@@ -21,6 +21,16 @@ namespace Vita.Entities.Model.Construction {
       CheckErrors(); 
     }
 
+    private void SetKeyNames() {
+      foreach(var ent in Model.Entities)
+        foreach(var key in ent.Keys)
+          if(string.IsNullOrWhiteSpace(key.ExplicitDbKeyName))
+            key.Name = key.ConstructKeyName();
+          else
+            key.Name = key.ExplicitDbKeyName; 
+
+    }
+
     private bool ExpandKey(EntityKeyInfo key) {
       if(key.IsExpanded())
         return true;

@@ -134,13 +134,13 @@ namespace Vita.Data.Linq.Translation {
     }
 
     public ColumnExpression RegisterColumn(TableExpression table, string columnName, TranslationContext context) {
-      var existingCol = GetRegisteredColumn(table, columnName, context);
-      if(existingCol == null) {
-        table = RegisterTable(table, context);
-        existingCol = CreateColumn(table, columnName, context);
-        context.CurrentSelect.Columns.Add(existingCol);
-      }
-      return existingCol;
+      var oldCol = context.CurrentSelect.Columns.FirstOrDefault(c => c.Table == table && c.ColumnInfo.ColumnName == columnName);
+      if(oldCol != null)
+        return oldCol; 
+      table = RegisterTable(table, context);
+      var col = CreateColumn(table, columnName, context);
+      context.CurrentSelect.Columns.Add(col);
+      return col;
     }
 
     protected virtual ColumnExpression GetRegisteredColumn(TableExpression table, string columnName,
@@ -197,14 +197,9 @@ namespace Vita.Data.Linq.Translation {
       if(theseKeys == null)
         return null;
 
-      // the current table has the foreign key, the other table the referenced (usually primary) key
-      if(theseKeys.Count != otherKeys.Count)
-        Util.Throw("S0128: Association arguments (FK and ref'd PK) don't match");
-
-      // we first create the table, with the JoinID, and we MUST complete the table later, with the Join() method
       var otherType = refMember.DataType;
       var otherTableInfo = context.DbModel.GetTable(otherType);
-      var otherTableExpression = CreateTable(otherType, context); // new TableExpression(otherType, otherTableInfo.FullName, otherTableInfo, joinID);
+      var otherTableExpression = new TableExpression(otherTableInfo, LockType.None, joinID);
       otherTableExpression = RegisterTable(otherTableExpression, context);
       Expression joinExpression = null;
 
@@ -231,13 +226,6 @@ namespace Vita.Data.Linq.Translation {
       // we complete the table here, now that we have all join information
       otherTableExpression.Join(joinType, tableExpression, joinExpression);
 
-      // our table is created, with the expressions
-      // now check if we didn't register exactly the same
-      var existingTable = (from t in context.EnumerateScopeTables() where t.IsEqualTo(otherTableExpression) select t).SingleOrDefault();
-      if(existingTable != null)
-        return existingTable;
-
-      context.CurrentSelect.Tables.Add(otherTableExpression);
       foreach(var createdColumn in createdColumns)
         context.CurrentSelect.Columns.Add(createdColumn);
       return otherTableExpression;

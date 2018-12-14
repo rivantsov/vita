@@ -18,8 +18,6 @@ namespace Vita.Data.Linq.Translation {
     public EntityCommand Command;
     public QueryOptions QueryOptions { get { return Command.Info.Options; } } 
 
-    public Stack<MethodInfo> CallStack { get; private set; }
-
     /// <summary>Values coming from the code executing the query - parameters. Top-level parameters for the entire query.</summary>
     public readonly IList<ExternalValueExpression> ExternalValues;
 
@@ -30,27 +28,22 @@ namespace Vita.Data.Linq.Translation {
       set { SelectExpressions[_currentScopeIndex] = value; }
     }
     public IList<SelectExpression> SelectExpressions { get; private set; }
-    public IList<DerivedTableExpression> DerivedTables { get; private set; }
     public IDictionary<string, Expression> LambdaParameters { get; private set; }
 
     public TranslationContext(DbModel dbModel, EntityCommand command) {
       DbModel = dbModel;
       Command = command;
-      CallStack = new Stack<MethodInfo>();
       SelectExpressions = new List<SelectExpression>();
       _currentScopeIndex = SelectExpressions.Count;
       SelectExpressions.Add(new SelectExpression(command.Info));
       ExternalValues = new List<ExternalValueExpression>();
-      DerivedTables = new List<DerivedTableExpression>();
       LambdaParameters = new Dictionary<string, Expression>();
     }
 
     public TranslationContext(TranslationContext source) {
       this.DbModel = source.DbModel;
       this.Command = source.Command;
-      this.CallStack = source.CallStack;
       this.ExternalValues = source.ExternalValues;
-      this.DerivedTables = source.DerivedTables;
       this.SelectExpressions = source.SelectExpressions;
       this.LambdaParameters = source.LambdaParameters;
       this._currentScopeIndex = source._currentScopeIndex;

@@ -349,7 +349,8 @@ namespace Vita.Data.Model {
           }
         // keys - we construct keynames after table/column names were finalized
         foreach(var key in table.Keys) {
-          AssignDbKeyName(key); 
+          CheckAssignDbKeyName(key);
+          CheckDbKeyNameUnique(key);
           _namingPolicy?.CheckName(key); 
         }
       } //foreach
@@ -357,11 +358,14 @@ namespace Vita.Data.Model {
     }//method
 
 
-    public void AssignDbKeyName(DbKeyInfo dbKey) {
+    public void CheckAssignDbKeyName(DbKeyInfo dbKey) {
       // note: some dbKeys do not have entity key (ex: indexes on foreign keys)
-      dbKey.Name = dbKey.EntityKey?.ExplicitDbKeyName;
       if (!string.IsNullOrEmpty(dbKey.Name))
         return; 
+      if (dbKey.EntityKey?.Name != null) {
+        dbKey.Name = dbKey.EntityKey.Name;
+        return; 
+      }
       // construct the name
       var tbl = dbKey.Table;
       var prefix = Entities.Model.Construction.EntityModelBuilderHelper.GetKeyNamePrefix(dbKey.KeyType);
@@ -378,8 +382,6 @@ namespace Vita.Data.Model {
         var keyCols = dbKey.KeyColumns.GetNames(removeUnderscores: true);
         dbKey.Name = prefix + tbl.TableName + "_" + keyCols;
       }
-      // check uniqueness
-      CheckDbKeyNameUnique(dbKey);
     }
 
     private void CheckDbKeyNameUnique(DbKeyInfo dbKey) {

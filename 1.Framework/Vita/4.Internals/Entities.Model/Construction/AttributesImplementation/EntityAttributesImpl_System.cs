@@ -76,8 +76,8 @@ namespace Vita.Entities {
         // it will add errors if it fails
         HostEntity.TryParseKeySpec(this.MemberNames, log, out Key.KeyMembers, ordered: true);
       }
-      // construct name once members are added
-      Key.ConstructKeyName();
+      // construct name
+      Key.ExplicitDbKeyName = this.DbKeyName; 
       // PK
       if(KeyType.IsSet(KeyType.PrimaryKey)) {
         if(HostEntity.PrimaryKey == null) {

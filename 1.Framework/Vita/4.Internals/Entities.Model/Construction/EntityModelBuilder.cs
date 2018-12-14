@@ -61,7 +61,8 @@ namespace Vita.Entities.Model.Construction {
 
       CollectInitializeAttributes(); 
       ApplyAttributesProcessRefsLists();
-      ExpandEntityKeyMembers(); 
+      ExpandEntityKeyMembers();
+      SetKeyNames(); 
 
       Model.ModelState = EntityModelState.Constructed;
       _app.AppEvents.OnModelConstructing(this);

@@ -50,7 +50,6 @@ namespace Vita.Entities.Model.Construction {
       fk.IsCopyOf = targetKey;
       fk.KeyMembers.Add(new EntityKeyMemberInfo(member, false));
       var refInfo = member.ReferenceInfo = new EntityReferenceInfo(member, fk, targetKey);
-      fk.ConstructKeyName(); //once members are added
       // if there's EntitRef attr, apply its props if specified
       if (entRefAttr != null) {
         if(!string.IsNullOrEmpty(entRefAttr.ForeignKeyName))

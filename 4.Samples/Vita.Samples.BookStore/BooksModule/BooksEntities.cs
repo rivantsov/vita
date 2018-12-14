@@ -71,7 +71,8 @@ namespace Vita.Samples.BookStore {
     [PrimaryKey, Auto]
     Guid Id { get; set; }
 
-    [Size(Sizes.Name), Unique(Alias = "PublisherName")] //Alias is used in identifying the key in UniqueIndexViolation exception
+    //Alias is used in identifying the key in UniqueIndexViolation exception
+    [Size(Sizes.Name), Unique(DbKeyName ="UC_PubName", Alias = "PublisherName")] 
     string Name { get; set; }
 
     [OrderBy("PublishedOn:DESC")]

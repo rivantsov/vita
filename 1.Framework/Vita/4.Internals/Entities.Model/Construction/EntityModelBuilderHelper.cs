@@ -18,20 +18,20 @@ namespace Vita.Entities.Model.Construction {
     }
 
     // these are not key names in db, we assign DbKey.Name in DbModelBuilder using some special code
-    public static void ConstructKeyName(this EntityKeyInfo key) {
-      Util.Check(key.KeyMembers.Count > 0, "KeyMembers list is emtpy, cannot construct name. Entity: {0}, keytype: {1}", 
+    public static string ConstructKeyName(this EntityKeyInfo key) {
+      Util.Check(key.IsExpanded(), "KeyMembers list must be expanded, cannot construct name. Entity: {0}, keytype: {1}", 
           key.Entity.Name, key.KeyType);
       var prefix = GetKeyNamePrefix(key.KeyType);
       var entity = key.Entity;
       if(key.KeyType.IsSet(KeyType.PrimaryKey)) {
-        key.Name = prefix + entity.Name;
+        return prefix + entity.Name;
       } else if (key.KeyType.IsSet(KeyType.ForeignKey)) {
         var target = key.OwnerMember.ReferenceInfo.ToKey.Entity;
-        key.Name = prefix + key.Entity.Name + "_" + target.Name;
+        return prefix + key.Entity.Name + "_" + target.Name;
       } else {
         var members = key.GetMemberNames();
         string memberNames = string.Join(string.Empty, members).Replace("_", string.Empty); //remove underscores in names 
-        key.Name = prefix + entity.Name + "_" + memberNames;
+        return prefix + entity.Name + "_" + memberNames;
       }
     }
 

@@ -355,23 +355,19 @@ namespace Vita.Entities.Model {
     public EntityMemberInfo OwnerMember; //for FK, the ref member
     public Delegate CacheSelectMethod; // compiled method to select in cache
     public EntityFilter IndexFilter;
-    public string ExplicitDbKeyName; //set by attribute
+    public string ExplicitDbKeyName; 
 
     public EntityKeyInfo(EntityInfo entity, KeyType keyType, 
         EntityMemberInfo ownerMember = null, string alias = null) {
       KeyType = keyType;
       Entity = entity;
       OwnerMember = ownerMember;
-      Alias = alias ?? Name;
+      Alias = alias; 
       entity.Keys.Add(this);
-      Name = "(unnamed)"; //will be set later
     }
     
     public override string ToString() {
       return Util.SafeFormat("{0}:{1}({2})", Entity.FullName, KeyType, string.Join(",", KeyMembers));
-    }
-    public override int GetHashCode() {
-      return Name.GetHashCode();
     }
     public bool IsExpanded() {
       return ExpandedKeyMembers.Count > 0; 

@@ -26,7 +26,16 @@ namespace Vita.Testing.ExtendedTests {
       var app = Startup.BooksApp;
       var session = app.OpenSession();
       session.EnableCache(false);
-      var utcNow = app.TimeService.UtcNow; 
+      var utcNow = app.TimeService.UtcNow;
+
+      // Bug - Count(filter) argument expr causes error (should be translated to Where cond)
+      var b1 = session.EntitySet<IBook>().FirstOrDefault(b => b.Price > 1);
+      var cntf = session.EntitySet<IBook>().Count(b => b.Price > 1);
+      var cnt = session.EntitySet<IBook>().Count();
+      // count with grouping and filter
+      var bkGroups = session.EntitySet<IBook>().GroupBy(b => b.Category)
+        .Select(g => new { g.Key, Count = g.Count(b => b.Price > 1) })
+        .ToList();
 
       // bug: SQLite does not format properly Datetime parameters in LINQ
       var bk1 = session.EntitySet<IBook>().First(); //get random book 
@@ -114,7 +123,6 @@ namespace Vita.Testing.ExtendedTests {
       session.DeleteEntity(newOrd);
       session.SaveChanges();
 
-      TryMoveSqliteFile(); 
     }
 
     //Testing that SQLite DbCommand is disconnected - this releases server-side resources

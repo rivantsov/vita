@@ -77,6 +77,7 @@ namespace Vita.Data.Model {
     public IList<DbColumnInfo> UpdatableColumns;
 
     public TextSqlFragment SqlFullName;
+    public string DefaultSqlAlias; 
 
     //Used in analyzing changes. In old model, points to the object in new model, and vice versa
     public DbTableInfo Peer;
@@ -94,7 +95,8 @@ namespace Vita.Data.Model {
       FullName = model.FormatFullName(Schema, tableName);
       base.LogRefName = DbModelHelper.JoinNames(Schema, TableName);
       if (!IsNullTable())
-        model.AddTable(this); 
+        model.AddTable(this);
+      DefaultSqlAlias = DbModelHelper.GetDefaultSqlAlias(entity);
     }
     public override string ToString() {
       return FullName;

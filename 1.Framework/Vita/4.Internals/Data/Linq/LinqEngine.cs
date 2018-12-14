@@ -186,23 +186,6 @@ namespace Vita.Data.Linq {
       return (object[] prms) => compiledValueRead.DynamicInvoke(prms);
     }
 
-    protected virtual IList<string> GetAllAliases(TranslationContext context) {
-      var aliases = new List<string>();
-      aliases.AddRange(context.EnumerateAllTables().Select(t => t.Alias).Where(a => a != null));
-      aliases.AddRange(context.EnumerateScopeColumns().Select(c => c.Alias).Where(a => a != null));
-      return aliases;
-    }
-
-    protected virtual string GenerateTableAlias(IList<string> allAliases) {
-      int index = 0;
-      string alias;
-      do {
-        alias = "t" + index++;
-      } while(allAliases.Contains(alias));
-      allAliases.Add(alias);
-      return alias;
-    }
-
     /// <summary>
     /// Give all non-aliased tables a name
     /// </summary>
@@ -214,14 +197,28 @@ namespace Vita.Data.Linq {
         tables[0].Alias = null;
       } else {
         var allAliases = GetAllAliases(context);
-        foreach(var tableExpression in tables) {
-          // if no alias, or duplicate alias
-          if(string.IsNullOrEmpty(tableExpression.Alias) || allAliases.Count(s => s == tableExpression.Alias) > 1)
-            tableExpression.Alias = GenerateTableAlias(allAliases);
-          if(!tableExpression.Alias.EndsWith("$"))
-            tableExpression.Alias = tableExpression.Alias + "$";
-        }
+        foreach(var tableExpression in tables)
+            AssignTableAlias(tableExpression, allAliases);
       }
+    }
+
+    protected virtual void AssignTableAlias(TableExpression table, IList<string> allAliases) {
+      // Note: table might be sub-select, without table.TableInfo
+      string dftAlias = table.TableInfo?.DefaultSqlAlias ?? "t";
+      table.Alias = dftAlias;
+      int index = 0;
+      while(allAliases.Contains(table.Alias))
+        table.Alias =  dftAlias + index++;
+      allAliases.Add(table.Alias);
+      // append $ to guarantee no collision with table or column name
+      table.Alias += '$'; 
+    }
+
+    protected virtual IList<string> GetAllAliases(TranslationContext context) {
+      var aliases = new List<string>();
+      aliases.AddRange(context.EnumerateAllTables().Select(t => t.Alias).Where(a => a != null));
+      aliases.AddRange(context.EnumerateScopeColumns().Select(c => c.Alias).Where(a => a != null));
+      return aliases;
     }
 
     //RI: added this to fix some SQL errors when multiple columns in the output have the same name

@@ -113,11 +113,15 @@ namespace Vita.Data.Model {
       return refs;
     }
 
-    public static string GetDefaultSqlAlias(EntityInfo entity) {
-      if(entity == null)
+    public static string GetDefaultSqlAlias(string name) {
+      if(string.IsNullOrEmpty(name))
         return "t";
-      var name = new string(entity.Name.Where(c => char.IsUpper(c)).ToArray()).ToLowerInvariant();
-      return name; 
+      // try picking up caps - if there are both upper and lower cases
+      var alias = new string(name.Where(c => char.IsUpper(c)).Take(3).ToArray()).ToLowerInvariant();
+      if (string.IsNullOrEmpty(alias)) {
+        // try 
+      }
+      return alias; 
     }
 
   }//class

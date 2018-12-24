@@ -61,13 +61,10 @@ namespace Vita.Data.Postgres {
     }
 
     protected override SqlFragment BuildLimitSql(SqlFragment limit, SqlFragment offset) {
-      var sqlLimit = limit == null ? null : _pgDialect.SqlLimitTemplate.Format(limit);
-      var sqlOffset = offset == null ? null : _pgDialect.SqlOffsetTemplate.Format(offset);
-      if(sqlLimit == null)
-        return sqlOffset;
-      if(sqlOffset == null)
-        return sqlLimit;
-      return new CompositeSqlFragment(sqlLimit, sqlOffset);
+      if(limit == null)
+        return this.SqlDialect.OffsetTemplate.Format(offset);
+      else
+        return this.SqlDialect.OffsetLimitTemplate.Format(offset, limit);
     }
 
     // special form, for array in parameter

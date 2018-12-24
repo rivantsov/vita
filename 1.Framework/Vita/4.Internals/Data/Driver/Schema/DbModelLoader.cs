@@ -109,7 +109,7 @@ namespace Vita.Data.Driver {
         var schema = row.GetAsString("TABLE_SCHEMA");
         if (!IncludeSchema(schema)) continue; 
         var tableName = row.GetAsString("TABLE_NAME");
-        var tblInfo = new DbTableInfo(Model, schema, tableName, null);
+        var tblInfo = new DbTableInfo(Model, schema, tableName, null); 
       }
     }
 

@@ -13,13 +13,13 @@ namespace Vita.Data.MySql {
     public SqlFragment SqlTermLockForUpdate = new TextSqlFragment(" FOR UPDATE");
     public SqlFragment SqlTermLockInShareMode = new TextSqlFragment(" LOCK IN SHARE MODE");
     public SqlFragment SqlSelectIdentity = new TextSqlFragment("SELECT LAST_INSERT_ID();");
-    // MySql does not have syntax for offset-only, so we set limit to 10 million recs
-    public SqlTemplate OffsetTemplate = new SqlTemplate(" LIMIT 10000000 OFFSET {0} ");
-    public SqlTemplate OffsetLimitTemplate = new SqlTemplate(" LIMIT {1} OFFSET {0} ");
 
 
     public MySqlDialect(MySqlDbDriver driver) : base(driver) {
       base.MaxParamCount = 32000; // no doc ref, just posting on forum: https://stackoverflow.com/questions/6581573
+      // MySql does not have syntax for offset-only, so we set limit to 10 million recs
+      base.OffsetTemplate = new SqlTemplate(" LIMIT 10000000 OFFSET {0} ");
+      base.OffsetLimitTemplate = new SqlTemplate(" LIMIT {1} OFFSET {0} ");
     }
 
     public override void InitTemplates() {

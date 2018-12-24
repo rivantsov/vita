@@ -23,9 +23,9 @@ namespace Vita.Data.SQLite {
 
     protected override SqlFragment BuildLimitSql(SqlFragment limit, SqlFragment offset) {
       if(limit == null)
-        return _dialect.SqlTemplateOffset.Format(offset);
+        return _dialect.OffsetTemplate.Format(offset);
       else
-        return _dialect.SqlTemplateLimitOffset.Format(offset, limit);
+        return _dialect.OffsetLimitTemplate.Format(offset, limit);
     }
 
     public override SqlFragment BuildOrderByMember(OrderByExpression obExpr) {

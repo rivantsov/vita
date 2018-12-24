@@ -14,14 +14,14 @@ namespace Vita.Data.Postgres {
   public class PgDbSqlDialect : DbSqlDialect {
     public SqlFragment SqlLockForUpdate = new TextSqlFragment(" FOR UPDATE");
     public SqlFragment SqlLockInShareMode = new TextSqlFragment("  FOR SHARE");
-    public SqlTemplate SqlOffsetTemplate = new SqlTemplate("OFFSET {0} ");
-    public SqlTemplate SqlLimitTemplate = new SqlTemplate("LIMIT {0} ");
 
     public SqlTemplate SqlCrudTemplateReturningIdentity = new SqlTemplate(@" RETURNING {0};");
 
 
     public PgDbSqlDialect(PgDbDriver driver) : base(driver) {
       base.MaxParamCount = 32000; //reported also 65K
+      base.OffsetTemplate = new SqlTemplate(" OFFSET {0} ");
+      base.OffsetLimitTemplate = new SqlTemplate(" LIMIT {1} OFFSET {0} ");
       base.DynamicSqlParameterPrefix = "@P"; 
       base.BatchBeginTransaction = new TextSqlFragment("START TRANSACTION;");
       base.BatchCommitTransaction = new TextSqlFragment("COMMIT;");

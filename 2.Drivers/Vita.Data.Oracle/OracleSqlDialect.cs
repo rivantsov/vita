@@ -13,13 +13,13 @@ namespace Vita.Data.Oracle {
   public class OracleSqlDialect : DbSqlDialect {
     public TextSqlFragment ConcatOperator = new TextSqlFragment("||");
     public SqlTemplate SqlReturnIdentityTemplate = new SqlTemplate("RETURNING {0} INTO {1};");
-    public SqlTemplate OffsetLimitTemplate = new SqlTemplate("OFFSET {0} ROWS FETCH NEXT {1} ROWS ONLY");
-    public SqlTemplate OffsetTemplate = new SqlTemplate("OFFSET {0} ROWS");
     public SqlFragment SqlTermLockForUpdate = new TextSqlFragment(" FOR UPDATE");
     public SqlFragment SqlFromDual = new TextSqlFragment("FROM dual"); //fake From clause
 
     public OracleSqlDialect(OracleDbDriver driver) : base(driver) {
       base.DynamicSqlParameterPrefix = ":p";
+      base.OffsetLimitTemplate = new SqlTemplate("OFFSET {0} ROWS FETCH NEXT {1} ROWS ONLY");
+      base.OffsetTemplate = new SqlTemplate("OFFSET {0} ROWS");
       base.BatchBegin = new TextSqlFragment("BEGIN \r\n");
       base.BatchEnd = new TextSqlFragment("END;");
       base.BatchBeginTransaction = SqlTerms.Empty;

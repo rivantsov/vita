@@ -13,8 +13,6 @@ namespace Vita.Data.MsSql {
   public class MsSqlDialect : DbSqlDialect {
     public SqlFragment WithUpdateLockHint = new TextSqlFragment(" WITH(UpdLock) ");
     public SqlFragment WithNoLockHint = new TextSqlFragment(" WITH(NOLOCK) ");
-    public SqlTemplate OffsetLimitTemplate = new SqlTemplate("OFFSET {0} ROWS FETCH NEXT {1} ROWS ONLY");
-    public SqlTemplate OffsetTemplate = new SqlTemplate("OFFSET {0} ROWS");
     public SqlTemplate TopTemplate = new SqlTemplate("TOP({0})");
     public SqlTemplate ConcatTemplate = new SqlTemplate("CONCAT({0})"); // for multiple args, > 2
     public SqlTemplate SqlGetIdentityTemplate = new SqlTemplate("SET {0} = SCOPE_IDENTITY();");
@@ -36,9 +34,12 @@ namespace Vita.Data.MsSql {
       base.DDLSeparator = Environment.NewLine + "GO" + Environment.NewLine;
       //Change Count() to COUNT_BIG - COUNT is not allowed inside views, so we change default to Count_BIG
       base.SqlCountStar = new TextSqlFragment("COUNT_BIG(*)");
-    }
 
-    public override void InitTemplates() {
+      base.OffsetTemplate = new SqlTemplate("OFFSET {0} ROWS");
+      base.OffsetLimitTemplate = new SqlTemplate("OFFSET {0} ROWS FETCH NEXT {1} ROWS ONLY");
+  }
+
+  public override void InitTemplates() {
       base.InitTemplates();
 
       AggregateTemplates[AggregateType.Count] = new SqlTemplate("COUNT_BIG({0})");

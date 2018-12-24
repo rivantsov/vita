@@ -41,6 +41,8 @@ namespace Vita.Data.Driver {
     public SqlTemplate SqlTemplateColumnAssignValue = new SqlTemplate("{0} = {1}");
     public SqlTemplate SqlTemplateColumnAssignAliasValue = new SqlTemplate("{0} = {1}.{2}");
     public SqlTemplate SqlTemplateOrderBy = new SqlTemplate("ORDER BY {0}");
+    public SqlTemplate OffsetTemplate = new SqlTemplate("OFFSET {0} ROWS");
+    public SqlTemplate OffsetLimitTemplate = new SqlTemplate("OFFSET {0} ROWS FETCH NEXT {1} ROWS ONLY");
 
     public TextSqlFragment BatchBegin = SqlTerms.Empty;
     public TextSqlFragment BatchEnd = SqlTerms.Empty;

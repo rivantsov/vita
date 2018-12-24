@@ -9,11 +9,13 @@ using Vita.Data.SqlGen;
 namespace Vita.Data.SqlGen {
 
   public class SqlTemplate {
+    public readonly string Template; 
     public int Precedence;
     public IList<SqlFragment> Fragments = new List<SqlFragment>(); //also contains placeholders 
     public SqlPlaceHolderList PlaceHolders = new SqlPlaceHolderList(); 
 
     public SqlTemplate(string template, int precedence = SqlPrecedence.NoPrecedence) {
+      Template = template; 
       Precedence = precedence;
       Parse(template); 
     }

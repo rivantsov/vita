@@ -96,7 +96,7 @@ namespace Vita.Data.Model {
       base.LogRefName = DbModelHelper.JoinNames(Schema, TableName);
       if (!IsNullTable())
         model.AddTable(this);
-      DefaultSqlAlias = DbModelHelper.GetDefaultSqlAlias(entity);
+      DefaultSqlAlias = DbModelHelper.GetDefaultSqlAlias(this.TableName);
     }
     public override string ToString() {
       return FullName;

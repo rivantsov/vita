@@ -231,6 +231,9 @@ namespace Vita.Data.Driver {
         var toKey = toTable.PrimaryKey; 
         bool cascadeDelete = row.GetAsString("DELETE_RULE") == "CASCADE";
         var refConstraint = new DbRefConstraintInfo(Model, fromKey, toKey, cascadeDelete); //will be added to list by constr
+        // set FK flag
+        foreach(var kCol in fromKey.KeyColumns)
+          kCol.Column.Flags |= DbColumnFlags.ForeignKey; 
       }
     }
 

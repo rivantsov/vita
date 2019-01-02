@@ -85,7 +85,7 @@ namespace Vita.Data.Model {
         LinqExpressionHelper.EvaluateCommandParameters(viewCmd); //in case there are any local variables
 
         var sqlStmt = engine.Translate(viewCmd);
-        var cmdBuilder = new DataCommandBuilder(this._dbModel, mode: SqlGenMode.NoParameters);
+        var cmdBuilder = new DataCommandBuilder(_driver, mode: SqlGenMode.NoParameters);
         cmdBuilder.AddLinqStatement(sqlStmt, viewCmd.ParameterValues);
         // ';' is important for Oracle
         viewTbl.ViewSql = cmdBuilder.GetSqlText().Trim(' ', '\r', '\n', ';');  

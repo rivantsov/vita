@@ -28,6 +28,10 @@ namespace Vita.Data.SqlGen {
       return true;
     }
 
-  }
+    public static void AddMany(this IList<SqlFragment> fragments, params SqlFragment[] list) {
+      foreach(var fr in list)
+        fragments.Add(fr); 
+    }
 
+  }
 }

@@ -57,7 +57,7 @@ namespace Vita.Data.Runtime {
       var sql = CommandRepo.GetSelect(command); 
       var genMode = command.Info.Options.IsSet(QueryOptions.NoParameters) ? 
                              SqlGenMode.NoParameters : SqlGenMode.PreferParam;
-      var cmdBuilder = new DataCommandBuilder(this.DbModel, batchMode: false, mode: genMode);
+      var cmdBuilder = new DataCommandBuilder(this._driver, batchMode: false, mode: genMode);
       cmdBuilder.AddLinqStatement(sql, command.ParameterValues);
       var dataCmd = cmdBuilder.CreateCommand(conn, DbExecutionType.Reader, sql.ResultProcessor);
       ExecuteDataCommand(dataCmd);
@@ -68,7 +68,7 @@ namespace Vita.Data.Runtime {
       var sql = CommandRepo.GetLinqNonQuery(command);
       var fmtOptions = command.Info.Options.IsSet(QueryOptions.NoParameters) ?
                              SqlGenMode.NoParameters : SqlGenMode.PreferParam;
-      var cmdBuilder = new DataCommandBuilder(this.DbModel);
+      var cmdBuilder = new DataCommandBuilder(this._driver);
       cmdBuilder.AddLinqStatement(sql, command.ParameterValues);
       var dataCmd = cmdBuilder.CreateCommand(conn, DbExecutionType.NonQuery, sql.ResultProcessor);
       ExecuteDataCommand(dataCmd);
@@ -113,7 +113,7 @@ namespace Vita.Data.Runtime {
             switch(tableGrp.Operation) {
               case EntityOperation.Insert:
                 if (CanProcessMany(tableGrp)) {
-                  var cmdBuilder = new DataCommandBuilder(this.DbModel);
+                  var cmdBuilder = new DataCommandBuilder(this._driver);
                   var sql = CommandRepo.GetCrudInsertMany(tableGrp.Table, tableGrp.Records, cmdBuilder);
                   cmdBuilder.AddUpdates(sql, tableGrp.Records);
                   var cmd = cmdBuilder.CreateCommand(conn, sql.ExecutionType, sql.ResultProcessor);
@@ -126,7 +126,7 @@ namespace Vita.Data.Runtime {
                 break;
               case EntityOperation.Delete:
                 if (CanProcessMany(tableGrp)) {
-                  var cmdBuilder = new DataCommandBuilder(this.DbModel);
+                  var cmdBuilder = new DataCommandBuilder(this._driver);
                   var sql = CommandRepo.GetCrudDeleteMany(tableGrp.Table);
                   cmdBuilder.AddUpdates(sql, tableGrp.Records, new object[] { tableGrp.Records });
                   var cmd = cmdBuilder.CreateCommand(conn, DbExecutionType.NonQuery, sql.ResultProcessor);
@@ -152,7 +152,7 @@ namespace Vita.Data.Runtime {
       foreach (var rec in tableGrp.Records) {
         if(updateSet.InsertsIdentity && rec.EntityInfo.Flags.IsSet(EntityFlags.ReferencesIdentity))
           rec.RefreshIdentityReferences(); 
-        var cmdBuilder = new DataCommandBuilder(this.DbModel);
+        var cmdBuilder = new DataCommandBuilder(this._driver);
         var sql = CommandRepo.GetCrudSqlForSingleRecord(tableGrp.Table, rec);
         cmdBuilder.AddUpdate(sql, rec);
         var cmd = cmdBuilder.CreateCommand(conn, sql.ExecutionType, sql.ResultProcessor);

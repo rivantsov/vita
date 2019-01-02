@@ -36,7 +36,7 @@ namespace Vita.Data.Runtime {
 
     public DbBatch Build(DbUpdateSet updateSet) {
       _batch = new DbBatch() { UpdateSet = updateSet };
-      _commandBuilder = new DataCommandBuilder(_dbModel, batchMode: true, mode: SqlGenMode.PreferLiteral);
+      _commandBuilder = new DataCommandBuilder(_driver, batchMode: true, mode: SqlGenMode.PreferLiteral);
 
       var commandsBefore = updateSet.Session.ScheduledCommands.Where(c => c.Schedule == CommandSchedule.TransactionStart).ToList();
       AddScheduledCommands(commandsBefore);
@@ -61,9 +61,9 @@ namespace Vita.Data.Runtime {
     }
 
     protected void CheckCurrentCommand() {
-      if(_commandBuilder.ParameterCount  >= _dbModel.Driver.SqlDialect.MaxParamCount) {
+      if(_commandBuilder.ParameterCount  >= _driver.SqlDialect.MaxParamCount) {
         FinalizeCurrentCommand();
-        _commandBuilder = new DataCommandBuilder(_dbModel, batchMode: true);
+        _commandBuilder = new DataCommandBuilder(_driver, batchMode: true);
       }
     }
 

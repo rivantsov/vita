@@ -27,7 +27,6 @@ namespace Vita.Data.Runtime {
   }
 
   public class DataCommandBuilder : IColumnValueFormatter {
-    DbModel _dbModel; 
     DbDriver _driver;
     DbSqlDialect _sqlDialect; 
     IDbCommand _dbCommand;
@@ -43,9 +42,8 @@ namespace Vita.Data.Runtime {
     public int ParameterCount => _dbCommand.Parameters.Count;
 
 
-    public DataCommandBuilder(DbModel dbModel, bool batchMode = false, SqlGenMode mode = SqlGenMode.PreferParam) {
-      _dbModel = dbModel; 
-      _driver = _dbModel.Driver;
+    public DataCommandBuilder(DbDriver driver, bool batchMode = false, SqlGenMode mode = SqlGenMode.PreferParam) {
+      _driver = driver;
       _sqlDialect = _driver.SqlDialect;
       _batchMode = batchMode; 
       _genMode = mode;
@@ -64,6 +62,11 @@ namespace Vita.Data.Runtime {
       var cmd = new DataCommand(connection, _dbCommand, executionType, resultProcessor, _records);
       _dbCommand = null;
       return cmd; 
+    }
+
+    public IDbCommand GetDbCommand() {
+      _dbCommand.CommandText = string.Join(string.Empty, _sqlStrings);
+      return _dbCommand;
     }
 
     public DataCommand CreateBatchCommand(DataConnection conn, bool encloseInTrans) {

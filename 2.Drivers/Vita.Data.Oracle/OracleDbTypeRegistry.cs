@@ -21,7 +21,7 @@ namespace Vita.Data.Oracle {
 
     public OracleDbTypeRegistry(OracleDbDriver driver) : base(driver) {
 
-      var stNumber = NumericTypeDef = base.AddDbTypeDef("number", typeof(decimal), Data.Driver.TypeSystem.DbTypeFlags.PrecisionScale, 
+      var stNumber = NumericTypeDef = base.AddDbTypeDef("number", typeof(decimal), DbTypeFlags.PrecisionScale, 
         aliases: "numeric", toLiteral: OracleConverters.NumberToLiteral);
       //save mappings in fields - we will use them in one of the methods
       _int64TypeInfo = Map(typeof(Int64), stNumber, prec: 20);
@@ -44,30 +44,30 @@ namespace Vita.Data.Oracle {
       AddDbTypeDef("binary_double", typeof(Double), aliases: "double");
 
       // Strings; string is mapped to nvarchar(...); 
-      var stNVarchar2 = base.AddDbTypeDef("nvarchar2", typeof(string), Data.Driver.TypeSystem.DbTypeFlags.Size, specialType: DbSpecialType.String);
-      var stVarchar2 = base.AddDbTypeDef("varchar2", typeof(string), Data.Driver.TypeSystem.DbTypeFlags.Size | Data.Driver.TypeSystem.DbTypeFlags.Ansi, 
+      var stNVarchar2 = base.AddDbTypeDef("nvarchar2", typeof(string), DbTypeFlags.Size, specialType: DbSpecialType.String);
+      var stVarchar2 = base.AddDbTypeDef("varchar2", typeof(string), DbTypeFlags.Size | DbTypeFlags.Ansi, 
                                        specialType: DbSpecialType.StringAnsi);
-      var stNChar = base.AddDbTypeDef("nchar", typeof(string), Data.Driver.TypeSystem.DbTypeFlags.Size);
-      var stChar = base.AddDbTypeDef("char", typeof(string), Data.Driver.TypeSystem.DbTypeFlags.Size | Data.Driver.TypeSystem.DbTypeFlags.Ansi);
-      var stNclob = base.AddDbTypeDef("nclob", typeof(string), Data.Driver.TypeSystem.DbTypeFlags.Unlimited, specialType: DbSpecialType.StringUnlimited);
-      var stClob = base.AddDbTypeDef("clob", typeof(string), Data.Driver.TypeSystem.DbTypeFlags.Unlimited | Data.Driver.TypeSystem.DbTypeFlags.Ansi, 
+      var stNChar = base.AddDbTypeDef("nchar", typeof(string), DbTypeFlags.Size);
+      var stChar = base.AddDbTypeDef("char", typeof(string), DbTypeFlags.Size | DbTypeFlags.Ansi);
+      var stNclob = base.AddDbTypeDef("nclob", typeof(string), DbTypeFlags.Unlimited, specialType: DbSpecialType.StringUnlimited);
+      var stClob = base.AddDbTypeDef("clob", typeof(string), DbTypeFlags.Unlimited | DbTypeFlags.Ansi, 
                                      specialType: DbSpecialType.StringAnsiUnlimited);
       var stLong = base.AddDbTypeDef("long", typeof(string),
-                   Data.Driver.TypeSystem.DbTypeFlags.Unlimited | Data.Driver.TypeSystem.DbTypeFlags.Obsolete | Data.Driver.TypeSystem.DbTypeFlags.Ansi);
+                   DbTypeFlags.Unlimited | DbTypeFlags.Obsolete | DbTypeFlags.Ansi);
       //char(1)
       Map(typeof(char), stNChar, 1);
       //binary
       var binInit = "hextoraw('00')";
       var tBinary = typeof(Vita.Entities.Binary);
-      var stRaw = base.AddDbTypeDef("raw", typeof(byte[]), Data.Driver.TypeSystem.DbTypeFlags.Size, specialType: DbSpecialType.Binary,
+      var stRaw = base.AddDbTypeDef("raw", typeof(byte[]), DbTypeFlags.Size, specialType: DbSpecialType.Binary,
                           toLiteral: OracleConverters.BytesToLiteral, columnInit: binInit);
       Map(tBinary, stRaw);
       // guid mapping
       Map(typeof(Guid), stRaw, size: 16);
-      var stBlob = base.AddDbTypeDef("blob", typeof(byte[]), Data.Driver.TypeSystem.DbTypeFlags.Unlimited,
+      var stBlob = base.AddDbTypeDef("blob", typeof(byte[]), DbTypeFlags.Unlimited,
                     specialType: DbSpecialType.BinaryUnlimited, toLiteral: OracleConverters.BytesToLiteral, columnInit: binInit);
       Map(tBinary, stBlob);
-      var stLongRaw = base.AddDbTypeDef("long raw", typeof(byte[]), Data.Driver.TypeSystem.DbTypeFlags.Size | Data.Driver.TypeSystem.DbTypeFlags.Unlimited | Data.Driver.TypeSystem.DbTypeFlags.Obsolete, 
+      var stLongRaw = base.AddDbTypeDef("long raw", typeof(byte[]), DbTypeFlags.Size | DbTypeFlags.Unlimited | DbTypeFlags.Obsolete, 
                       toLiteral: OracleConverters.BytesToLiteral, columnInit: binInit);
       Map(tBinary, stLongRaw);
       var stRowId = base.AddDbTypeDef("rowid", typeof(byte[]), mapColumnType: false, toLiteral: OracleConverters.BytesToLiteral, columnInit: binInit);
@@ -85,12 +85,12 @@ namespace Vita.Data.Oracle {
                      toLiteral: OracleConverters.DateTimeToLiteral);
       //intervals.
       // example type loaded from db: 'INTERVAL DAY(2) TO SECOND(6)'
-      var stIntervalDayToSecond = base.AddDbTypeDef(PrefixIntervalDay, typeof(TimeSpan), Data.Driver.TypeSystem.DbTypeFlags.Precision | Data.Driver.TypeSystem.DbTypeFlags.Scale,
+      var stIntervalDayToSecond = base.AddDbTypeDef(PrefixIntervalDay, typeof(TimeSpan), DbTypeFlags.Precision | DbTypeFlags.Scale,
            specTemplate: PrefixIntervalDay + "({0}) to second ({1})", 
            toLiteral: OracleConverters.TimeSpanToLiteral);
       Map(typeof(TimeSpan), stIntervalDayToSecond, prec: 3, scale: 3);
 
-      var stIntervalYearToMonth = base.AddDbTypeDef(PrefixIntervalYear, typeof(TimeSpan), Data.Driver.TypeSystem.DbTypeFlags.Precision | Data.Driver.TypeSystem.DbTypeFlags.Scale,
+      var stIntervalYearToMonth = base.AddDbTypeDef(PrefixIntervalYear, typeof(TimeSpan), DbTypeFlags.Precision | DbTypeFlags.Scale,
            specTemplate: PrefixIntervalDay + "({0}) to month ({1})",
            toLiteral: OracleConverters.TimeSpanToLiteral);
 

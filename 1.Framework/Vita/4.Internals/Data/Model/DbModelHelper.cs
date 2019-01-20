@@ -124,6 +124,14 @@ namespace Vita.Data.Model {
       return alias; 
     }
 
+    // Used by MetaD1
+    public static bool MatchesPrimaryKey(this DbKeyInfo key) {
+      if(key.KeyType.IsSet(KeyType.PrimaryKey))
+        return true;
+      var pk = key.Table.PrimaryKey;
+      return key.KeyColumns.Count == pk.KeyColumns.Count &&
+               key.KeyColumns.All(kc => kc.Column.Flags.IsSet(DbColumnFlags.PrimaryKey));
+    }
   }//class
 
 }

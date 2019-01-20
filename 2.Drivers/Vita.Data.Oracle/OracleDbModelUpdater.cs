@@ -9,6 +9,26 @@ using Vita.Data.Upgrades;
 using Vita.Entities.Model;
 
 namespace Vita.Data.Oracle {
+
+  /* Script to create user/schema; note: USERS is tablespace
+   
+CREATE USER "books" identified by password 
+  DEFAULT TABLESPACE USERS
+  TEMPORARY TABLESPACE temp;
+
+GRANT CONNECT, CREATE TABLE TO "books";
+ALTER USER "books" quota unlimited on USERS;
+
+-- DROP USER "books" CASCADE; -- to drop user and all objects inside
+
+-- selecting with filter by schema
+select * from 
+  all_tables
+  where owner = 'books'
+  
+
+  */
+
   public class OracleDbModelUpdater : DbModelUpdater {
 
     public OracleDbModelUpdater(DbSettings settings) : base(settings) {

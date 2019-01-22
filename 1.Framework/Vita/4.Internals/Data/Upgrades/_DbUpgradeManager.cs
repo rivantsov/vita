@@ -74,7 +74,10 @@ namespace Vita.Data.Upgrades {
       if (!CheckCanUpgrade(oldDbVersion)) 
         return _upgradeInfo;
       var loader = driver.CreateDbModelLoader(_database.Settings, _log);
-      loader.LoadFilter = _database.DbModel.LoadFilter;
+      if (driver.Supports(DbFeatures.Schemas)) {
+        var schemas = _database.DbModel.Schemas.Select(s => s.Schema).ToList();
+        loader.SetSchemasSubset(schemas);
+      }
       _upgradeInfo.OldDbModel = loader.LoadModel();
       _upgradeInfo.OldDbModel.VersionInfo = oldDbVersion;
       //assign prior versions 

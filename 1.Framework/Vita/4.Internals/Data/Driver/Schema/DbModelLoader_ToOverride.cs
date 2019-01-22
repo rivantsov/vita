@@ -16,16 +16,13 @@ namespace Vita.Data.Driver {
   public partial class DbModelLoader {
 
     //Builds schema filter from schemas in LoadFilter. If this list is empty (which means 'all schemas), returns '1=1' expression
-    string _schemaList;
+    string _schemaListCached; 
     protected virtual string GetSchemaFilter(string schemaColumn) {
-      if (!Driver.Supports(DbFeatures.Schemas))
+      if (!Driver.Supports(DbFeatures.Schemas) || _schemasSubSet.Count == 0)
         return "(1=1)";
-      if( LoadFilter == null || LoadFilter.Schemas.Count == 0)
-        return "(1=1)";
-      if (_schemaList == null) {
-        _schemaList = "(" + string.Join(", ", LoadFilter.Schemas.Select(s => s.Quote())) + ")";
-      }
-      return schemaColumn + " IN " + _schemaList;  
+      if (_schemaListCached == null) 
+        _schemaListCached = "(" + string.Join(", ", _schemasSubSet.Select(s => s.Quote())) + ")";
+      return schemaColumn + " IN " + _schemaListCached;  
     }
 
     public virtual InfoTable GetDatabases() {
@@ -33,7 +30,7 @@ namespace Vita.Data.Driver {
       return ExecuteSelect(sql);
     }
 
-    //Columns:CATALOG_NAME	SCHEMA_NAME	SCHEMA_OWNER	DEFAULT_CHARACTER_SET_CATALOG	DEFAULT_CHARACTER_SET_SCHEMA 
+    //Columns: CATALOG_NAME	SCHEMA_NAME	SCHEMA_OWNER	DEFAULT_CHARACTER_SET_CATALOG	DEFAULT_CHARACTER_SET_SCHEMA 
     //	DEFAULT_CHARACTER_SET_NAME  
     public virtual InfoTable GetSchemas() {
       var filter = GetSchemaFilter("SCHEMA_NAME");

@@ -21,7 +21,6 @@ namespace Vita.Data.Model {
     public List<DbSchemaInfo> Schemas = new List<DbSchemaInfo>();
     public DbVersionInfo VersionInfo;
     public EntityModel EntityModel => EntityApp.Model;
-    public DbModelLoadFilter LoadFilter = new DbModelLoadFilter(); 
 
     IList<DbTableInfo> _tables = new List<DbTableInfo>();
     IDictionary<string, DbTableInfo> _tablesByName = new Dictionary<string, DbTableInfo>(StringComparer.InvariantCultureIgnoreCase);

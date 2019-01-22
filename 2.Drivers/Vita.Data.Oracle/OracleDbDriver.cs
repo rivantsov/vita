@@ -20,7 +20,7 @@ using Oracle.ManagedDataAccess.Client;
 namespace Vita.Data.Oracle {
   public class OracleDbDriver : DbDriver {
     public const DbFeatures OracleFeatures = 
-          DbFeatures.OutputParameters | DbFeatures.DefaultParameterValues
+        DbFeatures.Schemas |  DbFeatures.OutputParameters | DbFeatures.DefaultParameterValues
         | DbFeatures.ReferentialConstraints
         // | DbFeatures.ClusteredIndexes -- PK is always clustered index
         | DbFeatures.Views
@@ -37,6 +37,10 @@ namespace Vita.Data.Oracle {
         | DbFeatures.Sequences;
     public DbOptions DefaultOracleDbOptions = DbOptions.UseRefIntegrity | DbOptions.ShareDbModel | DbOptions.AutoIndexForeignKeys;
 
+    /// <summary>Settings key for default tablespace value in DbSettings.CustomSettings dictionary.</summary>
+    public const string SettingsKeyDefaultTableSpace = "KeyDefaultTableSpace";
+    /// <summary>Settings key for default temp tablespace value in DbSettings.CustomSettings dictionary.</summary>
+    public const string SettingsKeyDefaultTempTableSpace = "KeyDefaultTempTableSpace";
 
     public OracleDbDriver() : base(DbServerType.Oracle, OracleFeatures) {
       base.TypeRegistry = new OracleDbTypeRegistry(this); 

@@ -137,7 +137,15 @@ namespace Vita.Testing.BasicTests {
       // SQLite tests starts with a copy of an empty database, no need to delete (it fails in fact)
       if(ServerType == DbServerType.SQLite)
         return;
-      DataUtility.DropSchemaObjects(app, dbSettings); 
+      try {
+        DataUtility.DropSchemaObjects(app, dbSettings);
+      } catch(Exception ex) {
+        var log = ex.ToLogString();
+        app.ActivationLog.Error(log);
+        Debug.WriteLine("EntityApp init exception: ");
+        Debug.WriteLine(log);
+        throw; 
+      }
     }
 
 

@@ -16,11 +16,7 @@ namespace Vita.Data {
     public readonly DbModelConfig ModelConfig;
     public readonly DbUpgradeMode UpgradeMode;
     public DbUpgradeOptions UpgradeOptions;
-
-    /// <summary>A DB server role to grant execute permissions for SELECT stored procedures (MS SQL only).</summary>
-    public string GrantExecReadToRole = "public";
-    /// <summary>A DB server role to grant execute permissions for Insert, Update, Delete stored procedures (MS SQL only).</summary>
-    public string GrantExecWriteToRole = "public";
+    public Dictionary<string, string> CustomSettings = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase); 
 
     // Connection strings
     public readonly string ConnectionString;
@@ -55,6 +51,11 @@ namespace Vita.Data {
       get { return ModelConfig.Driver; }
     }
 
+    public string GetCustomSetting(string key, string defaultValue = null) {
+      if(CustomSettings.TryGetValue(key, out string value))
+        return value;
+      return defaultValue; 
+    }
   }//class
 
 

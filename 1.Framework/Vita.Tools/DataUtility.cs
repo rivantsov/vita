@@ -89,48 +89,27 @@ namespace Vita.Tools {
     }
 
     public static DbModel LoadDbModel(EntityApp app, DbSettings dbSettings) {
-      // construct db model to get load filter - this is specifically important for oracle
-      var appDbModel = BuildDbModel(app, dbSettings);
-      return LoadDbModel(dbSettings, appDbModel.LoadFilter, app.ActivationLog);
+      var schemas = app.Areas.Select(a => a.Name).ToList(); 
+      return LoadDbModel(dbSettings, schemas, app.ActivationLog);
     }
 
-    public static DbModel LoadDbModel(DbSettings settings, DbModelLoadFilter loadFilter, IActivationLog log) {
+    public static DbModel LoadDbModel(DbSettings settings, List<string> schemas, IActivationLog log) {
       var driver = settings.ModelConfig.Driver;
       var loader = driver.CreateDbModelLoader(settings, log);
-      loader.LoadFilter = loadFilter;
+      loader.SetSchemasSubset(schemas); 
       var model = loader.LoadModel();
       return model;
     }
 
 
     public static void DropSchemaObjects(EntityApp app, DbSettings dbSettings) {
-      var loadFilter = GetDbModelFilter(app, dbSettings); 
-      DropSchemaObjects(dbSettings, loadFilter, app.ActivationLog);
+      var schemas = app.Areas.Select(a => a.Name).ToList();
+      DropSchemaObjects(dbSettings, schemas, app.ActivationLog);
     }
 
-    public static DbModelLoadFilter GetDbModelFilter(EntityApp app, DbSettings dbSettings) {
-      DbModelLoadFilter loadFilter = null;
-      switch(dbSettings.Driver.ServerType) {
-        //SQLite, Oracle does not support schemas; additonally for Oracle, we cannot go and delete all
-        // for Oracle we have to go for exact object list to delete - in Oracle there are too many pre-existing tables and views, 
-        // and no schemas. So we have to build DbModel.
-        case DbServerType.SQLite:
-        case DbServerType.Oracle:
-          var dbModel = BuildDbModel(app, dbSettings);
-          loadFilter = dbModel.LoadFilter;
-          break;
-        default:
-          // other loaders use schemas to filter 
-          loadFilter = new DbModelLoadFilter();
-          loadFilter.Schemas.UnionWith(app.Areas.Select(a => a.Name));
-          break;
-      }
-      return loadFilter; 
-    }
-
-    public static void DropSchemaObjects(DbSettings settings, DbModelLoadFilter loadFilter, IActivationLog log) {
+    public static void DropSchemaObjects(DbSettings settings, List<string> schemas, IActivationLog log) {
       var driver = settings.Driver; 
-      var model = LoadDbModel(settings, loadFilter, log);
+      var model = LoadDbModel(settings, schemas, log);
       var upgradeInfo = new DbUpgradeInfo(null, model);
       foreach(var sch in model.Schemas)
         if(sch.Schema != "dbo") //just for MS SQL, can never drop this
@@ -209,7 +188,8 @@ namespace Vita.Tools {
         typesToClear.ExceptWith(exceptEntities);
       // get existing tables; in unit tests it might happen that when we delete all for table that does not exist yet
       var modelLoader = driver.CreateDbModelLoader(dbSettings, app.ActivationLog);
-      modelLoader.LoadFilter = db.DbModel.LoadFilter;
+      var schemas = app.Areas.Select(a => a.Name).ToList(); 
+      modelLoader.SetSchemasSubset(schemas);
       var oldModel = modelLoader.LoadModel();
       var oldtableNames = new HashSet<string>(oldModel.Tables.Select(t => t.FullName), StringComparer.OrdinalIgnoreCase);
       //Figure out table/entity list and sort it

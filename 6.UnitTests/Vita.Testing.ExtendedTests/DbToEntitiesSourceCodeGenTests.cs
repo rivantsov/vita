@@ -53,15 +53,6 @@ namespace Vita.Testing.ExtendedTests {
       xmlConfig.LoadXml(xml);
       var dbFirstConfig = new DbFirstConfig(xmlConfig);
 
-      // For all servers except Oracle you don't need to specify explicit table list, loader will load all there and that's fine
-      // Oracla had hundreds of system tables there in empty database, and it is impossible to separate these 
-      //  so the easiest way is to provide table list explicitly
-      if(driver.ServerType == DbServerType.Oracle) {
-        var tableList = "Book,Publisher,Author,BookAuthor,BookReview,User,BookOrder,BookOrderLine,Coupon,Image," +
-                     "DbInfo,DbModuleInfo,Login,SecretQuestion,SecretQuestionAnswer,TrustedDevice,LoginExtraFactor,LoginProcess";
-          dbFirstConfig.TableNames.AddRange(tableList.Split(',')); 
-      }
-
       var traceFbk = new TraceProcessFeedback();
       var dbfirst = new DbFirstProcessor(traceFbk);
       try {

@@ -339,22 +339,6 @@ namespace Vita.Data.Model {
     }
   }
 
-  /// <summary>Information for DbModelLoader which objects to load. It is used to limit scope of schema objects loaded 
-  /// and analyzed/compared with new model. 
-  /// </summary>
-  /// <remarks>
-  /// For regular scenario, the filter is derived from DbModel and is a property of the DbModel. 
-  /// For DB-first tool, constructed from configuration data - list of schemas or tables to look at is 
-  /// specified 
-  /// </remarks>
-  public class DbModelLoadFilter {
-    public HashSet<string> Schemas = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-    public List<string> Tables = new List<string>();
-    public List<string> Views = new List<string>();
-    public List<string> Sequences = new List<string>();
-  }
-
-
   public static class DbModelExtensions {
     public static bool IsSet(this DbColumnFlags flags, DbColumnFlags flag) {
       return (flags & flag) != 0;

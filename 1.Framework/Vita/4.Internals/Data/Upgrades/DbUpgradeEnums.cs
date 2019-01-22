@@ -50,6 +50,7 @@ namespace Vita.Data.Upgrades {
 
   /// <summary>Identifies script type and determines the default execution order of SQL scripts for changing the DB model. </summary>
   public enum DbScriptType {
+    ScriptInit,
     MigrationStartUpgrade,
 
     DatabaseAdd, 

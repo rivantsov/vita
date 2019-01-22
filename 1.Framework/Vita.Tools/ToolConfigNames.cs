@@ -19,7 +19,6 @@ namespace Vita.Tools {
     public const string AutoValues = nameof(AutoValues);
     public const string ForceDataTypes = nameof(ForceDataTypes);
     public const string IgnoreTables = nameof(IgnoreTables);
-    public const string TableNames = nameof(TableNames);
 
     public const string AssemblyPath = nameof(AssemblyPath);
     public const string DbOptions = nameof(DbOptions);

@@ -28,12 +28,11 @@ namespace Vita.Data.Oracle {
     }
 
   public override string GetTableExistsSql(DbTableInfo table) {
-      var template = @"
+      var sql = $@"
 SELECT Table_name 
 FROM all_tables
-WHERE table_name = '{0}'
+WHERE owner='{table.Schema}' AND table_name = '{table.TableName}'
 ";
-      var sql = string.Format(template, table.TableName);
       return sql; 
     }
 

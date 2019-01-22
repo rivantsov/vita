@@ -38,7 +38,6 @@ namespace Vita.Tools.DbFirst {
     public readonly IDictionary<string, Type> ForceDataTypes;
     public readonly DbDriver Driver;
     public readonly HashSet<string> IgnoreTables = new StringSet();
-    public readonly List<string> TableNames = new List<string>();
 
     public DbFirstConfig() { }
 
@@ -63,9 +62,6 @@ namespace Vita.Tools.DbFirst {
       if(!string.IsNullOrWhiteSpace(ignoreList))
         IgnoreTables.UnionWith(ignoreList.Split(new [] {',', ';'}, StringSplitOptions.RemoveEmptyEntries));
       // 
-      var tableNames = rootEl.GetValue(ToolConfigNames.TableNames);
-      if(!string.IsNullOrWhiteSpace(tableNames))
-        this.TableNames.AddRange(tableNames.Split(','));
     }
 
     public static DbFirstConfig FromXml(string xml) {

@@ -61,7 +61,7 @@ namespace Vita.Testing.ExtendedTests {
           prm.Value = csBook.Id;
           break;
         case DbServerType.Oracle:
-          cmd.CommandText = "UPDATE \"Book\" SET \"Price\" = \"Price\" + 1 WHERE \"Id\" = :p;";
+          cmd.CommandText = "UPDATE \"books\".\"Book\" SET \"Price\" = \"Price\" + 1 WHERE \"Id\" = :p;";
           prm.ParameterName = "p";
           prm.Value = csBook.Id.ToByteArray();
           break;

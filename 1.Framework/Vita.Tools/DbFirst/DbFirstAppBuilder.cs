@@ -56,11 +56,7 @@ namespace Vita.Tools.DbFirst {
       _dbSettings = new DbSettings(_config.Driver, config.Driver.GetDefaultOptions(), _config.ConnectionString);
       // create loader and setup filter
       var modelLoader = _config.Driver.CreateDbModelLoader(_dbSettings, log);
-      // TODO: add filtering table list
-      var loadFilter = new DbModelLoadFilter();
-      loadFilter.Schemas.UnionWith(_config.Schemas);
-      loadFilter.Tables.AddRange(_config.TableNames);
-      modelLoader.LoadFilter = loadFilter;
+      modelLoader.SetSchemasSubset(_config.Schemas); 
       //actually load model
       _dbModel = modelLoader.LoadModel();
       Util.Check(_dbModel.Tables.Count() > 0, "No tables found in the database. Code generation aborted.");

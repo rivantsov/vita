@@ -2,5 +2,7 @@
   Materialized views (maybe in the future)
   Query with option ForceIgnoreCase; workaround - use 'Orderby b.Title.ToUpper()'
   Oracle SQL does not allow comparing string blobs like book.Abstract = 'some abstract'; also does not allow this columns in GroupBy
-  VITA supports TableSpaces, you can specify tablespace as property on EntityArea object - it will apply to all entities/tables in this area (schema). But tablespace must pre-exist, VITA does not create or delete them. 
+
+Tablespaces:
+VITA supports TableSpaces, you can specify tablespace as property on EntityArea object - it will apply to all entities/tables in this area (schema). But tablespace must pre-exist, VITA does not create or delete them. 
 

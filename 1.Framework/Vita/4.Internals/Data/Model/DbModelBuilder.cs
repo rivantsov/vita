@@ -47,7 +47,6 @@ namespace Vita.Data.Model {
       CompleteTablesSetup(); 
       CompileViews();
       BuildSequences();
-      BuildDbModelLoadFilter(); 
       _driver.OnDbModelConstructed(_dbModel);
       CheckErrors();
       return _dbModel;
@@ -420,28 +419,6 @@ namespace Vita.Data.Model {
       return tname;
     }//method
 
-    private void BuildDbModelLoadFilter() {
-      var loadFilter = new DbModelLoadFilter();
-      foreach(var tbl in _dbModel.Tables) {
-        loadFilter.Schemas.Add(tbl.Schema);
-        switch(tbl.Kind) {
-          case EntityKind.View:
-            loadFilter.Views.Add(tbl.TableName);
-            break;
-          case EntityKind.Table:
-            loadFilter.Tables.Add(tbl.TableName);
-            // add all old table names - in case we are about to rename the table
-            var oldNames = tbl.Entity.OldNames;
-            if(oldNames != null)
-              loadFilter.Tables.AddRange(oldNames); 
-            break;
-        }//switch
-      }//foreach
-      foreach(var seq in _dbModel.Sequences)
-        loadFilter.Sequences.Add(seq.Name);
-
-      _dbModel.LoadFilter = loadFilter;
-    }//method
 
   }//class
 }//namespace

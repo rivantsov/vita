@@ -17,6 +17,17 @@ using Vita.Entities.Utilities;
 namespace Vita.Data.MsSql {
 
   public class MsSqlDbDriver : DbDriver {
+    /// <summary>A key for the value in DbSettings.CustomSettings dictionary that contains the name of the role in SQL Server
+    /// that is granted execution read priviliges to views and sequences. If the value is not present in the dictionary, 
+    /// privileges are granted to [public] role.</summary>
+    public const string SettingsKeyGrantExecReadRole = "GrantExecReadRole";
+    /// <summary>A key for the value in DbSettings.CustomSettings dictionary that contains the name of the role in SQL Server
+    /// that is granted execution write priviliges to views and sequences. If the value is not present in the dictionary, 
+    /// privileges are granted to [public] role.</summary>
+    public const string SettingsKeyGrantExecWriteRole = "GrantExecWriteRole";
+
+
+
     public const DbOptions DefaultMsSqlDbOptions = DbOptions.UseRefIntegrity | DbOptions.ShareDbModel 
                                                  | DbOptions.AutoIndexForeignKeys | DbOptions.UseBatchMode;
     public const DbFeatures MsSql12Features =

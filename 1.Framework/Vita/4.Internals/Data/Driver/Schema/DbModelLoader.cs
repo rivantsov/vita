@@ -18,7 +18,6 @@ namespace Vita.Data.Driver {
 
   /// <summary>Loads DB model from database. </summary>
   public partial class DbModelLoader {
-    public DbModelLoadFilter LoadFilter;
     //returned by information_schema.Tables view as Table_type; for some db vendors it is different (postgres: BASE TABLE)
     protected string TableTypeTag = "TABLE";
     protected string ViewTypeTag = "VIEW";
@@ -32,7 +31,9 @@ namespace Vita.Data.Driver {
     //Static empty table, to use as return object for methods that return 'nothing' (not supported aspects)
     protected InfoTable EmptyTable = new InfoTable();
 
-
+    //Schemas are initially copied from Settings. But app can reset them to desired list later.  
+    //note: if _schemas is empty, it means - load all.
+    private StringSet _schemasSubSet = new StringSet();
 
     public DbModelLoader(DbSettings settings, IActivationLog log) {
       Settings = settings;
@@ -65,13 +66,17 @@ namespace Vita.Data.Driver {
     }
 
     protected virtual bool IncludeSchema(string schema) {
-      if(!Driver.Supports(DbFeatures.Schemas) || LoadFilter == null)
+      if(!SupportsSchemas())
         return true;
-      return LoadFilter.Schemas.Contains(schema); 
+      return _schemasSubSet.Contains(schema); 
     }
 
     protected bool SupportsSchemas() {
       return Driver.Supports(DbFeatures.Schemas);
+    }
+
+    public void SetSchemasSubset(IList<string> schemas) {
+      _schemasSubSet.UnionWith(schemas); 
     }
 
     //Loads schemas into dbModel.Setup.Schemas only if it was originally empty

@@ -240,7 +240,7 @@ $@"CREATE TABLE {table.FullName} (
         indexFields = key.KeyColumns.GetSqlNameListWithOrderSpec();
       else
         indexFields = key.KeyColumns.GetSqlNameList();
-      var qKeyName = '"' + key.Name + '"';
+      var qKeyName = QuoteName(key.Name);
       string includeList = string.Empty;
       if(key.IncludeColumns.Count > 0 && driver.Supports(DbFeatures.IncludeColumnsInIndexes))
         includeList = "INCLUDE (" + key.IncludeColumns.GetSqlNameList() + ")";

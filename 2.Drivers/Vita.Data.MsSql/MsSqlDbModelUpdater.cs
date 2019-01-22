@@ -25,8 +25,9 @@ namespace Vita.Data.MsSql {
   {view.ViewSql}"; 
       change.AddScript(DbScriptType.ViewAdd, script);
       //Grant Select 
-      if (!string.IsNullOrWhiteSpace(Settings.GrantExecReadToRole))
-        change.AddScript(DbScriptType.Grant, $"GRANT SELECT ON {view.FullName} TO [{Settings.GrantExecReadToRole}];");
+      var execReadRole = Settings.GetCustomSetting(MsSqlDbDriver.SettingsKeyGrantExecReadRole, "public");
+      if (!string.IsNullOrWhiteSpace(execReadRole))
+        change.AddScript(DbScriptType.Grant, $"GRANT SELECT ON {view.FullName} TO [{execReadRole}];");
 
     }
     public override void BuildTableRenameSql(DbObjectChange change, DbTableInfo oldTable, DbTableInfo newTable) {
@@ -111,7 +112,7 @@ CREATE {unique} {clustered} INDEX {qKeyName}
       change.AddScript(DbScriptType.SequenceAdd, sqlCreateTemplate, sequence.FullName, typeName,
           sequence.StartValue, sequence.Increment);
       //Grant permission to UPDATE
-      var updateRole = this.Settings.GrantExecWriteToRole;
+      var updateRole = this.Settings.GetCustomSetting(MsSqlDbDriver.SettingsKeyGrantExecWriteRole, "public");
       if (!string.IsNullOrWhiteSpace(updateRole))
         change.AddScript(DbScriptType.Grant, sqlGrantTemplate, sequence.FullName, updateRole); 
     }
@@ -125,10 +126,12 @@ CREATE {unique} {clustered} INDEX {qKeyName}
     public override void BuildCustomTypeAddSql(DbObjectChange change, DbCustomTypeInfo typeInfo) {
       var tn = typeInfo.FullName; 
       change.AddScript(DbScriptType.CustomTypeAdd, $"CREATE TYPE {tn} AS TABLE ([Value] Sql_Variant);");
-      if (!string.IsNullOrWhiteSpace(Settings.GrantExecReadToRole))
-        change.AddScript(DbScriptType.CustomTypeAdd, $"Grant EXECUTE on TYPE::{tn} to [{Settings.GrantExecReadToRole}];");
-      if (!string.IsNullOrWhiteSpace(Settings.GrantExecWriteToRole) && Settings.GrantExecWriteToRole != Settings.GrantExecReadToRole)
-        change.AddScript(DbScriptType.CustomTypeAdd, $"Grant EXECUTE on TYPE::{tn} to [{Settings.GrantExecWriteToRole}];");
+      var execReadRole = this.Settings.GetCustomSetting(MsSqlDbDriver.SettingsKeyGrantExecReadRole, "public");
+      if (!string.IsNullOrWhiteSpace(execReadRole))
+        change.AddScript(DbScriptType.CustomTypeAdd, $"Grant EXECUTE on TYPE::{tn} to [{execReadRole}];");
+      var execWriteRole = this.Settings.GetCustomSetting(MsSqlDbDriver.SettingsKeyGrantExecWriteRole, "public");
+      if(!string.IsNullOrWhiteSpace(execWriteRole) && execWriteRole != execReadRole)
+        change.AddScript(DbScriptType.CustomTypeAdd, $"Grant EXECUTE on TYPE::{tn} to [{execWriteRole}];");
     }
 
     public override void BuildCustomTypeDropSql(DbObjectChange change, DbCustomTypeInfo typeInfo) {

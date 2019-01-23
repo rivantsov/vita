@@ -69,7 +69,7 @@ namespace Vita.Data.Linq.Translation {
       var entInfo = _dbModel.EntityModel.GetEntityInfo(entType);
       if (entInfo == null)
         return false;
-      var memberInfo = (EntityMemberInfo) entInfo.GetMember(mexpr.Member.Name);
+      var memberInfo = entInfo.GetMember(mexpr.Member.Name, throwIfNotFound: true);
       if (memberInfo.Flags.IsSet(EntityMemberFlags.Nullable))
         return false;
       return true; 
@@ -203,8 +203,7 @@ namespace Vita.Data.Linq.Translation {
           return null; 
         var modelInfo = context.DbModel.EntityModel;
         var masterEntInfo = (EntityInfo) modelInfo.GetEntityInfo(table.Type);
-        var entMember = masterEntInfo.GetMember(property.Name);
-        Util.Check(entMember != null, "Failed to find member {0} on entity {1}.", property.Name, masterEntInfo.Name);
+        var entMember = masterEntInfo.GetMember(property.Name, throwIfNotFound: true);
         Util.Check(entMember.Kind == EntityMemberKind.EntityList, "Internal LINQ error: expected List member ({0}.{1}", masterEntInfo.Name, property.Name);
         var listInfo = entMember.ChildListInfo;
         Expression whereExpr; 

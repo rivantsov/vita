@@ -334,20 +334,20 @@ namespace Vita.Tools.DbFirst {
     }
 
     private string CheckMemberName(string baseName, EntityInfo entity, string trySuffix = null) {
-      var result = baseName; 
-      if (entity.GetMember(result, throwIfNotFound: false) == null)
-        return result;
+      var name = baseName; 
+      if (entity.GetMember(name) == null)
+        return name;
       // For entity references we might have occasional match of baseName with the FK column name. To avoid adding numbers, we try to add "Ref" at the end.
       if (!string.IsNullOrEmpty(trySuffix)) {
-        result = baseName + trySuffix;
-        if (entity.GetMember(result) == null)
-          return result; 
+        name = baseName + trySuffix;
+        if (entity.GetMember(name) == null)
+          return name; 
       }
       // try adding number at the end.
       for (int i = 1; i < 10; i++) {
-        result = baseName + i;
-        if (entity.GetMember(result, throwIfNotFound: false) == null)
-          return result; 
+        name = baseName + i;
+        if (entity.GetMember(name) == null)
+          return name; 
       }
       Util.Throw("Failed to generate property name for entity {0}, base name {1}", entity.Name, baseName);
       return null; 

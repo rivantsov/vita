@@ -121,7 +121,7 @@ namespace Vita.Entities.Model.Construction {
           //CLR type is not nullable - flip it to nullable
           memberType = ReflectionHelper.GetNullable(memberType);
         }
-        var fkMember = key.Entity.GetMember(fkMemberName, throwIfNotFound: false);
+        var fkMember = key.Entity.GetMember(fkMemberName);
         // if member exists, it is declared explicitly, or maybe it is part of another FK
         if(fkMember != null) {
           // check it matches the type

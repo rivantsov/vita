@@ -24,7 +24,7 @@ namespace Vita.Entities.Emit {
 
     public override MethodEmitInfo GetMethodEmitInfo(MethodInfo interfaceMethod, PropertyInfo parentProperty = null) {
       var propName = parentProperty.Name;
-      var member = _entityInfo.GetMember(propName); 
+      var member = _entityInfo.GetMember(propName, throwIfNotFound: true); 
       bool isGet = interfaceMethod.Name.StartsWith("get_");
       if(isGet) {
         var args = new object[] { member.Index };

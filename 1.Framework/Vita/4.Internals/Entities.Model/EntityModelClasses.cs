@@ -138,7 +138,7 @@ namespace Vita.Entities.Model {
       return Name.GetHashCode();
     }
 
-    public EntityMemberInfo GetMember(string name, bool throwIfNotFound = true) {
+    public EntityMemberInfo GetMember(string name, bool throwIfNotFound = false) {
       if(name != null)
         name = name.Trim().ToLowerInvariant(); 
       EntityMemberInfo member;

@@ -715,7 +715,7 @@ namespace Vita.Data.Linq.Translation {
         }
         //entity reference
         if(_dbModel.EntityModel.IsEntity(memberType)) {
-          var refMemberInfo = tableExpression.TableInfo.Entity.GetMember(memberName);
+          var refMemberInfo = tableExpression.TableInfo.Entity.GetMember(memberName, throwIfNotFound: true);
           var queryAssociationExpression = RegisterAssociation(tableExpression, refMemberInfo, context);
           if(queryAssociationExpression != null)
             return queryAssociationExpression;

@@ -69,7 +69,7 @@ namespace Vita.Entities {
     /// <returns>The value of the property.</returns>
     public static object GetProperty(object entity, string propertyName) {
       var rec = EntityHelper.GetRecord(entity);
-      var member = rec.EntityInfo.GetMember(propertyName);
+      var member = rec.EntityInfo.GetMember(propertyName, throwIfNotFound: true);
       var value = rec.GetValue(member);
       return value;
     }
@@ -89,7 +89,7 @@ namespace Vita.Entities {
     /// <param name="value">The property value.</param>
     public static void SetProperty(object entity, string propertyName, object value) {
       var rec = EntityHelper.GetRecord(entity);
-      var member = rec.EntityInfo.GetMember(propertyName); 
+      var member = rec.EntityInfo.GetMember(propertyName, throwIfNotFound: true); 
       rec.SetValue(member, value);
     }
 

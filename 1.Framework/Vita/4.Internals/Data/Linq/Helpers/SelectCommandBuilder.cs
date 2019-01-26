@@ -6,6 +6,8 @@ using System.Reflection;
 using System.Text;
 
 using Vita.Data.Linq;
+using Vita.Data.Linq.Translation;
+using Vita.Data.Runtime;
 using Vita.Entities;
 using Vita.Entities.Locking;
 using Vita.Entities.Model;
@@ -16,15 +18,17 @@ namespace Vita.Data.Linq {
   public static class SelectCommandBuilder {
     static IList<ParameterExpression> _emptyParamList = new ParameterExpression[] { }; 
 
-    public static QueryInfo BuildSelectByKey(EntityKeyInfo key, LockType lockType, IList<EntityKeyMemberInfo> orderBy = null, EntityMemberMask mask = null) {
+    public static LinqCommandInfo BuildSelectByKey(EntityKeyInfo key, LockType lockType, IList<EntityKeyMemberInfo> orderBy = null, 
+                      EntityMemberMask mask = null) {
       var entType = key.Entity.EntityType;
       var lambdaExpr = BuildSelectFilteredByKeyLambda(key, lockType, orderBy, mask);
-      // Explicitly create LinqCommandInfo! we do not want analyzer to do it
-      var info = new QueryInfo(Entities.QueryOptions.None, lockType, false /*isView*/, 
+      var cacheKey = SqlCacheKey.CreateForSelectByKey(key, lockType, mask);
+      var info = new LinqCommandInfo(Entities.QueryOptions.None, lockType, false /*isView*/, 
              new[] { entType }, entType.Name + "/Select/Key/" + key.ToString(),
              _emptyParamList , null);
       info.Lambda = lambdaExpr;
       info.ResultShape = QueryResultShape.EntityList;
+      info.MemberMask = mask;
       return info; 
     }
 
@@ -44,15 +48,14 @@ namespace Vita.Data.Linq {
       return lambdaExpr;
     }
 
-    public static QueryInfo BuildSelectByMemberValueArray(EntityMemberInfo member, EntityMemberMask mask = null) {
+    public static LinqCommandInfo BuildSelectByMemberValueArray(EntityMemberInfo member, EntityMemberMask mask = null) {
       var entType = member.Entity.EntityType; 
       var lambdaExpr = BuildSelectByMemberValueArrayLambda(member, mask);
-      var info = new QueryInfo(QueryOptions.None, Entities.Locking.LockType.None, false, //isView
+      var info = new LinqCommandInfo(QueryOptions.None, Entities.Locking.LockType.None, false, //isView
                        new[] { entType }, entType.Name + "/Select/KeyArray/" + member.MemberName,  _emptyParamList, null);
       info.Lambda = lambdaExpr;
       info.ResultShape = QueryResultShape.EntityList;
       return info;
-
     }
 
     public static LambdaExpression BuildSelectByMemberValueArrayLambda(EntityMemberInfo member, EntityMemberMask mask = null) {
@@ -66,7 +69,7 @@ namespace Vita.Data.Linq {
       return lambda; 
     }
 
-    public static QueryInfo BuildGetCountForEntityRef(EntityModel model, EntityReferenceInfo refInfo) {
+    public static LinqCommandInfo BuildGetCountForEntityRef(EntityModel model, EntityReferenceInfo refInfo) {
       var child = refInfo.FromMember.Entity;
       var parent = refInfo.ToKey.Entity;
       var refMember = refInfo.FromMember;
@@ -86,9 +89,9 @@ namespace Vita.Data.Linq {
       var genCount = LinqExpressionHelper.QueryableCountMethod.MakeGenericMethod(child.EntityType);
       var countCallExpr = Expression.Call(genCount, whereCall);
 
-      var cmd = new EntityCommand(countCallExpr, EntityOperation.Select, child);
-      QueryAnalyzer.Analyze(model, cmd);
-      QueryPreprocessor.PreprocessCommand(model, cmd);
+      var cmd = new LinqCommand(countCallExpr, LinqCommandKind.Select, child);
+      LinqCommandAnalyzer.Analyze(model, cmd);
+      LinqCommandPreprocessor.PreprocessCommand(model, cmd);
       cmd.Info.Options |= QueryOptions.NoEntityCache; 
       return cmd.Info;
     }

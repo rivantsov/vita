@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -168,5 +169,24 @@ namespace Vita.Entities.Utilities {
 
     static MethodInfo _makeNullableMethod;
     static MethodInfo _convertToEnumerableOfNullablesMethod;
+
+    #region Int->byte[] method
+    [StructLayout(LayoutKind.Explicit)]
+    struct IntAsBytes {
+      [FieldOffset(0)] public int Value;
+      [FieldOffset(0)] public byte Byte0;
+      [FieldOffset(1)] public byte Byte1;
+      [FieldOffset(2)] public byte Byte2;
+      [FieldOffset(3)] public byte Byte3;
+    }
+
+    public static byte[] GetBytes(this int value) {
+      IntAsBytes x = new IntAsBytes();
+      x.Value = value;
+      return new byte[] { x.Byte0, x.Byte1, x.Byte2, x.Byte3 };
+    }
+    #endregion
+
+
   }
 }

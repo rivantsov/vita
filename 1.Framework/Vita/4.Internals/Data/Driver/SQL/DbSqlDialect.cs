@@ -19,7 +19,6 @@ namespace Vita.Data.Driver {
   public partial class DbSqlDialect {
     DbDriver _driver; 
 
-    // Parameter prefix. For MS SQL, it is '@' for both. For MySql, we need to use '@' for dynamic SQLs but no prefix or smth like 'prm' for stored procs
     public int MaxLiteralLength = 100;
     public int MaxRecordsInInsertMany = 200; 
 
@@ -230,7 +229,7 @@ namespace Vita.Data.Driver {
       }
     }
 
-    public virtual bool IsSqlTier(Expression expression, QueryInfo queryInfo) {
+    public virtual bool IsSqlTier(Expression expression, LinqCommandInfo queryInfo) {
       var sqlExpr = expression as SqlExpression;
       if(sqlExpr != null) {
         switch(sqlExpr.SqlNodeType) {

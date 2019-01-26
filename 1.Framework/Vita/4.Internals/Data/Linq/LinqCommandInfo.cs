@@ -15,11 +15,11 @@ using Vita.Entities.Locking;
 
 namespace Vita.Data.Linq {
 
-  /// <summary>Contains basic information about the query. Produced by the QueryAnalyzer.</summary>
+  /// <summary>Contains basic information about the Linq command (query). Produced by the LinqCommandAnalyzer.</summary>
   /// <remarks> Contains query parameter values and cache key - this data allows looking up translated query definition from query cache
   /// and execute using current parameters. 
   /// </remarks>
-  public class QueryInfo {
+  public class LinqCommandInfo {
     public QueryOptions Options;
     public LockType LockType;
     public bool IsView;
@@ -35,8 +35,9 @@ namespace Vita.Data.Linq {
     public LambdaExpression Lambda;
     public QueryResultShape ResultShape;
     public IList<LambdaExpression> Includes;
+    public EntityMemberMask MemberMask; //for queries returning entities
 
-    public QueryInfo(QueryOptions options, LockType lockType, bool isView, IList<Type> entityTypes, string cacheKey, IList<ParameterExpression> externalParameters, 
+    public LinqCommandInfo(QueryOptions options, LockType lockType, bool isView, IList<Type> entityTypes, string cacheKey, IList<ParameterExpression> externalParameters, 
                      IList<LambdaExpression> includes) {
       Options = options;
       LockType = lockType;

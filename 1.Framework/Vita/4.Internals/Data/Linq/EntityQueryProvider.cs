@@ -59,8 +59,8 @@ namespace Vita.Data.Linq {
       // but not execute it. Example: DbView definition
       Util.Check(Session != null, "The query is not executable. Query: {0}", expression);
       var elemType = expression.Type.IsGenericType ? expression.Type.GenericTypeArguments[0] : typeof(object);
-      var command = new EntityCommand(expression, EntityOperation.Select, null);
-      var result = Session.ExecuteCommand(command);
+      var command = new LinqCommand(expression, LinqCommandKind.Select, null);
+      var result = Session.ExecuteLinqCommand(command);
       return result;
     }
 

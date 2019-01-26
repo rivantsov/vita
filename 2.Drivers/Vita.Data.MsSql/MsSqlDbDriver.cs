@@ -76,7 +76,7 @@ namespace Vita.Data.MsSql {
     public override DbModelUpdater CreateDbModelUpdater(DbSettings settings) {
       return new MsSqlDbModelUpdater(settings); 
     }
-    public override DbSqlBuilder CreateDbSqlBuilder(DbModel dbModel, QueryInfo queryInfo) {
+    public override DbSqlBuilder CreateDbSqlBuilder(DbModel dbModel, LinqCommandInfo queryInfo) {
       return new MsSqlBuilder(dbModel, queryInfo); 
     }
     public override IDbCommand CreateCommand() {

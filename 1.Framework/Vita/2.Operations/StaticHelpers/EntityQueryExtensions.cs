@@ -170,7 +170,7 @@ namespace Vita.Entities {
     public static int ExecuteInsert<TEntity>(this IEntitySession session, IQueryable baseQuery) {
       Util.CheckParam(session, nameof(session));
       var entSession = (EntitySession)session;
-      return entSession.ExecuteLinqNonQuery<TEntity>(baseQuery, EntityOperation.Insert);
+      return entSession.ExecuteLinqNonQuery<TEntity>(baseQuery, LinqCommandKind.Insert);
     }
 
     /// <summary>Executes a SQL update statement based on LINQ query. </summary>
@@ -194,7 +194,7 @@ namespace Vita.Entities {
     public static int ExecuteUpdate<TEntity>(this IEntitySession session, IQueryable baseQuery) {
       Util.CheckParam(session, nameof(session));
       var entSession = (EntitySession)session;
-      return entSession.ExecuteLinqNonQuery<TEntity>(baseQuery, EntityOperation.Update);
+      return entSession.ExecuteLinqNonQuery<TEntity>(baseQuery, LinqCommandKind.Update);
     }
 
     /// <summary>Executes a SQL delete statement based on LINQ query. </summary>
@@ -213,25 +213,25 @@ namespace Vita.Entities {
     public static int ExecuteDelete<TEntity>(this IEntitySession session, IQueryable baseQuery) {
       Util.CheckParam(session, nameof(session));
       var entSession = (EntitySession)session;
-      return entSession.ExecuteLinqNonQuery<TEntity>(baseQuery, EntityOperation.Delete);
+      return entSession.ExecuteLinqNonQuery<TEntity>(baseQuery, LinqCommandKind.Delete);
     }
 
     public static void ScheduleInsert<TEntity>(this IEntitySession session, IQueryable query,
                              CommandSchedule schedule = CommandSchedule.TransactionEnd) {
       var entSession = (EntitySession)session;
-      entSession.ScheduleLinqNonQuery<TEntity>(query, EntityOperation.Insert, schedule);
+      entSession.ScheduleLinqNonQuery<TEntity>(query, LinqCommandKind.Insert, schedule);
     }
 
     public static void ScheduleUpdate<TEntity>(this IEntitySession session, IQueryable query,
                              CommandSchedule schedule = CommandSchedule.TransactionEnd) {
       var entSession = (EntitySession)session;
-      entSession.ScheduleLinqNonQuery<TEntity>(query, EntityOperation.Update, schedule);
+      entSession.ScheduleLinqNonQuery<TEntity>(query, LinqCommandKind.Update, schedule);
     }
 
     public static void ScheduleDelete<TEntity>(this IEntitySession session, IQueryable query,
                              CommandSchedule schedule = CommandSchedule.TransactionEnd) {
       var entSession = (EntitySession)session;
-      entSession.ScheduleLinqNonQuery<TEntity>(query, EntityOperation.Delete, schedule);
+      entSession.ScheduleLinqNonQuery<TEntity>(query, LinqCommandKind.Delete, schedule);
     }
 
   }//class

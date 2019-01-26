@@ -25,7 +25,7 @@ namespace Vita.Data.Runtime {
       _crudSqlBuilder = _dbModel.Driver.CreateDbSqlBuilder(_dbModel, null);
     }
 
-    public SqlStatement GetSelect(EntityCommand command) {
+    public SqlStatement GetLinqSelect(LinqCommand command) {
       var sql = _linqEngine.Translate(command);
       return sql; 
     }
@@ -46,7 +46,7 @@ namespace Vita.Data.Runtime {
       return sql; 
    }
 
-    public SqlStatement GetLinqNonQuery(EntityCommand command) {
+    public SqlStatement GetLinqNonQuery(LinqCommand command) {
       return _linqEngine.TranslateNonQuery(command);
     }
 

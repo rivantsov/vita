@@ -11,6 +11,7 @@ using Vita.Data.Driver;
 using Vita.Entities.Model;
 using Vita.Data.Runtime;
 using Vita.Entities.Runtime;
+using Vita.Data.Linq;
 
 namespace Vita.Data {
 
@@ -62,17 +63,6 @@ namespace Vita.Data {
           conn.Close();
       }
 
-    }
-
-    public static EntityOperation ToOperation(this EntityStatus status) {
-      switch (status) {
-        case EntityStatus.New: return EntityOperation.Insert;
-        case EntityStatus.Modified: return EntityOperation.Update;
-        case EntityStatus.Deleting: return EntityOperation.Delete;
-        default:
-          Util.Throw("Invalid entity status in update set: {0}", status);
-          return default(EntityOperation); // never happens
-      }
     }
 
     public static DbType GetIntDbType(this Type type) {

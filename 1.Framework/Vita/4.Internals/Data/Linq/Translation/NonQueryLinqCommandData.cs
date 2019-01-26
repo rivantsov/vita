@@ -13,19 +13,19 @@ using Vita.Entities.Runtime;
 
 namespace Vita.Data.Linq.Translation {
   public class NonQueryLinqCommandData {
-    public EntityCommand BaseLinqCommand;
+    public LinqCommand BaseLinqCommand;
     public SelectExpression BaseSelect;
     public List<Expression> SelectOutputValues = new List<Expression>();
     public TableExpression TargetTable;
     public bool UseSimpleCommand;
     public List<ColumnExpression> TargetColumns = new List<ColumnExpression>();
 
-    public NonQueryLinqCommandData(EntityCommand baseLinqCommand, SelectExpression baseSelect, TableExpression targetTable) {
+    public NonQueryLinqCommandData(LinqCommand baseLinqCommand, SelectExpression baseSelect, TableExpression targetTable) {
       BaseLinqCommand = baseLinqCommand; 
       BaseSelect = baseSelect; 
       TargetTable = targetTable;
-      switch(BaseLinqCommand.Operation) {
-        case EntityOperation.Insert: UseSimpleCommand = false; break;
+      switch(BaseLinqCommand.Kind) {
+        case LinqCommandKind.Insert: UseSimpleCommand = false; break;
         default:
           var allTables = BaseSelect.Tables;
           var usesSkipTakeOrderBy = BaseSelect.Offset != null || BaseSelect.Limit != null; 
@@ -35,6 +35,6 @@ namespace Vita.Data.Linq.Translation {
       }
 
     }
-    public EntityOperation Operation { get { return BaseLinqCommand.Operation; } }
+    public LinqCommandKind Operation { get { return BaseLinqCommand.Kind; } }
   }
 }

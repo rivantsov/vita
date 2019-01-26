@@ -26,7 +26,7 @@ namespace Vita.Data.Runtime {
       try {
         dbCommand.Connection = conn.DbConnection;
         dbCommand.Transaction = conn.DbTransaction;
-        var start = GetCurrentMsCount();
+        var start = _timeService.ElapsedMilliseconds;
         command.Result = _driver.ExecuteCommand(dbCommand, command.ExecutionType);
         conn.ActiveReader = command.Result as IDataReader; // if it is reader, save it in connection
         command.ProcessedResult = (command.ResultProcessor == null) 
@@ -34,7 +34,7 @@ namespace Vita.Data.Runtime {
                                    : command.ResultProcessor.ProcessResult(command);
         _driver.CommandExecuted(conn, dbCommand, command.ExecutionType);
         ProcessOutputCommandParams(command);
-        var end = GetCurrentMsCount();
+        var end = _timeService.ElapsedMilliseconds;
         command.TimeMs = (int)(end - start);
         LogCommand(conn.Session, dbCommand, command.TimeMs, command.RowCount);
       } catch(Exception ex) {
@@ -201,13 +201,13 @@ namespace Vita.Data.Runtime {
       try {
         command.Connection = connection.DbConnection;
         command.Transaction = connection.DbTransaction;
-        var start = GetCurrentMsCount();
+        var start = _timeService.ElapsedMilliseconds;
         int recordCount = -1;
         result = _driver.ExecuteCommand(command, execType);
         // if (execType == DbExecutionType.Reader)
         connection.ActiveReader = result as IDataReader; // if it is reader, save it in connection
         _driver.CommandExecuted(connection, command, execType);
-        var end = GetCurrentMsCount();
+        var end = _timeService.ElapsedMilliseconds;
         var timeMs = (int)(end - start);
         LogCommand(connection.Session, command, timeMs, recordCount);
         return result;

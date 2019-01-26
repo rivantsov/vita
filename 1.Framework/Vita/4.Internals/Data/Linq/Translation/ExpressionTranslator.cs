@@ -30,7 +30,7 @@ namespace Vita.Data.Linq.Translation {
 
       // This is special optimization case for reading entities, to avoid Lambda.Compile, we use 
       // instance of EntityRecordReader directly. DO NOT try to optimize or improve it!!! (talking to you, Roman)
-      bool isSelectOp = context.Command.Operation == Entities.Runtime.EntityOperation.Select;
+      bool isSelectOp = context.Command.Kind == LinqCommandKind.Select;
       if(isSelectOp && forExpr is TableExpression tableExpr) {
         entReader = CreateEntityReader(tableExpr, context);
         readerLambda = null;

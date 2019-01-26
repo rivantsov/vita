@@ -10,8 +10,8 @@ namespace Vita.Data.Model {
   // Temp placeholder/definition of cache interface; caching to be refactored in the future
   public interface IEntityCache {
     void Shutdown();
-    bool TryExecuteSelect(EntitySession session, EntityCommand command, out object result);
-    void OnCommandExecuted(EntitySession session, EntityCommand command, object result);
+    bool TryExecuteSelect(EntitySession session, LinqCommand command, out object result);
+    void OnCommandExecuted(EntitySession session, LinqCommand command, object result);
     void OnSavedChanges(EntitySession session); 
   }
 

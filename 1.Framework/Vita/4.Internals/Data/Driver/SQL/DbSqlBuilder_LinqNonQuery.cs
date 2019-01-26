@@ -19,14 +19,14 @@ namespace Vita.Data.Driver {
 
     public SqlStatement BuildLinqNonQuery(NonQueryLinqCommandData commandData) {
       switch(commandData.Operation) {
-        case EntityOperation.Insert:
+        case LinqCommandKind.Insert:
           return BuildLinqInsert(commandData);
-        case EntityOperation.Update:
+        case LinqCommandKind.Update:
           if(commandData.UseSimpleCommand)
             return BuildLinqUpdateSimple(commandData);
           else
             return BuildLinqUpdateWithSubquery(commandData);
-        case EntityOperation.Delete:
+        case LinqCommandKind.Delete:
           if(commandData.UseSimpleCommand)
             return BuildLinqDelete(commandData);
           else

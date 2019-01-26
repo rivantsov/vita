@@ -20,7 +20,7 @@ namespace Vita.Data.MySql {
 
     private MySqlDialect _myDialect; 
 
-    public MySqlBuilder(DbModel dbModel, QueryInfo queryInfo) : base(dbModel, queryInfo) {
+    public MySqlBuilder(DbModel dbModel, LinqCommandInfo queryInfo) : base(dbModel, queryInfo) {
       _myDialect = (MySqlDialect) dbModel.Driver.SqlDialect; 
     }
 

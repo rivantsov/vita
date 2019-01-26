@@ -52,8 +52,8 @@ namespace Vita.Entities.Runtime {
       var session = OwnerRecord.Session;
       var listInfo = OwnerMember.ChildListInfo;
       var cmdInfo = listInfo.GetSelectDirectChildRecordsCommand();
-      var cmd = new EntityCommand(cmdInfo, listInfo.LinkEntity, OwnerRecord.PrimaryKey.Values);
-      var linkEntList = (IList) session.ExecuteCommand(cmd); 
+      var cmd = new LinqCommand(cmdInfo, listInfo.LinkEntity, OwnerRecord.PrimaryKey.Values);
+      var linkEntList = (IList) session.ExecuteLinqCommand(cmd); 
       /* Not needed - previous select cmd should have include for target records
       // Preload target entity records, in addition to link records.
       // These records will be cached in session, so when we try to read the target entity below it will be already loaded.

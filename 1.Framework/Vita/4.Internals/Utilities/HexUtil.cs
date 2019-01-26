@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -39,6 +40,10 @@ namespace Vita.Entities.Utilities {
       //return val - (val < 58 ? 48 : 87);
       //Or the two combined, but a bit slower:
       return val - (val < 58 ? 48 : (val < 97 ? 55 : 87));
+    }
+
+    public static string IntToHex(int v) {
+      return ByteArrayToHex(v.GetBytes());
     }
 
   }

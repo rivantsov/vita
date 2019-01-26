@@ -19,8 +19,8 @@ namespace Vita.Data.Linq {
  
   partial class LinqEngine {
 
-    public SqlStatement TranslateNonQuery(EntityCommand command) {
-      QueryPreprocessor.PreprocessCommand(_entityModel, command);
+    public SqlStatement TranslateNonQuery(LinqCommand command) {
+      LinqCommandPreprocessor.PreprocessCommand(_entityModel, command);
       var translCtx = new TranslationContext(_dbModel, command);
       var queryInfo = command.Info;
       // convert lambda params into an initial set of ExternalValueExpression objects; 
@@ -45,9 +45,9 @@ namespace Vita.Data.Linq {
       var commandData = new NonQueryLinqCommandData(command, selectExpr, targetTableExpr);
       // Analyze base query output expression
       var readerBody = selectExpr.RowReaderLambda.Body;
-      switch(command.Operation) {
-        case EntityOperation.Update:
-        case EntityOperation.Insert: 
+      switch(command.Kind) {
+        case LinqCommandKind.Update:
+        case LinqCommandKind.Insert: 
           Util.Check(readerBody.NodeType == ExpressionType.New, "Query for LINQ {0} command must return New object", commandData.Operation);
           var newExpr = readerBody as NewExpression;
           var outValues = selectExpr.Operands.ToList();
@@ -76,7 +76,7 @@ namespace Vita.Data.Linq {
             }
           }
           break; 
-        case EntityOperation.Delete:
+        case LinqCommandKind.Delete:
           commandData.SelectOutputValues.Add(readerBody); //should return single value - primary key
           break; 
       }
@@ -86,7 +86,7 @@ namespace Vita.Data.Linq {
       return stmt; // new TranslatedLinqCommand(command, sql, cmdParams, command.Info.Flags);
     } //method
 
-    private static void ThrowTranslationFailed(EntityCommand command, string message, params object[] args) {
+    private static void ThrowTranslationFailed(LinqCommand command, string message, params object[] args) {
       var msg = Util.SafeFormat(message, args) + "\r\n Query:" + command.ToString(); 
       var exc = new LinqTranslationException(msg, command);
       throw exc; 

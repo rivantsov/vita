@@ -78,9 +78,9 @@ namespace Vita.Data.Model {
       foreach(var viewTbl in views) {
         var entInfo = viewTbl.Entity;
 
-        var viewCmd = new EntityCommand(entInfo.ViewDefinition.Query.Expression, EntityOperation.Select, null, isView: true);
+        var viewCmd = new LinqCommand(entInfo.ViewDefinition.Query.Expression, LinqCommandKind.Select, null, isView: true);
         viewCmd.TargetEntity = entInfo;
-        QueryAnalyzer.Analyze(_entityModel, viewCmd);
+        LinqCommandAnalyzer.Analyze(_entityModel, viewCmd);
         LinqExpressionHelper.EvaluateCommandParameters(viewCmd); //in case there are any local variables
 
         var sqlStmt = engine.Translate(viewCmd);

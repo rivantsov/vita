@@ -17,7 +17,7 @@ using Vita.Entities.Runtime;
 namespace Vita.Data.Oracle {
   public class OracleSqlBuilder : DbSqlBuilder {
     OracleSqlDialect _oracleDialect; 
-    public OracleSqlBuilder(DbModel dbModel, QueryInfo queryInfo) : base(dbModel, queryInfo) {
+    public OracleSqlBuilder(DbModel dbModel, LinqCommandInfo queryInfo) : base(dbModel, queryInfo) {
       _oracleDialect = (OracleSqlDialect)base.SqlDialect; 
     }
 

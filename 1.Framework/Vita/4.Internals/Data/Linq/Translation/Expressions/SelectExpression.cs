@@ -42,19 +42,19 @@ namespace Vita.Data.Linq.Translation.Expressions {
     // Parent scope: we will climb up to find if we don't find the request table in the current scope
     public SelectExpression Parent { get; set; }
 
-    public QueryInfo QueryInfo;
+    public LinqCommandInfo QueryInfo;
 
-    public SelectExpression(QueryInfo info) : base(SqlExpressionType.Select, null, null) {
+    public SelectExpression(LinqCommandInfo info) : base(SqlExpressionType.Select, null, null) {
       QueryInfo = info; 
     }
 
-    public SelectExpression(SelectExpression parentSelectExpression, QueryInfo queryInfo) 
+    public SelectExpression(SelectExpression parentSelectExpression, LinqCommandInfo queryInfo) 
          : base(SqlExpressionType.Select, null, null) {
       Parent = parentSelectExpression;
       QueryInfo = queryInfo; 
     }
 
-    private SelectExpression(QueryInfo info, Type type, IList<Expression> operands) : base(SqlExpressionType.Select, type, operands) {
+    private SelectExpression(LinqCommandInfo info, Type type, IList<Expression> operands) : base(SqlExpressionType.Select, type, operands) {
       QueryInfo = info; 
     }
 

@@ -34,27 +34,25 @@ namespace Vita.Data.Runtime {
     public void Shutdown() {
     }
 
-    #region IDataStore Members
-
-    public object ExecuteEntityCommand(EntitySession session, EntityCommand command) {
+    public object ExecuteLinqCommand(EntitySession session, LinqCommand command) {
       var conn = GetConnectionWithLock(session, command.Info.LockType);
       try {
         object result;
-        if(command.Operation == EntityOperation.Select)
-          result = ExecuteEntitySelect(session, command, conn);
+        if(command.Kind == LinqCommandKind.Select)
+          result = ExecuteLinqSelect(session, command, conn);
         else
-          result = ExecuteEntityNonQuery(session, command, conn);
+          result = ExecuteLinqNonQuery(session, command, conn);
         ReleaseConnection(conn);
         return result;
       } catch(Exception dex) {
         ReleaseConnection(conn, inError: true);
-        dex.AddValue(DataAccessException.KeyLinqQuery, command.QueryExpression);
+        dex.AddValue(DataAccessException.KeyLinqQuery, command.ToString());
         throw;
       }
     }
 
-    public object ExecuteEntitySelect(EntitySession session, EntityCommand command, DataConnection conn) {
-      var sql = CommandRepo.GetSelect(command); 
+    public object ExecuteLinqSelect(EntitySession session, LinqCommand command, DataConnection conn) {
+      var sql = CommandRepo.GetLinqSelect(command); 
       var genMode = command.Info.Options.IsSet(QueryOptions.NoParameters) ? 
                              SqlGenMode.NoParameters : SqlGenMode.PreferParam;
       var cmdBuilder = new DataCommandBuilder(this._driver, batchMode: false, mode: genMode);
@@ -64,7 +62,7 @@ namespace Vita.Data.Runtime {
       return dataCmd.ProcessedResult;
     }
 
-    private object ExecuteEntityNonQuery(EntitySession session, EntityCommand command, DataConnection conn) {
+    private object ExecuteLinqNonQuery(EntitySession session, LinqCommand command, DataConnection conn) {
       var sql = CommandRepo.GetLinqNonQuery(command);
       var fmtOptions = command.Info.Options.IsSet(QueryOptions.NoParameters) ?
                              SqlGenMode.NoParameters : SqlGenMode.PreferParam;
@@ -101,7 +99,8 @@ namespace Vita.Data.Runtime {
       var conn = updateSet.Connection;
       var withTrans = conn.DbTransaction == null && updateSet.UseTransaction; 
       try {
-        var start = GetCurrentMsCount();
+        LogComment(session, "-- SaveChanges starting, {0} records ------------", updateSet.Records.Count);
+        var start = _timeService.ElapsedMilliseconds;
         if(withTrans)
           conn.BeginTransaction(commitOnSave: true);
         //execute commands
@@ -111,7 +110,7 @@ namespace Vita.Data.Runtime {
         foreach (var grp in updateSet.UpdateGroups)
           foreach (var tableGrp in grp.TableGroups) {
             switch(tableGrp.Operation) {
-              case EntityOperation.Insert:
+              case LinqCommandKind.Insert:
                 if (CanProcessMany(tableGrp)) {
                   var cmdBuilder = new DataCommandBuilder(this._driver);
                   var sql = CommandRepo.GetCrudInsertMany(tableGrp.Table, tableGrp.Records, cmdBuilder);
@@ -121,10 +120,10 @@ namespace Vita.Data.Runtime {
                 } else
                   SaveTableGroupRecordsOneByOne(tableGrp, conn, updateSet);
                 break;
-              case EntityOperation.Update:
+              case LinqCommandKind.Update:
                 SaveTableGroupRecordsOneByOne(tableGrp, conn, updateSet);
                 break;
-              case EntityOperation.Delete:
+              case LinqCommandKind.Delete:
                 if (CanProcessMany(tableGrp)) {
                   var cmdBuilder = new DataCommandBuilder(this._driver);
                   var sql = CommandRepo.GetCrudDeleteMany(tableGrp.Table);
@@ -140,7 +139,10 @@ namespace Vita.Data.Runtime {
         if (session.ScheduledCommands.Count > 0)
           ExecuteScheduledCommands(conn, session, CommandSchedule.TransactionEnd);
         if (conn.DbTransaction != null && conn.Flags.IsSet(DbConnectionFlags.CommitOnSave))
-          conn.Commit(); 
+          conn.Commit();
+        var end = _timeService.ElapsedMilliseconds;
+        LogComment(session, "-- SaveChanges completed. Records: {0}, Time: {1} ms. ------------", 
+          updateSet.Records.Count, end - start);
         ReleaseConnection(conn);
       } catch {
         ReleaseConnection(conn, inError: true);
@@ -160,26 +162,22 @@ namespace Vita.Data.Runtime {
       }
     }
 
-
     private void ExecuteScheduledCommands(DataConnection conn, EntitySession session, CommandSchedule schedule) {
       if (session.ScheduledCommands.Count == 0)
         return;
       foreach (var cmd in session.ScheduledCommands)
         if (cmd.Schedule == schedule) {
-          ExecuteEntityNonQuery(session, cmd, conn);
+          ExecuteLinqNonQuery(session, cmd, conn);
         }
     }
-
-
-    #endregion 
 
     public bool CanProcessMany(DbUpdateTableGroup group) {
       if (group.Records.Count <= 1)
         return false;
       switch (group.Operation) {
-        case EntityOperation.Delete:
+        case LinqCommandKind.Delete:
           return group.Table.PrimaryKey.KeyColumns.Count == 1;
-        case EntityOperation.Insert:
+        case LinqCommandKind.Insert:
           if(!_driver.Supports(DbFeatures.InsertMany))
             return false;
           if(group.Table.Entity.Flags.IsSet(EntityFlags.HasIdentity | EntityFlags.HasRowVersion))
@@ -190,10 +188,6 @@ namespace Vita.Data.Runtime {
       }
     }
 
-
-    private long GetCurrentMsCount() {
-      return _timeService.ElapsedMilliseconds;
-    }
 
   }//class
 

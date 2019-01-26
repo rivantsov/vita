@@ -1,6 +1,7 @@
 ﻿
 using System;
 using System.Collections;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Data;
 using System.Diagnostics;
@@ -17,7 +18,6 @@ using Vita.Entities.Runtime;
 using Vita.Data.SqlGen;
 using Vita.Entities.Locking;
 using Vita.Data.Linq.Translation;
-using System.Collections.Concurrent;
 using Vita.Data.Runtime;
 
 namespace Vita.Data.Linq {
@@ -33,16 +33,16 @@ namespace Vita.Data.Linq {
       _translator = new ExpressionTranslator(dbModel);
     }
 
-    public SqlStatement Translate(EntityCommand command) {
+    public SqlStatement Translate(LinqCommand command) {
       if(command.Info == null)
-        QueryAnalyzer.Analyze(_entityModel, command);
+        LinqCommandAnalyzer.Analyze(_entityModel, command);
       try {
-        switch(command.Operation) {
-          case EntityOperation.Select:
+        switch(command.Kind) {
+          case LinqCommandKind.Select:
             return TranslateSelect(command);
-          case EntityOperation.Update:
-          case EntityOperation.Delete:
-          case EntityOperation.Insert:
+          case LinqCommandKind.Update:
+          case LinqCommandKind.Delete:
+          case LinqCommandKind.Insert:
             return TranslateNonQuery(command);
           default:
             ThrowTranslationFailed(command, "Unsupported LINQ command type.");
@@ -59,8 +59,8 @@ namespace Vita.Data.Linq {
       }
     }
 
-    public SqlStatement TranslateSelect(EntityCommand command) {
-      QueryPreprocessor.PreprocessCommand(_entityModel, command);
+    public SqlStatement TranslateSelect(LinqCommand command) {
+      LinqCommandPreprocessor.PreprocessCommand(_entityModel, command);
       var context = new TranslationContext(_dbModel, command); 
       var queryInfo = command.Info;
       // convert lambda params into an initial set of ExternalValueExpression objects; 
@@ -121,7 +121,7 @@ namespace Vita.Data.Linq {
       return creator; 
     }
 
-    private SqlStatement BuildSelectStatement(TranslationContext context, SelectExpression selectExpr, QueryInfo queryInfo) {
+    private SqlStatement BuildSelectStatement(TranslationContext context, SelectExpression selectExpr, LinqCommandInfo queryInfo) {
       var sqlBuilder = _dbModel.Driver.CreateDbSqlBuilder(_dbModel, selectExpr.QueryInfo);
       var placeHolders = BuildExternalValuesPlaceHolders(queryInfo, context);
       var sql = sqlBuilder.BuildSelect(selectExpr, queryInfo.LockType);
@@ -132,7 +132,7 @@ namespace Vita.Data.Linq {
       return sqlStmt; 
     }
 
-    private SqlPlaceHolderList BuildExternalValuesPlaceHolders(QueryInfo queryInfo, TranslationContext context) {
+    private SqlPlaceHolderList BuildExternalValuesPlaceHolders(LinqCommandInfo queryInfo, TranslationContext context) {
       var placeHolders = new SqlPlaceHolderList();
       foreach(var extValue in context.ExternalValues) {
         if(extValue.SqlUseCount == 0)
@@ -143,7 +143,7 @@ namespace Vita.Data.Linq {
       return placeHolders;
     }
 
-    private void BuildSqlPlaceHolderForExternalValue(QueryInfo queryInfo, ExternalValueExpression extValue) {
+    private void BuildSqlPlaceHolderForExternalValue(LinqCommandInfo queryInfo, ExternalValueExpression extValue) {
       var dataType = extValue.SourceExpression.Type;
       var driver = _dbModel.Driver; 
       var typeRegistry = driver.TypeRegistry;

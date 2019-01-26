@@ -18,10 +18,10 @@ namespace Vita.Data.Driver {
     public readonly DbModel Model;
     public readonly DbDriver Driver;
     public DbSqlDialect SqlDialect;
-    public QueryInfo QueryInfo; //might be null for CRUD commands (update,delete,insert)
+    public LinqCommandInfo QueryInfo; //might be null for CRUD commands (update,delete,insert)
 
 
-    public DbSqlBuilder(DbModel dbModel, QueryInfo queryInfo) {
+    public DbSqlBuilder(DbModel dbModel, LinqCommandInfo queryInfo) {
       Model = dbModel;
       Driver = Model.Driver;
       SqlDialect = Driver.SqlDialect;

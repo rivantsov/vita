@@ -47,7 +47,7 @@ namespace Vita.Entities.Runtime {
     public readonly IList<EntityRecord> RecordsChanged;
     public readonly IList<IPropertyBoundList> ListsChanged;
     public readonly HashSet<EntityRecord> RecordsToClearLists;
-    public readonly List<EntityCommand> ScheduledCommands;
+    public readonly List<LinqCommand> ScheduledCommands;
 
     // last executed DbCommand, use EntityHelper.GetLastCommand(this session) to retrieve it.
     public System.Data.IDbCommand LastCommand { get; internal set; }
@@ -80,7 +80,7 @@ namespace Vita.Entities.Runtime {
         RecordsChanged = new List<EntityRecord>();
         ListsChanged = new List<IPropertyBoundList>();
         RecordsToClearLists = new HashSet<EntityRecord>();
-        ScheduledCommands = new List<EntityCommand>();
+        ScheduledCommands = new List<LinqCommand>();
       }
       _timeService = Context.App.TimeService;
       //This might be reset in SaveChanges
@@ -276,8 +276,8 @@ namespace Vita.Entities.Runtime {
         // if it is cascading delete, this member is not a problem
         if (refMember.Flags.IsSet(EntityMemberFlags.CascadeDelete)) continue;
         var countCmdInfo = refMember.ReferenceInfo.CountCommand;
-        var countCmd = new EntityCommand(countCmdInfo, refMember.ReferenceInfo.ToKey.Entity, new object[] {this, record.EntityInstance});
-        var count = ExecuteCommand(countCmd);
+        var countCmd = new LinqCommand(countCmdInfo, refMember.ReferenceInfo.ToKey.Entity, new object[] {this, record.EntityInstance});
+        var count = ExecuteLinqCommand(countCmd);
         var intCount = (count.GetType() == typeof(int)) ? (int)count : (int) Convert.ChangeType(count, typeof(int));          
         if (intCount > 0)
           blockingTypeSet.Add(refMember.Entity.EntityType);
@@ -487,14 +487,14 @@ namespace Vita.Entities.Runtime {
 
     #region command execution
 
-    public virtual object ExecuteCommand(EntityCommand command, bool withIncludes = true) {
+    public virtual object ExecuteLinqCommand(LinqCommand command, bool withIncludes = true) {
       try { 
-        var cmdInfo = QueryAnalyzer.Analyze(Context.App.Model, command);
+        var cmdInfo = LinqCommandAnalyzer.Analyze(Context.App.Model, command);
         if(command.ParameterValues == null)
           LinqExpressionHelper.EvaluateCommandParameters(command, this);
         var result = _dataSource.ExecuteLinqCommand(this, command);
-        switch(command.Operation) {
-          case EntityOperation.Select:
+        switch(command.Kind) {
+          case LinqCommandKind.Select:
             Context.App.AppEvents.OnExecutedSelect(this, command);
             if(withIncludes && (command.Info.Includes?.Count > 0 || Context.HasIncludes()))
               IncludeProcessor.RunIncludeQueries(this, command, result);
@@ -512,18 +512,19 @@ namespace Vita.Entities.Runtime {
       }
     }
 
-    internal int ExecuteLinqNonQuery<TEntity>(IQueryable baseQuery, EntityOperation dbOperation) {
+    internal int ExecuteLinqNonQuery<TEntity>(IQueryable baseQuery, LinqCommandKind dbOperation) {
       Util.CheckParam(baseQuery, nameof(baseQuery));
       var targetEnt = Context.App.Model.GetEntityInfo(typeof(TEntity));
-      var command = new EntityCommand(baseQuery.Expression, dbOperation, targetEnt);
-      var objResult = this.ExecuteCommand(command);
+      var command = new LinqCommand(baseQuery.Expression, dbOperation, targetEnt);
+      var objResult = this.ExecuteLinqCommand(command);
       return (int)objResult;
     }
 
-    public IEntityRecordContainer SelectByPrimaryKey(EntityInfo entity, object[] keyValues, LockType lockType = LockType.None) {
-      var selectQuery = SelectCommandBuilder.BuildSelectByKey(entity.PrimaryKey, lockType); 
-      var cmd = new EntityCommand(selectQuery, entity, keyValues);
-      var list = (IList) ExecuteCommand(cmd);
+    public IEntityRecordContainer SelectByPrimaryKey(EntityInfo entity, object[] keyValues,
+            LockType lockType = LockType.None, EntityMemberMask mask = null) {
+      var selectQuery = SelectCommandBuilder.BuildSelectByKey(entity.PrimaryKey, lockType, null, mask); 
+      var cmd = new LinqCommand(selectQuery, entity, keyValues);
+      var list = (IList) ExecuteLinqCommand(cmd);
       if(list.Count == 0)
         return null;
       return (IEntityRecordContainer)list[0]; 
@@ -617,14 +618,14 @@ namespace Vita.Entities.Runtime {
       this.RecordsToClearLists.Add(record); 
     }
 
-    public void ScheduleLinqNonQuery<TEntity>(IQueryable baseQuery, EntityOperation dbOperation,
+    public void ScheduleLinqNonQuery<TEntity>(IQueryable baseQuery, LinqCommandKind dbOperation,
                              CommandSchedule schedule = CommandSchedule.TransactionEnd) {
       Util.Check(baseQuery is EntityQuery, "query parameter should an EntityQuery.");
       var model = Context.App.Model;
       var targetEnt = model.GetEntityInfo(typeof(TEntity));
       Util.Check(targetEnt != null, "Generic parameter {0} is not an entity registered in the Model.", typeof(TEntity));
-      var command = new EntityCommand(baseQuery.Expression, dbOperation, targetEnt, schedule);
-      QueryAnalyzer.Analyze(model, command);
+      var command = new LinqCommand(baseQuery.Expression, dbOperation, targetEnt, schedule);
+      LinqCommandAnalyzer.Analyze(model, command);
       LinqExpressionHelper.EvaluateCommandParameters(command, this);
       this.ScheduledCommands.Add(command);
     }

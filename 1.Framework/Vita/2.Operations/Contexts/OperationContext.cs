@@ -42,7 +42,7 @@ namespace Vita.Entities {
     public string UserCulture { get; set; } = "EN-US";
     public WebCallContext WebContext { get; set; }
     public readonly ILog Log;
-    public ThreadSafeList<ClientFault> ClientFaults { get { return _clientFaults; } }
+    public IList<ClientFault> ClientFaults { get; } = new List<ClientFault>();
     public DbConnectionReuseMode DbConnectionMode { get; set; }
     public QueryFilter QueryFilter { get; } = new QueryFilter();
     public ProcessType ProcessType;
@@ -57,9 +57,9 @@ namespace Vita.Entities {
     // The connection is registered in _disposables list, and will be force-closed at the end of the global operaiton.
     // At the end of web request WebCallContextHandler will call DisposeAll() to make sure all disposable objects (connections) 
     // are disposed (closed). 
-    public ThreadSafeWeakRefList<IDisposable> Disposables = new ThreadSafeWeakRefList<IDisposable>();
+    ConcurrentBag<WeakReference> _disposables; //created on first use
 
-    ThreadSafeList<ClientFault> _clientFaults = new ThreadSafeList<ClientFault>(); 
+    ConcurrentBag<ClientFault> _clientFaults = new ConcurrentBag<ClientFault>(); 
 
     // Name of data source when more than one is registered; null if single data source (db)
     public string DataSourceName = Vita.Data.Runtime.DataSource.DefaultName;
@@ -139,11 +139,19 @@ namespace Vita.Entities {
     }
 
     public void RegisterDisposable(IDisposable disposable) {
-      Disposables.AddRef(disposable); 
+      _disposables = _disposables ?? new ConcurrentBag<WeakReference>(); 
+      if (_disposables.Count > 50) {
+        var allAlive = _disposables.ToArray().Where(wr => wr.IsAlive);
+        _disposables = new ConcurrentBag<WeakReference>(allAlive); 
+      }
+      _disposables.Add(new WeakReference(disposable)); 
     }
 
     public void DisposeAll() {
-      Disposables.ForEach(d => d.Dispose(), clear: true);
+      var allAlive = _disposables.ToArray().Where(wr => wr.IsAlive);
+      foreach(var wr in allAlive)
+        (wr.Target as IDisposable)?.Dispose();
+      _disposables = null; 
     }
 
     public void Dispose() {
@@ -254,10 +262,12 @@ namespace Vita.Entities {
     #endregion
 
 
+    #region ClientFaults, Validation
+
     public void ThrowValidation() {
       if(ClientFaults.Count == 0)
         return;
-      var cfex = new ClientFaultException(this._clientFaults.ToArray(clear: true));
+      var cfex = new ClientFaultException(_clientFaults.ToArray());
       throw cfex;
     }//method
 
@@ -265,6 +275,15 @@ namespace Vita.Entities {
       _clientFaults.Add(fault); 
     }
 
+    public ClientFault[] GetClientFaults() {
+      return _clientFaults.ToArray(); 
+    }
+
+    public bool HasClientFaults() {
+      return _clientFaults.Count > 0; 
+    }
+
+    #endregion
 
     public string GetLogContents() {
       var bufLog = this.Log as BufferedOperationLog;

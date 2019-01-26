@@ -35,10 +35,10 @@ namespace Vita.Data.Linq {
   // the expression tree to be modified, and it constantly checks if args have changed. 
   // Compare this case to the query tranlation process - when query is not in query cache, we go into process of translating it. Translation is 
   // not performance critical - we expect it to happen once for a particular query, then it will be saved in query cache and reused. 
-  // So in translation we use regular .NET expression visitors. 
+  // So in translation (preprocessor) we use regular .NET expression visitors. 
   // 3. We could use Expression.ToString() for query cache key, but it seems it is not efficient enough - it involves full tree visit, with a lot of string
   //   merges. Our solution is to build an array of node keys while we iterate the tree and then do a string.Join of all keys.
-  // 4. Analysis results are put into LinqCommandInfo object and saved put LinqCommand's field - in case if analysis is called more than once, it is actually
+  // 4. Analysis results are put into QueryInfo object and saved put LinqCommand's field - in case if analysis is called more than once, it is actually
   //    done only once, with reusing value saved in EntityQuery's field. 
   // Algorithm
   // The goal is to detect all 'locally-evaluatable' subexpressions that will turn into parameters. 
@@ -52,9 +52,9 @@ namespace Vita.Data.Linq {
   //TODO: review assigning value kind Db for parameter (AnalyzeParameter) - it might not be right for all cases
 
   /// <summary>Performs initial query analysis, computes cache key and values of parameters. </summary>
-  public class QueryAnalyzer {
+  public class LinqCommandAnalyzer {
     EntityModel _model; 
-    EntityCommand _command;
+    LinqCommand _command;
     // Filter parameters coming from outside - for ex: clauses in EntityFilters (query/authorization filters)
     List<ParameterExpression> _externalParams = new List<ParameterExpression>();
     // parameters of internal lambdas
@@ -74,28 +74,28 @@ namespace Vita.Data.Linq {
       Db, // identifies data record value (or derived from it)
     }
 
-    public static QueryInfo Analyze(EntityModel model, EntityCommand command) {
+    public static LinqCommandInfo Analyze(EntityModel model, LinqCommand command) {
       // if the query was already analyzed, return the old object; otherwise analyze and save in query's field
       if (command.Info != null)
         return command.Info; 
-      var analyzer = new QueryAnalyzer();
+      var analyzer = new LinqCommandAnalyzer();
       command.Info = analyzer.AnalyzeCommand(model, command);
       return command.Info;
     }
 
-    private QueryInfo AnalyzeCommand(EntityModel model, EntityCommand command) {
+    private LinqCommandInfo AnalyzeCommand(EntityModel model, LinqCommand command) {
       _model = model; 
       _command = command;
       _options = command.IsView? QueryOptions.NoParameters : QueryOptions.None; 
       try {
         //include command type and options value into cache key
-        AddCacheKey(command.Operation);
+        AddCacheKey(command.Kind);
         AnalyzeNode(_command.Expression);
         _command.Locals = _locals;
         AddCacheKey(_options);
         var cacheKey = _cacheKeyBuilder.ToString();
         //Build command info
-        var info = new QueryInfo(_options, _lockType, command.IsView, _entityTypes, cacheKey, _externalParams, _includes);
+        var info = new LinqCommandInfo(_options, _lockType, command.IsView, _entityTypes, cacheKey, _externalParams, _includes);
         info.ResultShape = GetResultShape(_command.Expression.Type); 
         return info; 
       } catch(Exception ex) {

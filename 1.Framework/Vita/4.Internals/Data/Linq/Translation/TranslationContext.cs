@@ -15,7 +15,7 @@ namespace Vita.Data.Linq.Translation {
   internal class TranslationContext {
 
     public DbModel DbModel;
-    public EntityCommand Command;
+    public LinqCommand Command;
     public QueryOptions QueryOptions { get { return Command.Info.Options; } } 
 
     /// <summary>Values coming from the code executing the query - parameters. Top-level parameters for the entire query.</summary>
@@ -30,7 +30,7 @@ namespace Vita.Data.Linq.Translation {
     public IList<SelectExpression> SelectExpressions { get; private set; }
     public IDictionary<string, Expression> LambdaParameters { get; private set; }
 
-    public TranslationContext(DbModel dbModel, EntityCommand command) {
+    public TranslationContext(DbModel dbModel, LinqCommand command) {
       DbModel = dbModel;
       Command = command;
       SelectExpressions = new List<SelectExpression>();

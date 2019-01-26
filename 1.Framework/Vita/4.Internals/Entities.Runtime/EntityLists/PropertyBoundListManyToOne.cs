@@ -44,8 +44,8 @@ namespace Vita.Entities.Runtime {
       }
       // var recs = OwnerRecord.Session.GetChildRecords(OwnerRecord, OwnerMember.ChildListInfo.ParentRefMember);
       var selectCmdInfo = this.OwnerMember.ChildListInfo.GetSelectDirectChildRecordsCommand();
-      var selectCmd = new EntityCommand(selectCmdInfo, this.TargetEntity, OwnerRecord.PrimaryKey.Values);
-      var objEntList = (IList) OwnerRecord.Session.ExecuteCommand(selectCmd);
+      var selectCmd = new LinqCommand(selectCmdInfo, this.TargetEntity, OwnerRecord.PrimaryKey.Values);
+      var objEntList = (IList) OwnerRecord.Session.ExecuteLinqCommand(selectCmd);
       var recContList = new List<IEntityRecordContainer>();
       foreach (var ent in objEntList)
         recContList.Add((IEntityRecordContainer)ent);

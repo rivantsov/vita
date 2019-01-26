@@ -14,7 +14,7 @@ using Vita.Entities.Runtime;
 
 namespace Vita.Data.Linq {
 
-  /* Used for both entity cache queries and DB queries; preprocesses (transforms) query expression
+  /* Preprocesses (transforms) query expression
    Tasks:
    1. 'Unfolds' sub-queries referenced through local variables - replaces these references with actual queries
        (analyzer that runs before does the same to include the subqueries into cache key).
@@ -26,19 +26,19 @@ namespace Vita.Data.Linq {
      For views - parameters later will be replaced with literal values when generating SQL 
    */
 
-  public class QueryPreprocessor : ExpressionVisitor {
+  public class LinqCommandPreprocessor : ExpressionVisitor {
     EntityModel _model; 
-    EntityCommand _command;
+    LinqCommand _command;
     List<ParameterExpression> _parameters;
 
-    public static void PreprocessCommand(EntityModel model, EntityCommand command) {
+    public static void PreprocessCommand(EntityModel model, LinqCommand command) {
       if (command.Info.Lambda != null)
         return;
-      var preProc = new QueryPreprocessor();
+      var preProc = new LinqCommandPreprocessor();
       preProc.Preprocess(model, command); 
     }
 
-    private void Preprocess(EntityModel model, EntityCommand command) {
+    private void Preprocess(EntityModel model, LinqCommand command) {
       _model = model; 
       _command = command;
       _parameters = new List<ParameterExpression>();

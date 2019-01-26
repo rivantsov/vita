@@ -50,7 +50,7 @@ namespace Vita.Data.Runtime {
       return _batch; 
     }
 
-    protected void AddScheduledCommands(IList<EntityCommand> commands) {
+    protected void AddScheduledCommands(IList<LinqCommand> commands) {
       if(commands.Count == 0)
         return;
       foreach(var lcmd in commands) {
@@ -80,7 +80,7 @@ namespace Vita.Data.Runtime {
     public void AddUpdateGroup(DbUpdateTableGroup group) {
       SqlStatement  sql = null; 
       switch(group.Operation) {
-        case EntityOperation.Insert:
+        case LinqCommandKind.Insert:
           if(_db.CanProcessMany(group)) {
             // TODO: handle the case when there are too many params within 1 insert command
             var recGroups = GroupRecordsForInsertMany(group.Records, _driver.SqlDialect.MaxRecordsInInsertMany);
@@ -97,7 +97,7 @@ namespace Vita.Data.Runtime {
           }
           break;
 
-        case EntityOperation.Update:
+        case LinqCommandKind.Update:
           foreach(var rec in group.Records) {
             CheckCurrentCommand();
             sql = _commandRepo.GetCrudSqlForSingleRecord(group.Table, rec);
@@ -105,7 +105,7 @@ namespace Vita.Data.Runtime {
           }
           break;
 
-        case EntityOperation.Delete:
+        case LinqCommandKind.Delete:
           if(_db.CanProcessMany(group)) {
             sql = _commandRepo.GetCrudDeleteMany(group.Table);
             _commandBuilder.AddUpdates(sql, group.Records, new object[] { group.Records });  

@@ -18,7 +18,7 @@ namespace Vita.Entities.Utilities {
     public static StringTemplate Empty = new StringTemplate(string.Empty, string.Empty, new string[0]);
 
     /// <summary>Parses template with named arguments and converts it to standard form with list of arg names attached.
-    /// Ex: &quot;text {name}&quot; -&lt; &quot&text {0}&quot; </summary>
+    /// Converts all brace-enclosed names ({value}) into placeholders like {0}. </summary>
     /// <param name="template">Template to convert.</param>
     /// <returns>StringTemplate object.</returns>
     /// <remarks>Does not support escaped handles like {{ or }} </remarks>

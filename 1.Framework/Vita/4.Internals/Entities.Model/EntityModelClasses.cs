@@ -397,7 +397,7 @@ namespace Vita.Entities.Model {
     public EntityKeyInfo ToKey { get; private set; }
     public string ForeignKeyColumns;
     public EntityMemberInfo TargetListMember; // Entity list member on target entity based on the reference; might be null
-    public QueryInfo CountCommand; //counts child records for a given parent - used by CanDelete() method
+    public LinqCommandInfo CountCommand; //counts child records for a given parent - used by CanDelete() method
 
     public EntityReferenceInfo(EntityMemberInfo fromMember, EntityKeyInfo fromKey, EntityKeyInfo toKey) {
       FromMember = fromMember;
@@ -436,13 +436,13 @@ namespace Vita.Entities.Model {
     public EntityFilter Filter;
     public List<EntityKeyMemberInfo> OrderBy;
 
-    QueryInfo _selectDirectChildRecordsCommand;
+    LinqCommandInfo _selectDirectChildRecordsCommand;
 
     public ChildEntityListInfo(EntityMemberInfo ownerMember) {
       OwnerMember = ownerMember;
     }
 
-    public QueryInfo GetSelectDirectChildRecordsCommand() {
+    public LinqCommandInfo GetSelectDirectChildRecordsCommand() {
       if (_selectDirectChildRecordsCommand == null) {
          var cmdInfo = SelectCommandBuilder.BuildSelectByKey(this.ParentRefMember.ReferenceInfo.FromKey, Locking.LockType.None, OrderBy);
         if(RelationType == EntityRelationType.ManyToMany) {

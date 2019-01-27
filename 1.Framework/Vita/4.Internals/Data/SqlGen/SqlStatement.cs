@@ -75,9 +75,10 @@ namespace Vita.Data.SqlGen {
       foreach (var fr in Fragments) {
         if (fr is SqlPlaceHolder) {
           AppendAsOne(newList, textFragments);
-          textFragments.Clear(); 
-        }
-        textFragments.Add(fr);
+          textFragments.Clear();
+          newList.Add(fr);
+        } else 
+          textFragments.Add(fr);
       } //foreach
       if (textFragments.Count > 0)
         AppendAsOne(newList, textFragments); 
@@ -93,7 +94,8 @@ namespace Vita.Data.SqlGen {
           return;
         default:
           var strings = new List<string>();
-          tail.Each(f => f.AddFormatted(strings, null));
+          foreach(var f in tail)
+            f.AddFormatted(strings, null);
           var text = string.Join(string.Empty, strings);
           toList.Add(new TextSqlFragment(text));
           return;
@@ -117,5 +119,8 @@ namespace Vita.Data.SqlGen {
       this.Fragments.RemoveAt(this.Fragments.Count - 1);
     }
 
+    public override string ToString() {
+      return string.Join(string.Empty, this.Fragments); 
+    }
   }//class
 }

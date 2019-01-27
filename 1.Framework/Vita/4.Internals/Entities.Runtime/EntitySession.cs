@@ -522,7 +522,8 @@ namespace Vita.Entities.Runtime {
 
     public IEntityRecordContainer SelectByPrimaryKey(EntityInfo entity, object[] keyValues,
             LockType lockType = LockType.None, EntityMemberMask mask = null) {
-      var selectQuery = SelectCommandBuilder.BuildSelectByKey(entity.PrimaryKey, lockType, null, mask); 
+      mask = mask ?? entity.AllMembersMask; 
+      var selectQuery = SelectCommandBuilder.BuildSelectByKey(entity.PrimaryKey, mask, lockType); 
       var cmd = new LinqCommand(selectQuery, entity, keyValues);
       var list = (IList) ExecuteLinqCommand(cmd);
       if(list.Count == 0)

@@ -24,12 +24,12 @@ namespace Vita.Data.Linq {
 
   internal partial class LinqEngine {
     DbModel _dbModel;
-    EntityModel _entityModel; 
+    EntityModel _entityModel;
     ExpressionTranslator _translator;
 
     public LinqEngine(DbModel dbModel) {
       _dbModel = dbModel;
-      _entityModel = _dbModel.EntityModel; 
+      _entityModel = _dbModel.EntityModel;
       _translator = new ExpressionTranslator(dbModel);
     }
 
@@ -50,11 +50,9 @@ namespace Vita.Data.Linq {
 
         }
       } catch(LinqTranslationException) {
-        throw; // if it is alread Linq translation exception, pass it up.
+        throw; // if it is already Linq translation exception, pass it up.
       } catch(Exception ex) {
-        var message = "Linq to SQL translation failed: " + ex.Message +
-                   "\r\nPossibly facilities you are trying to use are not supported. " +
-                   "\r\nTry to reformulate/simplify the query. Hint: do not use c# functions/methods inside query directly. ";
+        var message = "Linq to SQL translation failed, invalid expression: " + ex.Message;
         throw new LinqTranslationException(message, command, ex);
       }
     }

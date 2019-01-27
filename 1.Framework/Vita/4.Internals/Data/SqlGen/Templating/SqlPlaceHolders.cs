@@ -32,7 +32,7 @@ namespace Vita.Data.SqlGen {
     }
   }
 
-  [DebuggerDisplay("Ph:{Column.ColumnName}")]
+  [DebuggerDisplay("?{Column.ColumnName}?")]
   public class SqlColumnValuePlaceHolder : SqlPlaceHolder {
     public DbColumnInfo Column;
 

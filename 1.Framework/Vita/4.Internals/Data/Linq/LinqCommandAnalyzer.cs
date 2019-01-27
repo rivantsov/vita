@@ -13,6 +13,7 @@ using Vita.Entities.Model;
 using Vita.Entities;
 using System.Collections;
 using Vita.Entities.Locking;
+using Vita.Data.Runtime;
 
 namespace Vita.Data.Linq {
 
@@ -65,6 +66,8 @@ namespace Vita.Data.Linq {
     List<Expression> _locals = new List<Expression>(); 
     QueryOptions _options; //OR-ed value from all sub-queries
     LockType _lockType = LockType.None;
+    SqlCacheKey _cacheKey;
+
 
     //Helper enum identifying kind of value (origin) returned by the node
     enum ValueKind {
@@ -86,16 +89,13 @@ namespace Vita.Data.Linq {
     private LinqCommandInfo AnalyzeCommand(EntityModel model, LinqCommand command) {
       _model = model; 
       _command = command;
-      _options = command.IsView? QueryOptions.NoParameters : QueryOptions.None; 
+      _options = command.IsView? QueryOptions.NoParameters : QueryOptions.None;
+      _cacheKey = SqlCacheKey.CreateForLinq(command.Kind, LockType.None, _options);
       try {
-        //include command type and options value into cache key
-        AddCacheKey(command.Kind);
         AnalyzeNode(_command.Expression);
         _command.Locals = _locals;
-        AddCacheKey(_options);
-        var cacheKey = _cacheKeyBuilder.ToString();
         //Build command info
-        var info = new LinqCommandInfo(_options, _lockType, command.IsView, _entityTypes, cacheKey, _externalParams, _includes);
+        var info = new LinqCommandInfo(_options, _lockType, command.IsView, _entityTypes, _cacheKey, _externalParams, _includes);
         info.ResultShape = GetResultShape(_command.Expression.Type); 
         return info; 
       } catch(Exception ex) {
@@ -407,17 +407,14 @@ namespace Vita.Data.Linq {
 
 
     #region QueryCache key builder
-    // The value is used as key in the QueryCache (it is dictionary)
-    StringBuilder _cacheKeyBuilder = new StringBuilder(512); //big enough for most cases, to avoid reallocation
     private void AddCacheKey(object key) {
-      _cacheKeyBuilder.Append(key);
-      _cacheKeyBuilder.Append("/");
+      _cacheKey.Add(key?.ToString());
     }
     private void TrimCacheKey(int toLength) {
-      _cacheKeyBuilder.Remove(toLength, _cacheKeyBuilder.Length - toLength);
+      _cacheKey.Trim(toLength);
     }
     private int GetCacheKeyLength() {
-      return _cacheKeyBuilder.Length;
+      return _cacheKey.Length;
     }
     #endregion
 

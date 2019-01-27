@@ -18,14 +18,13 @@ namespace Vita.Data.Linq {
   public static class SelectCommandBuilder {
     static IList<ParameterExpression> _emptyParamList = new ParameterExpression[] { }; 
 
-    public static LinqCommandInfo BuildSelectByKey(EntityKeyInfo key, LockType lockType, IList<EntityKeyMemberInfo> orderBy = null, 
-                      EntityMemberMask mask = null) {
+    public static LinqCommandInfo BuildSelectByKey(EntityKeyInfo key, EntityMemberMask mask, LockType lockType, 
+                                                          IList<EntityKeyMemberInfo> orderBy = null) {
       var entType = key.Entity.EntityType;
       var lambdaExpr = BuildSelectFilteredByKeyLambda(key, lockType, orderBy, mask);
       var cacheKey = SqlCacheKey.CreateForSelectByKey(key, lockType, mask);
       var info = new LinqCommandInfo(Entities.QueryOptions.None, lockType, false /*isView*/, 
-             new[] { entType }, entType.Name + "/Select/Key/" + key.ToString(),
-             _emptyParamList , null);
+                                       new[] { entType }, cacheKey, _emptyParamList , null);
       info.Lambda = lambdaExpr;
       info.ResultShape = QueryResultShape.EntityList;
       info.MemberMask = mask;
@@ -49,6 +48,9 @@ namespace Vita.Data.Linq {
     }
 
     public static LinqCommandInfo BuildSelectByMemberValueArray(EntityMemberInfo member, EntityMemberMask mask = null) {
+      Util.NotImplemented();
+      return null; 
+      /* used in Include queries
       var entType = member.Entity.EntityType; 
       var lambdaExpr = BuildSelectByMemberValueArrayLambda(member, mask);
       var info = new LinqCommandInfo(QueryOptions.None, Entities.Locking.LockType.None, false, //isView
@@ -56,6 +58,7 @@ namespace Vita.Data.Linq {
       info.Lambda = lambdaExpr;
       info.ResultShape = QueryResultShape.EntityList;
       return info;
+      */
     }
 
     public static LambdaExpression BuildSelectByMemberValueArrayLambda(EntityMemberInfo member, EntityMemberMask mask = null) {

@@ -107,5 +107,27 @@ SELECT SOME NONSENSE
     #endregion
 
 
+    [TestMethod]
+    public void TestHelpers_BitMask() {
+      var mask = new BitMask(128);
+      // set first hex digits to 0, 1, 2, 4, 8 by setting bits
+      mask.Set(4, true);
+      mask.Set(9, true);
+      mask.Set(14, true);
+      mask.Set(19, true);
+     // set 1 bit far away
+      mask.Set(64, true);
+
+      // Set 4 bits to all 1's, so it will be F
+      mask.Set(112, true);
+      mask.Set(113, true);
+      mask.Set(114, true);
+      mask.Set(115, true);
+      var hex = mask.ToHex();
+      Debug.Write($"Bit mask hex: {hex} ");
+      var expected = "0008 4210 0000 0000 0000 0001 000F 0000".Replace(" ", string.Empty);
+      Assert.AreEqual(expected, hex, "Hex value of mask does not match expected.");
+    }
+
   }
 }

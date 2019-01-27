@@ -9,11 +9,35 @@ using Vita.Entities.Model;
 
 namespace Vita.Data.Runtime {
 
-  public class SqlCacheKey {
+  public class SqlCacheKey : IEquatable<SqlCacheKey> {
     IList<string> _strings;
+    string _key;
 
     const string _CRUD = "CRUD";
     const string _LINQ = "LINQ";
+
+    public void Add(string value) {
+      _strings.Add(value);
+      _key = null; 
+    }
+
+    public void Trim(int toLength) {
+      while(_strings.Count > toLength)
+        _strings.RemoveAt(_strings.Count - 1);
+      _key = null;
+    }
+
+
+    public string Key {
+      get {
+        _key = _key ?? string.Join("/", _strings);
+        return _key; 
+      }
+    }
+
+    public int Length {
+      get { return _strings.Count; }
+    }
 
     // used for LINQ statements when values are added dynamically as we analyze the query
     private SqlCacheKey(IList<string> strings) {
@@ -54,6 +78,17 @@ namespace Vita.Data.Runtime {
 
     public SqlCacheKey CreateForDeleteMany(EntityInfo entity) {
       return new SqlCacheKey("CRUD", entity.Name, "DELETE-MANY");
+    }
+
+    // IEquatable<> impl
+    public bool Equals(SqlCacheKey other) {
+      return this.Key == other.Key;
+    }
+    public override int GetHashCode() {
+      return this.Key.GetHashCode();
+    }
+    public override string ToString() {
+      return Key; 
     }
   }
 

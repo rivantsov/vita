@@ -23,7 +23,7 @@ namespace Vita.Entities.Utilities {
       _length = length;
       var numInts = ((length - 1) / BitsPerInt32) + 1;
       _array = new int[numInts];
-      if(!setAll)
+      if(setAll)
         SetAll(true); 
     }
 

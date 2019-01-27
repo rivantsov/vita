@@ -101,23 +101,6 @@ namespace Vita.Data.MsSql {
       return base.BuildSqlForSqlFunctionExpression(expr);
     }
 
-    /*
-    private SqlFragment BuildValueInArrayParamSql(Expression value, SqlLinqParamPlaceHolder listPrmPh) {
-      var valueSql = BuildLinqExpressionSql(value); 
-      // We use Sql_variant column in table UDT that holds list. It was found that it causes index scan instead of seek
-      // So we add CAST here
-      var elType = listPrmPh.ElementType;
-      var typeDef = base.Driver.TypeRegistry.FindStorageType(elType, false);
-      if (typeDef != null) {
-        // With a CAST
-        var typeName = new TextSqlFragment(typeDef.TypeName);
-        return _msDialect.InArrayTemplateTyped.Format(valueSql, typeName, listPrmPh);
-      } else
-        //without CAST
-        return _msDialect.InArrayTemplateUntyped.Format(valueSql, listPrmPh);
-    }
-    */
-
     public override SqlFragment BuildLimitClause(SelectExpression selectExpression) {
       if (selectExpression.Flags.IsSet(SelectExpressionFlags.MsSqlUseTop))
         return null; 

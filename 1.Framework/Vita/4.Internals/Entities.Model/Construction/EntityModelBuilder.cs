@@ -362,7 +362,7 @@ namespace Vita.Entities.Model.Construction {
         foreach(var refM in ent.RefMembers)
           if (refM.ReferenceInfo.ToKey.Entity.Flags.IsSet(EntityFlags.HasIdentity))
             ent.Flags |= EntityFlags.ReferencesIdentity;
-
+        ent.AllMembersMask = new EntityMemberMask(ent.PersistentValuesCount, setAll: true);
       }//foreach ent
     }
 

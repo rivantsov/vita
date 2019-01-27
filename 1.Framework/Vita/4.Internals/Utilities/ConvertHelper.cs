@@ -183,7 +183,8 @@ namespace Vita.Entities.Utilities {
     public static byte[] GetBytes(this int value) {
       IntAsBytes x = new IntAsBytes();
       x.Value = value;
-      return new byte[] { x.Byte0, x.Byte1, x.Byte2, x.Byte3 };
+      //return new byte[] { x.Byte0, x.Byte1, x.Byte2, x.Byte3 };
+      return new byte[] { x.Byte3, x.Byte2, x.Byte1, x.Byte0 };
     }
     #endregion
 

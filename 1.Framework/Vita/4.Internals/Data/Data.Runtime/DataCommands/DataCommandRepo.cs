@@ -14,24 +14,38 @@ namespace Vita.Data.Runtime {
 
   public class DataCommandRepo {
     DbModel _dbModel;
-    DbDriver _driver; 
+    DbDriver _driver;
+    SqlStatementCache _sqlCache; 
     LinqEngine _linqEngine;
     DbSqlBuilder _crudSqlBuilder; 
 
     public DataCommandRepo(DbModel dbModel) {
       _dbModel = dbModel;
-      _driver = _dbModel.Driver; 
+      _driver = _dbModel.Driver;
+      _sqlCache = new SqlStatementCache(10000); 
       _linqEngine = new LinqEngine(_dbModel);
       _crudSqlBuilder = _dbModel.Driver.CreateDbSqlBuilder(_dbModel, null);
     }
 
     public SqlStatement GetLinqSelect(LinqCommand command) {
-      var sql = _linqEngine.Translate(command);
-      return sql; 
+      if(command.Info == null)
+        LinqCommandAnalyzer.Analyze(_dbModel.EntityModel, command);
+      var cacheKey = command.Info.CacheKey;
+      var stmt = _sqlCache.Lookup(cacheKey);
+      if(stmt != null)
+        return stmt;
+      stmt = _linqEngine.Translate(command);
+      if(!command.Info.Options.IsSet(QueryOptions.NoQueryCache))
+        _sqlCache.Add(cacheKey, stmt);
+      return stmt;
     }
 
     public SqlStatement GetCrudSqlForSingleRecord(DbTableInfo table, EntityRecord record) {
-      SqlStatement sql = null;
+      var cacheKey = SqlCacheKey.CreateForCrud(table.Entity, record.Status, record.ChangedMembersMask);
+      SqlStatement sql = _sqlCache.Lookup(cacheKey);
+      if(sql != null)
+        return sql; 
+      // build it
       switch(record.Status) {
         case EntityStatus.New:
           sql = _crudSqlBuilder.BuildCrudInsertOne(table, record);
@@ -43,6 +57,7 @@ namespace Vita.Data.Runtime {
           sql = _crudSqlBuilder.BuildCrudDeleteOne(table); 
           break; 
       }
+      _sqlCache.Add(cacheKey, sql); 
       return sql; 
    }
 

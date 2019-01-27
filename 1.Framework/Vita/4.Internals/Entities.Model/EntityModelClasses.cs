@@ -99,6 +99,8 @@ namespace Vita.Entities.Model {
 
     public ConstantExpression EntitySetConstant;
 
+    public EntityMemberMask AllMembersMask; 
+
     public EntityInfo(EntityModule module, Type entityType, EntityKind kind = EntityKind.Table, EntityArea altArea = null) {
       Module = module;
       EntityType = entityType;
@@ -444,7 +446,9 @@ namespace Vita.Entities.Model {
 
     public LinqCommandInfo GetSelectDirectChildRecordsCommand() {
       if (_selectDirectChildRecordsCommand == null) {
-         var cmdInfo = SelectCommandBuilder.BuildSelectByKey(this.ParentRefMember.ReferenceInfo.FromKey, Locking.LockType.None, OrderBy);
+        var mask = this.ParentRefMember.Entity.AllMembersMask;
+         var cmdInfo = SelectCommandBuilder.BuildSelectByKey(this.ParentRefMember.ReferenceInfo.FromKey, mask, 
+                                                    Locking.LockType.None, OrderBy);
         if(RelationType == EntityRelationType.ManyToMany) {
           cmdInfo.Includes = new List<LambdaExpression>();
           var include = ExpressionMaker.MakeInclude(this.LinkEntity.EntityType, this.OtherEntityRefMember);

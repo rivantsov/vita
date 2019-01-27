@@ -12,6 +12,7 @@ using Vita.Entities;
 using Vita.Entities.Model;
 using Vita.Entities.Runtime;
 using Vita.Entities.Locking;
+using Vita.Data.Runtime;
 
 namespace Vita.Data.Linq {
 
@@ -28,7 +29,7 @@ namespace Vita.Data.Linq {
     // these values are minimum that is necessary for repeated query execution - with translated query created earlier 
     // and saved in query cache; all we need for repeated execution is CacheKey to get the translated query 
     // from cache (SQL), and current values for SQL parameters. 
-    public string CacheKey;
+    public SqlCacheKey CacheKey;
     public IList<ParameterExpression> ExternalParameters;
     //Assigned by Pre-processor
     public HashSet<EntityInfo> Entities = new HashSet<EntityInfo>();
@@ -37,7 +38,7 @@ namespace Vita.Data.Linq {
     public IList<LambdaExpression> Includes;
     public EntityMemberMask MemberMask; //for queries returning entities
 
-    public LinqCommandInfo(QueryOptions options, LockType lockType, bool isView, IList<Type> entityTypes, string cacheKey, IList<ParameterExpression> externalParameters, 
+    public LinqCommandInfo(QueryOptions options, LockType lockType, bool isView, IList<Type> entityTypes, SqlCacheKey cacheKey, IList<ParameterExpression> externalParameters, 
                      IList<LambdaExpression> includes) {
       Options = options;
       LockType = lockType;

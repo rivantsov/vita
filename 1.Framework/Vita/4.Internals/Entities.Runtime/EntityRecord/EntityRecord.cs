@@ -15,7 +15,6 @@ using Vita.Data.SqlGen;
 
 namespace Vita.Entities.Runtime {
 
-
   public partial class EntityRecord  {
     public EntitySession Session;
     public EntityInfo EntityInfo; 
@@ -30,6 +29,8 @@ namespace Vita.Entities.Runtime {
     public EntityCachingType SourceCacheType; //if coming from cache, indicates type of cache
 
     public List<ClientFault> ValidationFaults; //created on demand
+
+    public EntityMemberMask ChangedMembersMask; 
 
     //Authorization info
     public object UserPermissions; 
@@ -77,6 +78,7 @@ namespace Vita.Entities.Runtime {
       _status = status;
       EntityInfo = entityInfo;
       InitValuesStorage();
+      ChangedMembersMask = new EntityMemberMask(entityInfo.PersistentValuesCount);
     }
 
     internal void InitValuesStorage() {

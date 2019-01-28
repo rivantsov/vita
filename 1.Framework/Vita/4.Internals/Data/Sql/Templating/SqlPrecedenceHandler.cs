@@ -6,7 +6,7 @@ using System.Text;
 using Vita.Data.Linq.Translation.Expressions;
 using Vita.Entities;
 
-namespace Vita.Data.SqlGen {
+namespace Vita.Data.Sql {
 
   public interface ISqlPrecedenceHandler {
     int GetPrecedence(ExpressionType type);

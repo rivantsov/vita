@@ -4,7 +4,7 @@ using System.Text;
 using Vita.Data.Driver;
 using Vita.Data.Linq.Translation.Expressions;
 using Vita.Data.Model;
-using Vita.Data.SqlGen;
+using Vita.Data.Sql;
 
 namespace Vita.Data.SQLite {
 

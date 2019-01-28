@@ -10,7 +10,7 @@ using Vita.Data.Driver;
 using Vita.Data.Model;
 using Vita.Entities.Runtime;
 using Vita.Data.Linq;
-using Vita.Data.SqlGen;
+using Vita.Data.Sql;
 using Vita.Data.Linq.Translation;
 
 namespace Vita.Data.Runtime {
@@ -20,7 +20,7 @@ namespace Vita.Data.Runtime {
     Database _db;
     DbDriver _driver;
     DbModel _dbModel;
-    DataCommandRepo _commandRepo; 
+    SqlFactory _commandRepo; 
 
     DbBatch _batch;
 
@@ -31,7 +31,7 @@ namespace Vita.Data.Runtime {
       _db = db;
       _driver = _db.DbModel.Driver;
       _dbModel = _db.DbModel;
-      _commandRepo = _db.CommandRepo;
+      _commandRepo = _db.SqlFactory;
     }
 
     public DbBatch Build(DbUpdateSet updateSet) {
@@ -55,7 +55,7 @@ namespace Vita.Data.Runtime {
         return;
       foreach(var lcmd in commands) {
         CheckCurrentCommand();
-        var sql = _commandRepo.GetLinqNonQuery(lcmd);
+        var sql = _commandRepo.GetLinqSql(lcmd);
         _commandBuilder.AddLinqStatement(sql, lcmd.ParameterValues); 
       }//foreach schCmd
     }

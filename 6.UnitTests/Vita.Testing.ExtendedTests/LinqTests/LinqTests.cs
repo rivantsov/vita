@@ -10,6 +10,7 @@ using Vita.Samples.BookStore;
 using Vita.Data.Driver;
 using Vita.Modules.Login;
 using Vita.Tools.Testing;
+using Vita.Data.Sql;
 
 namespace Vita.Testing.ExtendedTests {
 
@@ -557,8 +558,8 @@ namespace Vita.Testing.ExtendedTests {
       Assert.IsTrue(orders2.Count > 0, "No orders by type found.");
     }
 
-    [TestMethod, Ignore("QueryCache not migrated.")]
-    public void TestLinqQueryCache() {
+    [TestMethod]
+    public void TestSqlCache() {
       var app = Startup.BooksApp;
       var session = app.OpenSession();
       var books = session.EntitySet<IBook>();
@@ -576,12 +577,19 @@ namespace Vita.Testing.ExtendedTests {
                       where b.Publisher.Name == "Kids Books"
                       orderby b.Title
                       select b;
+
+      var lkpCount0 = SqlCache.LookupCount;
+      var missCount = SqlCache.MissCount; 
       var kidBooksList = kidBooksQ.ToList();
-      //Just for debugging, do it 3 times
+      Assert.IsTrue(kidBooksList.Count > 0, "kid books not found.");
+      Assert.AreEqual(lkpCount0 + 1, SqlCache.LookupCount, "Expected one failed sql cache lookup");
+      Assert.AreEqual(missCount + 1, SqlCache.MissCount, "Expected one failed sql cache lookup");
+      //do it  2 more times
       kidBooksList = kidBooksQ.ToList();
       kidBooksList = kidBooksQ.ToList();
-      Assert.IsTrue(kidBooksList.Count > 0, "Compiled query cache test failed: kid books not found.");
-      // var l2 = kidBooksQ.ToList(); // for checking in debug mode - second time the query must be cached (compiled query cache)
+      Assert.IsTrue(kidBooksList.Count > 0, "kid books not found.");
+      Assert.AreEqual(lkpCount0 + 3, SqlCache.LookupCount, "Expected 2 more lookup");
+      Assert.AreEqual(missCount + 1, SqlCache.MissCount, "Expected no more misses");
 
       // Query with disabled compiled query cache. Disable cache for 'search' queries, to avoid polluting cache
       // with many custom searches that users enter in search form. 

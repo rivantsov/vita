@@ -9,7 +9,7 @@ using Vita.Data.Driver.TypeSystem;
 using Vita.Data.Model;
 using Vita.Entities.Runtime;
 
-namespace Vita.Data.SqlGen {
+namespace Vita.Data.Sql {
 
   // base placeholder, also used as positional placeholder in Sql templates
   public  class SqlPlaceHolder : SqlFragment, IFlatSqlFragment {

@@ -5,7 +5,7 @@ using System.Text;
 
 using Oracle.ManagedDataAccess.Client;
 using Vita.Data.Driver;
-using Vita.Data.SqlGen;
+using Vita.Data.Sql;
 using Vita.Entities;
 using Vita.Entities.Logging;
 using Vita.Entities.Model;

@@ -15,7 +15,7 @@ using Vita.Data.Driver.InfoSchema;
 using System.Threading.Tasks;
 using System.Data.Common;
 using System.Threading;
-using Vita.Data.SqlGen;
+using Vita.Data.Sql;
 using Vita.Data.Runtime;
 using Vita.Data.Linq;
 using Vita.Data.Driver.TypeSystem;

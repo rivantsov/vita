@@ -5,7 +5,7 @@ using System.Linq.Expressions;
 using System.Text;
 using Vita.Data.Linq;
 
-namespace Vita.Data.SqlGen {
+namespace Vita.Data.Sql {
 
   public interface IFlatSqlFragment {
     void AddFormatted(IList<string> strings, IList<string> placeHolderArgs);

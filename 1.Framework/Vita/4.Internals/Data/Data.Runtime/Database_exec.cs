@@ -13,7 +13,7 @@ using Vita.Entities.Runtime;
 using Vita.Entities.Logging;
 using Vita.Entities.Locking;
 
-using Vita.Data.SqlGen;
+using Vita.Data.Sql;
 
 namespace Vita.Data.Runtime {
 

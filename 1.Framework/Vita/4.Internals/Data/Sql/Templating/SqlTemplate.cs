@@ -4,9 +4,9 @@ using System.Diagnostics;
 using System.Text;
 
 using Vita.Entities;
-using Vita.Data.SqlGen;
+using Vita.Data.Sql;
 
-namespace Vita.Data.SqlGen {
+namespace Vita.Data.Sql {
 
   public class SqlTemplate {
     public readonly string Template; 

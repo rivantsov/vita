@@ -8,7 +8,7 @@ using NpgsqlTypes;
 using Vita.Data.Driver;
 using Vita.Data.Driver.TypeSystem;
 using Vita.Data.Linq.Translation.Expressions;
-using Vita.Data.SqlGen;
+using Vita.Data.Sql;
 
 namespace Vita.Data.Postgres {
   public class PgDbSqlDialect : DbSqlDialect {

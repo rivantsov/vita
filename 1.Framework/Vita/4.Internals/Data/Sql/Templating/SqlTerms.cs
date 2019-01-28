@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace Vita.Data.SqlGen {
+namespace Vita.Data.Sql {
 
   public static class SqlTerms  {
     public static TextSqlFragment LeftParenthesis = new TextSqlFragment("(");

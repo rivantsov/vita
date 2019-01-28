@@ -15,7 +15,7 @@ using Vita.Data.Model;
 using Vita.Entities;
 using Vita.Entities.Model;
 using Vita.Entities.Runtime;
-using Vita.Data.SqlGen;
+using Vita.Data.Sql;
 using Vita.Entities.Locking;
 using Vita.Data.Linq.Translation;
 using Vita.Data.Runtime;
@@ -33,9 +33,9 @@ namespace Vita.Data.Linq {
       _translator = new ExpressionTranslator(dbModel);
     }
 
+    // Note: command expected to be analyzed already
     public SqlStatement Translate(LinqCommand command) {
-      if(command.Info == null)
-        LinqCommandAnalyzer.Analyze(_entityModel, command);
+      Util.Check(command.Info != null, "Expected LINQ command analyzed.");
       try {
         switch(command.Kind) {
           case LinqCommandKind.Select:
@@ -43,12 +43,9 @@ namespace Vita.Data.Linq {
           case LinqCommandKind.Update:
           case LinqCommandKind.Delete:
           case LinqCommandKind.Insert:
-            return TranslateNonQuery(command);
           default:
-            ThrowTranslationFailed(command, "Unsupported LINQ command type.");
-            return null;
-
-        }
+            return TranslateNonQuery(command);
+        } //switch
       } catch(LinqTranslationException) {
         throw; // if it is already Linq translation exception, pass it up.
       } catch(Exception ex) {

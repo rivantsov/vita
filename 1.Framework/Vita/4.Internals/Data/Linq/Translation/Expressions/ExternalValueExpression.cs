@@ -3,7 +3,7 @@ using System;
 using System.Diagnostics;
 using System.Linq.Expressions;
 using System.Reflection;
-using Vita.Data.SqlGen;
+using Vita.Data.Sql;
 using Vita.Entities.Utilities;
 
 namespace Vita.Data.Linq.Translation.Expressions {

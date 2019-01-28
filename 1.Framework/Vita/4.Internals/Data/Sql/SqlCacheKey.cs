@@ -7,10 +7,10 @@ using Vita.Entities;
 using Vita.Entities.Locking;
 using Vita.Entities.Model;
 
-namespace Vita.Data.Runtime {
+namespace Vita.Data.Sql {
 
   public class SqlCacheKey : IEquatable<SqlCacheKey> {
-    IList<string> _strings;
+    IList<string> _strings; //might be array or list
     string _key;
 
     const string _CRUD = "CRUD";
@@ -22,11 +22,13 @@ namespace Vita.Data.Runtime {
     }
 
     public void Trim(int toLength) {
-      while(_strings.Count > toLength)
-        _strings.RemoveAt(_strings.Count - 1);
+      if(toLength > _strings.Count) {
+        var list = _strings as List<string>;
+        Util.Check(list != null, "Fatal: invalid call to SqlCacheKey.Trim, key is fixed size list.");
+        list.RemoveRange(toLength, _strings.Count - toLength);
+      }
       _key = null;
     }
-
 
     public string Key {
       get {
@@ -40,21 +42,20 @@ namespace Vita.Data.Runtime {
     }
 
     // used for LINQ statements when values are added dynamically as we analyze the query
-    private SqlCacheKey(IList<string> strings) {
+    private SqlCacheKey() {
+      _strings = new List<string>(100); 
+    }
+    // fixed-size cache key, used for CRUD commands, where key is known in advance, it is fixed limited list (array)
+    private SqlCacheKey(params string[] strings) {
       _strings = strings; 
     }
 
-    // fixed-size cache key, used for CRUD commands, where key is known in advance, it is fixed limited list
-    private SqlCacheKey(params string[] strings) {
-      _strings = strings;
-    }
-
     public static SqlCacheKey CreateForLinq(LinqCommandKind linqKind, LockType lockType, QueryOptions options) {
-      var strings = new List<string>(100); //we have to create real list and reserve capacity for more values
-      strings.Add(_LINQ);
-      strings.Add(linqKind.ToString());
-      strings.Add(options.ToString());
-      return new SqlCacheKey(strings); 
+      var key = new SqlCacheKey();
+      key.Add(_LINQ);
+      key.Add(linqKind.ToString());
+      key.Add(options.ToString());
+      return key; 
     }
 
     public static SqlCacheKey CreateForSelectByKey(EntityKeyInfo key, LockType lockType, EntityMemberMask mask) {
@@ -76,7 +77,7 @@ namespace Vita.Data.Runtime {
       }
     }
 
-    public SqlCacheKey CreateForDeleteMany(EntityInfo entity) {
+    public static SqlCacheKey CreateForDeleteMany(EntityInfo entity) {
       return new SqlCacheKey("CRUD", entity.Name, "DELETE-MANY");
     }
 

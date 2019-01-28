@@ -8,40 +8,41 @@ using Vita.Entities.Runtime;
 using Vita.Data.Driver;
 using Vita.Data.Linq;
 using Vita.Data.Model;
-using Vita.Data.SqlGen;
+using Vita.Data.Sql;
+using Vita.Data.Runtime;
 
-namespace Vita.Data.Runtime {
+namespace Vita.Data.Sql {
 
-  public class DataCommandRepo {
+  public class SqlFactory {
     DbModel _dbModel;
     DbDriver _driver;
-    SqlStatementCache _sqlCache; 
+    SqlCache _sqlCache; 
     LinqEngine _linqEngine;
     DbSqlBuilder _crudSqlBuilder; 
 
-    public DataCommandRepo(DbModel dbModel) {
+    public SqlFactory(DbModel dbModel) {
       _dbModel = dbModel;
       _driver = _dbModel.Driver;
-      _sqlCache = new SqlStatementCache(10000); 
+      _sqlCache = new SqlCache(10000); 
       _linqEngine = new LinqEngine(_dbModel);
       _crudSqlBuilder = _dbModel.Driver.CreateDbSqlBuilder(_dbModel, null);
     }
 
-    public SqlStatement GetLinqSelect(LinqCommand command) {
+    public SqlStatement GetLinqSql(LinqCommand command) {
       if(command.Info == null)
         LinqCommandAnalyzer.Analyze(_dbModel.EntityModel, command);
       var cacheKey = command.Info.CacheKey;
       var stmt = _sqlCache.Lookup(cacheKey);
       if(stmt != null)
         return stmt;
-      stmt = _linqEngine.Translate(command);
+      stmt = _linqEngine.Translate(command); 
       if(!command.Info.Options.IsSet(QueryOptions.NoQueryCache))
         _sqlCache.Add(cacheKey, stmt);
       return stmt;
     }
 
     public SqlStatement GetCrudSqlForSingleRecord(DbTableInfo table, EntityRecord record) {
-      var cacheKey = SqlCacheKey.CreateForCrud(table.Entity, record.Status, record.ChangedMembersMask);
+      var cacheKey = SqlCacheKey.CreateForCrud(table.Entity, record.Status, record.MaskMembersChanged);
       SqlStatement sql = _sqlCache.Lookup(cacheKey);
       if(sql != null)
         return sql; 
@@ -61,14 +62,18 @@ namespace Vita.Data.Runtime {
       return sql; 
    }
 
-    public SqlStatement GetLinqNonQuery(LinqCommand command) {
-      return _linqEngine.TranslateNonQuery(command);
-    }
 
     public SqlStatement GetCrudDeleteMany(DbTableInfo table) {
-      return _crudSqlBuilder.BuildCrudDeleteMany(table); 
+      var cacheKey = SqlCacheKey.CreateForDeleteMany(table.Entity);
+      var sql = _sqlCache.Lookup(cacheKey);
+      if(sql != null)
+        return sql; 
+      sql = _crudSqlBuilder.BuildCrudDeleteMany(table);
+      _sqlCache.Add(cacheKey, sql);
+      return sql; 
     }
 
+    // Insert-many are never cached - these are custom-built each time
     public SqlStatement  GetCrudInsertMany(DbTableInfo table, IList<EntityRecord> records, IColumnValueFormatter formatter) {
       return _crudSqlBuilder.BuildCrudInsertMany(table, records, formatter);
     }

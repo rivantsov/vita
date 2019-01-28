@@ -11,7 +11,7 @@ using Vita.Data.Driver;
 using Vita.Entities.Locking;
 using Vita.Entities.Logging;
 using Vita.Data.Linq;
-using Vita.Data.SqlGen;
+using Vita.Data.Sql;
 using Vita.Entities.Utilities;
 
 namespace Vita.Data.MsSql {

@@ -9,9 +9,9 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Remove="4.Internals\Data\SqlGen\Disabled\**" />
-    <EmbeddedResource Remove="4.Internals\Data\SqlGen\Disabled\**" />
-    <None Remove="4.Internals\Data\SqlGen\Disabled\**" />
+    <Compile Remove="4.Internals\Data\Sql\Disabled\**" />
+    <EmbeddedResource Remove="4.Internals\Data\Sql\Disabled\**" />
+    <None Remove="4.Internals\Data\Sql\Disabled\**" />
   </ItemGroup>
 
   <ItemGroup>

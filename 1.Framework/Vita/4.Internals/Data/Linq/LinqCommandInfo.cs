@@ -7,12 +7,10 @@ using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 
-using Vita.Entities.Utilities;
 using Vita.Entities;
 using Vita.Entities.Model;
-using Vita.Entities.Runtime;
 using Vita.Entities.Locking;
-using Vita.Data.Runtime;
+using Vita.Data.Sql;
 
 namespace Vita.Data.Linq {
 

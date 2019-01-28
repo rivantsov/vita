@@ -8,7 +8,7 @@ using Vita.Entities.Model;
 using Vita.Data.Linq.Translation;
 using Vita.Data.Linq.Translation.Expressions;
 using Vita.Data.Model;
-using Vita.Data.SqlGen;
+using Vita.Data.Sql;
 using Vita.Data.Linq;
 using Vita.Entities.Runtime;
 using System.Linq.Expressions;

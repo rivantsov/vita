@@ -5,6 +5,7 @@ using System.Text;
 using Vita.Entities.Utilities;
 
 namespace Vita.Entities.Model {
+
   public class EntityMemberMask {
     public BitMask Bits;
 
@@ -12,8 +13,12 @@ namespace Vita.Entities.Model {
       Bits = new BitMask(length, setAll);
     }
 
+    public void Set(EntityMemberInfo member, bool value = true) {
+      Bits.Set(member.ValueIndex, value);
+    }
+
     public bool IsSet(EntityMemberInfo member) {
-      return Bits.Get(member.Index);
+      return Bits.Get(member.ValueIndex);
     }
 
     public string AsHexString() {

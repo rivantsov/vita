@@ -14,6 +14,7 @@ using Vita.Entities;
 using System.Collections;
 using Vita.Entities.Locking;
 using Vita.Data.Runtime;
+using Vita.Data.Sql;
 
 namespace Vita.Data.Linq {
 

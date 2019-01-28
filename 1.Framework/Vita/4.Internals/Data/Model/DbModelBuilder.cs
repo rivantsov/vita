@@ -11,7 +11,7 @@ using Vita.Entities.Model;
 using Vita.Data.Driver;
 using Vita.Entities.Logging;
 using Vita.Data.Linq;
-using Vita.Data.SqlGen;
+using Vita.Data.Sql;
 using Vita.Data.Runtime;
 using Vita.Entities.Runtime;
 using Vita.Data.Driver.TypeSystem;

@@ -11,7 +11,7 @@ using Vita.Entities.Model;
 using Vita.Data.Linq;
 using Vita.Data.Model;
 using Vita.Data.Linq.Translation.Expressions;
-using Vita.Data.SqlGen;
+using Vita.Data.Sql;
 using Vita.Data.Linq.Translation;
 using Vita.Entities.Runtime;
 

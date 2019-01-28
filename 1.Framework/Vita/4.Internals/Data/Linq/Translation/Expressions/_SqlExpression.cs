@@ -2,7 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq.Expressions;
-using Vita.Data.SqlGen;
+using Vita.Data.Sql;
 using Vita.Entities;
 using Vita.Entities.Utilities;
 

@@ -5,24 +5,23 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using Vita.Data.SqlGen;
+using Vita.Data.Sql;
 using Vita.Entities.Services.Implementations;
 
-namespace Vita.Data.Runtime {
+namespace Vita.Data.Sql {
 
-  public class SqlStatementCache {
+  public class SqlCache {
 
     class SqlCacheItem {
       public SqlStatement Sql;
       public long LastUsed; 
     }
 
-
     ConcurrentDictionary<SqlCacheKey, SqlCacheItem> _cache;
     TimeService _timeService;
     int _capacity;
 
-    public SqlStatementCache(int capacity = 10000) {
+    public SqlCache(int capacity = 10000) {
       _capacity = capacity; 
       _timeService = TimeService.Instance;
       _cache = new ConcurrentDictionary<SqlCacheKey, SqlCacheItem>();
@@ -39,8 +38,11 @@ namespace Vita.Data.Runtime {
     }
 
     public SqlStatement Lookup(SqlCacheKey key) {
-      if(!_cache.TryGetValue(key, out var item))
+      Interlocked.Increment(ref LookupCount);
+      if(!_cache.TryGetValue(key, out var item)) {
+        Interlocked.Increment(ref MissCount);
         return null;
+      }
       Interlocked.Exchange(ref item.LastUsed, _timeService.ElapsedMilliseconds);
       return item.Sql; 
     }
@@ -66,6 +68,16 @@ namespace Vita.Data.Runtime {
       foreach(var de in toRemove)
         _cache.TryRemove(de.Key, out var dummy);
     }
+
+    //stats
+    public static long LookupCount;
+    public static long MissCount;
+
+    public static void ResetStats() {
+      LookupCount = 0;
+      MissCount = 0; 
+    }
+
   }//class
 
 }

@@ -6,7 +6,7 @@ using System.Text;
 using Vita.Data.Driver;
 using Vita.Data.Linq.Translation;
 using Vita.Data.Model;
-using Vita.Data.SqlGen;
+using Vita.Data.Sql;
 using Vita.Entities;
 using Vita.Entities.Model;
 using Vita.Entities.Runtime;

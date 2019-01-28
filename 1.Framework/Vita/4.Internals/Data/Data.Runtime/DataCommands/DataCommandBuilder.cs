@@ -7,7 +7,7 @@ using System.Text;
 using Vita.Data.Driver;
 using Vita.Data.Linq;
 using Vita.Data.Model;
-using Vita.Data.SqlGen;
+using Vita.Data.Sql;
 using Vita.Entities;
 using Vita.Entities.Model;
 using Vita.Entities.Runtime;
@@ -208,7 +208,7 @@ namespace Vita.Data.Runtime {
     // called only non-batch mode
     public bool CheckReferencesNewIdentity(EntityRecord rec, SqlColumnValuePlaceHolder cph, out string idParamName) {
       idParamName = null;
-      if(!rec.CheckReferencesNewIdentity(cph.Column, out EntityRecord targetRec))
+      if(!ReferencesNewIdentity(rec, cph.Column, out EntityRecord targetRec))
         return false;
       var targetCmdData = targetRec.DbCommandData; 
       Util.Check(targetCmdData != null, "Fatal error: the target record of FK column {0} does not have {1} field set. " + 
@@ -232,6 +232,23 @@ namespace Vita.Data.Runtime {
       _paramCopyList.Add(new BatchParamCopy() { From = idPrmInfo.Parameter, To = newPrm });
       return true; 
     }
+
+    private static bool ReferencesNewIdentity(EntityRecord rec, DbColumnInfo fkCol, out EntityRecord targetRecord) {
+      targetRecord = null;
+      if(!rec.EntityInfo.Flags.IsSet(EntityFlags.ReferencesIdentity))
+        return false;
+      if(!fkCol.Flags.IsSet(DbColumnFlags.IdentityForeignKey))
+        return false;
+      var targetRef = rec.GetValueDirect(fkCol.Member.ForeignKeyOwner);
+      if(targetRef == DBNull.Value)
+        return false;
+      var targetRec = (EntityRecord)targetRef;
+      if(targetRec.Status != EntityStatus.New)
+        return false;
+      targetRecord = targetRec;
+      return true;
+    }
+
 
     public virtual bool CanUseLiteral(object value, DbColumnInfo column = null) {
       if(value == null || value == DBNull.Value)

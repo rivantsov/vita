@@ -11,11 +11,11 @@ using System.Diagnostics;
 using Vita.Entities;
 using Vita.Entities.Model;
 using Vita.Data.Linq;
-using Vita.Data.SqlGen;
+using Vita.Data.Sql;
 
 namespace Vita.Entities.Runtime {
 
-  public partial class EntityRecord  {
+  public sealed partial class EntityRecord  {
     public EntitySession Session;
     public EntityInfo EntityInfo; 
     //If true, the record is registered in Session.RecordsLoaded set.
@@ -30,7 +30,14 @@ namespace Vita.Entities.Runtime {
 
     public List<ClientFault> ValidationFaults; //created on demand
 
-    public EntityMemberMask ChangedMembersMask; 
+    public EntityMemberMask MaskMembersRead;
+    public EntityMemberMask MaskMembersChanged {
+      get {
+        if(_maskMembersChanged == null)
+          _maskMembersChanged = new EntityMemberMask(this.EntityInfo.PersistentValuesCount);
+        return _maskMembersChanged;
+      }
+    } EntityMemberMask _maskMembersChanged;
 
     //Authorization info
     public object UserPermissions; 
@@ -78,7 +85,7 @@ namespace Vita.Entities.Runtime {
       _status = status;
       EntityInfo = entityInfo;
       InitValuesStorage();
-      ChangedMembersMask = new EntityMemberMask(entityInfo.PersistentValuesCount);
+      MaskMembersRead = new EntityMemberMask(this.EntityInfo.PersistentValuesCount);
     }
 
     internal void InitValuesStorage() {
@@ -100,18 +107,14 @@ namespace Vita.Entities.Runtime {
       this.ValuesModified = new object[valuesCount];
       Array.Copy(copyFrom.ValuesOriginal, ValuesOriginal, valuesCount);
       this.ValuesTransient = new object[EntityInfo.TransientValuesCount];
+      MaskMembersRead = new EntityMemberMask(valuesCount);
     }
     #endregion
 
     public event PropertyChangedEventHandler PropertyChanged;
-
-    #region EntityRecord implementation
     public string AliasId { get; set; }
 
-    //PropertyChanged event handlers are passed from Entity to this event
-    #endregion
-
-
+    #region  PrimaryKey, Status, EntityInstance
     public EntityKey PrimaryKey {
       get {
         if(_primaryKey == null && EntityInfo.PrimaryKey != null)
@@ -130,15 +133,6 @@ namespace Vita.Entities.Runtime {
     }
     IEntityRecordContainer _entityInstance;
 
-    public IList<ClientFault> GetValidationFaults() {
-      return ValidationFaults; // ?? new List<ClientFault>(); 
-    }
-    public void AddValidationFault(ClientFault fault) {
-      ValidationFaults = ValidationFaults ?? new List<ClientFault>();
-      ValidationFaults.Add(fault);
-      Session.Context.AddClientFault(fault);
-    }
-
 
     public EntityStatus Status {
       get { return _status; }
@@ -152,22 +146,35 @@ namespace Vita.Entities.Runtime {
       }
     } EntityStatus _status;
 
-    // Used by Entities to get/set value by member index
+    //For Saved event, keeps old status after it had changed to know what was the update
+    public EntityStatus StatusBeforeSave { get; private set; }
+
+    #endregion
+
+    #region Get/Set value
     public object GetValue(int index) {
       var member = EntityInfo.Members[index];
       return GetValue(member);
     }
+
     public void SetValue(int index, object value) {
       var member = EntityInfo.Members[index];
       SetValue(member, value); 
     }
 
+    public object GetValue(string name) {
+      var member = EntityInfo.GetMember(name, true);
+      return GetValue(member);
+    }
+
+    public void SetValue(string name, object value) {
+      var member = EntityInfo.GetMember(name, true);
+      SetValue(member, value);
+    }
+
+
     public object GetValue(EntityMemberInfo member) {
-      //If there's session, go thru session. Authorization-enabled session will use this method to check permissions
-      if(Session == null)
-        return member.GetValueRef(this, member);
-      else
-        return Session.RecordGetMemberValue(this, member);
+      return member.GetValueRef(this, member);
     }
 
     public void SetValue(EntityMemberInfo member, object value) {
@@ -179,8 +186,7 @@ namespace Vita.Entities.Runtime {
       if(_status == EntityStatus.Stub)
         this.Reload();
       var oldStatus = _status;
-      // Go thru session. Authorization-enabled session will use this method to check permissions
-      Session.RecordSetMemberValue(this, member, value);
+      member.SetValueRef(this, member, value);
       //Fire modified event if necessary
       if(_status != oldStatus && _status == EntityStatus.Modified) {
         EntityInfo.Events.OnModified(this);
@@ -193,48 +199,41 @@ namespace Vita.Entities.Runtime {
       }
     }
 
-
-    public object GetValue(string name) {
-      var member = EntityInfo.GetMember(name, true);
-      return GetValue(member);
+    public object GetValueDirect(EntityMemberInfo member) {
+      MaskMembersRead.Set(member);
+      var valueIndex = member.ValueIndex;
+      if(member.Kind == EntityMemberKind.Column)
+        return ValuesModified[valueIndex] ?? ValuesOriginal[valueIndex];
+      else
+        return ValuesTransient[valueIndex];
     }
 
-    public void SetValue(string name, object value) {
-      var member = EntityInfo.GetMember(name, true);
-      SetValue(member, value);
+    public void SetValueDirect(EntityMemberInfo member, object value, bool setModified = false) {
+      var valueIndex = member.ValueIndex;
+      if(member.Kind == EntityMemberKind.Column) {
+        if(_status == EntityStatus.Loading)
+          ValuesOriginal[valueIndex] = value;
+        else {
+          MaskMembersChanged.Set(member);
+          ValuesModified[valueIndex] = value;
+        }
+      } else
+        ValuesTransient[valueIndex] = value ?? DBNull.Value;
+      if(member.Flags.IsSet(EntityMemberFlags.PrimaryKey)) //identity setting from insert!
+        this.PrimaryKey.CopyValues(this);
+      if(setModified && this._status == EntityStatus.Loaded)
+        Status = EntityStatus.Modified;
     }
 
-    public int GetPropertySize(string name) {
-      var member = EntityInfo.GetMember(name, true);
-      return member.Size; 
+    public bool HasValue(EntityMemberInfo member) {
+      var value = GetValueDirect(member);
+      return value != null;
     }
-
-    public void Reload() {
-      Util.Check(Session != null, "Cannot reload record {0} - it is not attached to a session. ", EntityInfo);
-      // Executing SelectByPrimaryKey automatically refreshes the values in the record
-      // In some situations we need to elevate read, 
-      // Ex: record permissions are granted thru reference on other entity; user has no any permissions for entity type, 
-      // so SecureSession.ExecuteSelect would permissions for entity type and throw AccessDenied
-      using(Session.ElevateRead()) {
-        // var cmdInfo = EntityInfo.PrimaryKey.SelectByKeyValueCommand;
-        // var cmd = new LinqCommand(cmdInfo, this.EntityInfo, PrimaryKey.Values);
-        Session.SelectByPrimaryKey(this.EntityInfo, PrimaryKey.Values);
-      }
-      this.ClearTransientValues();
-    }
-
-
-    #region Public properties: PrimaryKey, Status, EntityInstance
-    //For Saved event, keeps old status after it had changed to know what was the update
-    public EntityStatus StatusBeforeSave {get; private set;}
-
-    public bool AccessCheckEnabled {
-      get { return _status != EntityStatus.Loading && _status != EntityStatus.New; }
-    }
-
     #endregion
 
-    #region Save, Commit/cancel changes
+
+
+    #region Save, Commit/cancel changes, Reload
     public void CommitChanges() {
       ValidationFaults = null; 
       this.StatusBeforeSave = _status; 
@@ -280,63 +279,42 @@ namespace Vita.Entities.Runtime {
             OnPropertyChanged(member.MemberName);
     }
 
+    public void Reload() {
+      Util.Check(Session != null, "Cannot reload record {0} - it is not attached to a session. ", EntityInfo);
+      // Executing SelectByPrimaryKey automatically refreshes the values in the record
+      // In some situations we need to elevate read, 
+      // Ex: record permissions are granted thru reference on other entity; user has no any permissions for entity type, 
+      // so SecureSession.ExecuteSelect would permissions for entity type and throw AccessDenied
+      using(Session.ElevateRead()) {
+        // var cmdInfo = EntityInfo.PrimaryKey.SelectByKeyValueCommand;
+        // var cmd = new LinqCommand(cmdInfo, this.EntityInfo, PrimaryKey.Values);
+        Session.SelectByPrimaryKey(this.EntityInfo, PrimaryKey.Values);
+      }
+      this.ClearTransientValues();
+    }
+
     #endregion
 
-    #region GetProperty, SetProperty methods
-
-
-    public object GetValueDirect(EntityMemberInfo member) {
-      var valueIndex = member.ValueIndex; 
-      if (member.Kind == EntityMemberKind.Column)
-        return ValuesModified[valueIndex] ?? ValuesOriginal[valueIndex];
-      else 
-        return ValuesTransient[valueIndex];
-    }
-
-    public void SetValueDirect(EntityMemberInfo member, object value, bool setModified = false) {
-      var valueIndex = member.ValueIndex;
-      if (member.Kind == EntityMemberKind.Column) {
-        if (_status == EntityStatus.Loading)
-          ValuesOriginal[valueIndex] = value;
-        else 
-          ValuesModified[valueIndex] = value;
-      } else 
-        ValuesTransient[valueIndex] = value ?? DBNull.Value;
-      if (member.Flags.IsSet(EntityMemberFlags.PrimaryKey)) //identity setting from insert!
-        this.PrimaryKey.CopyValues(this);
-      if (setModified && this._status == EntityStatus.Loaded)
-        Status = EntityStatus.Modified; 
-    }
-
-    public bool HasValue(EntityMemberInfo member) {
-      var value = GetValueDirect(member); 
-      return value != null; 
+    #region Misc methods
+    public int GetPropertySize(string name) {
+      var member = EntityInfo.GetMember(name, true);
+      return member.Size;
     }
 
     private HashSet<EntityMemberInfo> GetModifiedMembers() {
       var result = new HashSet<EntityMemberInfo>();
+      if(_maskMembersChanged == null)
+        return result; 
       foreach (var member in EntityInfo.Members)
-        if (Modified(member))
+        if (_maskMembersChanged.IsSet(member))
           result.Add(member);
       return result;
     }
 
     public bool Modified(EntityMemberInfo persistentMember) {
-      if (persistentMember.Kind != EntityMemberKind.Column)
-        return false; 
-      return ValuesModified[persistentMember.ValueIndex] != null;
-    }
-
-    public IPropertyBoundList InitChildEntityList(EntityMemberInfo member) {
-      Util.Check(Session != null, "Failed to create child entity list for member {0}. Record is not attached to session.", member);
-      var listInfo = member.ChildListInfo;
-      Util.Check(Session != null, "Failed to create child entity list for member {0}. Record is not attached to session.", member);
-      var listType = (listInfo.RelationType == EntityRelationType.ManyToOne) ?
-        typeof(PropertyBoundListManyToOne<>) : typeof(PropertyBoundListManyToMany<>);
-      var genListType = listType.MakeGenericType(listInfo.TargetEntity.EntityType);
-      var list = Activator.CreateInstance(genListType, this, member) as IPropertyBoundList;
-      this.ValuesTransient[member.ValueIndex] = list;
-      return list;
+      if (persistentMember.Kind != EntityMemberKind.Column || _maskMembersChanged == null)
+        return false;
+      return _maskMembersChanged.IsSet(persistentMember);
     }
 
 
@@ -369,6 +347,17 @@ namespace Vita.Entities.Runtime {
     #endregion
 
     #region ValidationErrors 
+
+    public IList<ClientFault> GetValidationFaults() {
+      return ValidationFaults; // ?? new List<ClientFault>(); 
+    }
+    public void AddValidationFault(ClientFault fault) {
+      ValidationFaults = ValidationFaults ?? new List<ClientFault>();
+      ValidationFaults.Add(fault);
+      Session.Context.AddClientFault(fault);
+    }
+
+
     public bool IsValid {
       get { return ValidationFaults == null || ValidationFaults.Count ==0; }
     }
@@ -507,6 +496,19 @@ namespace Vita.Entities.Runtime {
           break; 
       }
     }
+
+    public IPropertyBoundList InitChildEntityList(EntityMemberInfo member) {
+      Util.Check(Session != null, "Failed to create child entity list for member {0}. Record is not attached to session.", member);
+      var listInfo = member.ChildListInfo;
+      Util.Check(Session != null, "Failed to create child entity list for member {0}. Record is not attached to session.", member);
+      var listType = (listInfo.RelationType == EntityRelationType.ManyToOne) ?
+        typeof(PropertyBoundListManyToOne<>) : typeof(PropertyBoundListManyToMany<>);
+      var genListType = listType.MakeGenericType(listInfo.TargetEntity.EntityType);
+      var list = Activator.CreateInstance(genListType, this, member) as IPropertyBoundList;
+      this.ValuesTransient[member.ValueIndex] = list;
+      return list;
+    }
+
 
     public void RefreshIdentityReferences() {
       foreach(var refM in EntityInfo.RefMembers) {

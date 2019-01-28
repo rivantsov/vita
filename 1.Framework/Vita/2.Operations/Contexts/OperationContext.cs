@@ -42,7 +42,6 @@ namespace Vita.Entities {
     public string UserCulture { get; set; } = "EN-US";
     public WebCallContext WebContext { get; set; }
     public readonly ILog Log;
-    public IList<ClientFault> ClientFaults { get; } = new List<ClientFault>();
     public DbConnectionReuseMode DbConnectionMode { get; set; }
     public QueryFilter QueryFilter { get; } = new QueryFilter();
     public ProcessType ProcessType;
@@ -59,6 +58,7 @@ namespace Vita.Entities {
     // are disposed (closed). 
     ConcurrentBag<WeakReference> _disposables; //created on first use
 
+    public IList<ClientFault> ClientFaults => _clientFaults.ToList();
     ConcurrentBag<ClientFault> _clientFaults = new ConcurrentBag<ClientFault>(); 
 
     // Name of data source when more than one is registered; null if single data source (db)

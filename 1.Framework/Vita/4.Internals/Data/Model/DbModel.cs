@@ -9,7 +9,7 @@ using Vita.Entities;
 using Vita.Entities.Model;
 using Vita.Data.Driver;
 using Vita.Data.Linq;
-using Vita.Data.SqlGen;
+using Vita.Data.Sql;
 
 namespace Vita.Data.Model {
 

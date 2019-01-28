@@ -6,7 +6,7 @@ using System.Text;
 using Microsoft.SqlServer.Server;
 using Vita.Data.Driver;
 using Vita.Data.Linq.Translation.Expressions;
-using Vita.Data.SqlGen;
+using Vita.Data.Sql;
 using Vita.Entities.Utilities;
 
 namespace Vita.Data.MsSql {

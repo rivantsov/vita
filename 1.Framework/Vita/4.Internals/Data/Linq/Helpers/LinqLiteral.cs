@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 using Vita.Data.Model;
-using Vita.Data.SqlGen;
+using Vita.Data.Sql;
 
 namespace Vita.Data.Linq {
 

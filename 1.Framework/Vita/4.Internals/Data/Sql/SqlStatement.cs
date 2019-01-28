@@ -7,7 +7,7 @@ using Vita.Data.Linq;
 using Vita.Data.Runtime;
 using Vita.Entities.Runtime;
 
-namespace Vita.Data.SqlGen {
+namespace Vita.Data.Sql {
 
   using CommandAction = Action<DataCommand, EntityRecord>;
 

@@ -5,7 +5,7 @@ using System.Linq;
 using System.Linq.Expressions;
 using Vita.Data.Linq.Translation;
 using Vita.Data.Linq.Translation.Expressions;
-using Vita.Data.SqlGen;
+using Vita.Data.Sql;
 using Vita.Entities;
 using Vita.Entities.Locking;
 using Vita.Entities.Utilities;

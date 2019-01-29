@@ -560,6 +560,7 @@ namespace Vita.Testing.ExtendedTests {
 
     [TestMethod]
     public void TestSqlCache() {
+
       var app = Startup.BooksApp;
       var session = app.OpenSession();
       var books = session.EntitySet<IBook>();
@@ -601,6 +602,9 @@ namespace Vita.Testing.ExtendedTests {
                           select b;
       var kidBooksListDesc = kidBooksQ.ToList();
       Assert.IsTrue(kidBooksListDesc.Count > 0, "Query with disabled query cache failed: multiple-author books not found.");
+      kidBooksListDesc = kidBooksQ.ToList();
+
+      SqlCacheLogHelper.FlushSqlCacheLog(); 
     }
 
     [TestMethod]

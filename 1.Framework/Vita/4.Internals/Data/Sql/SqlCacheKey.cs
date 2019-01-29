@@ -22,7 +22,7 @@ namespace Vita.Data.Sql {
     }
 
     public void Trim(int toLength) {
-      if(toLength > _strings.Count) {
+      if(toLength < _strings.Count) {
         var list = _strings as List<string>;
         Util.Check(list != null, "Fatal: invalid call to SqlCacheKey.Trim, key is fixed size list.");
         list.RemoveRange(toLength, _strings.Count - toLength);

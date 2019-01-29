@@ -10,8 +10,6 @@ using System.IO;
 using System.Collections.Specialized;
 
 using Vita.Entities;
-using Vita.Entities.Model;
-using Vita.Entities.Services;
 using Vita.Data;
 using Vita.Data.Driver;
 using Vita.Data.Model;
@@ -22,6 +20,7 @@ using Microsoft.Extensions.Configuration;
 using Vita.Tools;
 using Vita.Entities.DbInfo;
 using Vita.Tools.Testing;
+using Vita.Data.Sql;
 //using Microsoft.Data.Sqlite;
 
 namespace Vita.Testing.ExtendedTests {
@@ -165,6 +164,8 @@ namespace Vita.Testing.ExtendedTests {
       InitAppSettings();
       var config = TestRunConfigLoader.LoadForTestExplorer(AppSettings);
       Reset(config);
+      SqlCacheLogHelper.SetupSqlCacheLog();
+
     }
 
     //Delete log file only once at app startup; important when running in batch mode for multiple servers
@@ -200,6 +201,7 @@ namespace Vita.Testing.ExtendedTests {
 #endif
       if (BooksApp != null)
         BooksApp.Flush();
+      SqlCacheLogHelper.FlushSqlCacheLog(); 
       Thread.Sleep(200);
     }
 
@@ -209,7 +211,6 @@ namespace Vita.Testing.ExtendedTests {
       DataUtility.DeleteAllData(BooksApp, exceptEntities: new Type[] {typeof(IDbInfo), typeof(IDbModuleInfo)}); 
       SampleDataGenerator.CreateUnitTestData(BooksApp);
     }
-
 
   }//class
 }

@@ -56,10 +56,12 @@ namespace Vita.Tools.DbFirst {
       var systemLinq = typeof(Enumerable).Assembly.Location;
       var linqExpr = typeof(System.Linq.Expressions.Expression).Assembly.Location;
       var dataCommon = typeof(System.Data.DbType).Assembly.Location;
+
       //VITA assemblies
       var driverLoc = driverType.Assembly.Location;
       //var driverAsmPath = System.IO.Path.GetFileName(driverLoc);
       var vitaPath = typeof(Entities.EntityApp).Assembly.Location;
+      var entEmit = typeof(Vita.Entities.Emit.EntityClassEmitter).Assembly.Location;
 
       var refs = new[] {
         MetadataReference.CreateFromFile(netstandard),
@@ -71,7 +73,8 @@ namespace Vita.Tools.DbFirst {
         MetadataReference.CreateFromFile(linqExpr),
         MetadataReference.CreateFromFile(dataCommon),
         MetadataReference.CreateFromFile(driverLoc),
-        MetadataReference.CreateFromFile(vitaPath)
+        MetadataReference.CreateFromFile(vitaPath),
+        MetadataReference.CreateFromFile(entEmit)
       };
       return refs; 
     } //method

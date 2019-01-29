@@ -10,6 +10,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Vita.Entities;
 using Vita.Data.Driver;
 using Vita.Tools.Testing;
+using System.Runtime.InteropServices;
 
 namespace Vita.Testing.BasicTests.Misc {
 
@@ -432,7 +433,6 @@ namespace Vita.Testing.BasicTests.Misc {
       Assert.AreEqual("Jane", ford.Owner.FirstName, "2-ref test: owner name does not match");
       Assert.AreEqual("John", ford.Driver.FirstName, "2-ref test: driver name does not match");
     }
-
 
 
   }//class

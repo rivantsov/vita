@@ -21,6 +21,8 @@ namespace Vita.Data.Sql {
     TimeService _timeService;
     int _capacity;
 
+    public static Action<SqlCacheKey, SqlStatement> Debug_OnLookup; 
+
     public SqlCache(int capacity = 10000) {
       _capacity = capacity; 
       _timeService = TimeService.Instance;
@@ -41,9 +43,11 @@ namespace Vita.Data.Sql {
       Interlocked.Increment(ref LookupCount);
       if(!_cache.TryGetValue(key, out var item)) {
         Interlocked.Increment(ref MissCount);
+        Debug_OnLookup?.Invoke(key, null); 
         return null;
       }
       Interlocked.Exchange(ref item.LastUsed, _timeService.ElapsedMilliseconds);
+      Debug_OnLookup?.Invoke(key, item.Sql);
       return item.Sql; 
     }
 

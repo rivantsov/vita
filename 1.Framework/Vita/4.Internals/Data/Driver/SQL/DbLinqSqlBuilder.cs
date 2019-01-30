@@ -15,23 +15,45 @@ using Vita.Entities.Utilities;
 
 namespace Vita.Data.Driver {
 
-  public partial class DbSqlBuilder {
+  public partial class DbLinqSqlBuilder {
 
-    public virtual SqlFragment BuildSelect(SelectExpression select, LockType lockType = LockType.None) {
-      select = PreviewSelect(select, lockType);
-      var selectOut = BuildSelectOutputClause(select);
-      var tables = GetSortedTables(select);
-      var from = BuildFromClause(select, tables);
-      var where = BuildWhereClause(select, tables, select.Where);
-      var groupBy = BuildGroupByClause(select);
-      var having = BuildHavingClause(select);
-      var orderBy = BuildOrderByClause(select);
-      var lockClause = BuildLockClause(select, lockType);
-      var limit = BuildLimitClause(select);
+    protected DbModel DbModel;
+    protected DbSqlDialect SqlDialect;
+    protected LinqCommand Command;
+    protected SqlPlaceHolderList PlaceHolders = new SqlPlaceHolderList();
+
+
+    public DbLinqSqlBuilder(DbModel dbModel, LinqCommand command) {
+      DbModel = dbModel;
+      SqlDialect = DbModel.Driver.SqlDialect;
+      Command = command;
+    }
+
+    public virtual SqlStatement BuildSelectStatement(SelectExpression translatedSelect) {
+      var sql = BuildSelectSql(translatedSelect); 
+      var sqlStmt = new SqlStatement(sql, PlaceHolders, DbExecutionType.Reader,
+                       DbModel.Driver.SqlDialect.PrecedenceHandler, Command.Info.Options);
+      sqlStmt.Fragments.Add(SqlTerms.Semicolon);
+      sqlStmt.Fragments.Add(SqlTerms.NewLine);
+      return sqlStmt;
+    }
+
+    public virtual SqlFragment BuildSelectSql(SelectExpression translatedSelect) {
+      var lockType = Command.Info.LockType;
+      translatedSelect = PreviewSelect(translatedSelect, lockType);
+      var selectOut = BuildSelectOutputClause(translatedSelect);
+      var tables = GetSortedTables(translatedSelect);
+      var from = BuildFromClause(translatedSelect, tables);
+      var where = BuildWhereClause(translatedSelect, tables, translatedSelect.Where);
+      var groupBy = BuildGroupByClause(translatedSelect);
+      var having = BuildHavingClause(translatedSelect);
+      var orderBy = BuildOrderByClause(translatedSelect);
+      var lockClause = BuildLockClause(translatedSelect, lockType);
+      var limit = BuildLimitClause(translatedSelect);
       var all = (new SqlFragment[] { selectOut, from, where, groupBy, having, orderBy, lockClause, limit})
-        .Where(f => f != null).ToArray();
-      var sqlRoot = SqlFragment.CreateList(SqlTerms.NewLine, all);
-      return sqlRoot;
+        .Where(f => f != null).ToList();
+      var sql = SqlFragment.CreateList(SqlTerms.NewLine, all);
+      return sql; 
     }
 
     public virtual SelectExpression PreviewSelect(SelectExpression select, LockType lockType) {
@@ -80,7 +102,7 @@ namespace Vita.Data.Driver {
     public virtual SqlFragment BuildSqlForSqlLiteral(Expression expr) {
       var value = ExpressionHelper.Evaluate(expr);
       var literal = (LinqLiteralBase)value;
-      return literal.GetSql(this.Model); 
+      return literal.GetSql(this.DbModel); 
 
     }
 
@@ -123,6 +145,7 @@ namespace Vita.Data.Driver {
         case SqlExpressionType.Column:
           var colExpr = (ColumnExpression)expr;
           return GetColumnRefSql(colExpr, forOutput: false);
+
         case SqlExpressionType.SubSelect:
           var subs = (SubSelectExpression)expr;
           var subSelect = BuildSqlForSqlExpression(subs.Select);
@@ -131,6 +154,7 @@ namespace Vita.Data.Driver {
         case SqlExpressionType.Table:
           var te = (TableExpression)expr;
           return te.TableInfo.SqlFullName; 
+
         case SqlExpressionType.TableFilter:
           var tfe = (TableFilterExpression)expr;
           var argParts = BuildSqls(tfe.Columns);
@@ -140,7 +164,9 @@ namespace Vita.Data.Driver {
 
         case SqlExpressionType.ExternalValue:
           var extValue = (ExternalValueExpression)expr;
-          return extValue.SqlPlaceHolder;
+          var ph = BuildSqlPlaceHolderForExternalValue(extValue); 
+          // it is already added to placeholders list
+          return ph;
 
         case SqlExpressionType.Group:
           var ge = (GroupExpression)expr;
@@ -153,7 +179,7 @@ namespace Vita.Data.Driver {
           return BuildAggregateSql((AggregateExpression) expr); 
 
         case SqlExpressionType.Select:
-          var selectSql = BuildSelect((SelectExpression)expr);
+          var selectSql = BuildSelectSql((SelectExpression)expr);
           return CompositeSqlFragment.Parenthesize(selectSql);
 
 
@@ -161,7 +187,7 @@ namespace Vita.Data.Driver {
           // Looks like we never come here
           //!!! investigate this
           //TODO: investigate DerivedTable SQL
-          return new TextSqlFragment("*");
+          return SqlTerms.Star;
 
         default:
           Util.Throw("SqlExpression->SQL not implemented, SqlNodeType: {0}", expr.SqlNodeType);
@@ -245,10 +271,10 @@ namespace Vita.Data.Driver {
         // TODO: see if it ever happens
         //Util.Throw("Investigate: literal for sequence value");
         var seq = (SequenceDefinition)value;
-        var dbSeq = this.Model.GetSequence(seq);
+        var dbSeq = this.DbModel.GetSequence(seq);
         return new TextSqlFragment(dbSeq.FullName);
       }
-      var stype = Driver.TypeRegistry.GetDbTypeDef(type);
+      var stype = this.DbModel.Driver.TypeRegistry.GetDbTypeDef(type);
       var literal = stype.ToLiteral(value);
       return new TextSqlFragment(literal); 
     }

@@ -16,7 +16,7 @@ using Vita.Entities.Runtime;
 
 namespace Vita.Data.Postgres {
 
-  public class PgDbSqlBuilder : DbSqlBuilder {
+  public class PgDbSqlBuilder : DbLinqSqlBuilder {
     PgDbSqlDialect _pgDialect; 
 
     public PgDbSqlBuilder(DbModel dbModel, LinqCommandInfo queryInfo): base(dbModel, queryInfo) {

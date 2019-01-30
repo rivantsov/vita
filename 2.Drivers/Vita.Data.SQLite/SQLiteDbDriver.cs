@@ -65,7 +65,7 @@ namespace Vita.Data.SQLite {
       }
     }
 
-    public override DbSqlBuilder CreateDbSqlBuilder(DbModel dbModel, LinqCommandInfo queryInfo) {
+    public override DbLinqSqlBuilder CreateLinqSqlBuilder(DbModel dbModel, LinqCommandInfo queryInfo) {
       return new SQLiteDbSqlBuilder(dbModel, queryInfo); 
     }
 

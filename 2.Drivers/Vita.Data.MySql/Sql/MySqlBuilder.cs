@@ -16,7 +16,7 @@ using Vita.Entities.Runtime;
 using Vita.Entities.Utilities;
 
 namespace Vita.Data.MySql {
-  public class MySqlBuilder : DbSqlBuilder {
+  public class MySqlBuilder : DbLinqSqlBuilder {
 
     private MySqlDialect _myDialect; 
 

@@ -17,12 +17,12 @@ using Vita.Entities.Runtime;
 
 namespace Vita.Data.MsSql {
 
-  public class MsSqlBuilder : DbSqlBuilder {
-    MsSqlDialect _msDialect; 
+  public class MsLinqSqlBuilder : DbLinqSqlBuilder {
+    MsSqlDialect _msDialect;
 
     // maxParamsCount is 2300 for MS SQL, but we're being a bit cautious here
-    public MsSqlBuilder(DbModel dbModel, LinqCommandInfo queryInfo) : base(dbModel, queryInfo) {
-      _msDialect = (MsSqlDialect)dbModel.Driver.SqlDialect; 
+    public MsLinqSqlBuilder(DbModel dbModel, LinqCommand command) : base(dbModel, command) {
+      _msDialect = (MsSqlDialect)dbModel.Driver.SqlDialect;
     }
 
     public override SelectExpression PreviewSelect(SelectExpression select, LockType lockType) {
@@ -97,6 +97,8 @@ namespace Vita.Data.MsSql {
           var argSqls = BuildSqls(expr.Operands);
           var args = SqlFragment.CreateList(SqlTerms.Comma, argSqls);
           return _msDialect.ConcatTemplate.Format(args);
+        case SqlFunctionType.InArray:
+          break; 
       }
       return base.BuildSqlForSqlFunctionExpression(expr);
     }
@@ -114,52 +116,6 @@ namespace Vita.Data.MsSql {
         return _msDialect.OffsetLimitTemplate.Format(offset, limit);
     }
 
-    public override SqlStatement BuildCrudInsertOne(DbTableInfo table, EntityRecord record) {
-      var sql = base.BuildCrudInsertOne(table, record);
-      var flags = table.Entity.Flags; 
-      if (flags.IsSet(EntityFlags.HasIdentity))
-        AppendIdentityReturn(sql, table); 
-      if (flags.IsSet(EntityFlags.HasRowVersion))
-        AppendRowVersionCheckReturn(sql, table, record); 
-      return sql;
-    }
-
-    public override SqlStatement BuildCrudUpdateOne(DbTableInfo table, EntityRecord rec) {
-      var sql = base.BuildCrudUpdateOne(table, rec);
-      if (table.Entity.Flags.IsSet(EntityFlags.HasRowVersion))
-        AppendRowVersionCheckReturn(sql, table, rec);
-      return sql; 
-    }
-
-    private void AppendIdentityReturn(SqlStatement sql, DbTableInfo table) {
-      var idCol = table.Columns.First(c => c.Flags.IsSet(DbColumnFlags.Identity));
-      var dbType = idCol.Member.DataType.GetIntDbType();
-      var idPrmPh = new SqlColumnValuePlaceHolder(idCol, ParameterDirection.Output);
-      sql.PlaceHolders.Add(idPrmPh);
-      var getIdSql = _msDialect.SqlGetIdentityTemplate.Format(idPrmPh);
-      sql.Append(getIdSql);
-      sql.Append(SqlTerms.NewLine);
-    }
-
-    private void AppendRowVersionCheckReturn(SqlStatement sql, DbTableInfo table, EntityRecord record) {
-      var rvCol = table.Columns.First(c => c.Flags.IsSet(DbColumnFlags.RowVersion));
-      // do row count check for update only, not for insert
-      if (record.Status == EntityStatus.Modified) {
-        var tag = new TextSqlFragment($"'ConcurrentUpdate/{table.Entity.Name}/{record.PrimaryKey.ValuesToString()}'");
-        var checkRowsSql = _msDialect.SqlCheckRowCountIsOne.Format(tag);
-        sql.Append(checkRowsSql);
-      }
-      // return RowVersion in parameter
-      var rvPrmPholder = new SqlColumnValuePlaceHolder(rvCol, ParameterDirection.InputOutput);
-      sql.PlaceHolders.Add(rvPrmPholder);
-      rvPrmPholder.PreviewParameter = (prm, ph) => {
-        prm.DbType = DbType.Binary;
-        prm.Size = 8;
-      };
-      var getRvSql = _msDialect.SqlGetRowVersionTemplate.Format(rvPrmPholder);
-      sql.Append(getRvSql);
-      sql.Append(SqlTerms.NewLine);
-    }
 
   }//class
 }

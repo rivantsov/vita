@@ -96,7 +96,7 @@ namespace Vita.Data.MsSql {
           //   the correct format: WHERE Id in (SELECT Value from @P0)
           // additionally we need to make cast to target element type - for efficiency
           var subSelectTemplate = GetSelectFromListParamTemplate(lph.ElementType);
-          ph.FormatParameter = prm => string.Format(subSelectTemplate, prm.ParameterName);
+          ph.FormatParameter = prm => string.Format(subSelectTemplate, prm.ParameterName); 
           // Table-valued parameters cannot be DBNull
           if(sqlPrm.Value == DBNull.Value)
             sqlPrm.Value = null; 

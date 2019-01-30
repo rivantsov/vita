@@ -12,7 +12,7 @@ using Vita.Entities.Utilities;
 
 namespace Vita.Data.Driver {
 
-  public partial class DbSqlBuilder {
+  public partial class DbLinqSqlBuilder {
 
     public virtual SqlFragment BuildSelectOutputClause(SelectExpression select) {
       var flist = new List<SqlFragment>();
@@ -114,13 +114,6 @@ namespace Vita.Data.Driver {
       if(wheres.Count == 0)
         return null;
       var whereParts = new List<SqlFragment>();
-      // !!! check if it is needed
-      /*
-      foreach(var tableExpression in tables) {
-        if(!MustDeclareAsJoin(tables, tableExpression) && tableExpression.JoinExpression != null)
-          whereClauses.Add(BuildExpression(tableExpression.JoinExpression));
-      }
-      */
       foreach(var whereExpression in wheres) 
           whereParts.Add(BuildLinqExpressionSql(whereExpression));
       var whereAll = whereParts.Count == 1 ? whereParts[0] : SqlFragment.CreateList(SqlTerms.And, whereParts);

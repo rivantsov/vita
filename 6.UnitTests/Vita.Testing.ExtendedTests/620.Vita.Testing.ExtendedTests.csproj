@@ -34,10 +34,6 @@
     <ProjectReference Include="..\..\1.Framework\Vita.Tools\090.Vita.Tools.csproj" />
     <ProjectReference Include="..\..\1.Framework\Vita\010.Vita.csproj" />
     <ProjectReference Include="..\..\2.Drivers\Vita.Data.MsSql\210.Vita.Data.MsSql.csproj" />
-    <ProjectReference Include="..\..\2.Drivers\Vita.Data.MySql\220.Vita.Data.MySql.csproj" />
-    <ProjectReference Include="..\..\2.Drivers\Vita.Data.Oracle\260.Vita.Data.Oracle.csproj" />
-    <ProjectReference Include="..\..\2.Drivers\Vita.Data.Postgres\230.Vita.Data.Postgres.csproj" />
-    <ProjectReference Include="..\..\2.Drivers\Vita.Data.SQLite\250.Vita.Data.SQLite.csproj" />
     <ProjectReference Include="..\..\3.Modules\Vita.Modules.Login\320.Vita.Modules.Login.csproj" />
     <ProjectReference Include="..\..\4.Samples\Vita.Samples.BookStore.SampleData\420.Vita.Samples.BookStore.SampleData.csproj" />
     <ProjectReference Include="..\..\4.Samples\Vita.Samples.BookStore\410.Vita.Samples.BookStore.csproj" />

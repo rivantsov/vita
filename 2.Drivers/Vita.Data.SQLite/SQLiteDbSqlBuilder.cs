@@ -14,7 +14,7 @@ using Vita.Entities.Runtime;
 using Vita.Entities.Utilities;
 
 namespace Vita.Data.SQLite {
-  public class SQLiteDbSqlBuilder : DbSqlBuilder {
+  public class SQLiteDbSqlBuilder : DbLinqSqlBuilder {
     SQLiteDbSqlDialect _dialect; 
 
     public SQLiteDbSqlBuilder(DbModel dbModel, LinqCommandInfo queryInfo): base(dbModel, queryInfo) {

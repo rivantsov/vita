@@ -25,8 +25,6 @@ namespace Vita.Data.Linq.Translation.Expressions {
     // public SqlValueMode SqlMode;
     public Type ListElementType;
 
-    public SqlPlaceHolder SqlPlaceHolder;
-
     //public string Alias { get; set; }
 
     public ExternalValueExpression(Expression sourceExpression) : base(SqlExpressionType.ExternalValue, sourceExpression.Type) {

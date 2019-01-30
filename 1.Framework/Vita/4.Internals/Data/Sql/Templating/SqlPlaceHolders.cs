@@ -15,9 +15,9 @@ namespace Vita.Data.Sql {
   public  class SqlPlaceHolder : SqlFragment, IFlatSqlFragment {
     public int Index;
     public ParameterDirection ParamDirection = ParameterDirection.Input;
-    public Action<IDbDataParameter, SqlPlaceHolder> PreviewParameter;
     public Func<object, string> FormatLiteral;
-    public Func<IDataParameter, string> FormatParameter = p => p.ParameterName;
+    public Func<IDbDataParameter, string> FormatParameter;
+    public Action<IDbDataParameter, SqlPlaceHolder> PreviewParameter;
 
 
     public SqlPlaceHolder(int index = -1) {

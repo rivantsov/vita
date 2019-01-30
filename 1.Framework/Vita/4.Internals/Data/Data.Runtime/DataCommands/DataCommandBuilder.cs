@@ -162,8 +162,9 @@ namespace Vita.Data.Runtime {
       if(useLiteral)
         return FormatAsLiteral(ph, dbValue);
       else {
-        var prm = _sqlDialect.AddDbParameter(_dbCommand, ph, dbValue); 
-        return ph.FormatParameter(prm);
+        var prm = _sqlDialect.AddDbParameter(_dbCommand, ph, dbValue);
+        var fmt = ph.FormatParameter;
+        return fmt == null ? prm.ParameterName : fmt(prm);
       }
     }
 
@@ -176,8 +177,9 @@ namespace Vita.Data.Runtime {
       } else {
         // convert to value that should be put in parameter; MSSQL: list of SqlDataRecord-s
         var prmValue = ph.ListToDbParamValue(list);
-        var prm = _sqlDialect.AddDbParameter(_dbCommand, ph, prmValue); 
-        return ph.FormatParameter(prm);
+        var prm = _sqlDialect.AddDbParameter(_dbCommand, ph, prmValue);
+        var fmt = ph.FormatParameter;
+        return fmt == null ? prm.ParameterName : fmt(prm);
       }
     }
 

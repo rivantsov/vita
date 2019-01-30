@@ -108,7 +108,7 @@ namespace Vita.Data.Oracle {
       return new OracleDbModelUpdater(settings);
     }
 
-    public override DbSqlBuilder CreateDbSqlBuilder(DbModel dbModel, LinqCommandInfo queryInfo) {
+    public override DbLinqSqlBuilder CreateLinqSqlBuilder(DbModel dbModel, LinqCommandInfo queryInfo) {
       return new OracleSqlBuilder(dbModel, queryInfo); 
     }
     public override object ExecuteCommand(IDbCommand command, DbExecutionType executionType) {

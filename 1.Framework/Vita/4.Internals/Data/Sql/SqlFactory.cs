@@ -18,14 +18,14 @@ namespace Vita.Data.Sql {
     DbDriver _driver;
     SqlCache _sqlCache; 
     LinqEngine _linqEngine;
-    DbSqlBuilder _crudSqlBuilder; 
+    DbCrudSqlBuilder _crudSqlBuilder; 
 
     public SqlFactory(DbModel dbModel) {
       _dbModel = dbModel;
       _driver = _dbModel.Driver;
       _sqlCache = new SqlCache(10000); 
       _linqEngine = new LinqEngine(_dbModel);
-      _crudSqlBuilder = _dbModel.Driver.CreateDbSqlBuilder(_dbModel, null);
+      _crudSqlBuilder = _dbModel.Driver.CreateCrudSqlBuilder(_dbModel);
     }
 
     public SqlStatement GetLinqSql(LinqCommand command) {

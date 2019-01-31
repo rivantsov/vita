@@ -20,7 +20,7 @@ namespace Vita.Data.Runtime {
     Database _db;
     DbDriver _driver;
     DbModel _dbModel;
-    SqlFactory _commandRepo; 
+    SqlFactory _sqlFactory; 
 
     DbBatch _batch;
 
@@ -31,7 +31,7 @@ namespace Vita.Data.Runtime {
       _db = db;
       _driver = _db.DbModel.Driver;
       _dbModel = _db.DbModel;
-      _commandRepo = _db.SqlFactory;
+      _sqlFactory = _db.SqlFactory;
     }
 
     public DbBatch Build(DbUpdateSet updateSet) {
@@ -55,7 +55,7 @@ namespace Vita.Data.Runtime {
         return;
       foreach(var lcmd in commands) {
         CheckCurrentCommand();
-        var sql = _commandRepo.GetLinqSql(lcmd);
+        var sql = _sqlFactory.GetLinqSql(lcmd);
         _commandBuilder.AddLinqStatement(sql, lcmd.ParameterValues); 
       }//foreach schCmd
     }
@@ -85,13 +85,13 @@ namespace Vita.Data.Runtime {
             // TODO: handle the case when there are too many params within 1 insert command
             var recGroups = GroupRecordsForInsertMany(group.Records, _driver.SqlDialect.MaxRecordsInInsertMany);
             foreach(var recGroup in recGroups) {
-              sql = _commandRepo.GetCrudInsertMany(group.Table, recGroup, _commandBuilder);
+              sql = _sqlFactory.GetCrudInsertMany(group.Table, recGroup, _commandBuilder);
               _commandBuilder.AddUpdates(sql, recGroup);
             } //foreach
           } else {
             foreach(var rec in group.Records) {
               CheckCurrentCommand();
-              sql = sql ?? _commandRepo.GetCrudSqlForSingleRecord(group.Table, rec);
+              sql = sql ?? _sqlFactory.GetCrudSqlForSingleRecord(group.Table, rec);
               _commandBuilder.AddUpdate(sql, rec);
             }
           }
@@ -100,19 +100,19 @@ namespace Vita.Data.Runtime {
         case LinqCommandKind.Update:
           foreach(var rec in group.Records) {
             CheckCurrentCommand();
-            sql = _commandRepo.GetCrudSqlForSingleRecord(group.Table, rec);
+            sql = _sqlFactory.GetCrudSqlForSingleRecord(group.Table, rec);
             _commandBuilder.AddUpdate(sql, rec);
           }
           break;
 
         case LinqCommandKind.Delete:
           if(_db.CanProcessMany(group)) {
-            sql = _commandRepo.GetCrudDeleteMany(group.Table);
+            sql = _sqlFactory.GetCrudDeleteMany(group.Table);
             _commandBuilder.AddUpdates(sql, group.Records, new object[] { group.Records });  
           } else {
             foreach(var rec in group.Records) {
               CheckCurrentCommand();
-              sql = sql ?? _commandRepo.GetCrudSqlForSingleRecord(group.Table, rec);
+              sql = sql ?? _sqlFactory.GetCrudSqlForSingleRecord(group.Table, rec);
               _commandBuilder.AddUpdate(sql, rec);
             }
           }

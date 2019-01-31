@@ -69,15 +69,11 @@ namespace Vita.Data.Driver {
       var pkCol = pk.KeyColumns[0].Column;
       var elemTypeDef = pkCol.TypeInfo.TypeDef;
       var pkListPh = new SqlListParamPlaceHolder(pkCol.Member.DataType, elemTypeDef,
-                   // (linq) Placeholder expects here function that reads the value from local environment;
+                   // Placeholder expects here function that reads the value from local environment;
                    // we provide a function that will take List<EntityRecord> and produce list of PK values
                    valueReader: recs => GetPrimaryKeyValues(recs, table),
-                   // Placeholder expects function that converts CLR-level value into DB parameter value
-                   // For ex, for SQL Server it is  function that converts list of IDs into list of SqlDataRecords 
-                   //  as required by SQL client rules (to send array in SQL parameter)
-                   listToDbParamValue: list => DbModel.Driver.SqlDialect.ConvertListParameterValue(list, pkCol.Member.DataType),
                    // ToLiteral
-                   listToLiteral: list => DbModel.Driver.SqlDialect.ListToLiteral(list, elemTypeDef)
+                   formatLiteral: list => DbModel.Driver.SqlDialect.ListToLiteral(list, elemTypeDef)
                    );
       var placeHolders = new SqlPlaceHolderList();
       placeHolders.Add(pkListPh);

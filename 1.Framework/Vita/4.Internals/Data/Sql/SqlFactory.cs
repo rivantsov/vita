@@ -35,7 +35,8 @@ namespace Vita.Data.Sql {
       var stmt = _sqlCache.Lookup(cacheKey);
       if(stmt != null)
         return stmt;
-      stmt = _linqEngine.Translate(command); 
+      stmt = _linqEngine.Translate(command);
+      _driver.SqlDialect.ReviewSqlStatement(stmt, command);
       if(!command.Info.Options.IsSet(QueryOptions.NoQueryCache))
         _sqlCache.Add(cacheKey, stmt);
       return stmt;
@@ -58,6 +59,7 @@ namespace Vita.Data.Sql {
           sql = _crudSqlBuilder.BuildCrudDeleteOne(table); 
           break; 
       }
+      _driver.SqlDialect.ReviewSqlStatement(sql, table); 
       _sqlCache.Add(cacheKey, sql); 
       return sql; 
     }
@@ -69,13 +71,16 @@ namespace Vita.Data.Sql {
       if(sql != null)
         return sql; 
       sql = _crudSqlBuilder.BuildCrudDeleteMany(table);
+      _driver.SqlDialect.ReviewSqlStatement(sql, table);
       _sqlCache.Add(cacheKey, sql);
       return sql; 
     }
 
     // Insert-many are never cached - these are custom-built each time
     public SqlStatement  GetCrudInsertMany(DbTableInfo table, IList<EntityRecord> records, IColumnValueFormatter formatter) {
-      return _crudSqlBuilder.BuildCrudInsertMany(table, records, formatter);
+      var sql = _crudSqlBuilder.BuildCrudInsertMany(table, records, formatter);
+      _driver.SqlDialect.ReviewSqlStatement(sql, table);
+      return sql; 
     }
 
   } //class

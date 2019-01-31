@@ -98,7 +98,7 @@ namespace Vita.Data.Linq.Translation {
       var rewriterContext = new TranslationContext(this);
       // scope dependent Parts
       rewriterContext._currentScopeIndex = SelectExpressions.Count;
-      SelectExpressions.Add(new SelectExpression(CurrentSelect, CurrentSelect.QueryInfo));
+      SelectExpressions.Add(new SelectExpression(CurrentSelect, CurrentSelect.CommandInfo));
       return rewriterContext;
     }
 
@@ -106,13 +106,13 @@ namespace Vita.Data.Linq.Translation {
     public TranslationContext NewSisterSelect() {
       var rewriterContext = new TranslationContext(this);
       rewriterContext._currentScopeIndex = SelectExpressions.Count;
-      SelectExpressions.Add(new SelectExpression(CurrentSelect.Parent, CurrentSelect.QueryInfo));
+      SelectExpressions.Add(new SelectExpression(CurrentSelect.Parent, CurrentSelect.CommandInfo));
       return rewriterContext;
     }
 
     public void NewParentSelect() {
       SelectExpression currentSelect = this.CurrentSelect;
-      SelectExpression newParentSelect = new SelectExpression(currentSelect.Parent, CurrentSelect.QueryInfo);
+      SelectExpression newParentSelect = new SelectExpression(currentSelect.Parent, CurrentSelect.CommandInfo);
       currentSelect.Parent = newParentSelect;
       this._currentScopeIndex = SelectExpressions.Count;
       SelectExpressions.Add(newParentSelect);

@@ -16,11 +16,11 @@ using Vita.Entities.Runtime;
 using Vita.Entities.Utilities;
 
 namespace Vita.Data.MySql {
-  public class MySqlBuilder : DbLinqSqlBuilder {
+  public class MySqlLinqSqlBuilder : DbLinqSqlBuilder {
 
     private MySqlDialect _myDialect; 
 
-    public MySqlBuilder(DbModel dbModel, LinqCommandInfo queryInfo) : base(dbModel, queryInfo) {
+    public MySqlLinqSqlBuilder(DbModel dbModel, LinqCommand command) : base(dbModel, command) {
       _myDialect = (MySqlDialect) dbModel.Driver.SqlDialect; 
     }
 
@@ -31,7 +31,7 @@ namespace Vita.Data.MySql {
       // - which screws up view version comparison in schema update. 
       // another thing - it adds explicit alias to all output columns (same as column name)
       select = base.PreviewSelect(select, lockType);
-      if (select.QueryInfo.IsView) {
+      if (select.CommandInfo.IsView) {
         int cnt = 0;
         foreach(var t in select.Tables)
           if(string.IsNullOrEmpty(t.Alias))
@@ -43,40 +43,6 @@ namespace Vita.Data.MySql {
         }
       }
       return select;
-    }
-
-    public override SqlStatement BuildCrudInsertOne(DbTableInfo table, EntityRecord record) {
-      var sql = base.BuildCrudInsertOne(table, record);
-      var flags = table.Entity.Flags;
-      if(flags.IsSet(EntityFlags.HasIdentity))
-        AppendIdentityReturn(sql, table);
-      return sql;
-    }
-
-    // Inserted identity is returned by extra select; command postprocessor IdentityReader gets it from DataReader
-    // and puts it into EntityRecord
-    private void AppendIdentityReturn(SqlStatement sql, DbTableInfo table) {
-      sql.Append(_myDialect.SqlSelectIdentity); // returned value is decimal!
-      sql.Append(SqlTerms.NewLine);
-      sql.ExecutionType = DbExecutionType.Reader;
-      sql.ResultProcessor = this._identityReader; 
-    }
-
-    IdentityReader _identityReader = new IdentityReader(); 
-
-    class IdentityReader : IDataCommandResultProcessor {
-      public object ProcessResult(DataCommand command) {
-        var reader = command.Result as IDataReader;
-        Util.Check(reader.Read(), "Identity reader error: command did not return a record with identity.");
-        var idValue = reader[0];
-        var rec = command.Records[0]; //there must be a single record
-        var idMember = rec.EntityInfo.IdentityMember;
-        if(idValue.GetType() != idMember.DataType)
-          idValue = ConvertHelper.ChangeType(idValue, idMember.DataType); 
-        rec.SetValueDirect(idMember, idValue);
-        reader.Close();
-        return reader; 
-      }
     }
 
     public override SqlFragment BuildLockClause(SelectExpression selectExpression, LockType lockType) {

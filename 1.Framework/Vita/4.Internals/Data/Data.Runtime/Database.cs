@@ -110,7 +110,7 @@ namespace Vita.Data.Runtime {
             switch(tableGrp.Operation) {
               case LinqCommandKind.Insert:
                 if (CanProcessMany(tableGrp)) {
-                  var cmdBuilder = new DataCommandBuilder(this._driver);
+                  var cmdBuilder = new DataCommandBuilder(this._driver, mode: SqlGenMode.PreferLiteral);
                   var sql = SqlFactory.GetCrudInsertMany(tableGrp.Table, tableGrp.Records, cmdBuilder);
                   cmdBuilder.AddUpdates(sql, tableGrp.Records);
                   var cmd = cmdBuilder.CreateCommand(conn, sql.ExecutionType, sql.ResultProcessor);

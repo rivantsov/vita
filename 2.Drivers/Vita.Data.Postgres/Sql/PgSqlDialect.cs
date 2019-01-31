@@ -11,14 +11,14 @@ using Vita.Data.Linq.Translation.Expressions;
 using Vita.Data.Sql;
 
 namespace Vita.Data.Postgres {
-  public class PgDbSqlDialect : DbSqlDialect {
+  public class PgSqlDialect : DbSqlDialect {
     public SqlFragment SqlLockForUpdate = new TextSqlFragment(" FOR UPDATE");
     public SqlFragment SqlLockInShareMode = new TextSqlFragment("  FOR SHARE");
 
     public SqlTemplate SqlCrudTemplateReturningIdentity = new SqlTemplate(@" RETURNING {0};");
 
 
-    public PgDbSqlDialect(PgDbDriver driver) : base(driver) {
+    public PgSqlDialect(PgDbDriver driver) : base(driver) {
       base.MaxParamCount = 32000; //reported also 65K
       base.OffsetTemplate = new SqlTemplate(" OFFSET {0} ");
       base.OffsetLimitTemplate = new SqlTemplate(" LIMIT {1} OFFSET {0} ");
@@ -78,11 +78,22 @@ namespace Vita.Data.Postgres {
       return base.GetSqlFunctionTemplate(expr);
     }
 
+    /*
+     We are using Any() function for in-array operator (instead of standard SQL's '<value> IN <list>)
+     Any() works both for parameter (as list value) or list literal. But list literal must be formatted using 
+      ARRAY[..] method. Example of correct query with literal: 
 
+        Select *
+        from "books"."Book" 
+        WHERE "Title" = Any(ARRAY['IronMan', 'Windows Programming'])
+          or "Category" = Any(ARRAY[0,1])
+          OR "Category" = Any('{}') -- empty array
+
+    */
     public override string ListToLiteral(object value, DbTypeDef elemTypeDef) {
       var list = value as IList;
       if(list.Count == 0)
-        return GetEmptyListLiteral(elemTypeDef);
+        return "'{}'"; // GetEmptyListLiteral(elemTypeDef);
       var strList = new List<string>(list.Count);
       foreach(var item in list) {
         strList.Add(elemTypeDef.ToLiteral(item));
@@ -90,11 +101,13 @@ namespace Vita.Data.Postgres {
       return "ARRAY[" + string.Join(", ", strList) + "]";
     }
 
+    /*
     public override string GetEmptyListLiteral(DbTypeDef elemTypeDef) {
       var pgDbType = elemTypeDef.Name;
       var emptyList = string.Format("SELECT CAST(NULL AS {0}) WHERE 1=0", pgDbType); 
       return emptyList;
     }
+    */
 
     public override IDbDataParameter AddDbParameter(IDbCommand command, SqlPlaceHolder ph, object value) {
       var prm = (NpgsqlParameter) base.AddDbParameter(command, ph, value);

@@ -31,7 +31,7 @@ namespace Vita.Data.Postgres {
 
     public PgDbDriver()  : base(DbServerType.Postgres, PgFeatures) {
       base.TypeRegistry = new PgTypeRegistry(this);
-      base.SqlDialect = new PgDbSqlDialect(this); 
+      base.SqlDialect = new PgSqlDialect(this); 
     }
 
     public override DbOptions GetDefaultOptions() {
@@ -61,9 +61,14 @@ namespace Vita.Data.Postgres {
       return new PgDbModelLoader(settings, log);
     }
 
-    public override DbLinqSqlBuilder CreateLinqSqlBuilder(DbModel dbModel, LinqCommandInfo queryInfo) {
-      return new PgDbSqlBuilder(dbModel, queryInfo);
+    public override DbLinqSqlBuilder CreateLinqSqlBuilder(DbModel dbModel, LinqCommand command) {
+      return new PgLinqSqlBuilder(dbModel, command);
     }
+
+    public override DbCrudSqlBuilder CreateCrudSqlBuilder(DbModel dbModel) {
+      return new PgCrudSqlBuilder(dbModel);
+    }
+
     public override IDbCommand CreateCommand() {
       return new NpgsqlCommand();
     }

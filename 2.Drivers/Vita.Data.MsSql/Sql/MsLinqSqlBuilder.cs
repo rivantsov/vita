@@ -1,10 +1,12 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Data;
+using System.Data.SqlClient;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Text;
-
+using Microsoft.SqlServer.Server;
 using Vita.Data.Driver;
 using Vita.Data.Linq;
 using Vita.Data.Linq.Translation.Expressions;
@@ -13,7 +15,7 @@ using Vita.Data.Sql;
 using Vita.Entities;
 using Vita.Entities.Locking;
 using Vita.Entities.Model;
-using Vita.Entities.Runtime;
+using Vita.Entities.Utilities;
 
 namespace Vita.Data.MsSql {
 
@@ -97,8 +99,6 @@ namespace Vita.Data.MsSql {
           var argSqls = BuildSqls(expr.Operands);
           var args = SqlFragment.CreateList(SqlTerms.Comma, argSqls);
           return _msDialect.ConcatTemplate.Format(args);
-        case SqlFunctionType.InArray:
-          break; 
       }
       return base.BuildSqlForSqlFunctionExpression(expr);
     }
@@ -115,7 +115,6 @@ namespace Vita.Data.MsSql {
       else
         return _msDialect.OffsetLimitTemplate.Format(offset, limit);
     }
-
 
   }//class
 }

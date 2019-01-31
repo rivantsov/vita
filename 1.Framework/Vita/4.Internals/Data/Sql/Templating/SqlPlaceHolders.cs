@@ -61,15 +61,14 @@ namespace Vita.Data.Sql {
     public Type ElementType;
     public DbTypeDef ElementTypeDef; 
     public Func<object[], object> ListValueReader;
-    public Func<object, object> ListToDbParamValue;
 
     public SqlListParamPlaceHolder(Type elementType, DbTypeDef elemTypeDef, Func<object[], object> valueReader, 
-                            Func<object, object> listToDbParamValue, Func<object, string> listToLiteral) {
+                                               Func<object, string> formatLiteral, Func<IDbDataParameter, string> formatParameter = null) {
       ElementType = elementType;
       ElementTypeDef = elemTypeDef;
       ListValueReader = valueReader;
-      ListToDbParamValue = listToDbParamValue;
-      base.FormatLiteral = listToLiteral;
+      base.FormatLiteral = formatLiteral;
+      base.FormatParameter = formatParameter ?? (p => p.ParameterName);
     }
   }
 

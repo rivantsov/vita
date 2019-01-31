@@ -42,20 +42,20 @@ namespace Vita.Data.Linq.Translation.Expressions {
     // Parent scope: we will climb up to find if we don't find the request table in the current scope
     public SelectExpression Parent { get; set; }
 
-    public LinqCommandInfo QueryInfo;
+    public LinqCommandInfo CommandInfo;
 
     public SelectExpression(LinqCommandInfo info) : base(SqlExpressionType.Select, null, null) {
-      QueryInfo = info; 
+      CommandInfo = info; 
     }
 
     public SelectExpression(SelectExpression parentSelectExpression, LinqCommandInfo queryInfo) 
          : base(SqlExpressionType.Select, null, null) {
       Parent = parentSelectExpression;
-      QueryInfo = queryInfo; 
+      CommandInfo = queryInfo; 
     }
 
     private SelectExpression(LinqCommandInfo info, Type type, IList<Expression> operands) : base(SqlExpressionType.Select, type, operands) {
-      QueryInfo = info; 
+      CommandInfo = info; 
     }
 
     protected override Expression Mutate2(IList<Expression> newOperands) {
@@ -64,7 +64,7 @@ namespace Vita.Data.Linq.Translation.Expressions {
         type = newOperands[0].Type;
       else
         type = Type;
-      var scopeExpression = new SelectExpression(QueryInfo, type, newOperands);
+      var scopeExpression = new SelectExpression(CommandInfo, type, newOperands);
       scopeExpression.Tables = Tables;
       scopeExpression.Columns = Columns;
       scopeExpression.Where = Where;

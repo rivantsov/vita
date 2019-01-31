@@ -32,14 +32,14 @@ namespace Vita.Data.Driver {
     public virtual SqlStatement BuildSelectStatement(SelectExpression translatedSelect) {
       var sql = BuildSelectSql(translatedSelect); 
       var sqlStmt = new SqlStatement(sql, PlaceHolders, DbExecutionType.Reader,
-                       DbModel.Driver.SqlDialect.PrecedenceHandler, Command.Info.Options);
+                       DbModel.Driver.SqlDialect.PrecedenceHandler, translatedSelect.CommandInfo.Options);
       sqlStmt.Fragments.Add(SqlTerms.Semicolon);
       sqlStmt.Fragments.Add(SqlTerms.NewLine);
       return sqlStmt;
     }
 
     public virtual SqlFragment BuildSelectSql(SelectExpression translatedSelect) {
-      var lockType = Command.Info.LockType;
+      var lockType = translatedSelect.CommandInfo.LockType;
       translatedSelect = PreviewSelect(translatedSelect, lockType);
       var selectOut = BuildSelectOutputClause(translatedSelect);
       var tables = GetSortedTables(translatedSelect);
@@ -64,6 +64,7 @@ namespace Vita.Data.Driver {
         select.Flags |= SelectExpressionFlags.Distinct; 
       return select;
     }
+
     //TODO: rewrite or get rid of it!
     protected IList<TableExpression> GetSortedTables(SelectExpression selectExpression) {
       //RI: I have rewritten this
@@ -164,7 +165,7 @@ namespace Vita.Data.Driver {
 
         case SqlExpressionType.ExternalValue:
           var extValue = (ExternalValueExpression)expr;
-          var ph = BuildSqlPlaceHolderForExternalValue(extValue); 
+          var ph = CreateSqlPlaceHolder(extValue); 
           // it is already added to placeholders list
           return ph;
 

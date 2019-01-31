@@ -155,18 +155,5 @@ from (`books`.`author` `a$` left join `books`.`user` `t0$` on((`t0$`.`Id` = `a$`
 
     }
 
-    /*
-        private void FixGuidColumnsTypeDefs() {
-          var guidTypeInfo = Driver.TypeRegistry.FindStorageType(typeof(Guid), false);
-          foreach(var table in Model.Tables) {
-            foreach(var col in table.Columns) {
-              if(col.TypeInfo.SqlTypeSpec == "binary(16)") {
-                col.TypeInfo.TypeDef = guidTypeInfo; 
-              }
-            }
-          }
-        }
-    */
-
   }
 }

@@ -414,10 +414,6 @@ SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME='{0}' AND TABLE_SCHEMA 
       return sql;
     }
 
-    public virtual object ConvertListParameterValue(object value, Type elemType) {
-      return value;
-    }
-
     public virtual IDbDataParameter AddDbParameter(IDbCommand command, SqlPlaceHolder ph, object value) {
       var prmIndex = command.Parameters.Count;
       var prm = command.CreateParameter();
@@ -443,6 +439,12 @@ SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME='{0}' AND TABLE_SCHEMA 
     // Used in 't.Col IN (<list>)' expressions when list is empty; does not work for all providers
     public virtual string GetEmptyListLiteral(DbTypeDef elemTypeDef) {
       return "SELECT NULL WHERE 1=0"; //works OK for MS SQL, SQLite
+    }
+
+    // metaObject depends on statement type - LinqCommand, or DbTable, etc
+    public virtual void ReviewSqlStatement(SqlStatement sql, object metaObject) {
+
+
     }
 
 

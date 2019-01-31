@@ -12,8 +12,7 @@ namespace Vita.Data.Driver {
 
   public partial class DbLinqSqlBuilder {
 
-    // Making it static for preparing to move to DbSqlBuilder
-    protected virtual SqlPlaceHolder BuildSqlPlaceHolderForExternalValue(ExternalValueExpression extValue) {
+    protected virtual SqlPlaceHolder CreateSqlPlaceHolder(ExternalValueExpression extValue) {
       var dataType = extValue.SourceExpression.Type;
       var driver = this.DbModel.Driver;
       var typeRegistry = driver.TypeRegistry;
@@ -24,9 +23,8 @@ namespace Vita.Data.Driver {
         var elemTypeDef = typeRegistry.GetDbTypeDef(elemType);
         Util.Check(elemTypeDef != null, "Failed to match DB type for CLR type {0}", elemType);
         ph = new SqlListParamPlaceHolder(elemType, elemTypeDef, valueReader,
-                   listToDbParamValue: list => driver.SqlDialect.ConvertListParameterValue(list, elemType),
                    // ToLiteral
-                   listToLiteral: list => driver.SqlDialect.ListToLiteral(list, elemTypeDef)
+                   formatLiteral: list => driver.SqlDialect.ListToLiteral(list, elemTypeDef)
                    );
       } else {
         //regular linq parameter

@@ -67,9 +67,17 @@ namespace Vita.Data.MySql {
     public override DbModelLoader CreateDbModelLoader(DbSettings settings, IActivationLog log) {
       return new MySqlDbModelLoader(settings, log);
     }
-    public override DbLinqSqlBuilder CreateLinqSqlBuilder(DbModel dbModel, LinqCommandInfo queryInfo) {
-      return new MySqlBuilder(dbModel, queryInfo);
+
+    public override DbCrudSqlBuilder CreateCrudSqlBuilder(DbModel dbModel) {
+      return new MySqlCrudSqlBuilder(dbModel); 
     }
+    public override DbLinqSqlBuilder CreateLinqSqlBuilder(DbModel dbModel, LinqCommand command) {
+      return new MySqlLinqSqlBuilder(dbModel, command);
+    }
+    public override DbLinqNonQuerySqlBuilder CreateLinqNonQuerySqlBuilder(DbModel dbModel, NonQueryLinqCommand command) {
+      return base.CreateLinqNonQuerySqlBuilder(dbModel, command);
+    }
+
     public override IDbCommand CreateCommand() {
       return new MySqlCommand(); 
     }

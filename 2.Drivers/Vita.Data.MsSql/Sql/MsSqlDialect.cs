@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Data;
 using System.Data.SqlClient;
@@ -83,26 +84,8 @@ namespace Vita.Data.MsSql {
       return base.GetAggregateResultType(aggregateType, opTypes);
     }
 
-
     public override IDbDataParameter AddDbParameter(IDbCommand command, SqlPlaceHolder ph, object value) {
       var parameter = base.AddDbParameter(command, ph, value); 
-      switch(ph) {
-        case SqlListParamPlaceHolder lph:
-          // it is a list value
-          var sqlPrm = (SqlParameter)parameter;
-          sqlPrm.SqlDbType = SqlDbType.Structured;
-          sqlPrm.TypeName = this.Driver.SystemSchema + "." + MsSqlDbDriver.ArrayAsTableTypeName;
-          // format reference to parameter as sub-select. In MS SQL you cannot do: 'WHERE id IN @P0'
-          //   the correct format: WHERE Id in (SELECT Value from @P0)
-          // additionally we need to make cast to target element type - for efficiency
-          var subSelectTemplate = GetSelectFromListParamTemplate(lph.ElementType);
-          ph.FormatParameter = prm => string.Format(subSelectTemplate, prm.ParameterName); 
-          // Table-valued parameters cannot be DBNull
-          if(sqlPrm.Value == DBNull.Value)
-            sqlPrm.Value = null; 
-          break; 
-      }
-
       // force DbType to datetime2
       switch (parameter.Direction) {
         case ParameterDirection.Input:
@@ -112,6 +95,21 @@ namespace Vita.Data.MsSql {
           break;
       } //switch direction
       return parameter; 
+    }
+
+    #region ReviewSqlStatement
+    public override void ReviewSqlStatement(SqlStatement sql, object metaObject) {
+      base.ReviewSqlStatement(sql, metaObject);
+      // additional configuration for list placeholders
+      foreach(var ph in sql.PlaceHolders) {
+        switch(ph) {
+          case SqlListParamPlaceHolder lph:
+            lph.PreviewParameter = ConfigureListParameter; //sets up special properties of DbParameter
+            var template = GetSelectFromListParamTemplate(lph.ElementType);
+            lph.FormatParameter = (prm) => string.Format(template, prm.ParameterName);
+            break; 
+        }
+      }
     }
 
     private string GetSelectFromListParamTemplate(Type elemType) {
@@ -126,14 +124,32 @@ namespace Vita.Data.MsSql {
     }
 
 
-    public override object ConvertListParameterValue(object value, Type elemType) {
-      var list = value as System.Collections.IEnumerable; 
-      bool isEnum = elemType.IsEnum;
+    // Parameters containing lists need special setup
+    private void ConfigureListParameter(IDbDataParameter prm, SqlPlaceHolder ph) {
+      var sqlPrm = (SqlParameter)prm;
+      // convert to list of SqlDataRecord
+      sqlPrm.Value = ConvertListParameterValue(sqlPrm.Value, (SqlListParamPlaceHolder)ph);
+      sqlPrm.SqlDbType = SqlDbType.Structured;
+      var msDriver = (MsSqlDbDriver)this.Driver;
+      sqlPrm.TypeName = msDriver.SystemSchema + "." + MsSqlDbDriver.ArrayAsTableTypeName;
+      /*
+      // Table-valued parameters cannot be DBNull; for empty list set it to null
+      if(sqlPrm.Value == DBNull.Value)
+        sqlPrm.Value = null;
+        */
+    }
+    #endregion
+
+    public List<SqlDataRecord> ConvertListParameterValue(object value, SqlListParamPlaceHolder lph) {
+      var list = value as IList;
+      if(list == null || list.Count == 0)
+        return null; //it should null, not DbNull.Value
+      bool isEnum = lph.ElementType.IsEnum;
       var records = new List<SqlDataRecord>();
       var rowMetaData = new SqlMetaData("Value", SqlDbType.Variant);
       foreach(object elem in list) {
         var rec = new SqlDataRecord(rowMetaData);
-        var v1 = isEnum ? ConvertHelper.EnumValueToInt(elem, elemType) : elem;
+        var v1 = isEnum ? ConvertHelper.EnumValueToInt(elem, lph.ElementType) : elem;
         rec.SetValue(0, v1);
         records.Add(rec);
       }

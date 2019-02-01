@@ -32,7 +32,8 @@ namespace Vita.Data.Runtime {
     IDbCommand _dbCommand;
     bool _batchMode; 
     SqlGenMode _genMode;
-    public int SqlCount; 
+    public int SqlCount;
+    SqlStatement _currentSql; 
 
     IList<BatchParamCopy> _paramCopyList; 
     IList<string> _sqlStrings = new List<string>();
@@ -47,8 +48,6 @@ namespace Vita.Data.Runtime {
       _sqlDialect = _driver.SqlDialect;
       _batchMode = batchMode; 
       _genMode = mode;
-      if(batchMode)
-        _genMode = SqlGenMode.PreferLiteral;
       _maxLiteralLength = _driver.SqlDialect.MaxLiteralLength; 
       _dbCommand = _driver.CreateCommand();
       //reserve spots: #0 for batch-begin (BEGIN; in ORACLE); #2 for Begin Trans
@@ -111,10 +110,12 @@ namespace Vita.Data.Runtime {
 
     private void AddStatement(SqlStatement sql, object args) {
       SqlCount++;
+      _currentSql = sql; 
       var phArgs = new string[sql.PlaceHolders.Count];
       for(var i = 0; i < phArgs.Length; i++)
         phArgs[i] = FormatPlaceHolder(sql.PlaceHolders[i], args);
       sql.WriteSql(_sqlStrings, phArgs);
+      _currentSql = null; 
     }
 
     private string FormatPlaceHolder(SqlPlaceHolder placeHolder, object arg) {
@@ -149,16 +150,16 @@ namespace Vita.Data.Runtime {
       // get value and check if we can use literal 
       memberValue = rec.GetValueDirect(cph.Column.Member);
       colValue = cph.Column.Converter.PropertyToColumn(memberValue);
-      if(_genMode == SqlGenMode.PreferLiteral && CanUseLiteral(memberValue, cph.Column))
-          return FormatAsLiteral(cph, colValue);
-      // use parameter
-      return AddParameter(cph, colValue, rec).ParameterName;
+      if(ShouldUseLiteral(memberValue, cph.Column))
+        return FormatAsLiteral(cph, colValue);
+      else 
+        return AddParameter(cph, colValue, rec).ParameterName;
     }
 
     private string FormatLinqPlaceHolder(SqlLinqParamPlaceHolder ph, object arg) {
       var value = ph.ValueReader((object[])arg);
       var dbValue = ph.ValueToDbValue(value) ?? DBNull.Value; //move it into converters? currently no-conv does not do this
-      var useLiteral = _genMode == SqlGenMode.NoParameters || (_genMode == SqlGenMode.PreferLiteral && CanUseLiteral(dbValue));
+      var useLiteral = ShouldUseLiteral(dbValue);
       if(useLiteral)
         return FormatAsLiteral(ph, dbValue);
       else {
@@ -171,6 +172,7 @@ namespace Vita.Data.Runtime {
     private string FormatListPlaceHolder(SqlListParamPlaceHolder ph, object arg) {
       // read value from locals (linq); for DeleteMany: read list of IDs from list of records
       var list = ph.ListValueReader((object[])arg);
+      // always use parameter, unless option is not available
       var useLiteral = !_driver.Supports(DbFeatures.ArrayParameters) || _genMode == SqlGenMode.NoParameters;
       if(useLiteral) {
         return ph.FormatLiteral(list);
@@ -249,6 +251,22 @@ namespace Vita.Data.Runtime {
       return true;
     }
 
+
+    private bool ShouldUseLiteral(object value, DbColumnInfo column = null) {
+      switch(_genMode) {
+        case SqlGenMode.NoParameters: return true;
+        case SqlGenMode.PreferLiteral: // batch mode likely
+          return CanUseLiteral(value, column);
+        case SqlGenMode.PreferParam:
+        default: 
+          switch(_currentSql.Kind) {
+            case SqlKind.InsertMany: //for insert-many, these are not reusable, try to use literal
+              return CanUseLiteral(value, column);
+            default:
+              return false; 
+          }//switch Kind
+      } // switch _genMode
+    }
 
     public virtual bool CanUseLiteral(object value, DbColumnInfo column = null) {
       if(value == null || value == DBNull.Value)

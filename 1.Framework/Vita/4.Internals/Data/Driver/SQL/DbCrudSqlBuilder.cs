@@ -39,7 +39,7 @@ namespace Vita.Data.Driver {
       var valuesFragm = CompositeSqlFragment.Parenthesize(SqlFragment.CreateList(SqlTerms.Comma, colSqls));
       // format SQL
       var sql = SqlDialect.SqlCrudTemplateInsert.Format(table.SqlFullName, colListSql, valuesFragm);
-      var stmt = new SqlStatement(sql, placeHolders, DbExecutionType.NonQuery);
+      var stmt = new SqlStatement(SqlKind.InsertOne, sql, placeHolders, DbExecutionType.NonQuery);
       return stmt;
     }
 
@@ -58,7 +58,7 @@ namespace Vita.Data.Driver {
       var whereCond = BuildWhereConditonForUpdateDeleteOne(table, placeHolders);
       var whereClause = new CompositeSqlFragment(SqlTerms.Where, whereCond);
       var sql = SqlDialect.SqlCrudTemplateUpdate.Format(table.SqlFullName, setList, whereClause);
-      var stmt = new SqlStatement(sql, placeHolders, DbExecutionType.NonQuery,
+      var stmt = new SqlStatement(SqlKind.UpdateOne, sql, placeHolders, DbExecutionType.NonQuery,
                          SqlDialect.PrecedenceHandler, QueryOptions.NoQueryCache);
       return stmt;
     }
@@ -78,7 +78,7 @@ namespace Vita.Data.Driver {
       var placeHolders = new SqlPlaceHolderList();
       placeHolders.Add(pkListPh);
       var sql = SqlDialect.SqlCrudTemplateDeleteMany.Format(table.SqlFullName, pkCol.SqlColumnNameQuoted, pkListPh);
-      var stmt = new SqlStatement(sql, placeHolders, DbExecutionType.NonQuery);
+      var stmt = new SqlStatement(SqlKind.DeleteMany, sql, placeHolders, DbExecutionType.NonQuery);
       return stmt;
     }
 
@@ -99,7 +99,7 @@ namespace Vita.Data.Driver {
       var whereCond = BuildWhereConditonForUpdateDeleteOne(table, placeHolders);
       var whereClause = new CompositeSqlFragment(SqlTerms.Where, whereCond);
       var sql = SqlDialect.SqlCrudTemplateDelete.Format(table.SqlFullName, whereClause);
-      var stmt = new SqlStatement(sql, placeHolders, DbExecutionType.NonQuery);
+      var stmt = new SqlStatement(SqlKind.DeleteOne, sql, placeHolders, DbExecutionType.NonQuery);
       return stmt;
     }
 
@@ -121,7 +121,7 @@ namespace Vita.Data.Driver {
       }
       var allValuesSql = SqlFragment.CreateList(SqlTerms.CommaNewLineIndent, rowFragments);
       var sql = SqlDialect.SqlCrudTemplateInsert.Format(table.SqlFullName, colListSql, allValuesSql);
-      var stmt = new SqlStatement(sql, null, DbExecutionType.NonQuery, null, QueryOptions.NoQueryCache);
+      var stmt = new SqlStatement(SqlKind.InsertMany, sql, null, DbExecutionType.NonQuery, null, QueryOptions.NoQueryCache);
       return stmt;
     }
 

@@ -15,9 +15,11 @@ using Vita.Entities.Model;
 using Vita.Entities.Runtime;
 
 namespace Vita.Data.Oracle {
-  public class OracleSqlBuilder : DbLinqSqlBuilder {
+
+  public class OracleLinqSqlBuilder : DbLinqSqlBuilder {
     OracleSqlDialect _oracleDialect; 
-    public OracleSqlBuilder(DbModel dbModel, LinqCommandInfo queryInfo) : base(dbModel, queryInfo) {
+
+    public OracleLinqSqlBuilder(DbModel dbModel, LinqCommand command) : base(dbModel, command) {
       _oracleDialect = (OracleSqlDialect)base.SqlDialect; 
     }
 
@@ -69,27 +71,6 @@ namespace Vita.Data.Oracle {
       if(tables.Count == 0) 
         return _oracleDialect.SqlFromDual;
       return base.BuildFromClause(selectExpression, tables);
-    }
-
-    public override SqlStatement BuildCrudInsertOne(DbTableInfo table, EntityRecord record) {
-      var sql = base.BuildCrudInsertOne(table, record);
-      var flags = table.Entity.Flags;
-      if(flags.IsSet(EntityFlags.HasIdentity))
-        AppendIdentityReturn(sql, table);
-      return sql;
-    }
-
-    private void AppendIdentityReturn(SqlStatement sql, DbTableInfo table) {
-      sql.TrimEndingSemicolon(); // somewhat a hack
-      // Append returning clause
-      var idCol = table.Columns.First(c => c.Flags.IsSet(DbColumnFlags.Identity));
-      var dbType = idCol.Member.DataType.GetIntDbType();
-      // we create placeholder based on Id column, only with OUTPUT direction - this results in parameter to return value
-      var idPrmPh = new SqlColumnValuePlaceHolder(idCol, ParameterDirection.Output);
-      sql.PlaceHolders.Add(idPrmPh);
-      var getIdSql = _oracleDialect.SqlReturnIdentityTemplate.Format(idCol.SqlColumnNameQuoted, idPrmPh);
-      sql.Append(getIdSql);
-      sql.Append(SqlTerms.NewLine);
     }
 
     protected override SqlFragment BuildLimitSql(SqlFragment limit, SqlFragment offset) {

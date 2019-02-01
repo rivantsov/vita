@@ -31,7 +31,7 @@ namespace Vita.Data.Driver {
 
     public virtual SqlStatement BuildSelectStatement(SelectExpression translatedSelect) {
       var sql = BuildSelectSql(translatedSelect); 
-      var sqlStmt = new SqlStatement(sql, PlaceHolders, DbExecutionType.Reader,
+      var sqlStmt = new SqlStatement(SqlKind.LinqSelect, sql, PlaceHolders, DbExecutionType.Reader,
                        DbModel.Driver.SqlDialect.PrecedenceHandler, translatedSelect.CommandInfo.Options);
       sqlStmt.Fragments.Add(SqlTerms.Semicolon);
       sqlStmt.Fragments.Add(SqlTerms.NewLine);

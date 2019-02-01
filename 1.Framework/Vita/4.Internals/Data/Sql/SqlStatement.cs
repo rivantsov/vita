@@ -9,23 +9,33 @@ using Vita.Entities.Runtime;
 
 namespace Vita.Data.Sql {
 
-  using CommandAction = Action<DataCommand, EntityRecord>;
+  public enum SqlKind {
+    LinqSelect,
+    LinqInsert,
+    LinqUpdate,
+    LinqDelete,
+    InsertOne,
+    InsertMany,
+    UpdateOne,
+    DeleteOne,
+    DeleteMany,
+    Other,
+  }
 
-  public class SqlStatement { 
+
+  public class SqlStatement {
+    public readonly SqlKind Kind; 
     public List<IFlatSqlFragment> Fragments = new List<IFlatSqlFragment>();
-    public SqlPlaceHolderList PlaceHolders = new SqlPlaceHolderList();
-    public QueryOptions Options;
+    public readonly SqlPlaceHolderList PlaceHolders = new SqlPlaceHolderList();
+    public readonly QueryOptions Options;
     internal bool IsCompacted;
 
     public DbExecutionType ExecutionType;
     public IDataCommandResultProcessor ResultProcessor;
-    // Note: this is intentional, these lists are null, the consuming code must check for null before using them
-    public List<CommandAction> PreActions;
-    public List<CommandAction> PostActions;
 
-
-    public SqlStatement(SqlFragment sql, SqlPlaceHolderList placeHolders, DbExecutionType executionType,
+    public SqlStatement(SqlKind kind, SqlFragment sql, SqlPlaceHolderList placeHolders, DbExecutionType executionType,
             SqlPrecedenceHandler precedenceHandler = null, QueryOptions options = QueryOptions.None) {
+      Kind = kind;
       ExecutionType = executionType; 
       Options = options;
       Append(sql, placeHolders, precedenceHandler);
@@ -102,15 +112,6 @@ namespace Vita.Data.Sql {
       } //switch tail.Count
     }
 
-
-    public void AddPreAction(CommandAction action) {
-      PreActions = PreActions ?? new List<CommandAction>();
-      PreActions.Add(action);
-    }
-    public void AddPostAction(CommandAction action) {
-      PostActions = PostActions ?? new List<CommandAction>();
-      PostActions.Add(action);
-    }
 
     public void TrimEndingSemicolon() {
       var last = this.Fragments[this.Fragments.Count - 1]; 

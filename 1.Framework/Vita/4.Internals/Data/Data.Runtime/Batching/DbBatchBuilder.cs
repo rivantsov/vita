@@ -63,7 +63,7 @@ namespace Vita.Data.Runtime {
     protected void CheckCurrentCommand() {
       if(_commandBuilder.ParameterCount  >= _driver.SqlDialect.MaxParamCount) {
         FinalizeCurrentCommand();
-        _commandBuilder = new DataCommandBuilder(_driver, batchMode: true);
+        _commandBuilder = new DataCommandBuilder(_driver, batchMode: true, mode: SqlGenMode.PreferLiteral);
       }
     }
 

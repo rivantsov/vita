@@ -72,19 +72,24 @@ namespace Vita.Data.SQLite {
       return "x'" + HexUtil.ByteArrayToHex(bytes) + "'";
     }
 
+    const string _quote = "'";
     public static string DateTimeToLiteral(object value){
       if(value == null || value == DBNull.Value)
         return "NULL";
+      if(value is string) //SQLite stores dates as string
+        return _quote + value + _quote; 
       var dt = (DateTime)value;
-      var result = "'" + dt.ToString(DateTimeFormat) + "'";
+      var result = _quote + dt.ToString(DateTimeFormat) + _quote;
       return result;
     }
 
     public static string TimeSpanToLiteral(object value) {
       if(value == null || value == DBNull.Value)
         return "NULL";
+      if(value is string) // it might be already converted
+        return _quote + value + _quote;
       var ts = (TimeSpan)value;
-      var result = "'" + ts.ToString("G") + "'";
+      var result = _quote + ts.ToString("G") + _quote;
       return result;
     }
 

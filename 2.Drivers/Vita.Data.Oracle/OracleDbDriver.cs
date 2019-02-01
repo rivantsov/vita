@@ -108,9 +108,13 @@ namespace Vita.Data.Oracle {
       return new OracleDbModelUpdater(settings);
     }
 
-    public override DbLinqSqlBuilder CreateLinqSqlBuilder(DbModel dbModel, LinqCommandInfo queryInfo) {
-      return new OracleSqlBuilder(dbModel, queryInfo); 
+    public override DbCrudSqlBuilder CreateCrudSqlBuilder(DbModel dbModel) {
+      return new OracleCrudSqlBuilder(dbModel);
     }
+    public override DbLinqSqlBuilder CreateLinqSqlBuilder(DbModel dbModel, LinqCommand command) {
+      return new OracleLinqSqlBuilder(dbModel, command); 
+    }
+
     public override object ExecuteCommand(IDbCommand command, DbExecutionType executionType) {
       // Oracle does not allow ending semicolon in single statement. 
       // But... batches start with BEGIN; and end with "END;"

@@ -13,7 +13,7 @@ namespace Vita.Data.Linq.Translation {
     public LinqTranslationException(string message, LinqCommand command, Exception inner = null) : base(message, inner) {
       Command = command; 
       if (Command != null)
-        this.Data["LinqCommand"] = Command.ToString(); 
+        this.Data["LinqExpression"] = Command.Expression.ToString(); 
     }
   }
 }

@@ -10,32 +10,32 @@ using Vita.Entities.Model;
 using Vita.Data.Linq.Translation.Expressions;
 using Vita.Data.Sql;
 using Vita.Data.Linq.Translation;
+using Vita.Data.Model;
 
 namespace Vita.Data.Linq {
  
   partial class LinqEngine {
 
     public SqlStatement TranslateNonQuery(LinqCommand command) {
-      LinqCommandPreprocessor.PreprocessCommand(_entityModel, command);
       var translCtx = new TranslationContext(_dbModel, command);
-      var queryInfo = command.Info;
       // convert lambda params into an initial set of ExternalValueExpression objects; 
-      foreach(var prm in queryInfo.Lambda.Parameters) {
+      foreach(var prm in command.Lambda.Parameters) {
         var inpParam = new ExternalValueExpression(prm);
         translCtx.ExternalValues.Add(inpParam);
       }
       //Analyze/transform base select query
-      var selectExpr = TranslateSelectExpression(queryInfo.Lambda.Body, translCtx);
-      var targetEnt = command.TargetEntity;
+      var selectExpr = TranslateSelectExpression(command.Lambda.Body, translCtx);
+      var targetEnt = command.UpdateEntity;
       var targetTable = _dbModel.GetTable(targetEnt.EntityType);
-      var targetTableExpr = new TableExpression(targetTable);
-      var nonQueryCmd = new NonQueryLinqCommand(command, selectExpr, targetTableExpr);
+      var nonQueryCmd = new NonQueryLinqCommand(command, targetTable, selectExpr);
       // Analyze base query output expression
+      var targetTableExpr = new TableExpression(targetTable);
       var readerBody = selectExpr.RowReaderLambda.Body;
-      switch(command.Kind) {
-        case LinqCommandKind.Update:
-        case LinqCommandKind.Insert: 
-          Util.Check(readerBody.NodeType == ExpressionType.New, "Query for LINQ {0} command must return New object", nonQueryCmd.CommandKind);
+      switch(nonQueryCmd.Operation) {
+        case LinqOperation.Update:
+        case LinqOperation.Insert: 
+          Util.Check(readerBody.NodeType == ExpressionType.New, 
+                "Query for LINQ {0} command must return New object", nonQueryCmd.Operation);
           var newExpr = readerBody as NewExpression;
           var outValues = selectExpr.Operands.ToList();
           for(int i = 0; i < newExpr.Members.Count; i++) {
@@ -45,7 +45,7 @@ namespace Vita.Data.Linq {
             switch(memberInfo.Kind) {
               case EntityMemberKind.Column: 
                 var col = _translator.CreateColumnForMember(targetTableExpr, memberInfo, translCtx);
-                nonQueryCmd.TargetColumns.Add(col);
+                nonQueryCmd.TargetColumns.Add(col.ColumnInfo);
                 nonQueryCmd.SelectOutputValues.Add(outValues[i]);
                 break; 
               case EntityMemberKind.EntityRef:
@@ -54,7 +54,7 @@ namespace Vita.Data.Linq {
                   "References with composite keys are not supported in LINQ non-query operations. Reference: ", memberName);
                 var pkMember = fromKey.ExpandedKeyMembers[0].Member; 
                 var col2 = _translator.CreateColumnForMember(targetTableExpr, pkMember, translCtx);
-                nonQueryCmd.TargetColumns.Add(col2);
+                nonQueryCmd.TargetColumns.Add(col2.ColumnInfo);
                 nonQueryCmd.SelectOutputValues.Add(outValues[i]);
                 break; 
               default:
@@ -63,7 +63,7 @@ namespace Vita.Data.Linq {
             }
           }
           break; 
-        case LinqCommandKind.Delete:
+        case LinqOperation.Delete:
           nonQueryCmd.SelectOutputValues.Add(readerBody); //should return single value - primary key
           break; 
       }
@@ -73,10 +73,6 @@ namespace Vita.Data.Linq {
       return stmt; 
     } //method
 
-    private static void ThrowTranslationFailed(LinqCommand command, string message, params object[] args) {
-      var msg = Util.SafeFormat(message, args) + "\r\n Query:" + command.ToString(); 
-      var exc = new LinqTranslationException(msg, command);
-      throw exc; 
-    }
+
   }//class
 }//ns

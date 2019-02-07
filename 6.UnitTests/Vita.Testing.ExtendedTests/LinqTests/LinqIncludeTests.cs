@@ -27,11 +27,10 @@ namespace Vita.Testing.ExtendedTests {
       Startup.TearDown(); 
     }
 
-    [TestMethod, Ignore("Include functionality not upgraged yet.")]
+    [TestMethod]
     public void TestLinqInclude() {
-      Util.Throw("Includes migration not completed, tests disabled. ");
       try {
-        // DisplayAttribute.Disabled = true;   // just for internal debugging, to disable automatic loading of entities for Display
+        DisplayAttribute.Disabled = true;   // just for internal debugging, to disable automatic loading of entities for Display
         Startup.BooksApp.AppEvents.ExecutedSelect += AppEvents_ExecutedSelect; //to spy after executed selects
         //using (SetupHelper.BooksApp.LoggingApp.Suspend()) { //to suspend logging activity in debugging
           TestLinqIncludeImpl(); 

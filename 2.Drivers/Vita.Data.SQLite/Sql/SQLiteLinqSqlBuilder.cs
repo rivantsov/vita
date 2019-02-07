@@ -17,7 +17,7 @@ namespace Vita.Data.SQLite {
   public class SQLiteLinqSqlBuilder : DbLinqSqlBuilder {
     SQLiteDbSqlDialect _dialect; 
 
-    public SQLiteLinqSqlBuilder(DbModel dbModel, LinqCommand command): base(dbModel, command) {
+    public SQLiteLinqSqlBuilder(DbModel dbModel, ExecutableLinqCommand command): base(dbModel, command) {
       _dialect = (SQLiteDbSqlDialect)dbModel.Driver.SqlDialect; 
     }
 

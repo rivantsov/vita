@@ -229,7 +229,7 @@ namespace Vita.Data.Driver {
       }
     }
 
-    public virtual bool IsSqlTier(Expression expression, LinqCommandInfo queryInfo) {
+    public virtual bool IsSqlTier(Expression expression, LinqCommand command) {
       var sqlExpr = expression as SqlExpression;
       if(sqlExpr != null) {
         switch(sqlExpr.SqlNodeType) {

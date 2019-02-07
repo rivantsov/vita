@@ -91,7 +91,7 @@ namespace Vita.Data.Linq {
       _model = model; 
       _command = command;
       _options = command.IsView? QueryOptions.NoParameters : QueryOptions.None;
-      _cacheKey = SqlCacheKey.CreateForLinq(command.Kind, LockType.None, _options);
+      _cacheKey = SqlCacheKey.CreateForLinq(command.Kind, _options);
       try {
         AnalyzeNode(_command.Expression);
         _command.Locals = _locals;
@@ -255,8 +255,10 @@ namespace Vita.Data.Linq {
       if (entQuery != null) {
         _entityTypes.Add(entQuery.ElementType);
         var lockTarget = constNode.Value as ILockTarget;
-        if(lockTarget != null && lockTarget.LockType != LockType.None)
-          _lockType = lockTarget.LockType; 
+        if(lockTarget != null && lockTarget.LockType != LockType.None) {
+          _lockType = lockTarget.LockType;
+          AddCacheKey(_lockType);
+        }
         return ValueKind.Db; 
       }
       if (!constNode.Type.IsValueTypeOrString())

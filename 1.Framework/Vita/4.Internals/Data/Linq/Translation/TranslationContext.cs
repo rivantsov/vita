@@ -16,7 +16,7 @@ namespace Vita.Data.Linq.Translation {
 
     public DbModel DbModel;
     public LinqCommand Command;
-    public QueryOptions QueryOptions { get { return Command.Info.Options; } } 
+    public QueryOptions QueryOptions { get { return Command.Options; } } 
 
     /// <summary>Values coming from the code executing the query - parameters. Top-level parameters for the entire query.</summary>
     public readonly IList<ExternalValueExpression> ExternalValues;
@@ -35,7 +35,7 @@ namespace Vita.Data.Linq.Translation {
       Command = command;
       SelectExpressions = new List<SelectExpression>();
       _currentScopeIndex = SelectExpressions.Count;
-      SelectExpressions.Add(new SelectExpression(command.Info));
+      SelectExpressions.Add(new SelectExpression(Command));
       ExternalValues = new List<ExternalValueExpression>();
       LambdaParameters = new Dictionary<string, Expression>();
     }
@@ -98,7 +98,7 @@ namespace Vita.Data.Linq.Translation {
       var rewriterContext = new TranslationContext(this);
       // scope dependent Parts
       rewriterContext._currentScopeIndex = SelectExpressions.Count;
-      SelectExpressions.Add(new SelectExpression(CurrentSelect, CurrentSelect.CommandInfo));
+      SelectExpressions.Add(new SelectExpression(CurrentSelect, CurrentSelect.Command));
       return rewriterContext;
     }
 
@@ -106,13 +106,13 @@ namespace Vita.Data.Linq.Translation {
     public TranslationContext NewSisterSelect() {
       var rewriterContext = new TranslationContext(this);
       rewriterContext._currentScopeIndex = SelectExpressions.Count;
-      SelectExpressions.Add(new SelectExpression(CurrentSelect.Parent, CurrentSelect.CommandInfo));
+      SelectExpressions.Add(new SelectExpression(CurrentSelect.Parent, CurrentSelect.Command));
       return rewriterContext;
     }
 
     public void NewParentSelect() {
       SelectExpression currentSelect = this.CurrentSelect;
-      SelectExpression newParentSelect = new SelectExpression(currentSelect.Parent, CurrentSelect.CommandInfo);
+      SelectExpression newParentSelect = new SelectExpression(currentSelect.Parent, CurrentSelect.Command);
       currentSelect.Parent = newParentSelect;
       this._currentScopeIndex = SelectExpressions.Count;
       SelectExpressions.Add(newParentSelect);

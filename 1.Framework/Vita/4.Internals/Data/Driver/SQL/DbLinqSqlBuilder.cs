@@ -32,19 +32,19 @@ namespace Vita.Data.Driver {
     public virtual SqlStatement BuildSelectStatement(SelectExpression translatedSelect) {
       var sql = BuildSelectSql(translatedSelect); 
       var sqlStmt = new SqlStatement(SqlKind.LinqSelect, sql, PlaceHolders, DbExecutionType.Reader,
-                       DbModel.Driver.SqlDialect.PrecedenceHandler, translatedSelect.CommandInfo.Options);
+                       DbModel.Driver.SqlDialect.PrecedenceHandler, translatedSelect.Command.Options);
       sqlStmt.Fragments.Add(SqlTerms.Semicolon);
       sqlStmt.Fragments.Add(SqlTerms.NewLine);
       return sqlStmt;
     }
 
     public virtual SqlFragment BuildSelectSql(SelectExpression translatedSelect) {
-      var lockType = translatedSelect.CommandInfo.LockType;
+      var lockType = translatedSelect.Command.LockType;
       translatedSelect = PreviewSelect(translatedSelect, lockType);
       var selectOut = BuildSelectOutputClause(translatedSelect);
       var tables = GetSortedTables(translatedSelect);
       var from = BuildFromClause(translatedSelect, tables);
-      var where = BuildWhereClause(translatedSelect, tables, translatedSelect.Where);
+      var where = BuildWhereClause(translatedSelect, translatedSelect.Where);
       var groupBy = BuildGroupByClause(translatedSelect);
       var having = BuildHavingClause(translatedSelect);
       var orderBy = BuildOrderByClause(translatedSelect);

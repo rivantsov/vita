@@ -19,7 +19,7 @@ namespace Vita.Data.Oracle {
   public class OracleLinqSqlBuilder : DbLinqSqlBuilder {
     OracleSqlDialect _oracleDialect; 
 
-    public OracleLinqSqlBuilder(DbModel dbModel, LinqCommand command) : base(dbModel, command) {
+    public OracleLinqSqlBuilder(DbModel dbModel, ExecutableLinqCommand command) : base(dbModel, command) {
       _oracleDialect = (OracleSqlDialect)base.SqlDialect; 
     }
 

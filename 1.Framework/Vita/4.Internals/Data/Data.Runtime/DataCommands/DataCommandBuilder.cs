@@ -90,7 +90,7 @@ namespace Vita.Data.Runtime {
       return string.Join(string.Empty, _sqlStrings);
     }
 
-    public void AddLinqStatement(SqlStatement sql, object[] args) {
+    public void AddLinqStatement(SqlStatement sql, List<InputValue> args) {
       AddStatement(sql, args);
     }
 

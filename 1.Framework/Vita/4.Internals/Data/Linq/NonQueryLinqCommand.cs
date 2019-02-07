@@ -4,31 +4,27 @@ using System.Linq;
 using System.Linq.Expressions;
 
 using Vita.Data.Linq.Translation.Expressions;
+using Vita.Data.Model;
 
 namespace Vita.Data.Linq {
 
+  // TODO: See if this class is needed at all
   public class NonQueryLinqCommand {
     public LinqCommand BaseLinqCommand;
+    public DbTableInfo TargetTable;
+    public List<DbColumnInfo> TargetColumns = new List<DbColumnInfo>();
+
+    // TODO: move these to parameter of DbLinqNonQuerySqlBuilder
     public SelectExpression BaseSelect;
     public List<Expression> SelectOutputValues = new List<Expression>();
-    public TableExpression TargetTable;
     public bool UseSimpleCommand;
-    public List<ColumnExpression> TargetColumns = new List<ColumnExpression>();
 
-    public NonQueryLinqCommand(LinqCommand baseLinqCommand, SelectExpression baseSelect, TableExpression targetTable) {
+    public NonQueryLinqCommand(LinqCommand baseLinqCommand, DbTableInfo targetTable, SelectExpression baseSelect) {
       BaseLinqCommand = baseLinqCommand; 
       BaseSelect = baseSelect; 
       TargetTable = targetTable;
-      switch(BaseLinqCommand.Kind) {
-        case LinqCommandKind.Insert: UseSimpleCommand = false; break;
-        default:
-          var allTables = BaseSelect.Tables;
-          var usesSkipTakeOrderBy = BaseSelect.Offset != null || BaseSelect.Limit != null; 
-          UseSimpleCommand = allTables.Count == 1 && allTables[0].TableInfo == targetTable.TableInfo && !usesSkipTakeOrderBy;
-          break; 
-      }
-
     }
-    public LinqCommandKind CommandKind { get { return BaseLinqCommand.Kind; } }
-  }
+
+    public LinqOperation Operation { get { return BaseLinqCommand.Operation; } }
+  } //class
 }

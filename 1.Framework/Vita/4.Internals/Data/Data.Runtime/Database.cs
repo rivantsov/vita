@@ -32,11 +32,11 @@ namespace Vita.Data.Runtime {
     public void Shutdown() {
     }
 
-    public object ExecuteLinqCommand(EntitySession session, LinqCommand command) {
-      var conn = GetConnectionWithLock(session, command.Info.LockType);
+    public object ExecuteLinqCommand(EntitySession session, ExecutableLinqCommand command) {
+      var conn = GetConnectionWithLock(session, command.BaseCommand.LockType);
       try {
         object result;
-        if(command.Kind == LinqCommandKind.Select)
+        if(command.BaseCommand.Operation == LinqOperation.Select)
           result = ExecuteLinqSelect(session, command, conn);
         else
           result = ExecuteLinqNonQuery(session, command, conn);
@@ -49,23 +49,23 @@ namespace Vita.Data.Runtime {
       }
     }
 
-    public object ExecuteLinqSelect(EntitySession session, LinqCommand command, DataConnection conn) {
-      var sql = SqlFactory.GetLinqSql(command); 
-      var genMode = command.Info.Options.IsSet(QueryOptions.NoParameters) ? 
+    public object ExecuteLinqSelect(EntitySession session, ExecutableLinqCommand command, DataConnection conn) {
+      var sql = SqlFactory.GetLinqSql(command.BaseCommand); 
+      var genMode = command.BaseCommand.Options.IsSet(QueryOptions.NoParameters) ? 
                              SqlGenMode.NoParameters : SqlGenMode.PreferParam;
       var cmdBuilder = new DataCommandBuilder(this._driver, batchMode: false, mode: genMode);
-      cmdBuilder.AddLinqStatement(sql, command.ParameterValues);
+      cmdBuilder.AddLinqStatement(sql, command.InputValues);
       var dataCmd = cmdBuilder.CreateCommand(conn, DbExecutionType.Reader, sql.ResultProcessor);
       ExecuteDataCommand(dataCmd);
       return dataCmd.ProcessedResult;
     }
 
-    private object ExecuteLinqNonQuery(EntitySession session, LinqCommand command, DataConnection conn) {
-      var sql = SqlFactory.GetLinqSql(command);
-      var fmtOptions = command.Info.Options.IsSet(QueryOptions.NoParameters) ?
+    private object ExecuteLinqNonQuery(EntitySession session, ExecutableLinqCommand command, DataConnection conn) {
+      var sql = SqlFactory.GetLinqSql(command.BaseCommand);
+      var fmtOptions = command.BaseCommand.Options.IsSet(QueryOptions.NoParameters) ?
                              SqlGenMode.NoParameters : SqlGenMode.PreferParam;
       var cmdBuilder = new DataCommandBuilder(this._driver);
-      cmdBuilder.AddLinqStatement(sql, command.ParameterValues);
+      cmdBuilder.AddLinqStatement(sql, command.InputValues);
       var dataCmd = cmdBuilder.CreateCommand(conn, DbExecutionType.NonQuery, sql.ResultProcessor);
       ExecuteDataCommand(dataCmd);
       return dataCmd.ProcessedResult ?? dataCmd.Result;
@@ -108,7 +108,7 @@ namespace Vita.Data.Runtime {
         foreach (var grp in updateSet.UpdateGroups)
           foreach (var tableGrp in grp.TableGroups) {
             switch(tableGrp.Operation) {
-              case LinqCommandKind.Insert:
+              case LinqOperation.Insert:
                 if (CanProcessMany(tableGrp)) {
                   var cmdBuilder = new DataCommandBuilder(this._driver, mode: SqlGenMode.PreferLiteral);
                   var sql = SqlFactory.GetCrudInsertMany(tableGrp.Table, tableGrp.Records, cmdBuilder);
@@ -118,10 +118,10 @@ namespace Vita.Data.Runtime {
                 } else
                   SaveTableGroupRecordsOneByOne(tableGrp, conn, updateSet);
                 break;
-              case LinqCommandKind.Update:
+              case LinqOperation.Update:
                 SaveTableGroupRecordsOneByOne(tableGrp, conn, updateSet);
                 break;
-              case LinqCommandKind.Delete:
+              case LinqOperation.Delete:
                 if (CanProcessMany(tableGrp)) {
                   var cmdBuilder = new DataCommandBuilder(this._driver);
                   var sql = SqlFactory.GetCrudDeleteMany(tableGrp.Table);
@@ -173,9 +173,9 @@ namespace Vita.Data.Runtime {
       if (group.Records.Count <= 1)
         return false;
       switch (group.Operation) {
-        case LinqCommandKind.Delete:
+        case LinqOperation.Delete:
           return group.Table.PrimaryKey.KeyColumns.Count == 1;
-        case LinqCommandKind.Insert:
+        case LinqOperation.Insert:
           if(!_driver.Supports(DbFeatures.InsertMany))
             return false;
           if(group.Table.Entity.Flags.IsSet(EntityFlags.HasIdentity | EntityFlags.HasRowVersion))

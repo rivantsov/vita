@@ -46,7 +46,7 @@ namespace Vita.Data.Linq.Translation {
 
       // If it is Equal, and both are nullable, add matching NULLs; 
       //   a == b   -> (a = b) | (a is Null & b IS NULL)
-      var forceIgnoreCase = context.Command.Info.Options.IsSet(QueryOptions.ForceIgnoreCase);
+      var forceIgnoreCase = context.Command.Options.IsSet(QueryOptions.ForceIgnoreCase);
       if (forceIgnoreCase && left.Type == typeof(string) & right.Type == typeof(string)) {
         return CreateSqlFunction(SqlFunctionType.StringEqual, forceIgnoreCase, left, right);
       }

@@ -134,7 +134,6 @@ namespace Vita.Entities.Model.Construction {
         } else {
           //create new column member
           fkMember = new EntityMemberInfo(key.Entity, EntityMemberKind.Column, fkMemberName, memberType);
-          fkMember.ExplicitDbType = targetMember.ExplicitDbType;
           fkMember.ExplicitDbTypeSpec = targetMember.ExplicitDbTypeSpec;
         }
         fkMember.Flags |= EntityMemberFlags.ForeignKey;

@@ -39,7 +39,7 @@ namespace Vita.Data.Driver {
     }
 
     private Func<object[], object> BuildParameterValueReader(Expression valueSourceExpression) {
-      var queryParams = Command.Info.Lambda.Parameters; 
+      var prms = Command.Lambda.Parameters; 
       // One trouble - for Binary object, we need to convert them to byte[]
       if(valueSourceExpression.Type == typeof(Binary)) {
         var methGetBytes = typeof(Binary).GetMethod(nameof(Binary.GetBytes));
@@ -48,14 +48,14 @@ namespace Vita.Data.Driver {
       //Quick path: most of the time the source expression is just a lambda parameter
       if(valueSourceExpression.NodeType == ExpressionType.Parameter) {
         var prmSource = (ParameterExpression)valueSourceExpression;
-        var index = queryParams.IndexOf(prmSource);
-        return (object[] prms) => prms[index];
+        var index = prms.IndexOf(prmSource);
+        return (object[] values) => values[index];
       }
       // There is some computation in valueSourceExpression; use dynamic invoke to evaluate it.
       // DynamicInvoke is not efficient but this case is rare enough, so it is not worth more trouble
-      var valueReadLambda = Expression.Lambda(valueSourceExpression, queryParams);
+      var valueReadLambda = Expression.Lambda(valueSourceExpression, prms);
       var compiledValueRead = valueReadLambda.Compile();
-      return (object[] prms) => compiledValueRead.DynamicInvoke(prms);
+      return (object[] values) => compiledValueRead.DynamicInvoke(values);
     }
 
 

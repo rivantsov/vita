@@ -38,25 +38,23 @@ namespace Vita.Data.Runtime {
       _batch = new DbBatch() { UpdateSet = updateSet };
       _commandBuilder = new DataCommandBuilder(_driver, batchMode: true, mode: SqlGenMode.PreferLiteral);
 
-      var commandsBefore = updateSet.Session.ScheduledCommands.Where(c => c.Schedule == CommandSchedule.TransactionStart).ToList();
-      AddScheduledCommands(commandsBefore);
+      AddScheduledCommands(updateSet.Session.ScheduledCommandsAtStart);
       foreach(var group in updateSet.UpdateGroups) 
         foreach(var tableGroup in group.TableGroups)  {
           AddUpdateGroup(tableGroup); 
         }// foreach group
-      var commandsAfter = updateSet.Session.ScheduledCommands.Where(c => c.Schedule == CommandSchedule.TransactionEnd).ToList();
-      AddScheduledCommands(commandsAfter);
+      AddScheduledCommands(updateSet.Session.ScheduledCommandsAtEnd);
       FinalizeCurrentCommand(completed: true);
       return _batch; 
     }
 
     protected void AddScheduledCommands(IList<LinqCommand> commands) {
-      if(commands.Count == 0)
+      if(commands == null || commands.Count == 0)
         return;
       foreach(var lcmd in commands) {
         CheckCurrentCommand();
         var sql = _sqlFactory.GetLinqSql(lcmd);
-        _commandBuilder.AddLinqStatement(sql, lcmd.ParameterValues); 
+        _commandBuilder.AddLinqStatement(sql, lcmd.InputValues); 
       }//foreach schCmd
     }
 
@@ -80,7 +78,7 @@ namespace Vita.Data.Runtime {
     public void AddUpdateGroup(DbUpdateTableGroup group) {
       SqlStatement  sql = null; 
       switch(group.Operation) {
-        case LinqCommandKind.Insert:
+        case LinqOperation.Insert:
           if(_db.CanProcessMany(group)) {
             // TODO: handle the case when there are too many params within 1 insert command
             var recGroups = GroupRecordsForInsertMany(group.Records, _driver.SqlDialect.MaxRecordsInInsertMany);
@@ -97,7 +95,7 @@ namespace Vita.Data.Runtime {
           }
           break;
 
-        case LinqCommandKind.Update:
+        case LinqOperation.Update:
           foreach(var rec in group.Records) {
             CheckCurrentCommand();
             sql = _sqlFactory.GetCrudSqlForSingleRecord(group.Table, rec);
@@ -105,7 +103,7 @@ namespace Vita.Data.Runtime {
           }
           break;
 
-        case LinqCommandKind.Delete:
+        case LinqOperation.Delete:
           if(_db.CanProcessMany(group)) {
             sql = _sqlFactory.GetCrudDeleteMany(group.Table);
             _commandBuilder.AddUpdates(sql, group.Records, new object[] { group.Records });  

@@ -24,25 +24,24 @@ namespace Vita.Data.Linq {
     public List<Expression> Locals;
     public object[] ParameterValues;
     public readonly LinqCommandKind Kind;
-    public EntityInfo TargetEntity;
+    public EntityInfo UpdateEntity;
     public bool IsView;
 
     //Non-query only
     public CommandSchedule Schedule; //Used only for scheduled commands
 
-    public LinqCommand(Expression expr, LinqCommandKind kind, EntityInfo targetEntity, 
+    public LinqCommand(Expression expr, LinqCommandKind kind, EntityInfo updateEntity = null, 
                              CommandSchedule schedule = CommandSchedule.TransactionEnd, bool isView = false) {
       Expression = expr;
       Kind = kind;
-      TargetEntity = targetEntity;
+      UpdateEntity = updateEntity;
       Schedule = schedule;
       IsView = isView; 
     }
 
-    internal LinqCommand(LinqCommandInfo info, EntityInfo targetEntity, object[] parameterValues) {
+    internal LinqCommand(LinqCommandInfo info, object[] parameterValues) {
       Info = info;
       Kind = LinqCommandKind.Select;
-      TargetEntity = targetEntity;
       ParameterValues = parameterValues;
       Util.Check(ParameterValues.Length == info.Lambda.Parameters.Count, 
         "Parameter values count ({0}) does not match parameter count ({1}) in lambda: {2}.",

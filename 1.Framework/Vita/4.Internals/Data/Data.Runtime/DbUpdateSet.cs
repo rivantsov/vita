@@ -88,10 +88,10 @@ namespace Vita.Data.Runtime {
   [DebuggerDisplay("{Table.TableName}:{Records.Count} recs")]
   public class DbUpdateTableGroup {
     public DbTableInfo Table;
-    public LinqCommandKind Operation; 
+    public LinqOperation Operation; 
     public IList<EntityRecord> Records = new List<EntityRecord>();
 
-    public DbUpdateTableGroup(DbTableInfo table, LinqCommandKind operation) {
+    public DbUpdateTableGroup(DbTableInfo table, LinqOperation operation) {
       Table = table;
       Operation = operation;
     }
@@ -258,15 +258,15 @@ namespace Vita.Data.Runtime {
       }//switch
     }
 
-    private static LinqCommandKind ToOperation(DbUpdateOrder groupType) {
+    private static LinqOperation ToOperation(DbUpdateOrder groupType) {
       switch(groupType) {
         case DbUpdateOrder.Insert: case DbUpdateOrder.IsolatedInsert:
-          return LinqCommandKind.Insert;
+          return LinqOperation.Insert;
         case DbUpdateOrder.Delete: case DbUpdateOrder.IsolatedDelete:
-          return LinqCommandKind.Delete;
+          return LinqOperation.Delete;
         case DbUpdateOrder.Update:
         default: 
-          return LinqCommandKind.Update;
+          return LinqOperation.Update;
       }
     }
 

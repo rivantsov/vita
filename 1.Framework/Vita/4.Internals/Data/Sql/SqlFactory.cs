@@ -29,21 +29,26 @@ namespace Vita.Data.Sql {
     }
 
     public SqlStatement GetLinqSql(LinqCommand command) {
-      if(command.Info == null)
+      if(string.IsNullOrEmpty(command.CacheKey))
         LinqCommandAnalyzer.Analyze(_dbModel.EntityModel, command);
-      var cacheKey = command.Info.CacheKey;
+      // lookup in cache
+      var cacheKey = command.CacheKey;
       var stmt = _sqlCache.Lookup(cacheKey);
       if(stmt != null)
         return stmt;
+      // not in cache - translate
+      LinqCommandRewriter.Rewrite(_dbModel.EntityModel, command);
+
       stmt = _linqEngine.Translate(command);
       _driver.SqlDialect.ReviewSqlStatement(stmt, command);
-      if(!command.Info.Options.IsSet(QueryOptions.NoQueryCache))
+      if(!command.Options.IsSet(QueryOptions.NoQueryCache))
         _sqlCache.Add(cacheKey, stmt);
       return stmt;
     }
 
     public SqlStatement GetCrudSqlForSingleRecord(DbTableInfo table, EntityRecord record) {
-      var cacheKey = SqlCacheKey.CreateForCrud(table.Entity, record.Status, record.MaskMembersChanged);
+      var maskStr = record.Status == EntityStatus.Modified ? record.MaskMembersChanged.AsHexString() : "?";
+      var cacheKey = $"CRUD-ONE/{table.Entity.Name}/{record.Status}/Mask:{maskStr}";
       SqlStatement sql = _sqlCache.Lookup(cacheKey);
       if(sql != null)
         return sql; 
@@ -66,7 +71,7 @@ namespace Vita.Data.Sql {
 
 
     public SqlStatement GetCrudDeleteMany(DbTableInfo table) {
-      var cacheKey = SqlCacheKey.CreateForDeleteMany(table.Entity);
+      var cacheKey = $"CRUD/Delete-Many/{table.Entity.Name}";
       var sql = _sqlCache.Lookup(cacheKey);
       if(sql != null)
         return sql; 

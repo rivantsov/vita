@@ -33,14 +33,14 @@ namespace Vita.Data.Linq {
 
     // Note: command expected to be analyzed already
     public SqlStatement Translate(LinqCommand command) {
-      Util.Check(command.Info != null, "Expected LINQ command analyzed.");
+      Util.Check(command.Lambda != null, "Expected rewritten linq command with Lambda property set.");
       try {
-        switch(command.Kind) {
-          case LinqCommandKind.Select:
+        switch(command.Operation) {
+          case LinqOperation.Select:
             return TranslateSelect(command);
-          case LinqCommandKind.Update:
-          case LinqCommandKind.Delete:
-          case LinqCommandKind.Insert:
+          case LinqOperation.Update:
+          case LinqOperation.Delete:
+          case LinqOperation.Insert:
           default:
             return TranslateNonQuery(command);
         } //switch
@@ -53,16 +53,14 @@ namespace Vita.Data.Linq {
     }
 
     public SqlStatement TranslateSelect(LinqCommand command) {
-      LinqCommandPreprocessor.PreprocessCommand(_entityModel, command);
       var context = new TranslationContext(_dbModel, command); 
-      var queryInfo = command.Info;
       // convert lambda params into an initial set of ExternalValueExpression objects; 
-      foreach(var prm in queryInfo.Lambda.Parameters) {
+      foreach(var prm in command.Lambda.Parameters) {
         var inpParam = new ExternalValueExpression(prm);
         context.ExternalValues.Add(inpParam);
       }
       //Analyze/transform query expression
-      var selectExpr = TranslateSelectExpression(queryInfo.Lambda.Body, context);
+      var selectExpr = TranslateSelectExpression(command.Lambda.Body, context);
       /*
       // If there's at least one parameter that must be converted to literal (ex: value list), we cannot cache the query
       bool canCache = !context.ExternalValues.Any(v => v.SqlNodeType == SqlExpressionTy=pe..SqlMode == SqlValueMode.Literal);
@@ -78,7 +76,7 @@ namespace Vita.Data.Linq {
       //check if we need to create implicit result set processor
       var rowListProcessor = selectExpr.RowListProcessor;
       if (rowListProcessor == null) {
-        var returnsResultSet = typeof(IQueryable).IsAssignableFrom(queryInfo.Lambda.Body.Type);
+        var returnsResultSet = typeof(IQueryable).IsAssignableFrom(command.Lambda.Body.Type);
         if(!returnsResultSet)
           rowListProcessor = RowListProcessor.CreateFirstSingleLast("First", outType);
       }

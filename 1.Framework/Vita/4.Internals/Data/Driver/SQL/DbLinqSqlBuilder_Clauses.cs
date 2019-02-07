@@ -108,9 +108,7 @@ namespace Vita.Data.Driver {
       return result;
     }
 
-    //TODO: rework this with explicit merge of where's using AND expr
-    // also separate early Having and Where expressions
-    public virtual SqlFragment BuildWhereClause(SelectExpression selectExpression, IList<TableExpression> tables, IList<Expression> wheres) {
+    public virtual SqlFragment BuildWhereClause(SelectExpression selectExpression, IList<Expression> wheres) {
       if(wheres.Count == 0)
         return null;
       var whereParts = new List<SqlFragment>();

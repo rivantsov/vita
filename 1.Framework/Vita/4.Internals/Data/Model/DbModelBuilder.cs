@@ -15,6 +15,7 @@ using Vita.Data.Sql;
 using Vita.Data.Runtime;
 using Vita.Entities.Runtime;
 using Vita.Data.Driver.TypeSystem;
+using System.Linq.Expressions;
 
 namespace Vita.Data.Model {
 
@@ -77,15 +78,16 @@ namespace Vita.Data.Model {
       var emptyList = new List<string>(); 
       foreach(var viewTbl in views) {
         var entInfo = viewTbl.Entity;
-
-        var viewCmd = new LinqCommand(entInfo.ViewDefinition.Query.Expression, LinqCommandKind.Select, null, isView: true);
-        viewCmd.TargetEntity = entInfo;
+        var expr = entInfo.ViewDefinition.Query.Expression;
+        var viewCmd = new LinqCommand(LinqCommandSource.View, LinqOperation.Select, expr);
         LinqCommandAnalyzer.Analyze(_entityModel, viewCmd);
+        LinqCommandRewriter.Rewrite(_entityModel, viewCmd);
+        var sql = engine.TranslateSelect(viewCmd);
         LinqExpressionHelper.EvaluateCommandParameters(viewCmd); //in case there are any local variables
 
         var sqlStmt = engine.Translate(viewCmd);
         var cmdBuilder = new DataCommandBuilder(_driver, mode: SqlGenMode.NoParameters);
-        cmdBuilder.AddLinqStatement(sqlStmt, viewCmd.ParameterValues);
+        cmdBuilder.AddLinqStatement(sqlStmt, viewCmd.InputValues);
         // ';' is important for Oracle
         viewTbl.ViewSql = cmdBuilder.GetSqlText().Trim(' ', '\r', '\n', ';');  
       }

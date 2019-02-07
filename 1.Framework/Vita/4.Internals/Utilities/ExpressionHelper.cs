@@ -106,5 +106,28 @@ namespace Vita.Entities.Utilities {
       return memberAccess.Member.Name;
     }
 
+    // Perf-optimized nodeType.ToString()
+    public static string AsString(this ExpressionType value) {
+      if(_expressionTypeStrings == null)
+        _expressionTypeStrings = BuildExpressionStrings();
+      return _expressionTypeStrings[(int)value];
+    }
+
+    private static string[] _expressionTypeStrings;
+
+    private static string[] BuildExpressionStrings() {
+      var values = Enum.GetValues(typeof(ExpressionType));
+      var len = 0;
+      foreach(var v in values) {
+        var i = (int)v;
+        if(i > len)
+          len = i; 
+      }
+      var strings = new string[len];
+      foreach(var v in values) 
+        strings[(int)v] = v.ToString();
+      return strings; 
+    } //method
+
   }
 }

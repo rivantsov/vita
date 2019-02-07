@@ -30,7 +30,7 @@ namespace Vita.Data.Linq.Translation {
 
       // This is special optimization case for reading entities, to avoid Lambda.Compile, we use 
       // instance of EntityRecordReader directly. DO NOT try to optimize or improve it!!! (talking to you, Roman)
-      bool isSelectOp = context.Command.Kind == LinqCommandKind.Select;
+      bool isSelectOp = context.Command.Operation == LinqOperation.Select;
       if(isSelectOp && forExpr is TableExpression tableExpr) {
         entReader = CreateEntityReader(tableExpr, context);
         readerLambda = null;
@@ -127,7 +127,7 @@ namespace Vita.Data.Linq.Translation {
     /// <returns></returns>
     private bool IsSqlTier(Expression expression, TranslationContext context) {
       //RI: moved this to SqlDialect, to allow different implementations for servers
-      var isSql = _dbModel.Driver.SqlDialect.IsSqlTier(expression, context.Command.Info);
+      var isSql = _dbModel.Driver.SqlDialect.IsSqlTier(expression, context.Command);
       return isSql;
     }
 

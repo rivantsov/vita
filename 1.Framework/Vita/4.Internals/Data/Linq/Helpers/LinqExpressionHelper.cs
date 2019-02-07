@@ -226,6 +226,7 @@ Details: failed converting sub-expression of type {0} to type {1}", expression.T
       return true;
     }
 
+    /*
     public static void EvaluateCommandParameters(LinqCommand command, EntitySession session = null) {
       //We proceed in 2 steps: 
       // 1. We evaluate external parameters (used in lambdas in authorization filters and QueryFilters);
@@ -250,6 +251,7 @@ Details: failed converting sub-expression of type {0} to type {1}", expression.T
         command.ParameterValues = prmValues;
       }
     }
+    */
 
 
 

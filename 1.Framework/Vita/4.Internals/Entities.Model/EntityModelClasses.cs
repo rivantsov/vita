@@ -246,9 +246,6 @@ namespace Vita.Entities.Model {
     public string ColumnName; //assigned by Column attribute, to specify explicit non-default name for table column
     public string ColumnDefault;
 
-    // DbType, typespec specified explicitly in Column attribute
-    [Obsolete]
-    public DbType? ExplicitDbType = null;
     public string ExplicitDbTypeSpec;
 
 
@@ -399,7 +396,7 @@ namespace Vita.Entities.Model {
     public EntityKeyInfo ToKey { get; private set; }
     public string ForeignKeyColumns;
     public EntityMemberInfo TargetListMember; // Entity list member on target entity based on the reference; might be null
-    public LinqCommandInfo CountCommand; //counts child records for a given parent - used by CanDelete() method
+    public LinqCommand CountCommand; //counts child records for a given parent - used by CanDelete() method
 
     public EntityReferenceInfo(EntityMemberInfo fromMember, EntityKeyInfo fromKey, EntityKeyInfo toKey) {
       FromMember = fromMember;
@@ -438,13 +435,13 @@ namespace Vita.Entities.Model {
     public EntityFilter Filter;
     public List<EntityKeyMemberInfo> OrderBy;
 
-    LinqCommandInfo _selectDirectChildRecordsCommand;
+    LinqCommand _selectDirectChildRecordsCommand;
 
     public ChildEntityListInfo(EntityMemberInfo ownerMember) {
       OwnerMember = ownerMember;
     }
 
-    public LinqCommandInfo GetSelectDirectChildRecordsCommand() {
+    public LinqCommand GetSelectDirectChildRecordsCommand() {
       if (_selectDirectChildRecordsCommand == null) {
         var mask = this.ParentRefMember.Entity.AllMembersMask;
          var cmdInfo = SelectCommandBuilder.BuildSelectByKey(this.ParentRefMember.ReferenceInfo.FromKey, mask, 

@@ -1400,7 +1400,7 @@ namespace Vita.Data.Linq.Translation {
     }
 
     protected virtual Expression AnalyzeLike(Expression expr, string before, Expression operand, string after, TranslationContext context) {
-      var forceIgnoreCase = context.Command.Info.Options.IsSet(QueryOptions.ForceIgnoreCase);
+      var forceIgnoreCase = context.Command.Options.IsSet(QueryOptions.ForceIgnoreCase);
       //The main goal is to provide automatic escaping of pattern (of wildcard characters)
       var newExpr = Analyze(expr, context);
       var sqlDialect = _dbModel.Driver.SqlDialect; 

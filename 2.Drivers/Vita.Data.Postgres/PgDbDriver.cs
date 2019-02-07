@@ -61,7 +61,7 @@ namespace Vita.Data.Postgres {
       return new PgDbModelLoader(settings, log);
     }
 
-    public override DbLinqSqlBuilder CreateLinqSqlBuilder(DbModel dbModel, LinqCommand command) {
+    public override DbLinqSqlBuilder CreateLinqSqlBuilder(DbModel dbModel, ExecutableLinqCommand command) {
       return new PgLinqSqlBuilder(dbModel, command);
     }
 

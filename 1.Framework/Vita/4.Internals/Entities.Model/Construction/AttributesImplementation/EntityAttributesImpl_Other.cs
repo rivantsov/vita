@@ -290,11 +290,6 @@ namespace Vita.Entities {
 
   }// class
 
-  public partial class CurrencyAttribute {
-    public override void ApplyOnMember(EntityModelBuilder builder) {
-      HostMember.ExplicitDbType = DbType.Currency;
-    }
-  }
 
   public partial class DependsOnAttribute {
     public override void ApplyOnMember(EntityModelBuilder builder) {
@@ -796,7 +791,6 @@ namespace Vita.Entities {
         HostMember.Precision = this.Precision;
       if (this.Size != 0)
         HostMember.Size = this.Size;
-      HostMember.ExplicitDbType = this._dbType;
       HostMember.ExplicitDbTypeSpec = this.DbTypeSpec?.ToLowerInvariant();
     }
 

@@ -17,20 +17,20 @@ namespace Vita.Data.Sql {
       public long LastUsed; 
     }
 
-    ConcurrentDictionary<SqlCacheKey, SqlCacheItem> _cache;
+    ConcurrentDictionary<string, SqlCacheItem> _cache;
     TimeService _timeService;
     int _capacity;
 
-    public static Action<SqlCacheKey, SqlStatement> Debug_OnLookup; 
+    public static Action<string, SqlStatement> Debug_OnLookup; 
 
     public SqlCache(int capacity = 10000) {
       _capacity = capacity; 
       _timeService = TimeService.Instance;
-      _cache = new ConcurrentDictionary<SqlCacheKey, SqlCacheItem>();
+      _cache = new ConcurrentDictionary<string, SqlCacheItem>();
       _lastSizeCheck = _timeService.ElapsedMilliseconds; 
     }
 
-    public void Add(SqlCacheKey key, SqlStatement sql) {
+    public void Add(string key, SqlStatement sql) {
       if (!sql.IsCompacted)
         sql.Compact();
       var now = _timeService.ElapsedMilliseconds;
@@ -39,7 +39,7 @@ namespace Vita.Data.Sql {
       _cache.TryAdd(key, item); 
     }
 
-    public SqlStatement Lookup(SqlCacheKey key) {
+    public SqlStatement Lookup(string key) {
       Interlocked.Increment(ref LookupCount);
       if(!_cache.TryGetValue(key, out var item)) {
         Interlocked.Increment(ref MissCount);

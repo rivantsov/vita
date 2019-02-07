@@ -89,7 +89,7 @@ namespace Vita.Entities.Model.Construction {
     public static object GetNullableEnumValue(EntityRecord record, EntityMemberInfo member) {
       var value = GetSimpleValue(record, member);
       if (value == DBNull.Value || value == null)
-        return value;
+        return null;
       if (!value.GetType().IsEnum) 
         value = Enum.ToObject(Nullable.GetUnderlyingType(member.DataType), value);
       return value; 

@@ -22,7 +22,7 @@ namespace Vita.Testing.ExtendedTests {
     static object _lock = new object();
     const string _cacheLogFileName = "_SqlCacheLog.log";
 
-    private static void LogSqlCacheAction(SqlCacheKey key, SqlStatement sql) {
+    private static void LogSqlCacheAction(SqlCacheKeyBuilder key, SqlStatement sql) {
       var res = sql == null ? "MISS" : " hit";
       var msg = $"{res} Key= {key.Key}";
       lock(_lock) {

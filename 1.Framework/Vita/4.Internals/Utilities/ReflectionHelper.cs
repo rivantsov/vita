@@ -317,37 +317,39 @@ namespace Vita.Entities.Utilities {
     }
 
     public static object GetMemberValue(this MemberInfo member, object obj) {
-      var prop = member as PropertyInfo;
-      if(prop != null)
-        return prop.GetValue(obj, null);
-      var fld = member as FieldInfo;
-      if(fld != null)
-        return fld.GetValue(obj);
+      switch(member) {
+        case PropertyInfo pi:
+          return pi.GetValue(obj);
+        case FieldInfo fi:
+          return fi.GetValue(obj);
+      }
       return null; 
     }
 
     public static Type GetMemberReturnType(this MemberInfo member) {
-      if (member is FieldInfo)
-          return ((FieldInfo)member).FieldType;
-      if (member is PropertyInfo)
-          return ((PropertyInfo)member).PropertyType;
-      if (member is MethodInfo)
-          return ((MethodInfo)member).ReturnType;
-      if (member is ConstructorInfo)
-          return null;
+      switch(member) {
+        case PropertyInfo pi:
+          return pi.PropertyType;
+        case FieldInfo fi:
+          return fi.FieldType;
+        case MethodInfo mi:
+          return mi.ReturnType;
+        case ConstructorInfo ci:
+          return null; 
+      }
       Util.Throw("Invalid argument for GetMemberType: {0}", member);
       return null;
     }
 
     public static bool IsStaticMember(this MemberInfo member) {
-      if(member is FieldInfo)
-        return ((FieldInfo)member).IsStatic;
-      if(member is MethodInfo)
-        return ((MethodInfo)member).IsStatic;
-      if(member is PropertyInfo) {
-        var prop = (PropertyInfo)member;
-        var meth = prop.GetMethod ?? prop.SetMethod;
-        return meth.IsStatic;
+      switch(member) {
+        case PropertyInfo pi:
+          var meth = pi.GetMethod ?? pi.SetMethod;
+          return meth.IsStatic;
+        case FieldInfo fi:
+          return fi.IsStatic;
+        case MethodInfo mi:
+          return mi.IsStatic;
       }
       return false;
     }

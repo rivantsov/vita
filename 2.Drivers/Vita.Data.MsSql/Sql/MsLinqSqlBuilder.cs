@@ -23,7 +23,7 @@ namespace Vita.Data.MsSql {
     MsSqlDialect _msDialect;
 
     // maxParamsCount is 2300 for MS SQL, but we're being a bit cautious here
-    public MsLinqSqlBuilder(DbModel dbModel, LinqCommand command) : base(dbModel, command) {
+    public MsLinqSqlBuilder(DbModel dbModel, ExecutableLinqCommand command) : base(dbModel, command) {
       _msDialect = (MsSqlDialect)dbModel.Driver.SqlDialect;
     }
 

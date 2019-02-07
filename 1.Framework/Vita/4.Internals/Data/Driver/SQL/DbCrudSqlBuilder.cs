@@ -82,18 +82,6 @@ namespace Vita.Data.Driver {
       return stmt;
     }
 
-    // The resulting list is sent as array to db server (as literal or parameter)
-    // For parameter case, it is important for some servers (Pgres) that list is a typed list, object[] does not work
-    // So we create an array of specific type
-    private IList GetPrimaryKeyValues(object[] input, DbTableInfo table) {
-      var records = (IList<EntityRecord>)input[0];
-      var pkCol = table.PrimaryKey.KeyColumns[0].Column;
-      var idArray = Array.CreateInstance(pkCol.Member.DataType, records.Count);
-      for(int i = 0; i < records.Count; i++)
-        idArray.SetValue(records[i].GetValueDirect(pkCol.Member), i);
-      return idArray;
-    }
-
     public virtual SqlStatement BuildCrudDeleteOne(DbTableInfo table) {
       var placeHolders = new SqlPlaceHolderList();
       var whereCond = BuildWhereConditonForUpdateDeleteOne(table, placeHolders);
@@ -126,6 +114,20 @@ namespace Vita.Data.Driver {
     }
 
     // -------------- Helper methods -------------------------------------------------------
+
+
+    // The resulting list is sent as array to db server (as literal or parameter)
+    // For parameter case, it is important for some servers (Pgres) that list is a typed list, object[] does not work
+    // So we create an array of specific type
+    protected IList GetPrimaryKeyValues(object[] input, DbTableInfo table) {
+      var records = (IList<EntityRecord>)input[0];
+      var pkCol = table.PrimaryKey.KeyColumns[0].Column;
+      var idArray = Array.CreateInstance(pkCol.Member.DataType, records.Count);
+      for(int i = 0; i < records.Count; i++)
+        idArray.SetValue(records[i].GetValueDirect(pkCol.Member), i);
+      return idArray;
+    }
+
     protected SqlFragment BuildWhereConditonForUpdateDeleteOne(DbTableInfo table, SqlPlaceHolderList placeHolders) {
       var pkCols = table.PrimaryKey.KeyColumns;
       var hasRowVersion = table.Entity.Flags.HasFlag(EntityFlags.HasRowVersion);
@@ -154,7 +156,6 @@ namespace Vita.Data.Driver {
     }
 
     // TODO: make it return only assigned columns, or those that have values different from default
-    // this requires implementing bit masks
     public IList<DbColumnInfo> GetColumnsToInsert(DbTableInfo table, EntityRecord record) {
       return table.InsertColumns;
     }

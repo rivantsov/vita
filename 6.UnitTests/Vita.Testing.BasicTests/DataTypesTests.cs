@@ -69,7 +69,8 @@ namespace Vita.Testing.BasicTests.DataTypes {
       float SingleProp { get; set; } //equiv System.Single
       // decimal/ money
       decimal DecProp { get; set; }
-      [Currency]
+
+      // [Currency] - deprecated
       decimal MoneyProp { get; set; }
 
       // date-time

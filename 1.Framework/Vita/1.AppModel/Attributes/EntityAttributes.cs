@@ -29,15 +29,6 @@ namespace Vita.Entities {
     public byte Precision { get; set; }
     public bool AnsiString { get; set; }
 
-    [Obsolete("Use DbTypeSpec property.")]
-    /// <summary>Explicit DbType for a column. </summary>
-    public DbType DbType {
-      // Nullable types are not allowed in attributes, so we have to wrap nullable<DbType> field into property.
-      get { return _dbType == null ? (DbType) (- 1) : _dbType.Value; }
-      set { _dbType = value; }
-    }
-    DbType? _dbType;
-
     public string DbTypeSpec;
 
     public ColumnAttribute() { }
@@ -427,12 +418,6 @@ namespace Vita.Entities {
   /// <summary>Marks a string or binary property as unlimited size column (nvarchar(max) in SQL Server). </summary>
   [AttributeUsage(AttributeTargets.Property)]
   public partial class UnlimitedAttribute: EntityModelAttributeBase { }
-
-  /// <summary>Marks a decimal property as Money column. </summary>
-  [AttributeUsage(AttributeTargets.Property)]
-  public partial class CurrencyAttribute: EntityModelAttributeBase {
-    public CurrencyAttribute() { }
-  }
 
   /// <summary>
   /// Marks property as nullable. Can be placed on properties of type string, Entity reference or even ValueType. 

@@ -58,8 +58,7 @@ namespace Vita.Data.Linq {
       // if session is null, it means that query is not executable - it should be used only to DEFINE a query and translate it to SQL
       // but not execute it. Example: DbView definition
       Util.Check(Session != null, "The query is not executable. Query: {0}", expression);
-      var elemType = expression.Type.IsGenericType ? expression.Type.GenericTypeArguments[0] : typeof(object);
-      var command = new LinqCommand(expression, LinqCommandKind.Select, null);
+      var command = new ExecutableLinqCommand(LinqCommandSource.Dynamic, LinqOperation.Select, expression);
       var result = Session.ExecuteLinqCommand(command);
       return result;
     }

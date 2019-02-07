@@ -71,7 +71,7 @@ namespace Vita.Data.MySql {
     public override DbCrudSqlBuilder CreateCrudSqlBuilder(DbModel dbModel) {
       return new MySqlCrudSqlBuilder(dbModel); 
     }
-    public override DbLinqSqlBuilder CreateLinqSqlBuilder(DbModel dbModel, LinqCommand command) {
+    public override DbLinqSqlBuilder CreateLinqSqlBuilder(DbModel dbModel, ExecutableLinqCommand command) {
       return new MySqlLinqSqlBuilder(dbModel, command);
     }
     public override DbLinqNonQuerySqlBuilder CreateLinqNonQuerySqlBuilder(DbModel dbModel, NonQueryLinqCommand command) {

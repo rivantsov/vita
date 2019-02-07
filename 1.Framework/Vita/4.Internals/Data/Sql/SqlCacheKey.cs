@@ -9,7 +9,7 @@ using Vita.Entities.Model;
 
 namespace Vita.Data.Sql {
 
-  public class SqlCacheKey : IEquatable<SqlCacheKey> {
+  public class SqlCacheKeyBuilder {
     IList<string> _strings; //might be array or list
     string _key;
 
@@ -42,55 +42,51 @@ namespace Vita.Data.Sql {
     }
 
     // used for LINQ statements when values are added dynamically as we analyze the query
-    private SqlCacheKey() {
+    private SqlCacheKeyBuilder() {
       _strings = new List<string>(100); 
     }
     // fixed-size cache key, used for CRUD commands, where key is known in advance, it is fixed limited list (array)
-    private SqlCacheKey(params string[] strings) {
+    private SqlCacheKeyBuilder(params string[] strings) {
       _strings = strings; 
     }
 
-    public static SqlCacheKey CreateForLinq(LinqCommandKind linqKind, LockType lockType, QueryOptions options) {
-      var key = new SqlCacheKey();
+    public static SqlCacheKeyBuilder Create(string descriptor) {
+      var key = new SqlCacheKeyBuilder();
+      key.Add(descriptor); 
+      return key;
+    }
+
+    public static SqlCacheKeyBuilder CreateForLinq(LinqCommand cmd) {
+      var key = new SqlCacheKeyBuilder();
       key.Add(_LINQ);
-      key.Add(linqKind.ToString());
-      key.Add(options.ToString());
+      key.Add(cmd.Source.ToString());
+      key.Add(cmd.Operation.ToString());
       return key; 
     }
 
-    public static SqlCacheKey CreateForSelectByKey(EntityKeyInfo key, LockType lockType, EntityMemberMask mask) {
+    public static SqlCacheKeyBuilder CreateForSelectByKey(EntityKeyInfo key, LockType lockType, EntityMemberMask mask) {
       var tag = key.KeyType.IsSet(KeyType.PrimaryKey) ? "SELECT-BY-PK" : "SELECT-BY-KEY";
-      return new SqlCacheKey(_CRUD, key.Entity.Name, tag, key.Name, lockType.ToString(), mask.Bits.ToHex()); 
+      return new SqlCacheKeyBuilder(_CRUD, key.Entity.Name, tag, key.Name, lockType.ToString(), mask.Bits.ToHex()); 
     }
 
-    public static SqlCacheKey CreateForCrud(EntityInfo entity, EntityStatus status, EntityMemberMask mask) {
+    public static SqlCacheKeyBuilder CreateForCrud(EntityInfo entity, EntityStatus status, EntityMemberMask mask) {
       switch(status) {
         case EntityStatus.New:
-          return new SqlCacheKey(_CRUD, entity.Name, "INSERT-ONE");
+          return new SqlCacheKeyBuilder(_CRUD, entity.Name, "INSERT-ONE");
         case EntityStatus.Modified:
-          return new SqlCacheKey(_CRUD, entity.Name, "UPDATE-ONE", mask.Bits.ToHex());
+          return new SqlCacheKeyBuilder(_CRUD, entity.Name, "UPDATE-ONE", mask.Bits.ToHex());
         case EntityStatus.Deleting:
-          return new SqlCacheKey(_CRUD, entity.Name, "DELETE-ONE");
+          return new SqlCacheKeyBuilder(_CRUD, entity.Name, "DELETE-ONE");
         default:
           Util.Throw("Invalid entity status, entity: {0}", entity.Name);
           return null; //never happens
       }
     }
 
-    public static SqlCacheKey CreateForDeleteMany(EntityInfo entity) {
-      return new SqlCacheKey("CRUD", entity.Name, "DELETE-MANY");
+    public static SqlCacheKeyBuilder CreateForDeleteMany(EntityInfo entity) {
+      return new SqlCacheKeyBuilder("CRUD", entity.Name, "DELETE-MANY");
     }
 
-    // IEquatable<> impl
-    public bool Equals(SqlCacheKey other) {
-      return this.Key == other.Key;
-    }
-    public override int GetHashCode() {
-      return this.Key.GetHashCode();
-    }
-    public override string ToString() {
-      return Key; 
-    }
   }
 
 }

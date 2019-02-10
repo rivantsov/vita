@@ -351,7 +351,8 @@ namespace Vita.Entities.Model.Construction {
           } else
             member.ValueIndex = ent.TransientValuesCount++;
           if (member.Kind == EntityMemberKind.EntityRef) {
-            member.ReferenceInfo.CountCommand = SelectCommandBuilder.BuildGetCountForEntityRef(this.Model, member.ReferenceInfo);
+            member.ReferenceInfo.FromKey.CountCommand = 
+                 SelectCommandBuilder.BuildGetCountForEntityRef(this.Model, member.ReferenceInfo);
           }
         }//foreach member
         if (!hasUpdatableMembers)

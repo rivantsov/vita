@@ -24,7 +24,7 @@ namespace Vita.Data.Runtime {
       var canUseBatch = Settings.Driver.Supports(DbFeatures.BatchedUpdates) && Settings.ModelConfig.Options.IsSet(DbOptions.UseBatchMode);
       if(!canUseBatch)
         return false; 
-      var totalCount = updateSet.Records.Count + updateSet.Session.ScheduledCommands.Count;
+      var totalCount = updateSet.Records.Count + updateSet.Session.ScheduledCommandsCount();
       if(totalCount <= 1)
         return false; 
       var options = updateSet.Session.Options;

@@ -29,26 +29,21 @@ namespace Vita.Data.Sql {
     }
 
     public SqlStatement GetLinqSql(LinqCommand command) {
-      if(string.IsNullOrEmpty(command.CacheKey))
-        LinqCommandAnalyzer.Analyze(_dbModel.EntityModel, command);
       // lookup in cache
-      var cacheKey = command.CacheKey;
-      var stmt = _sqlCache.Lookup(cacheKey);
+      var stmt = GetCachedLinqSql(command);
       if(stmt != null)
         return stmt;
       // not in cache - translate
-      LinqCommandRewriter.Rewrite(_dbModel.EntityModel, command);
-
-      stmt = _linqEngine.Translate(command);
+      stmt = TranslateLinqSql(command);
       _driver.SqlDialect.ReviewSqlStatement(stmt, command);
       if(!command.Options.IsSet(QueryOptions.NoQueryCache))
-        _sqlCache.Add(cacheKey, stmt);
+        _sqlCache.Add(command.SqlCacheKey, stmt);
       return stmt;
     }
 
     public SqlStatement GetCrudSqlForSingleRecord(DbTableInfo table, EntityRecord record) {
-      var maskStr = record.Status == EntityStatus.Modified ? record.MaskMembersChanged.AsHexString() : "?";
-      var cacheKey = $"CRUD-ONE/{table.Entity.Name}/{record.Status}/Mask:{maskStr}";
+      var maskStr = record.Status == EntityStatus.Modified ? record.MaskMembersChanged.AsHexString() : "(0)";
+      var cacheKey = $"CRUD/{table.Entity.Name}/{record.Status}/Mask:{maskStr}";
       SqlStatement sql = _sqlCache.Lookup(cacheKey);
       if(sql != null)
         return sql; 
@@ -82,10 +77,36 @@ namespace Vita.Data.Sql {
     }
 
     // Insert-many are never cached - these are custom-built each time
-    public SqlStatement  GetCrudInsertMany(DbTableInfo table, IList<EntityRecord> records, IColumnValueFormatter formatter) {
-      var sql = _crudSqlBuilder.BuildCrudInsertMany(table, records, formatter);
+    public SqlStatement  GetCrudInsertMany(DbTableInfo table, IList<EntityRecord> records, DataCommandBuilder commandBuilder) {
+      var sql = _crudSqlBuilder.BuildCrudInsertMany(table, records, commandBuilder); //commandBuilder is ICommandValueFormatter
       _driver.SqlDialect.ReviewSqlStatement(sql, table);
       return sql; 
+    }
+
+    // Helper methods 
+
+    private SqlStatement GetCachedLinqSql(LinqCommand command) {
+      if(command.Options.IsSet(QueryOptions.NoQueryCache))
+        return null;
+      if(string.IsNullOrEmpty(command.SqlCacheKey)) {
+        var dynCommand = command as DynamicLinqCommand;
+        // It is not dynamic linq command - it is pre-built linq; but SqlCacheKey is not provided; definitely bug
+        Util.Check(dynCommand != null, "Fatal: SQL cache key is not provided for non-dynamic query: {0}", command.Lambda);
+        LinqCommandAnalyzer.Analyze(_dbModel.EntityModel, dynCommand);
+      }
+      var sql = _sqlCache.Lookup(command.SqlCacheKey);
+      return sql;
+    }
+
+    private SqlStatement TranslateLinqSql(LinqCommand command) {
+      if(command.Lambda == null) {
+        var dynCommand = command as DynamicLinqCommand;
+        // It is not dynamic linq command - it is pre-built linq; but SqlCacheKey is not provided; definitely bug
+        Util.Check(dynCommand != null, "Fatal: lambda expression not set for pre-built query: {0}", command);
+        LinqCommandRewriter.RewriteToLambda(_dbModel.EntityModel, dynCommand);
+      }
+      var sql = _linqEngine.Translate(command);
+      return sql;
     }
 
   } //class

@@ -82,7 +82,7 @@ namespace Vita.Data.MsSql {
       return new MsCrudSqlBuilder(dbModel); 
     }
 
-    public override DbLinqSqlBuilder CreateLinqSqlBuilder(DbModel dbModel, ExecutableLinqCommand command) {
+    public override DbLinqSqlBuilder CreateLinqSqlBuilder(DbModel dbModel, LinqCommand command) {
       return new MsLinqSqlBuilder(dbModel, command); 
     }
 

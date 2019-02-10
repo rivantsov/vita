@@ -38,29 +38,16 @@ namespace Vita.Data.Linq {
     }
 
     TResult IQueryProvider.Execute<TResult>(Expression expression) {
-      var qp = (IQueryProvider)this;
-      var objResult = qp.Execute(expression);
-      if (objResult == null)
-        return default(TResult);
-      if (typeof(TResult).IsAssignableFrom(objResult.GetType()))
-        return (TResult)objResult;
-      //one special case - when TResult is IEnumerable<T> but query returns IEnumerable<T?>
-      var resType = typeof(TResult);
-      if (resType.IsGenericType && resType.GetGenericTypeDefinition() == typeof(IEnumerable<>)) {
-        var list = ConvertHelper.ConvertEnumerable(objResult as IEnumerable, resType);
-        return (TResult)list;
-      }
-      Util.Throw("Failed to convert query result of type {0} to type {1}.", objResult.GetType(), resType);
-      return default(TResult);
-    }
-  
-    object IQueryProvider.Execute(Expression expression) {
       // if session is null, it means that query is not executable - it should be used only to DEFINE a query and translate it to SQL
       // but not execute it. Example: DbView definition
       Util.Check(Session != null, "The query is not executable. Query: {0}", expression);
-      var command = new ExecutableLinqCommand(LinqCommandSource.Dynamic, LinqOperation.Select, expression);
-      var result = Session.ExecuteLinqCommand(command);
-      return result;
+      var objResult = Session.ExecuteQuery<TResult>(expression);
+      return objResult;
+    }
+  
+    object IQueryProvider.Execute(Expression expression) {
+      Util.Check(Session != null, "The query is not executable. Query: {0}", expression);
+      return Session.ExecuteQuery(expression); 
     }
 
   }//class

@@ -2,17 +2,22 @@
 using System.Collections.Generic;
 using System.Linq.Expressions;
 using System.Text;
+using Vita.Entities.Utilities;
 
 namespace Vita.Data.Linq {
 
   public static class LinqCommandHelper {
 
-    public static void EvaluateParameters(ExecutableLinqCommand command) {
-      //We proceed in 2 steps: 
-      // 1. We evaluate external parameters (used in lambdas in authorization filters and QueryFilters);
-      //    values are in current OperationContext
-      // 2. Evaluate local expressions which become final query parameters; they may depend on external params
+    public static void EvaluateLocals(ExecutableLinqCommand command) {
+      throw new NotImplementedException();
       /*
+      if(command.BaseCommand.Locals.Count == 0)
+        return; 
+      foreach(var local in command.BaseCommand.Locals) {
+        var v = ExpressionHelper.Evaluate(local);
+        command.ParamValues.Add(new ParamValue())
+      }
+
       object[] extParamValues = null;
       if(_externalParams.Count > 0) {
         extParamValues = new object[_externalParams.Count];

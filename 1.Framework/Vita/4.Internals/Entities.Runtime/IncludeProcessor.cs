@@ -25,10 +25,10 @@ namespace Vita.Entities.Runtime {
     // Initially found on some external solution, seemed to be broken, but now maybe working. Needs to be retested! 
     internal static void RunIncludeQueries(EntitySession session, ExecutableLinqCommand command, object mainQueryResult) {
       // initial checks if there's anything to run
-      var resultShape = command.Info.ResultShape;
+      var resultShape = command.BaseCommand.ResultShape;
       if (mainQueryResult == null || resultShape == QueryResultShape.Object)
         return;
-      var allIncludes = session.Context.GetMergedIncludes(command.Info.Includes);
+      var allIncludes = session.Context.GetMergedIncludes(command.BaseCommand.Includes);
       if (allIncludes == null || allIncludes.Count == 0)
         return; 
       // Get records from query result

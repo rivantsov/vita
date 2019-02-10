@@ -14,7 +14,8 @@ using Vita.Entities.Runtime;
 
 namespace Vita.Data.Linq {
 
-  /* Rewrites query expression into canonical form as parameterized lambda
+  /* Rewrites query expression into canonical form as parameterized lambda. Replaces all 'local' values with 
+     parameters.
    Tasks:
    1. 'Unfolds' sub-queries referenced through local variables - replaces these references with actual queries
        (analyzer that runs before does the same to include the subqueries into cache key).
@@ -27,24 +28,26 @@ namespace Vita.Data.Linq {
 
   public class LinqCommandRewriter : ExpressionVisitor {
     EntityModel _model; 
-    LinqCommand _command;
+    DynamicLinqCommand _command;
     List<Expression> _locals; 
     List<ParameterExpression> _parameters;
 
-    public static void Rewrite(EntityModel model, LinqCommand command) {
+    public static void RewriteToLambda(EntityModel model, DynamicLinqCommand command) {
       var preProc = new LinqCommandRewriter();
       preProc.RewriteCommand(model, command); 
     }
 
-    private void RewriteCommand(EntityModel model, LinqCommand command) {
+    private void RewriteCommand(EntityModel model, DynamicLinqCommand command) {
       _model = model; 
       _command = command;
       _locals = command.Locals;
       _parameters = new List<ParameterExpression>();
+      _parameters.AddRange(command.ExternalParameters); //add original
       //create parameters
+      int prmIndex = _parameters.Count;
       for (int i = 0; i < _locals.Count; i++) {
-        var prmExpr = _locals[i];
-        var prm = prmExpr.NodeType == ExpressionType.Parameter ? (ParameterExpression)prmExpr : Expression.Parameter(prmExpr.Type, "@P" + i);
+        var local = _locals[i];
+        var prm = local.NodeType == ExpressionType.Parameter ? (ParameterExpression)local : Expression.Parameter(local.Type, "@P" + prmIndex++);
         _parameters.Add(prm);
       }
       var body = this.Visit(_command.Expression);
@@ -75,8 +78,6 @@ namespace Vita.Data.Linq {
     protected override Expression VisitMethodCall(MethodCallExpression node) {
       if(node.Method.IsEntitySetMethod()) {
         var entType = node.Type.GetGenericArguments()[0];
-        var entInfo = _model.GetEntityInfo(entType, true);
-        _command.Entities.Add(entInfo);
         return ExpressionMaker.MakeEntitySetConstant(entType);  
       }
       if (node.Method.DeclaringType == typeof(EntityQueryExtensions) && node.Method.Name == nameof(EntityQueryExtensions.Include)) {
@@ -86,10 +87,7 @@ namespace Vita.Data.Linq {
     }
 
     protected override Expression VisitConstant(ConstantExpression node) {
-      Type entityType; 
-      if (IsEntitySet(node, out entityType)) {
-        var entInfo = _model.GetEntityInfo(entityType, true);
-        _command.Entities.Add(entInfo);
+      if (IsEntitySet(node, out var dummy)) {
         return node; 
       }
       return base.VisitConstant(node);

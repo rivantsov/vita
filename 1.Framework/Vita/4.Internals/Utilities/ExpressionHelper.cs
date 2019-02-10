@@ -117,13 +117,13 @@ namespace Vita.Entities.Utilities {
 
     private static string[] BuildExpressionStrings() {
       var values = Enum.GetValues(typeof(ExpressionType));
-      var len = 0;
+      var max = 0;
       foreach(var v in values) {
         var i = (int)v;
-        if(i > len)
-          len = i; 
+        if(i > max)
+          max = i; 
       }
-      var strings = new string[len];
+      var strings = new string[max + 1];
       foreach(var v in values) 
         strings[(int)v] = v.ToString();
       return strings; 

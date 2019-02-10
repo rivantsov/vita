@@ -54,7 +54,7 @@ namespace Vita.Data.Runtime {
       var genMode = command.BaseCommand.Options.IsSet(QueryOptions.NoParameters) ? 
                              SqlGenMode.NoParameters : SqlGenMode.PreferParam;
       var cmdBuilder = new DataCommandBuilder(this._driver, batchMode: false, mode: genMode);
-      cmdBuilder.AddLinqStatement(sql, command.InputValues);
+      cmdBuilder.AddLinqStatement(sql, command.ParamValues);
       var dataCmd = cmdBuilder.CreateCommand(conn, DbExecutionType.Reader, sql.ResultProcessor);
       ExecuteDataCommand(dataCmd);
       return dataCmd.ProcessedResult;
@@ -65,7 +65,7 @@ namespace Vita.Data.Runtime {
       var fmtOptions = command.BaseCommand.Options.IsSet(QueryOptions.NoParameters) ?
                              SqlGenMode.NoParameters : SqlGenMode.PreferParam;
       var cmdBuilder = new DataCommandBuilder(this._driver);
-      cmdBuilder.AddLinqStatement(sql, command.InputValues);
+      cmdBuilder.AddLinqStatement(sql, command.ParamValues);
       var dataCmd = cmdBuilder.CreateCommand(conn, DbExecutionType.NonQuery, sql.ResultProcessor);
       ExecuteDataCommand(dataCmd);
       return dataCmd.ProcessedResult ?? dataCmd.Result;
@@ -89,7 +89,8 @@ namespace Vita.Data.Runtime {
         if (sConn.Lifetime != DbConnectionLifetime.Explicit)
           ReleaseConnection(sConn); 
       }
-      session.ScheduledCommands.Clear(); 
+      session.ScheduledCommandsAtStart.Clear();
+      session.ScheduledCommandsAtEnd.Clear();
     }
 
     private void SaveChangesNoBatch(DbUpdateSet updateSet) {
@@ -102,8 +103,7 @@ namespace Vita.Data.Runtime {
         if(withTrans)
           conn.BeginTransaction(commitOnSave: true);
         //execute commands
-        if (session.ScheduledCommands.Count > 0)
-          ExecuteScheduledCommands(conn, session, CommandSchedule.TransactionStart);
+        ExecuteScheduledCommands(conn, session, session.ScheduledCommandsAtStart);
         //Apply record updates  
         foreach (var grp in updateSet.UpdateGroups)
           foreach (var tableGrp in grp.TableGroups) {
@@ -112,7 +112,7 @@ namespace Vita.Data.Runtime {
                 if (CanProcessMany(tableGrp)) {
                   var cmdBuilder = new DataCommandBuilder(this._driver, mode: SqlGenMode.PreferLiteral);
                   var sql = SqlFactory.GetCrudInsertMany(tableGrp.Table, tableGrp.Records, cmdBuilder);
-                  cmdBuilder.AddUpdates(sql, tableGrp.Records);
+                  cmdBuilder.AddInsertMany(sql, tableGrp.Records);
                   var cmd = cmdBuilder.CreateCommand(conn, sql.ExecutionType, sql.ResultProcessor);
                   ExecuteDataCommand(cmd);
                 } else
@@ -125,7 +125,7 @@ namespace Vita.Data.Runtime {
                 if (CanProcessMany(tableGrp)) {
                   var cmdBuilder = new DataCommandBuilder(this._driver);
                   var sql = SqlFactory.GetCrudDeleteMany(tableGrp.Table);
-                  cmdBuilder.AddUpdates(sql, tableGrp.Records, new object[] { tableGrp.Records });
+                  cmdBuilder.AddDeleteMany(sql, tableGrp.Records, new object[] { tableGrp.Records });
                   var cmd = cmdBuilder.CreateCommand(conn, DbExecutionType.NonQuery, sql.ResultProcessor);
                   ExecuteDataCommand(cmd);
                 } else
@@ -134,8 +134,7 @@ namespace Vita.Data.Runtime {
             }
           } //foreach tableGrp
         //Execute scheduled commands
-        if (session.ScheduledCommands.Count > 0)
-          ExecuteScheduledCommands(conn, session, CommandSchedule.TransactionEnd);
+        ExecuteScheduledCommands(conn, session, session.ScheduledCommandsAtEnd);
         if (conn.DbTransaction != null && conn.Flags.IsSet(DbConnectionFlags.CommitOnSave))
           conn.Commit();
         var end = _timeService.ElapsedMilliseconds;
@@ -154,19 +153,15 @@ namespace Vita.Data.Runtime {
           rec.RefreshIdentityReferences(); 
         var cmdBuilder = new DataCommandBuilder(this._driver);
         var sql = SqlFactory.GetCrudSqlForSingleRecord(tableGrp.Table, rec);
-        cmdBuilder.AddUpdate(sql, rec);
+        cmdBuilder.AddRecordUpdate(sql, rec);
         var cmd = cmdBuilder.CreateCommand(conn, sql.ExecutionType, sql.ResultProcessor);
         ExecuteDataCommand(cmd);
       }
     }
 
-    private void ExecuteScheduledCommands(DataConnection conn, EntitySession session, CommandSchedule schedule) {
-      if (session.ScheduledCommands.Count == 0)
-        return;
-      foreach (var cmd in session.ScheduledCommands)
-        if (cmd.Schedule == schedule) {
-          ExecuteLinqNonQuery(session, cmd, conn);
-        }
+    private void ExecuteScheduledCommands(DataConnection conn, EntitySession session, IList<LinqCommand> commands) {
+      foreach (var cmd in commands)
+          ExecuteLinqNonQuery(session, new ExecutableLinqCommand(cmd), conn);
     }
 
     public bool CanProcessMany(DbUpdateTableGroup group) {

@@ -93,11 +93,9 @@ namespace Vita.Data.Driver {
 
     // InsertMany will never be reused, so we prefer to use literals, not parameters
     public virtual SqlStatement BuildCrudInsertMany(DbTableInfo table, IList<EntityRecord> records, IColumnValueFormatter formatter) {
-      // list of column names
+      // list of column placeholders
       var insertColPhs = GetColumnPlaceholdersForInsert(table, records);
-      var insertColsSqls = insertColPhs.Select(ph => ph.Column.SqlColumnNameQuoted).ToList();
-      var colListSql = SqlFragment.CreateList(SqlTerms.Comma, insertColsSqls);
-      //values set
+      //values rows
       var rowFragments = new List<SqlFragment>();
       var colValueSqls = new List<SqlFragment>();
       foreach(var rec in records) {
@@ -107,8 +105,14 @@ namespace Vita.Data.Driver {
         var valuesRow = CompositeSqlFragment.Parenthesize(SqlFragment.CreateList(SqlTerms.Comma, colValueSqls));
         rowFragments.Add(valuesRow);
       }
+      // assemble SQL
+      // column list
+      var insertColsSqls = insertColPhs.Select(ph => ph.Column.SqlColumnNameQuoted).ToList();
+      var colListSql = SqlFragment.CreateList(SqlTerms.Comma, insertColsSqls);
+      // values rows
       var allValuesSql = SqlFragment.CreateList(SqlTerms.CommaNewLineIndent, rowFragments);
       var sql = SqlDialect.SqlCrudTemplateInsert.Format(table.SqlFullName, colListSql, allValuesSql);
+      // assemble Insert statement
       var stmt = new SqlStatement(SqlKind.InsertMany, sql, null, DbExecutionType.NonQuery, null, QueryOptions.NoQueryCache);
       return stmt;
     }

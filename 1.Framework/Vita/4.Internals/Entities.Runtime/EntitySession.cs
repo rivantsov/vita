@@ -3,16 +3,14 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Collections.Concurrent;
 using System.Linq;
-using System.Linq.Expressions;
 
 using Vita.Entities.Utilities;
 using Vita.Entities.Model;
 using Vita.Entities.Services;
-using Vita.Data;
 using Vita.Entities.Locking;
+using Vita.Data;
 using Vita.Data.Linq;
 using Vita.Entities.Logging;
-using Vita.Data.Linq.Translation;
 using Vita.Data.Runtime;
 
 namespace Vita.Entities.Runtime {
@@ -20,7 +18,7 @@ namespace Vita.Entities.Runtime {
   public enum EntitySessionSubType {
     ReadWrite,
     ReadOnly,
-    ConcurrentReadOnly, //allowed only for readonly sessions
+    ConcurrentReadOnly, 
   }
 
   public enum EntitySessionOptions {
@@ -81,7 +79,6 @@ namespace Vita.Entities.Runtime {
         RecordsChanged = new List<EntityRecord>();
         ListsChanged = new List<IPropertyBoundList>();
         RecordsToClearLists = new HashSet<EntityRecord>();
-        ScheduledCommands = new List<ExecutableLinqCommand>();
       }
       _timeService = Context.App.TimeService;
       //This might be reset in SaveChanges
@@ -177,7 +174,7 @@ namespace Vita.Entities.Runtime {
       ListsChanged.Clear();
     }
     public bool HasChanges() {
-      return this.RecordsChanged.Count > 0 || this.ScheduledCommands.Count > 0;
+      return this.RecordsChanged.Count > 0 || this.ScheduledCommandsCount() > 0;
     }
 
     public virtual void SaveChanges() {
@@ -276,8 +273,8 @@ namespace Vita.Entities.Runtime {
       foreach (var refMember in entInfo.IncomingReferences) {
         // if it is cascading delete, this member is not a problem
         if (refMember.Flags.IsSet(EntityMemberFlags.CascadeDelete)) continue;
-        var countCmdInfo = refMember.ReferenceInfo.CountCommand;
-        var countCmd = new ExecutableLinqCommand(countCmdInfo, new object[] {this, record.EntityInstance});
+        var countCmdInfo = refMember.ReferenceInfo.FromKey.CountCommand;
+        var countCmd = new ExecutableLinqCommand(countCmdInfo, record.PrimaryKey.Values);
         var count = ExecuteLinqCommand(countCmd);
         var intCount = (count.GetType() == typeof(int)) ? (int)count : (int) Convert.ChangeType(count, typeof(int));          
         if (intCount > 0)
@@ -363,18 +360,50 @@ namespace Vita.Entities.Runtime {
           break; 
       }
     }
+
+    private EntityRecord CreateStub(EntityKey primaryKey) {
+      var rec = new EntityRecord(primaryKey);
+      rec.Session = this;
+      RecordsLoaded.Add(rec);
+      return rec;
+    }
+    protected virtual EntityRecord GetLoadedRecord(EntityKey primaryKey) {
+      if(primaryKey == null)
+        return null;
+      //1. Look in the cache
+      //var entityInfo = primaryKey.Key.Entity;
+      // var rec = Database.Cache.Lookup(entityInfo.EntityType, primaryKey);
+      // if(rec != null) return rec;
+      //2. Look in the group - if it was previously loaded
+      var rec = RecordsLoaded.Find(primaryKey);
+      // additionally check RecordsChanged; New records are not included in RecordsLoaded because they do not have PrimaryKes set (yet)
+      if(rec == null && RecordsChanged != null && RecordsChanged.Count > 0)
+        rec = FindNewRecord(primaryKey);
+      return rec;
+    }
+
+    private EntityRecord FindNewRecord(EntityKey primaryKey) {
+      var ent = primaryKey.KeyInfo.Entity;
+      for(int i = 0; i < RecordsChanged.Count; i++) { //for-i loop is faster
+        var rec = RecordsChanged[i];
+        if(rec.Status != EntityStatus.New || rec.EntityInfo != ent)
+          continue;
+        //we found new record of matching entity type. Check keys match. First check if key is loaded
+        if(!rec.KeyIsLoaded(primaryKey.KeyInfo))
+          continue;
+        if(primaryKey.Equals(rec.PrimaryKey))
+          return rec;
+      }
+      return null;
+    }
+
+    public virtual IList<TEntity> ToEntities<TEntity>(IEnumerable<EntityRecord> records) {
+      var entlist = records.Select(r => (TEntity)r.EntityInstance).ToList();
+      return entlist;
+    }
+
     #endregion
 
-    #region Record Get/Set Value
-    // Will be overridden SecureSession
-    public virtual object RecordGetMemberValue(EntityRecord record, EntityMemberInfo member) {
-      return member.GetValueRef(record, member);
-    }
-    public virtual void RecordSetMemberValue(EntityRecord record, EntityMemberInfo member, object value) {
-      member.SetValueRef(record, member, value);
-    }
-
-    #endregion
 
     #region OnSave methods
     // We might have new entities added on the fly, as we fire events. For example, ChangeTracking hooks to EntityStore and it adds new IChangeTrackEntries.
@@ -439,99 +468,14 @@ namespace Vita.Entities.Runtime {
     }
     #endregion
 
-    #region private methods
-    private EntityRecord CreateStub(EntityKey primaryKey) {
-      var rec = new EntityRecord(primaryKey);
-      rec.Session = this; 
-      RecordsLoaded.Add(rec);
-      return rec;
-    }
-    protected virtual EntityRecord GetLoadedRecord(EntityKey primaryKey) {
-      if (primaryKey == null)
-        return null;
-      //1. Look in the cache
-      //var entityInfo = primaryKey.Key.Entity;
-      // var rec = Database.Cache.Lookup(entityInfo.EntityType, primaryKey);
-      // if(rec != null) return rec;
-      //2. Look in the group - if it was previously loaded
-      var rec = RecordsLoaded.Find(primaryKey);
-      // additionally check RecordsChanged; New records are not included in RecordsLoaded because they do not have PrimaryKes set (yet)
-      if (rec == null && RecordsChanged != null && RecordsChanged.Count > 0)
-        rec = FindNewRecord(primaryKey); 
-      return rec;
-    }
-
-    private EntityRecord FindNewRecord(EntityKey primaryKey) {
-      var ent = primaryKey.KeyInfo.Entity;
-      for(int i=0; i < RecordsChanged.Count; i++) { //for-i loop is faster
-        var rec = RecordsChanged[i]; 
-        if (rec.Status != EntityStatus.New || rec.EntityInfo != ent) continue; 
-        //we found new record of matching entity type. Check keys match. First check if key is loaded
-        if (!rec.KeyIsLoaded(primaryKey.KeyInfo)) continue; 
-        if (primaryKey.Equals(rec.PrimaryKey)) 
-          return rec; 
-      }
-      return null; 
-    }
-    
-    public virtual IList<TEntity> ToEntities<TEntity>(IEnumerable<EntityRecord> records) {
-      var entlist = records.Select(r => (TEntity) r.EntityInstance).ToList();
-      return entlist;
-    }
-
-
-    protected internal EntityInfo GetEntityInfo(Type entityType) {
-      return Context.App.Model.GetEntityInfo(entityType, throwIfNotFound: true);
-    }
-
-    #endregion
-
-    #region command execution
-
-    public virtual object ExecuteLinqCommand(ExecutableLinqCommand command, bool withIncludes = true) {
-      try { 
-        var result = _dataSource.ExecuteLinqCommand(this, command);
-        switch(command.BaseCommand.Operation) {
-          case LinqOperation.Select:
-            Context.App.AppEvents.OnExecutedSelect(this, command);
-            if(withIncludes && (command.Info.Includes?.Count > 0 || Context.HasIncludes()))
-              IncludeProcessor.RunIncludeQueries(this, command, result);
-            break;
-          default:
-            Context.App.AppEvents.OnExecutedNonQuery(this, command);
-            NextTransactionId = Guid.NewGuid();
-            break; 
-        }
-        return result;
-      } catch(Exception ex) {
-        ex.AddValue("entity-command", command + string.Empty);
-        ex.AddValue("parameters", command.InputValues);
-        throw;
-      }
-    }
-
-    internal int ExecuteLinqNonQuery<TEntity>(IQueryable baseQuery, LinqOperation operation) {
-      Util.CheckParam(baseQuery, nameof(baseQuery));
-      var updateEnt = Context.App.Model.GetEntityInfo(typeof(TEntity));
-      var command = new ExecutableLinqCommand(baseQuery.Expression, operation, updateEnt);
-      var objResult = this.ExecuteLinqCommand(command);
-      return (int)objResult;
-    }
-
-    public IEntityRecordContainer SelectByPrimaryKey(EntityInfo entity, object[] keyValues,
-            LockType lockType = LockType.None, EntityMemberMask mask = null) {
-      mask = mask ?? entity.AllMembersMask; 
-      var selectQuery = SelectCommandBuilder.BuildSelectByKey(entity.PrimaryKey, mask, lockType); 
-      var cmd = new ExecutableLinqCommand(selectQuery, keyValues);
-      var list = (IList) ExecuteLinqCommand(cmd);
-      if(list.Count == 0)
-        return null;
-      return (IEntityRecordContainer)list[0]; 
-    }
-
-    #endregion
-
     #region Validation
+
+    // Can be used for unit testing
+    bool _validationDisabled;
+    public void EnableValidation(bool enable) {
+      _validationDisabled = !enable;
+    }
+
     public virtual void ValidateChanges() {
       // important - use for-i loop; validation may modify records (and add to this list)
       for( int i = 0; i < RecordsChanged.Count; i++)
@@ -608,6 +552,7 @@ namespace Vita.Entities.Runtime {
         }
       }
     }
+
     #endregion
 
     #region Misc methods
@@ -617,43 +562,46 @@ namespace Vita.Entities.Runtime {
       this.RecordsToClearLists.Add(record); 
     }
 
-    public void ScheduleLinqNonQuery<TEntity>(IQueryable baseQuery, LinqOperation op,
-                             CommandSchedule schedule = CommandSchedule.TransactionEnd) {
-      Util.Check(baseQuery is EntityQuery, "query parameter should an EntityQuery.");
-      var model = Context.App.Model;
-      var targetEnt = model.GetEntityInfo(typeof(TEntity));
-      Util.Check(targetEnt != null, "Generic parameter {0} is not an entity registered in the Model.", typeof(TEntity));
-      var command = new LinqCommand( LinqCommandSource.Dynamic, op, baseQuery.Expression, targetEnt);
-      switch(schedule) {
-        case CommandSchedule.TransactionStart:
-          ScheduledCommandsAtStart = ScheduledCommandsAtStart ?? new List<LinqCommand>();
-          ScheduledCommandsAtStart.Add(command);
-          break;
-        case CommandSchedule.TransactionEnd:
-          ScheduledCommandsAtEnd = ScheduledCommandsAtEnd ?? new List<LinqCommand>();
-          ScheduledCommandsAtEnd.Add(command);
-          break; 
-      } 
-    }
-
     public void SetLastCommand(System.Data.IDbCommand command) {
       LastCommand = command;
     }
 
-    // Used for unit testing, to see how validation errors propagate to client. 
-    // We disable validation on the client, while keep it enabled  on the server
-    bool _validationDisabled;
-    public void EnableValidation(bool enable) {
-      _validationDisabled = !enable;
+    protected internal EntityInfo GetEntityInfo(Type entityType) {
+      return Context.App.Model.GetEntityInfo(entityType, throwIfNotFound: true);
     }
 
     private void CheckNotReadonly() {
       Util.Check(!IsReadOnly, "Cannot modify records, session is readonly.");
     }
 
+    //this method is defined for conveniences; only derived method in SecureSession does real elevation
+    // But we want to be able to call this method without checking if we have secure session or not. 
+    public virtual IDisposable ElevateRead() {
+      return new DummyDisposable();
+    }
+
+    public virtual IDisposable WithNoCache() {
+      return new CacheDisableToken(this);
+    }
+
+    public bool CacheEnabled {
+      get { return !Options.IsSet(EntitySessionOptions.DisableCache); }
+    }
+
+    public bool LogEnabled {
+      get { return this.Log != null && !Options.IsSet(EntitySessionOptions.DisableLog); }
+    }
     public void AddLogEntry(LogEntry entry) {
       if(this.LogEnabled)
         Log.AddEntry(entry);
+    }
+
+
+    public void SetOption(EntitySessionOptions option, bool on) {
+      if(on)
+        Options |= option;
+      else
+        Options &= ~option;
     }
     #endregion
 
@@ -667,16 +615,6 @@ namespace Vita.Entities.Runtime {
       }
     }
     #endregion 
-
-    //this method is defined for conveniences; only derived method in SecureSession does real elevation
-    // But we want to be able to call this method without checking if we have secure session or not. 
-    public virtual IDisposable ElevateRead() {
-      return new DummyDisposable();
-    }
-
-    public virtual IDisposable WithNoCache() {
-      return new CacheDisableToken(this);
-    }
 
     #region nested Disposable tokens
     class CacheDisableToken : IDisposable {
@@ -698,20 +636,6 @@ namespace Vita.Entities.Runtime {
       public void Dispose() { }
     }
     #endregion 
-
-    public bool CacheEnabled {
-      get { return !Options.IsSet(EntitySessionOptions.DisableCache); }
-    }
-    public bool LogEnabled{
-      get { return this.Log != null && !Options.IsSet(EntitySessionOptions.DisableLog); }
-    }
-
-    public void SetOption(EntitySessionOptions option, bool on) {
-      if(on)
-        Options |= option;
-      else
-        Options &= ~option;
-    }
 
   }//class
 

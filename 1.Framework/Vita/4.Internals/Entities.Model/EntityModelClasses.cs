@@ -350,6 +350,9 @@ namespace Vita.Entities.Model {
     public List<EntityMemberInfo> ExpandedIncludeMembers = new List<EntityMemberInfo>();
     public EntityKeyInfo IsCopyOf; //for FKs
 
+    public LinqCommand SelectByKeyCommand;
+    public LinqCommand CountCommand; //counts child records for a given parent - used by CanDelete() method
+
     public bool HasIdentityMember;
     public EntityMemberInfo OwnerMember; //for FK, the ref member
     public Delegate CacheSelectMethod; // compiled method to select in cache
@@ -396,7 +399,6 @@ namespace Vita.Entities.Model {
     public EntityKeyInfo ToKey { get; private set; }
     public string ForeignKeyColumns;
     public EntityMemberInfo TargetListMember; // Entity list member on target entity based on the reference; might be null
-    public LinqCommand CountCommand; //counts child records for a given parent - used by CanDelete() method
 
     public EntityReferenceInfo(EntityMemberInfo fromMember, EntityKeyInfo fromKey, EntityKeyInfo toKey) {
       FromMember = fromMember;

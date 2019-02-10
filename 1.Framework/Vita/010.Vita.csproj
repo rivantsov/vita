@@ -16,18 +16,10 @@
 
   <ItemGroup>
     <Compile Remove="1.AppModel\Services\Logging\IErrorLogService_Disabled.cs" />
-    <Compile Remove="4.Internals\Data\Linq\OLD_LinqCommand.cs" />
-    <Compile Remove="4.Internals\Data\Linq\OLD_LinqCommandAnalyzer.cs" />
-    <Compile Remove="4.Internals\Data\Linq\OLD_LinqCommandInfo.cs" />
-    <Compile Remove="4.Internals\Data\Linq\_New\LinqCommandInfo_Disabled.cs" />
   </ItemGroup>
 
   <ItemGroup>
     <None Include="1.AppModel\Services\Logging\IErrorLogService_Disabled.cs" />
-    <None Include="4.Internals\Data\Linq\OLD_LinqCommandAnalyzer.cs" />
-    <None Include="4.Internals\Data\Linq\OLD_LinqCommand.cs" />
-    <None Include="4.Internals\Data\Linq\OLD_LinqCommandInfo.cs" />
-    <None Include="4.Internals\Data\Linq\_New\LinqCommandInfo_Disabled.cs" />
   </ItemGroup>
 
   <ItemGroup>

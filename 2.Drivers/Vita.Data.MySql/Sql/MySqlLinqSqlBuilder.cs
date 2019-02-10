@@ -20,7 +20,7 @@ namespace Vita.Data.MySql {
 
     private MySqlDialect _myDialect; 
 
-    public MySqlLinqSqlBuilder(DbModel dbModel, ExecutableLinqCommand command) : base(dbModel, command) {
+    public MySqlLinqSqlBuilder(DbModel dbModel, LinqCommand command) : base(dbModel, command) {
       _myDialect = (MySqlDialect) dbModel.Driver.SqlDialect; 
     }
 
@@ -31,7 +31,7 @@ namespace Vita.Data.MySql {
       // - which screws up view version comparison in schema update. 
       // another thing - it adds explicit alias to all output columns (same as column name)
       select = base.PreviewSelect(select, lockType);
-      if (select.Command.IsView) {
+      if (select.Command.Source == LinqCommandSource.View) {
         int cnt = 0;
         foreach(var t in select.Tables)
           if(string.IsNullOrEmpty(t.Alias))

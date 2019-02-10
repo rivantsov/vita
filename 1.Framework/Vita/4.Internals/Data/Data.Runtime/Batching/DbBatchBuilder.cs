@@ -54,7 +54,7 @@ namespace Vita.Data.Runtime {
       foreach(var lcmd in commands) {
         CheckCurrentCommand();
         var sql = _sqlFactory.GetLinqSql(lcmd);
-        _commandBuilder.AddLinqStatement(sql, lcmd.InputValues); 
+        _commandBuilder.AddLinqStatement(sql, null); 
       }//foreach schCmd
     }
 
@@ -84,13 +84,13 @@ namespace Vita.Data.Runtime {
             var recGroups = GroupRecordsForInsertMany(group.Records, _driver.SqlDialect.MaxRecordsInInsertMany);
             foreach(var recGroup in recGroups) {
               sql = _sqlFactory.GetCrudInsertMany(group.Table, recGroup, _commandBuilder);
-              _commandBuilder.AddUpdates(sql, recGroup);
+              _commandBuilder.AddInsertMany(sql, recGroup);
             } //foreach
           } else {
             foreach(var rec in group.Records) {
               CheckCurrentCommand();
               sql = sql ?? _sqlFactory.GetCrudSqlForSingleRecord(group.Table, rec);
-              _commandBuilder.AddUpdate(sql, rec);
+              _commandBuilder.AddRecordUpdate(sql, rec);
             }
           }
           break;
@@ -99,19 +99,19 @@ namespace Vita.Data.Runtime {
           foreach(var rec in group.Records) {
             CheckCurrentCommand();
             sql = _sqlFactory.GetCrudSqlForSingleRecord(group.Table, rec);
-            _commandBuilder.AddUpdate(sql, rec);
+            _commandBuilder.AddRecordUpdate(sql, rec);
           }
           break;
 
         case LinqOperation.Delete:
           if(_db.CanProcessMany(group)) {
             sql = _sqlFactory.GetCrudDeleteMany(group.Table);
-            _commandBuilder.AddUpdates(sql, group.Records, new object[] { group.Records });  
+            _commandBuilder.AddDeleteMany(sql, group.Records, new object[] { group.Records });  
           } else {
             foreach(var rec in group.Records) {
               CheckCurrentCommand();
               sql = sql ?? _sqlFactory.GetCrudSqlForSingleRecord(group.Table, rec);
-              _commandBuilder.AddUpdate(sql, rec);
+              _commandBuilder.AddRecordUpdate(sql, rec);
             }
           }
           break;

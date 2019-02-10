@@ -19,52 +19,24 @@ namespace Vita.Data.Linq {
                                                           IList<EntityKeyMemberInfo> orderBy = null) {
       var entType = key.Entity.EntityType;
       var lambdaExpr = BuildSelectFilteredByKeyLambda(key, lockType, orderBy, mask);
-      var cacheKey = SqlCacheKeyBuilder.CreateForSelectByKey(key, lockType, mask);
-      var info = new LinqCommand(Entities.QueryOptions.None, lockType, false /*isView*/, 
-                                       new[] { entType }, cacheKey, _emptyParamList , null);
-      info.Lambda = lambdaExpr;
-      info.ResultShape = QueryResultShape.EntityList;
-      info.MemberMask = mask;
-      return info; 
-    }
-
-    private static LambdaExpression BuildSelectFilteredByKeyLambda(EntityKeyInfo key, LockType lockType, 
-                                     IList<EntityKeyMemberInfo> orderBy,  EntityMemberMask mask = null) {
-      var entType = key.Entity.EntityType;
-      var prms = key.ExpandedKeyMembers.Select(m => Expression.Parameter(m.Member.DataType, "@" + m.Member.MemberName)).ToArray();
-      var pred = ExpressionMaker.MakeKeyPredicate(key, prms);
-      var entSet = (lockType == LockType.None) ? key.Entity.EntitySetConstant 
-                                               : ExpressionMaker.MakeEntitySetConstant(entType, lockType);
-      var entSetFiltered = ExpressionMaker.MakeCallWhere(entSet, entType, pred);
-      var entSetOrdered = entSetFiltered;
-      if(orderBy != null && orderBy.Count > 0)
-        foreach(var km in orderBy)
-          entSetOrdered = ExpressionMaker.AddOrderBy(entSetOrdered,  entType, km.Member, km.Desc);
-      var lambdaExpr = Expression.Lambda(entSetOrdered, prms);
-      return lambdaExpr;
+      var cmd = new LinqCommand(LinqCommandSource.PrebuiltQuery, LinqOperation.Select, lambdaExpr.Body);
+      cmd.Lambda = lambdaExpr;
+      cmd.ResultShape = QueryResultShape.EntityList;
+      cmd.MemberMask = mask;
+      var maskStr = mask.AsHexString();
+      cmd.SqlCacheKey = $"CRUD/{key.Entity.Name}/Select-by-key/{key.Name}/Lock:{lockType}/Mask:{maskStr}";
+      return cmd; 
     }
 
     public static LinqCommand BuildSelectByMemberValueArray(EntityMemberInfo member, EntityMemberMask mask = null) {
       var entType = member.Entity.EntityType;
       var lambdaExpr = BuildSelectByMemberValueArrayLambda(member, mask);
-      var cacheKey = SqlCacheKeyBuilder.CreateForLinq(LinqOperation.Select, QueryOptions.None);
-      cacheKey.Add("Include/" + entType.Name + "/Select/KeyArray/" + member.MemberName);
-      var info = new LinqCommand(QueryOptions.None, LockType.None, false, //isView
-                       new[] { entType }, cacheKey,  _emptyParamList, null);
-      info.Lambda = lambdaExpr;
-      info.ResultShape = QueryResultShape.EntityList;
-      return info;
-    }
-
-    public static LambdaExpression BuildSelectByMemberValueArrayLambda(EntityMemberInfo member, EntityMemberMask mask = null) {
-      var entType = member.Entity.EntityType;
-      var listType = typeof(IList<>).MakeGenericType(member.DataType);
-      var listPrm = Expression.Parameter(listType, "@list");
-      var pred = ExpressionMaker.MakeListContainsPredicate(entType, member, listPrm);
-      var entSet = member.Entity.EntitySetConstant;
-      var entSetFiltered = ExpressionMaker.MakeCallWhere(entSet, entType, pred);
-      var lambda = Expression.Lambda(entSetFiltered, listPrm);
-      return lambda; 
+      var cmd = new LinqCommand(LinqCommandSource.PrebuiltQuery, LinqOperation.Select, lambdaExpr.Body);
+      cmd.Lambda = lambdaExpr;
+      cmd.ResultShape = QueryResultShape.EntityList;
+      var maskStr = mask.AsHexString();
+      cmd.SqlCacheKey = $"CRUD/{member.Entity.Name}/Select-by-member-array/{member.MemberName}/Mask:{maskStr}";
+      return cmd;
     }
 
     public static LinqCommand BuildGetCountForEntityRef(EntityModel model, EntityReferenceInfo refInfo) {
@@ -87,12 +59,39 @@ namespace Vita.Data.Linq {
       var genCount = LinqExpressionHelper.QueryableCountMethod.MakeGenericMethod(child.EntityType);
       var countCallExpr = Expression.Call(genCount, whereCall);
 
-      var cmd = new ExecutableLinqCommand(countCallExpr, LinqOperation.Select, child);
+      var cmd = new LinqCommand( LinqCommandSource.PrebuiltQuery, LinqOperation.Select, countCallExpr);
       LinqCommandAnalyzer.Analyze(model, cmd);
-      LinqCommandRewriter.PreprocessCommand(model, cmd);
-      cmd.Info.Options |= QueryOptions.NoEntityCache; 
-      return cmd.Info;
+      LinqCommandRewriter.RewriteToLambda(model, cmd);
+      cmd.Options |= QueryOptions.NoEntityCache; 
+      return cmd;
     }
+
+    public static LambdaExpression BuildSelectByMemberValueArrayLambda(EntityMemberInfo member, EntityMemberMask mask = null) {
+      var entType = member.Entity.EntityType;
+      var listType = typeof(IList<>).MakeGenericType(member.DataType);
+      var listPrm = Expression.Parameter(listType, "@list");
+      var pred = ExpressionMaker.MakeListContainsPredicate(entType, member, listPrm);
+      var entSet = member.Entity.EntitySetConstant;
+      var entSetFiltered = ExpressionMaker.MakeCallWhere(entSet, entType, pred);
+      var lambda = Expression.Lambda(entSetFiltered, listPrm);
+      return lambda;
+    }
+    private static LambdaExpression BuildSelectFilteredByKeyLambda(EntityKeyInfo key, LockType lockType,
+                                     IList<EntityKeyMemberInfo> orderBy, EntityMemberMask mask = null) {
+      var entType = key.Entity.EntityType;
+      var prms = key.ExpandedKeyMembers.Select(m => Expression.Parameter(m.Member.DataType, "@" + m.Member.MemberName)).ToArray();
+      var pred = ExpressionMaker.MakeKeyPredicate(key, prms);
+      var entSet = (lockType == LockType.None) ? key.Entity.EntitySetConstant
+                                               : ExpressionMaker.MakeEntitySetConstant(entType, lockType);
+      var entSetFiltered = ExpressionMaker.MakeCallWhere(entSet, entType, pred);
+      var entSetOrdered = entSetFiltered;
+      if(orderBy != null && orderBy.Count > 0)
+        foreach(var km in orderBy)
+          entSetOrdered = ExpressionMaker.AddOrderBy(entSetOrdered, entType, km.Member, km.Desc);
+      var lambdaExpr = Expression.Lambda(entSetOrdered, prms);
+      return lambdaExpr;
+    }
+
 
   }
 }

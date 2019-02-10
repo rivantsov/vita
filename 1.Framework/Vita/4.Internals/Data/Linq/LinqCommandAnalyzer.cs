@@ -2,111 +2,70 @@
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
-using System.Text;
 using System.Linq.Expressions;
-using System.Reflection;
-using System.Diagnostics;
-
-using Vita.Entities.Utilities;
-using Vita.Entities.Runtime;
-using Vita.Entities.Model;
-using Vita.Entities;
-using System.Collections;
-using Vita.Entities.Locking;
-using Vita.Data.Runtime;
+using System.Text;
 using Vita.Data.Sql;
+using Vita.Entities;
+using Vita.Entities.Locking;
+using Vita.Entities.Model;
+using Vita.Entities.Runtime;
+using Vita.Entities.Utilities;
 
 namespace Vita.Data.Linq {
 
-
-  #region comments
-  // Performs initial analysis of the query. 
-  // The main task is to build query data - a 'minimal' information about submitted dynamic query - cache key and parameter values.
-  // If prepared version of the same query is found in query cache, this previously translated query is executed with new parameter values
-  // Initial analysis computes 2 things:
-  //  1. QueryCacheKey - to match the the query to previously submitted queries and retrieve previously prepared query from query cache.
-  //                     The cache key is based on query definition - the expression with 'masked'/excluded arguments - constants and variables
-  //                      used in the expression.
-  //  2. Values of query parameters - locally-evaluatable values or sub-expressions. These will be used as parameter values for 
-  //                     cached query definition to execute the query.
-  // Notes:
-  // 1. Query cache key does not look like original query's ToString(), it is a jumbled version, like this:
-  //     !Call/FirstOrDefault/!Call/Where/!Constant/EntitySet<ICoupon>/!Quote/!Lambda/!Parameter/c/!Equal/Equal/!MemberAccess/!Parameter/c/PromoCode/?p?
-  // 2. The main goal here is performance - the analysis is perfomed each time the query is submitted, even if we already executed similar query and 
-  // it is saved in query cache. We use a hand-crafted expression visitor here. The default Linq ExpressionVisitor is doing more work - it expects 
-  // the expression tree to be modified, and it constantly checks if args have changed. 
-  // Compare this case to the query tranlation process - when query is not in query cache, we go into process of translating it. Translation is 
-  // not performance critical - we expect it to happen once for a particular query, then it will be saved in query cache and reused. 
-  // So in translation (preprocessor) we use regular .NET expression visitors. 
-  // 3. We could use Expression.ToString() for query cache key, but it seems it is not efficient enough - it involves full tree visit, with a lot of string
-  //   merges. Our solution is to build an array of node keys while we iterate the tree and then do a string.Join of all keys.
-  // 4. Analysis results are put into QueryInfo object and saved put LinqCommand's field - in case if analysis is called more than once, it is actually
-  //    done only once, with reusing value saved in EntityQuery's field. 
-  // Algorithm
-  // The goal is to detect all 'locally-evaluatable' subexpressions that will turn into parameters. 
-  //  We build 2 lists as we navigate the tree - list of node keys and list of local values. Node keys are components of cache key; local values are candidates
-  // for query parameters; they are excluded from cache key as they are not part of query 'shape'. We start from tree leaf nodes, determine leaf's value kind,
-  // and then propagate up the ValueKind value. When propagating and deciding on comlex node's value kind, we use 'Max' function on ValueKind enum, 
-  // when combining kinds of child nodes - value kind of the node is a Max of value kinds of children (most of the time). 
-  // Example: for a binary expression 'a + b', if a is ValueKind.Local and b is ValueKind.Constant, then for 'a + b' the kind is Max(Local, Constant) -> Local. 
-  #endregion
-
-  //TODO: review assigning value kind Db for parameter (AnalyzeParameter) - it might not be right for all cases
-
-  /// <summary>Performs initial query analysis, computes cache key and values of parameters. </summary>
   public class LinqCommandAnalyzer {
-    EntityModel _model; 
-    LinqCommand _command;
-    // Filter parameters coming from outside - for ex: clauses in EntityFilters (query/authorization filters)
-    List<ParameterExpression> _externalParams = new List<ParameterExpression>();
-    // parameters of internal lambdas
-    List<ParameterExpression> _internalParams = new List<ParameterExpression>();
+    DynamicLinqCommand _command; 
+    EntityModel _model;
     List<LambdaExpression> _includes = new List<LambdaExpression>();
 
-    List<Type> _entityTypes = new List<Type>(); 
-    List<Expression> _locals = new List<Expression>(); 
+    List<Type> _entityTypes = new List<Type>();
+    List<Expression> _locals = new List<Expression>(); //local values and parameters
     QueryOptions _options; //OR-ed value from all sub-queries
     LockType _lockType = LockType.None;
-    SqlCacheKey _cacheKey;
+    SqlCacheKeyBuilder _cacheKeyBuilder;
 
+    // parameters of internal lambdas
+    List<ParameterExpression> _internalParams = new List<ParameterExpression>();
 
     //Helper enum identifying kind of value (origin) returned by the node
     enum ValueKind {
       None, //not a value, like Lambda expression
       Constant, //constant, part of query definition
-      Local,  // local value; parameter, not part of query definition
+      LocalValue,  
+      Parameter, //external parameter
       Db, // identifies data record value (or derived from it)
     }
 
-    public static LinqCommandInfo Analyze(EntityModel model, LinqCommand command) {
-      // if the query was already analyzed, return the old object; otherwise analyze and save in query's field
-      if (command.Info != null)
-        return command.Info; 
-      var analyzer = new LinqCommandAnalyzer();
-      command.Info = analyzer.AnalyzeCommand(model, command);
-      return command.Info;
+    public static void Analyze(EntityModel model, DynamicLinqCommand command) {
+      var scanner = new LinqCommandAnalyzer(model);
+      scanner.AnalyzeCommand(command);
     }
 
-    private LinqCommandInfo AnalyzeCommand(EntityModel model, LinqCommand command) {
+    public LinqCommandAnalyzer(EntityModel model) {
       _model = model; 
+    }
+
+    private void AnalyzeCommand(DynamicLinqCommand command) {
       _command = command;
-      _options = command.IsView? QueryOptions.NoParameters : QueryOptions.None;
-      _cacheKey = SqlCacheKey.CreateForLinq(command.Kind, _options);
+      _cacheKeyBuilder = new SqlCacheKeyBuilder("Linq", command.Source.ToString(), 
+                              command.Operation.ToString(), command.MemberMask.AsHexString());
       try {
         AnalyzeNode(_command.Expression);
-        _command.Locals = _locals;
-        //Build command info
-        var info = new LinqCommandInfo(_options, _lockType, command.IsView, _entityTypes, _cacheKey, _externalParams, _includes);
-        info.ResultShape = GetResultShape(_command.Expression.Type); 
-        return info; 
+        //copy some values to command 
+        command.SqlCacheKey = _cacheKeyBuilder.Key;
+        command.EntityTypes = _entityTypes;
+        command.LockType = _lockType;
+        command.Includes = _includes;
+        command.Options |= _options;
+        command.Locals.AddRange(_locals);
       } catch(Exception ex) {
-        ex.Data["QueryExperssion"] = command.Expression + string.Empty;
-        throw; 
+        ex.Data["LinqExperssion"] = _command.Expression + string.Empty;
+        throw;
       }
     }
 
     private ValueKind AnalyzeNode(Expression node) {
-      if (node == null)
+      if(node == null)
         return ValueKind.None;
       //remember cache key length - we will trim all added keys/locals if this node is local value
       var savedKeyLength = GetCacheKeyLength();
@@ -114,26 +73,30 @@ namespace Vita.Data.Linq {
       //TODO: optimize this using arrays? (lookup in array by node type)
       AddCacheKey(node.NodeType); //note: for local nodes this value will be popped out - see below
       var kind = AnalyzeNodeByType(node);
-      if(kind == ValueKind.Local) {
+      if(kind == ValueKind.LocalValue) {
         // The node is a local variable, not dependent on DB data. Its value is provided by the code, will be turned into parameter
         // The node and its children should not be part of Query cache(hash) key. We eliminate all child keys that might have been added. 
-        TrimCacheKey(savedKeyLength); 
-        AddCacheKey("?p?"); // indication of parameter
+        TrimCacheKey(savedKeyLength);
+        AddCacheKey("@p"); 
         if(_locals.Count > saveLocalCount)
           _locals.RemoveRange(saveLocalCount, _locals.Count - saveLocalCount);
         _locals.Add(node);
       }
-      return kind; 
+      return kind;
     }
 
     private ValueKind AnalyzeNodeByType(Expression node) {
-      if (node == null)
+      if(node == null)
         return ValueKind.None;
-      switch (node.NodeType) {
-        case ExpressionType.Constant: return AnalyzeConstant( (ConstantExpression)node);
-        case ExpressionType.Parameter: return AnalyzeParameter((ParameterExpression)node);
-        case ExpressionType.MemberAccess: return AnalyzeMember((MemberExpression)node);
-        case ExpressionType.Call: return AnalyzeCall((MethodCallExpression)node);
+      switch(node.NodeType) {
+        case ExpressionType.Constant:
+          return AnalyzeConstant((ConstantExpression)node);
+        case ExpressionType.Parameter:
+          return AnalyzeParameter((ParameterExpression)node);
+        case ExpressionType.MemberAccess:
+          return AnalyzeMember((MemberExpression)node);
+        case ExpressionType.Call:
+          return AnalyzeCall((MethodCallExpression)node);
 
         case ExpressionType.UnaryPlus:
         case ExpressionType.Negate:
@@ -183,7 +146,7 @@ namespace Vita.Data.Linq {
           return this.AnalyzeNode(tbe.Expression);
         case ExpressionType.Conditional:
           var c = (ConditionalExpression)node;
-          return AnalyzeNodes(c.Test, c.IfTrue, c.IfFalse); 
+          return AnalyzeNodes(c.Test, c.IfTrue, c.IfFalse);
         case ExpressionType.Lambda:
           var lambda = (LambdaExpression)node;
           return AnalyzeLambda(lambda);
@@ -199,7 +162,7 @@ namespace Vita.Data.Linq {
             // If it is 'new { Prop = ?..}' - anontype-new, we avoid folding it into local, even if argumens are constants
             // This is done to force SQL output clause to have all values listed in initializer - important for View and 
             // non-query LINQ statements
-            return ValueKind.Db; 
+            return ValueKind.Db;
         case ExpressionType.NewArrayInit:
         case ExpressionType.NewArrayBounds:
           var na = (NewArrayExpression)node;
@@ -221,10 +184,9 @@ namespace Vita.Data.Linq {
     }
 
     private ValueKind AnalyzeLambda(LambdaExpression lambda) {
-      var paramCount = lambda.Parameters.Count; 
-      if (paramCount > 0)
+      var paramCount = lambda.Parameters.Count;
+      if(paramCount > 0)
         _internalParams.AddRange(lambda.Parameters);
-      // AnalyzeNodes(lambda.Parameters);
       AnalyzeNode(lambda.Body);
       if(paramCount > 0)
         _internalParams.RemoveRange(_internalParams.Count - paramCount, paramCount);
@@ -240,52 +202,55 @@ namespace Vita.Data.Linq {
         return ValueKind.Db;
       } else {
         AddCacheKey(node.Name);
-        _externalParams.Add(node);
-        return ValueKind.Local;
+        if (!_locals.Contains(node))
+          _locals.Add(node);
+        return ValueKind.Parameter;
       }
     }
 
 
     private ValueKind AnalyzeConstant(ConstantExpression constNode) {
       AddCacheKey(constNode.Value);
-      if (constNode.Value == null)
+      if(constNode.Value == null)
         return ValueKind.Constant;
       //entity set
       var entQuery = constNode.Value as EntityQuery;
-      if (entQuery != null) {
+      if(entQuery != null) {
         _entityTypes.Add(entQuery.ElementType);
         var lockTarget = constNode.Value as ILockTarget;
         if(lockTarget != null && lockTarget.LockType != LockType.None) {
-          _lockType = lockTarget.LockType;
-          AddCacheKey(_lockType);
+          var lt = lockTarget.LockType; 
+          AddCacheKey(lt.ToString());
+          if(lt > _lockType)
+            _lockType = lt; 
         }
-        return ValueKind.Db; 
+        return ValueKind.Db;
       }
-      if (!constNode.Type.IsValueTypeOrString())
-        return ValueKind.Local;
+      if(!constNode.Type.IsValueTypeOrString())
+        return ValueKind.LocalValue;
       return ValueKind.Constant;
     }
 
     private ValueKind AnalyzeMember(MemberExpression node) {
       // check if it is subquery stored in local variable; if yes, retrieve the value and convert to constant
       IQueryable subQuery;
-      if (LinqExpressionHelper.CheckSubQueryInLocalVariable(node, out subQuery)) {
+      if(LinqExpressionHelper.CheckSubQueryInLocalVariable(node, out subQuery)) {
         AnalyzeNode(subQuery.Expression); // we need to visit it as well, to process sub-query nodes
         return ValueKind.Db;
       }
 
-      if(node.Type.IsSubclassOf(typeof(LinqLiteralBase))) {        
+      if(node.Type.IsSubclassOf(typeof(LinqLiteralBase))) {
         return ValueKind.Constant;
       }
-      if (node.Type == typeof(SequenceDefinition)) {
+      if(node.Type == typeof(SequenceDefinition)) {
         return ValueKind.Constant;
       }
 
       //regular member access node
       var exprValueKind = this.AnalyzeNode(node.Expression);
       AddCacheKey(node.Member.Name);
-      if (node.Member.IsStaticMember())
-        return ValueKind.Local;
+      if(node.Member.IsStaticMember())
+        return ValueKind.LocalValue;
       else
         return exprValueKind; //same as mexp.Expression's valueKind
     }
@@ -293,8 +258,8 @@ namespace Vita.Data.Linq {
     private ValueKind AnalyzeCall(MethodCallExpression node) {
       var objValueKind = AnalyzeNode(node.Object);
       var method = node.Method;
-      if (method.DeclaringType == typeof(EntityQueryExtensions)) {
-        switch (method.Name) {
+      if(method.DeclaringType == typeof(EntityQueryExtensions)) {
+        switch(method.Name) {
           case "Include":
             // Note: we do not add method name to cache key, or any args; so queries with different includes have the same key 
             // - and can be reused - which is what we want
@@ -314,12 +279,12 @@ namespace Vita.Data.Linq {
       AddCacheKey(method.Name);
 
       //Analyze child nodes
-      if (method.DeclaringType == typeof(Queryable)) {
+      if(method.DeclaringType == typeof(Queryable)) {
         //read QueryOptions and included queries from first argument (query)
         // One special case: Skip(n), Take(n). In LINQ expression they represented as int constants (not expressions)
         // - we will translate them into parameters, so we can use the same query for different pages.
         // This means that values of arguments should be excluded from cache key - we do it by not analyzing them.
-        switch (method.Name) {
+        switch(method.Name) {
           case "Take":
           case "Skip":
             AnalyzeNode(node.Arguments[0]);// analyze only the first arg (query), but not const value
@@ -330,11 +295,11 @@ namespace Vita.Data.Linq {
 
       if(method.DeclaringType == typeof(NativeSqlFunctionStubs)) {
         foreach(var arg in node.Arguments)
-          AnalyzeNode(arg); 
+          AnalyzeNode(arg);
         return ValueKind.Db;
       }
 
-      if (method.IsEntitySetMethod()) {
+      if(method.IsEntitySetMethod()) {
         //Add type of entity set
         AddCacheKey(method.ReturnType.GetGenericArguments()[0].Name);
         return ValueKind.Db;
@@ -350,33 +315,33 @@ namespace Vita.Data.Linq {
     //collection analyzers
     private ValueKind AnalyzeNodes(params Expression[] expressions) {
       var result = ValueKind.None;
-      for (int i = 0; i < expressions.Length; i++)
+      for(int i = 0; i < expressions.Length; i++)
         result = Max(result, this.AnalyzeNode(expressions[i]));
       return result;
     }
     private ValueKind AnalyzeNodes<E>(ReadOnlyCollection<E> expressions) where E : Expression {
       var result = ValueKind.None;
-      for (int i = 0; i < expressions.Count; i++)
+      for(int i = 0; i < expressions.Count; i++)
         result = Max(result, this.AnalyzeNode(expressions[i]));
-      return result; 
+      return result;
     }
 
     private ValueKind AnalyzeInitializers(ReadOnlyCollection<ElementInit> original) {
       var result = ValueKind.None;
-      for (int i = 0, n = original.Count; i < n; i++)
+      for(int i = 0, n = original.Count; i < n; i++)
         result = Max(result, this.AnalyzeNodes(original[i].Arguments));
-      return result; 
+      return result;
     }
 
     private ValueKind AnalyzeBindings(ReadOnlyCollection<MemberBinding> original) {
       var result = ValueKind.None;
-      for (int i = 0, n = original.Count; i < n; i++)
-        result = Max(result,  this.AnalyzeBinding(original[i]));
+      for(int i = 0, n = original.Count; i < n; i++)
+        result = Max(result, this.AnalyzeBinding(original[i]));
       return result;
     }
 
     private ValueKind AnalyzeBinding(MemberBinding binding) {
-      switch (binding.BindingType) {
+      switch(binding.BindingType) {
         case MemberBindingType.Assignment:
           var asm = (MemberAssignment)binding;
           return this.AnalyzeNode(asm.Expression);
@@ -397,32 +362,28 @@ namespace Vita.Data.Linq {
       return gt ? x : y;
     }
 
-    private QueryResultShape GetResultShape(Type outType) {
-      if (outType.IsInterface && _model.IsEntity(outType))
-        return QueryResultShape.Entity;
-      if (outType.IsGenericType) {
-        var genArg0 = outType.GetGenericArguments()[0];
-        if (typeof(IEnumerable).IsAssignableFrom(outType) && _model.IsEntity(genArg0))
-          return QueryResultShape.EntityList;
-      }
-      return QueryResultShape.Object; // don't know and don't care      
-    }
-
-
     #region QueryCache key builder
-    private void AddCacheKey(object key) {
-      _cacheKey.Add(key?.ToString());
+    private void AddCacheKey(ExpressionType nodeType) {
+      _cacheKeyBuilder.Add(nodeType.AsString());
     }
+
+    private void AddCacheKey(string key) {
+      _cacheKeyBuilder.Add(key);
+    }
+
+    private void AddCacheKey(object value) {
+      var s = value == null ? string.Empty : value.ToString(); 
+      _cacheKeyBuilder.Add(s); 
+    }
+
     private void TrimCacheKey(int toLength) {
-      _cacheKey.Trim(toLength);
+      _cacheKeyBuilder.Trim(toLength);
     }
     private int GetCacheKeyLength() {
-      return _cacheKey.Length;
+      return _cacheKeyBuilder.Length;
     }
     #endregion
 
 
   }//class
-
 }
-

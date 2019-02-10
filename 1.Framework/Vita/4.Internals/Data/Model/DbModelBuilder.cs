@@ -79,17 +79,15 @@ namespace Vita.Data.Model {
       foreach(var viewTbl in views) {
         var entInfo = viewTbl.Entity;
         var expr = entInfo.ViewDefinition.Query.Expression;
-        var viewCmd = new LinqCommand(LinqCommandSource.View, LinqOperation.Select, expr);
+        var viewCmd = new DynamicLinqCommand(LinqCommandSource.View, LinqOperation.Select, expr);
         LinqCommandAnalyzer.Analyze(_entityModel, viewCmd);
-        LinqCommandRewriter.Rewrite(_entityModel, viewCmd);
+        LinqCommandRewriter.RewriteToLambda(_entityModel, viewCmd);
         var sql = engine.TranslateSelect(viewCmd);
-        LinqExpressionHelper.EvaluateCommandParameters(viewCmd); //in case there are any local variables
-
-        var sqlStmt = engine.Translate(viewCmd);
+        var execCmd = new ExecutableLinqCommand(viewCmd); 
+        LinqCommandHelper.EvaluateLocals(execCmd); //in case there are any local variables
         var cmdBuilder = new DataCommandBuilder(_driver, mode: SqlGenMode.NoParameters);
-        cmdBuilder.AddLinqStatement(sqlStmt, viewCmd.InputValues);
-        // ';' is important for Oracle
-        viewTbl.ViewSql = cmdBuilder.GetSqlText().Trim(' ', '\r', '\n', ';');  
+        cmdBuilder.AddLinqStatement(sql, execCmd.ParamValues);
+        viewTbl.ViewSql = cmdBuilder.GetSqlText(); //.Trim(' ', '\r', '\n', ';');  
       }
     }
 

@@ -111,7 +111,7 @@ namespace Vita.Data.Oracle {
     public override DbCrudSqlBuilder CreateCrudSqlBuilder(DbModel dbModel) {
       return new OracleCrudSqlBuilder(dbModel);
     }
-    public override DbLinqSqlBuilder CreateLinqSqlBuilder(DbModel dbModel, ExecutableLinqCommand command) {
+    public override DbLinqSqlBuilder CreateLinqSqlBuilder(DbModel dbModel, LinqCommand command) {
       return new OracleLinqSqlBuilder(dbModel, command); 
     }
 

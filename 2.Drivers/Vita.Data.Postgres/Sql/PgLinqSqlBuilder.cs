@@ -19,7 +19,7 @@ namespace Vita.Data.Postgres {
   public class PgLinqSqlBuilder : DbLinqSqlBuilder {
     PgSqlDialect _pgDialect; 
 
-    public PgLinqSqlBuilder(DbModel dbModel, ExecutableLinqCommand command): base(dbModel, command) {
+    public PgLinqSqlBuilder(DbModel dbModel, LinqCommand command): base(dbModel, command) {
       _pgDialect = (PgSqlDialect)dbModel.Driver.SqlDialect;
     }
 

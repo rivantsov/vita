@@ -16,7 +16,6 @@ using Vita.Entities.Utilities;
 namespace Vita.Data.Runtime {
 
   public enum SqlGenMode {
-    //Auto = 0,
     NoParameters,
     PreferParam,
     PreferLiteral,
@@ -90,33 +89,41 @@ namespace Vita.Data.Runtime {
       return string.Join(string.Empty, _sqlStrings);
     }
 
-    public void AddLinqStatement(SqlStatement sql, List<InputValue> args) {
+    public void AddLinqStatement(SqlStatement sql, List<ParamValue> inputs) {
+      var args = inputs.Select(inp => inp.Value).ToArray(); 
       AddStatement(sql, args);
     }
 
-    public void AddUpdate(SqlStatement sql, EntityRecord rec) {
+    public void AddRecordUpdate(SqlStatement sql, EntityRecord rec) {
       _records.Add(rec);
       AddStatement(sql, rec); 
     }
-    public void AddUpdates(SqlStatement sql, IList<EntityRecord> recs) {
+    public void AddInsertMany(SqlStatement sql, IList<EntityRecord> recs) {
       _records.AddRange(recs);
-      AddStatement(sql, recs);
+      //insert-many is built with no placeholders - literals or param refs, so 'arg' is not used
+      AddStatement(sql, null); 
     }
-    // Used by DeleteMany, arg is list of Ids
-    public void AddUpdates(SqlStatement sql, IList<EntityRecord> recs, object arg) {
+    // Used by DeleteMany; arg is list of IDs
+    public void AddDeleteMany(SqlStatement sql, IList<EntityRecord> recs, object arg) {
       _records.AddRange(recs);
       AddStatement(sql, arg);
     }
 
     private void AddStatement(SqlStatement sql, object args) {
       SqlCount++;
-      _currentSql = sql; 
-      var phArgs = new string[sql.PlaceHolders.Count];
-      for(var i = 0; i < phArgs.Length; i++)
-        phArgs[i] = FormatPlaceHolder(sql.PlaceHolders[i], args);
+      _currentSql = sql;
+      string[] phArgs;
+      if(sql.PlaceHolders.Count == 0)
+        phArgs = _emptyStrings;
+      else {
+        phArgs = new string[sql.PlaceHolders.Count];
+        for(var i = 0; i < phArgs.Length; i++)
+          phArgs[i] = FormatPlaceHolder(sql.PlaceHolders[i], args);
+      }
       sql.WriteSql(_sqlStrings, phArgs);
       _currentSql = null; 
     }
+    static string[] _emptyStrings = new string[] { };
 
     private string FormatPlaceHolder(SqlPlaceHolder placeHolder, object arg) {
       switch(placeHolder) {

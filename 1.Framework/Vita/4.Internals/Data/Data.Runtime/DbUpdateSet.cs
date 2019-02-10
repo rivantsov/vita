@@ -110,7 +110,8 @@ namespace Vita.Data.Runtime {
       Connection = conn; 
       Records = session.RecordsChanged.Where(rec => ShouldUpdate(rec)).ToList();
       BuildRecordGroups(dbModel);
-      UseTransaction = Records.Count + session.ScheduledCommands.Count > 1; 
+      var totalCount = Records.Count + Session.ScheduledCommandsCount();
+      UseTransaction = totalCount > 1; 
     }
 
     #region Record sequencing and grouping

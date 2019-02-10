@@ -86,7 +86,7 @@ namespace Vita.Data.Model {
         var execCmd = new ExecutableLinqCommand(viewCmd); 
         LinqCommandHelper.EvaluateLocals(execCmd); //in case there are any local variables
         var cmdBuilder = new DataCommandBuilder(_driver, mode: SqlGenMode.NoParameters);
-        cmdBuilder.AddLinqStatement(sql, execCmd.ParamValues);
+        cmdBuilder.AddLinqStatement(sql, null);
         viewTbl.ViewSql = cmdBuilder.GetSqlText(); //.Trim(' ', '\r', '\n', ';');  
       }
     }

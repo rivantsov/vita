@@ -19,7 +19,7 @@ namespace Vita.Data.Linq {
                                                           IList<EntityKeyMemberInfo> orderBy = null) {
       var entType = key.Entity.EntityType;
       var lambdaExpr = BuildSelectFilteredByKeyLambda(key, lockType, orderBy, mask);
-      var cmd = new LinqCommand(LinqCommandSource.PrebuiltQuery, LinqOperation.Select, lambdaExpr.Body);
+      var cmd = new LinqCommand(LinqCommandSource.PrebuiltQuery, LinqOperation.Select);
       cmd.Lambda = lambdaExpr;
       cmd.ResultShape = QueryResultShape.EntityList;
       cmd.MemberMask = mask;
@@ -31,7 +31,7 @@ namespace Vita.Data.Linq {
     public static LinqCommand BuildSelectByMemberValueArray(EntityMemberInfo member, EntityMemberMask mask = null) {
       var entType = member.Entity.EntityType;
       var lambdaExpr = BuildSelectByMemberValueArrayLambda(member, mask);
-      var cmd = new LinqCommand(LinqCommandSource.PrebuiltQuery, LinqOperation.Select, lambdaExpr.Body);
+      var cmd = new LinqCommand(LinqCommandSource.PrebuiltQuery, LinqOperation.Select);
       cmd.Lambda = lambdaExpr;
       cmd.ResultShape = QueryResultShape.EntityList;
       var maskStr = mask.AsHexString();
@@ -59,9 +59,8 @@ namespace Vita.Data.Linq {
       var genCount = LinqExpressionHelper.QueryableCountMethod.MakeGenericMethod(child.EntityType);
       var countCallExpr = Expression.Call(genCount, whereCall);
 
-      var cmd = new LinqCommand( LinqCommandSource.PrebuiltQuery, LinqOperation.Select, countCallExpr);
-      LinqCommandAnalyzer.Analyze(model, cmd);
-      LinqCommandRewriter.RewriteToLambda(model, cmd);
+      var cmd = new LinqCommand( LinqCommandSource.PrebuiltQuery, LinqOperation.Select);
+      cmd.Lambda = Expression.Lambda(countCallExpr, cPrm);
       cmd.Options |= QueryOptions.NoEntityCache; 
       return cmd;
     }

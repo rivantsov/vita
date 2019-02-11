@@ -9,12 +9,17 @@ using Vita.Entities.Model;
 
 namespace Vita.Data.Sql {
 
+  public enum SpecialQueryType {
+    SelectByKey,
+    SelectByKeyArray,
+    SelectByKeyExists,
+  }
+
+
+
   public class SqlCacheKeyBuilder {
     List<string> _strings; //might be array or list
     string _key;
-
-    const string _CRUD = "CRUD";
-    const string _LINQ = "LINQ";
 
     public void Add(string value) {
       _strings.Add(value);
@@ -47,6 +52,26 @@ namespace Vita.Data.Sql {
       if(values != null)
         _strings.AddRange(values); 
     }
+
+    // static helpers
+
+    public static string BuildSpecialSelectKey(SpecialQueryType qryType, LinqOperation op, LockType lockType, 
+             string entityName, string keyName, EntityMemberMask mask, IList<EntityKeyMemberInfo> orderBy) {
+      var maskStr = mask?.AsHexString() ?? "(nomask)";
+      var ordStr = (orderBy == null) ? "none" : string.Join(",", orderBy);
+      var key = $"SELECT/{qryType}/{op}/Lock:{lockType}/{entityName}/{keyName}/Mask:{maskStr}/OrderBy:{ordStr}";
+      return key; 
+    }
+    public static string BuildCrudKey(EntityStatus status, string entityName, EntityMemberMask mask) {
+      var maskStr = status == EntityStatus.Modified ? mask.AsHexString() : "(nomask)";
+      var key = $"CRUD/{entityName}/{status}/Mask:{maskStr}";
+      return key;
+    }
+    public static string BuildCrudDeleteManyKey(string entityName) {
+      var key = $"CRUD/DELETE-MANY/{entityName}";
+      return key;
+    }
+
 
   }
 }

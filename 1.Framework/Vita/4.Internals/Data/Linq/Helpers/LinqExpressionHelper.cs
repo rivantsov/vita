@@ -21,7 +21,7 @@ namespace Vita.Data.Linq {
     public static MethodInfo QueryableSelectMethod;
     public static MethodInfo QueryableWhereMethod;
     public static MethodInfo QueryableAsQueryableMethod;
-    public static MethodInfo QueryableCountMethod;
+    public static MethodInfo QueryableAny2ArgMethod;
     public static MethodInfo QueryableOrderByMethod;
     public static MethodInfo QueryableOrderByDescMethod;
 
@@ -60,7 +60,7 @@ namespace Vita.Data.Linq {
       }
       QueryableOrderByMethod = allMethods.First(m => m.Name == nameof(Queryable.OrderBy) && m.GetParameters().Length == 2);
       QueryableOrderByDescMethod = allMethods.First(m => m.Name == nameof(Queryable.OrderByDescending) && m.GetParameters().Length == 2);
-      QueryableCountMethod = allMethods.First(m => m.Name == nameof(Queryable.Count) && m.GetParameters().Length == 1);
+      QueryableAny2ArgMethod = allMethods.First(m => m.Name == nameof(Queryable.Any) && m.GetParameters().Length == 2);
       QueryableAsQueryableMethod = allMethods.First(m => m.Name == nameof(Queryable.AsQueryable) && m.IsGenericMethod);
 
       ListContainsMethod = typeof(ICollection<>).FindMethod(nameof(IList.Contains), paramCount: 1);  

@@ -351,7 +351,7 @@ namespace Vita.Entities.Model {
     public EntityKeyInfo IsCopyOf; //for FKs
 
     public LinqCommand SelectByKeyCommand;
-    public LinqCommand CountCommand; //counts child records for a given parent - used by CanDelete() method
+    public LinqCommand CheckAnyCommand; //counts child records for a given parent - used by CanDelete() method
 
     public bool HasIdentityMember;
     public EntityMemberInfo OwnerMember; //for FK, the ref member

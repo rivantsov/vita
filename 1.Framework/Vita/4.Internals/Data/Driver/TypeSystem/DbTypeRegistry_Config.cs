@@ -31,20 +31,6 @@ namespace Vita.Data.Driver.TypeSystem {
     // Newer version (10-29)
     private string[] _emptyStrings = new string[] { };
 
-    /// <summary>Add generic type definition, ex: varchar, int</summary>
-    /// <param name="name"></param>
-    /// <param name="columnOutType"></param>
-    /// <param name="flags"></param>
-    /// <param name="specTemplate"></param>
-    /// <param name="aliases"></param>
-    /// <param name="defaultPrecision"></param>
-    /// <param name="defaultScale"></param>
-    /// <param name="toLiteral"></param>
-    /// <param name="columnInit"></param>
-    /// <param name="mapColumnType">Only for simple type defs, with not arguments and not unlimited - map the default DbTypeInfo
-    ///   to column type for CLR-type to typeInfo lookup.</param>
-    /// <param name="specialType"></param>
-    /// <returns></returns>
     public virtual DbTypeDef AddDbTypeDef(string name, Type columnOutType, DbTypeFlags flags = DbTypeFlags.None,
                   string specTemplate = null, string aliases = null,
                   byte? defaultPrecision = null, byte? defaultScale = null,

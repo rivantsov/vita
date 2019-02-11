@@ -42,8 +42,7 @@ namespace Vita.Data.Sql {
     }
 
     public SqlStatement GetCrudSqlForSingleRecord(DbTableInfo table, EntityRecord record) {
-      var maskStr = record.Status == EntityStatus.Modified ? record.MaskMembersChanged.AsHexString() : "(0)";
-      var cacheKey = $"CRUD/{table.Entity.Name}/{record.Status}/Mask:{maskStr}";
+      var cacheKey = SqlCacheKeyBuilder.BuildCrudKey(record.Status, record.EntityInfo.Name, record.MaskMembersChanged);
       SqlStatement sql = _sqlCache.Lookup(cacheKey);
       if(sql != null)
         return sql; 
@@ -66,7 +65,7 @@ namespace Vita.Data.Sql {
 
 
     public SqlStatement GetCrudDeleteMany(DbTableInfo table) {
-      var cacheKey = $"CRUD/Delete-Many/{table.Entity.Name}";
+      var cacheKey = SqlCacheKeyBuilder.BuildCrudDeleteManyKey(table.Entity.Name);
       var sql = _sqlCache.Lookup(cacheKey);
       if(sql != null)
         return sql; 
@@ -88,9 +87,7 @@ namespace Vita.Data.Sql {
     private SqlStatement GetCachedLinqSql(LinqCommand command) {
       if(command.Options.IsSet(QueryOptions.NoQueryCache))
         return null;
-      if(string.IsNullOrEmpty(command.SqlCacheKey)) {
-        Util.Check(false, "Fatal: SQL cache key is not set for LINQ query: {0}", command);
-      }
+      Util.Check(!string.IsNullOrEmpty(command.SqlCacheKey), "Fatal: SQL cache key is not set for LINQ query: {0}", command);
       var sql = _sqlCache.Lookup(command.SqlCacheKey);
       return sql;
     }

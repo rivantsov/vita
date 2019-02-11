@@ -35,7 +35,7 @@ namespace Vita.Entities.Locking {
 
     /// <summary>Retrieves entity by type and primary key value and sets database lock on the underlying record. </summary>
     /// <typeparam name="TEntity">Entity type.</typeparam>
-    /// <param name="primaryKeyValue">The value of the primary key.</param>
+    /// <param name="primaryKey">The value of the primary key.</param>
     /// <param name="lockType">Lock type.</param>
     /// <returns>An entity instance.</returns>
     /// <remarks>For composite primary keys pass an instance of primary key

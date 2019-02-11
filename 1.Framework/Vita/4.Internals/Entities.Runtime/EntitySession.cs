@@ -276,12 +276,10 @@ namespace Vita.Entities.Runtime {
       foreach (var refMember in entInfo.IncomingReferences) {
         // if it is cascading delete, this member is not a problem
         if (refMember.Flags.IsSet(EntityMemberFlags.CascadeDelete)) continue;
-        var countCmd = refMember.ReferenceInfo.FromKey.CountCommand;
-       // var execCountCmd = new ExecutableLinqCommand(countCmd, record.PrimaryKey.Values);
-        var execCountCmd = new ExecutableLinqCommand(countCmd, new object[] { record.EntityInstance });
-        var count = ExecuteLinqCommand(execCountCmd);
-        var intCount = (count.GetType() == typeof(int)) ? (int)count : (int) Convert.ChangeType(count, typeof(int));          
-        if (intCount > 0)
+        var existsCmd = refMember.ReferenceInfo.FromKey.CheckAnyCommand;
+        var execExistsCmd = new ExecutableLinqCommand(existsCmd, new object[] { record.EntityInstance });
+        var exists = ExecuteLinqCommand(execExistsCmd);
+        if ((bool)exists)
           blockingTypeSet.Add(refMember.Entity.EntityType);
       }
       if (blockingTypeSet.Count == 0)

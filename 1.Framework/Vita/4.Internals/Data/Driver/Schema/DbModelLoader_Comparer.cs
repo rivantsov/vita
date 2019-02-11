@@ -102,7 +102,8 @@ namespace Vita.Data.Driver {
     }
 
     protected virtual string NormalizeViewScript(string script) {
-      return script.Trim(' ', '\r', '\n', '\t');
+      // ; is for Oracle, remove ending semicolon
+      return script.Trim(' ', '\r', '\n', '\t', ';');
     }
 
   }

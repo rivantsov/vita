@@ -31,8 +31,7 @@ namespace Vita.Entities.Logging {
 
     public void AddEntry(LogEntry entry) {
       entry.ContextInfo = _contextInfo; 
-      _logService.AddEntry(entry); 
-      /*
+      //_logService.AddEntry(entry); 
       entry.ContextInfo = entry.ContextInfo ?? _contextInfo; 
       _entries.Enqueue(entry);
       var count = Interlocked.Increment(ref _approxCount);
@@ -46,7 +45,6 @@ namespace Vita.Entities.Logging {
           Interlocked.Add(ref _approxCount, -2);
         }
       }
-      */
     }
 
     public void Flush() {

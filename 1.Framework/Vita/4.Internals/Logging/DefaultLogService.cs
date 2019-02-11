@@ -19,6 +19,12 @@ namespace Vita.Entities.Logging {
           arr[i].AddEntry(entry); 
     }
 
+    public void Flush() {
+      var arr = _listeners;
+      for(int i = 0; i < arr.Length; i++)
+          arr[i].Flush();
+    }
+
     public void AddListener(ILogListener listener) {
       var lst = _listeners.ToList();
       lst.Add(listener);

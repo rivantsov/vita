@@ -68,7 +68,7 @@ namespace Vita.Data.Runtime {
       //Log begin trans
       if (commitOnSave)
         Flags |= DbConnectionFlags.CommitOnSave;
-      this.Session.LogMessage("BEGIN TRANS");
+      this.Session.LogMessage("BEGIN TRANS, Isolation level: {0}", isolationLevel);
     }
 
     public void Commit() {
@@ -79,8 +79,8 @@ namespace Vita.Data.Runtime {
       Flags &= ~DbConnectionFlags.CommitOnSave; 
       var now = Session.Context.App.TimeService.ElapsedMilliseconds; 
       //Log Commit trans
-      var msg = string.Format("{0} -- {1} ms", "COMMIT TRANS", now - _transactionStart);
-      this.Session.LogMessage(msg);
+      var time = now - _transactionStart;
+      this.Session.LogMessage("COMMIT TRANS, time: {0} ms", time);
     }
 
     public void Abort() {

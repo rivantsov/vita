@@ -242,8 +242,6 @@ namespace Vita.Testing.BasicTests.DataTypes {
       var ent1Id = ent1.Id; 
       session.SaveChanges();
 
-      // OracleTestDataReader(); 
-
       session = ctx.OpenSession();
       var allEntities = session.GetEntities<IDataTypesEntity>(); 
       Assert.AreEqual(2, allEntities.Count, "Expected 2 entities.");

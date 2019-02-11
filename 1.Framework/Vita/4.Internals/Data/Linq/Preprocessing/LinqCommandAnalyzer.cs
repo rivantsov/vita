@@ -26,29 +26,28 @@ namespace Vita.Data.Linq {
 
     // parameters of internal lambdas
     List<ParameterExpression> _internalParams = new List<ParameterExpression>();
+    // parameters of external lambdas (Query filters)
+    List<ParameterExpression> _externalParams; //initialized on the fly
 
     //Helper enum identifying kind of value (origin) returned by the node
     enum ValueKind {
       None, //not a value, like Lambda expression
       Constant, //constant, part of query definition
-      LocalValue,  
-      Parameter, //external parameter
+      Local,  
       Db, // identifies data record value (or derived from it)
     }
 
-    public static void Analyze(EntityModel model, DynamicLinqCommand command) {
-      var scanner = new LinqCommandAnalyzer(model);
+    public static void Analyze(DynamicLinqCommand command) {
+      var scanner = new LinqCommandAnalyzer();
       scanner.AnalyzeCommand(command);
-    }
-
-    public LinqCommandAnalyzer(EntityModel model) {
-      _model = model; 
     }
 
     private void AnalyzeCommand(DynamicLinqCommand command) {
       _command = command;
+      _model = command.Session.Context.App.Model;
+      var maskStr = command.MemberMask?.AsHexString() ?? "?";
       _cacheKeyBuilder = new SqlCacheKeyBuilder("Linq", command.Source.ToString(), 
-                              command.Operation.ToString(), command.MemberMask.AsHexString());
+                              command.Operation.ToString(), "mask:", maskStr);
       try {
         AnalyzeNode(_command.Expression);
         //copy some values to command 
@@ -58,6 +57,9 @@ namespace Vita.Data.Linq {
         command.Includes = _includes;
         command.Options |= _options;
         command.Locals.AddRange(_locals);
+        command.ExternalParameters = _externalParams?.ToArray();
+        if(command.Locals.Count > 0)
+          LinqCommandHelper.EvaluateLocals(command); 
       } catch(Exception ex) {
         ex.Data["LinqExperssion"] = _command.Expression + string.Empty;
         throw;
@@ -73,7 +75,7 @@ namespace Vita.Data.Linq {
       //TODO: optimize this using arrays? (lookup in array by node type)
       AddCacheKey(node.NodeType); //note: for local nodes this value will be popped out - see below
       var kind = AnalyzeNodeByType(node);
-      if(kind == ValueKind.LocalValue) {
+      if(kind == ValueKind.Local) {
         // The node is a local variable, not dependent on DB data. Its value is provided by the code, will be turned into parameter
         // The node and its children should not be part of Query cache(hash) key. We eliminate all child keys that might have been added. 
         TrimCacheKey(savedKeyLength);
@@ -202,9 +204,10 @@ namespace Vita.Data.Linq {
         return ValueKind.Db;
       } else {
         AddCacheKey(node.Name);
-        if (!_locals.Contains(node))
-          _locals.Add(node);
-        return ValueKind.Parameter;
+        _externalParams = _externalParams ?? new List<ParameterExpression>(); 
+        if (!_externalParams.Contains(node))
+          _externalParams.Add(node);
+        return ValueKind.Local;
       }
     }
 
@@ -227,7 +230,7 @@ namespace Vita.Data.Linq {
         return ValueKind.Db;
       }
       if(!constNode.Type.IsValueTypeOrString())
-        return ValueKind.LocalValue;
+        return ValueKind.Local;
       return ValueKind.Constant;
     }
 
@@ -250,7 +253,7 @@ namespace Vita.Data.Linq {
       var exprValueKind = this.AnalyzeNode(node.Expression);
       AddCacheKey(node.Member.Name);
       if(node.Member.IsStaticMember())
-        return ValueKind.LocalValue;
+        return ValueKind.Local;
       else
         return exprValueKind; //same as mexp.Expression's valueKind
     }

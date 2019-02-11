@@ -50,7 +50,8 @@ namespace Vita.Data.Runtime {
     }
 
     public object ExecuteLinqSelect(EntitySession session, ExecutableLinqCommand command, DataConnection conn) {
-      var sql = SqlFactory.GetLinqSql(command.BaseCommand); 
+      var sql = SqlFactory.GetLinqSql(command.BaseCommand);
+      command.CopyParamValuesFromLocal();
       var genMode = command.BaseCommand.Options.IsSet(QueryOptions.NoParameters) ? 
                              SqlGenMode.NoParameters : SqlGenMode.PreferParam;
       var cmdBuilder = new DataCommandBuilder(this._driver, batchMode: false, mode: genMode);
@@ -62,6 +63,7 @@ namespace Vita.Data.Runtime {
 
     private object ExecuteLinqNonQuery(EntitySession session, ExecutableLinqCommand command, DataConnection conn) {
       var sql = SqlFactory.GetLinqSql(command.BaseCommand);
+      command.CopyParamValuesFromLocal(); 
       var fmtOptions = command.BaseCommand.Options.IsSet(QueryOptions.NoParameters) ?
                              SqlGenMode.NoParameters : SqlGenMode.PreferParam;
       var cmdBuilder = new DataCommandBuilder(this._driver);
@@ -89,8 +91,8 @@ namespace Vita.Data.Runtime {
         if (sConn.Lifetime != DbConnectionLifetime.Explicit)
           ReleaseConnection(sConn); 
       }
-      session.ScheduledCommandsAtStart.Clear();
-      session.ScheduledCommandsAtEnd.Clear();
+      session.ScheduledCommandsAtStart = null;
+      session.ScheduledCommandsAtEnd = null;
     }
 
     private void SaveChangesNoBatch(DbUpdateSet updateSet) {
@@ -160,6 +162,8 @@ namespace Vita.Data.Runtime {
     }
 
     private void ExecuteScheduledCommands(DataConnection conn, EntitySession session, IList<LinqCommand> commands) {
+      if(commands == null || commands.Count == 0)
+        return; 
       foreach (var cmd in commands)
           ExecuteLinqNonQuery(session, new ExecutableLinqCommand(cmd), conn);
     }

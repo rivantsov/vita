@@ -35,6 +35,9 @@ namespace Vita.Entities.Logging {
           SaveAll();           
       }
     }
+    public void Flush() {
+      SaveAll(); 
+    }
 
     // fast lookup
     private bool CanWriteEntry(LogEntry entry) {

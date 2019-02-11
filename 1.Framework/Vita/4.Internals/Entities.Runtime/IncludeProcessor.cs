@@ -24,6 +24,9 @@ namespace Vita.Entities.Runtime {
     //    if empty, it remains uninitialized, and on touch fwk fires select query with 0 results
     // Initially found on some external solution, seemed to be broken, but now maybe working. Needs to be retested! 
     internal static void RunIncludeQueries(EntitySession session, ExecutableLinqCommand command, object mainQueryResult) {
+      var flag = false;
+      if(!flag)
+        return;  //temp disabled
       // initial checks if there's anything to run
       var resultShape = command.BaseCommand.ResultShape;
       if (mainQueryResult == null || resultShape == QueryResultShape.Object)

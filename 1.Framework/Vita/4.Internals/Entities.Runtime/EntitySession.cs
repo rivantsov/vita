@@ -15,10 +15,11 @@ using Vita.Data.Runtime;
 
 namespace Vita.Entities.Runtime {
 
-  public enum EntitySessionSubType {
+  public enum EntitySessionKind {
     ReadWrite,
     ReadOnly,
     ConcurrentReadOnly, 
+    Dummy, // not real session, used for compiling views
   }
 
   public enum EntitySessionOptions {
@@ -34,10 +35,10 @@ namespace Vita.Entities.Runtime {
   public partial class EntitySession : IEntitySession {
     public readonly OperationContext Context;
     public readonly ILog Log;
-    public EntitySessionSubType Flags;
+    public EntitySessionKind Flags;
     public EntitySessionOptions Options;
 
-    public readonly EntitySessionSubType SubType;
+    public readonly EntitySessionKind Kind;
     public readonly bool IsReadOnly;
     public readonly bool IsSecureSession;
 
@@ -61,18 +62,18 @@ namespace Vita.Entities.Runtime {
     DataSource _dataSource;
 
     #region constructor
-    public EntitySession(OperationContext context, EntitySessionSubType subType = EntitySessionSubType.ReadWrite,
+    public EntitySession(OperationContext context, EntitySessionKind kind = EntitySessionKind.ReadWrite,
             EntitySessionOptions options = EntitySessionOptions.None) {
       Context = context;
-      SubType = subType;
+      Kind = kind;
       Options = options;
 
       IsSecureSession = false;
       _appEvents = Context.App.AppEvents;
       this.Log = Context.Log;
       // Multithreaded sessions must be readonly
-      var isConcurrent = SubType == EntitySessionSubType.ConcurrentReadOnly;
-      IsReadOnly = SubType == EntitySessionSubType.ReadOnly || isConcurrent;
+      var isConcurrent = Kind == EntitySessionKind.ConcurrentReadOnly;
+      IsReadOnly = Kind == EntitySessionKind.ReadOnly || isConcurrent;
       RecordsLoaded = new EntityRecordWeakRefTable(isConcurrent);
       // These lists are not used in Readonly sessions
       if(!IsReadOnly) {
@@ -83,8 +84,10 @@ namespace Vita.Entities.Runtime {
       _timeService = Context.App.TimeService;
       //This might be reset in SaveChanges
       NextTransactionId = Guid.NewGuid();
-      _dataSource = context.App.DataAccess.GetDataSource(this.Context);
-      _appEvents.OnNewSession(this);
+      if (Kind != EntitySessionKind.Dummy) {
+        _dataSource = context.App.DataAccess.GetDataSource(this.Context);
+        _appEvents.OnNewSession(this);
+      }
     }
     #endregion
 
@@ -273,9 +276,10 @@ namespace Vita.Entities.Runtime {
       foreach (var refMember in entInfo.IncomingReferences) {
         // if it is cascading delete, this member is not a problem
         if (refMember.Flags.IsSet(EntityMemberFlags.CascadeDelete)) continue;
-        var countCmdInfo = refMember.ReferenceInfo.FromKey.CountCommand;
-        var countCmd = new ExecutableLinqCommand(countCmdInfo, record.PrimaryKey.Values);
-        var count = ExecuteLinqCommand(countCmd);
+        var countCmd = refMember.ReferenceInfo.FromKey.CountCommand;
+       // var execCountCmd = new ExecutableLinqCommand(countCmd, record.PrimaryKey.Values);
+        var execCountCmd = new ExecutableLinqCommand(countCmd, new object[] { record.EntityInstance });
+        var count = ExecuteLinqCommand(execCountCmd);
         var intCount = (count.GetType() == typeof(int)) ? (int)count : (int) Convert.ChangeType(count, typeof(int));          
         if (intCount > 0)
           blockingTypeSet.Add(refMember.Entity.EntityType);

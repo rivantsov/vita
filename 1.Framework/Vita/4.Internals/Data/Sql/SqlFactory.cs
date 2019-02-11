@@ -89,10 +89,7 @@ namespace Vita.Data.Sql {
       if(command.Options.IsSet(QueryOptions.NoQueryCache))
         return null;
       if(string.IsNullOrEmpty(command.SqlCacheKey)) {
-        var dynCommand = command as DynamicLinqCommand;
-        // It is not dynamic linq command - it is pre-built linq; but SqlCacheKey is not provided; definitely bug
-        Util.Check(dynCommand != null, "Fatal: SQL cache key is not provided for non-dynamic query: {0}", command.Lambda);
-        LinqCommandAnalyzer.Analyze(_dbModel.EntityModel, dynCommand);
+        Util.Check(false, "Fatal: SQL cache key is not set for LINQ query: {0}", command);
       }
       var sql = _sqlCache.Lookup(command.SqlCacheKey);
       return sql;

@@ -41,13 +41,11 @@ namespace Vita.Data.Linq {
       _model = model; 
       _command = command;
       _locals = command.Locals;
-      _parameters = new List<ParameterExpression>();
-      _parameters.AddRange(command.ExternalParameters); //add original
       //create parameters
-      int prmIndex = _parameters.Count;
+      _parameters = new List<ParameterExpression>();
       for (int i = 0; i < _locals.Count; i++) {
         var local = _locals[i];
-        var prm = local.NodeType == ExpressionType.Parameter ? (ParameterExpression)local : Expression.Parameter(local.Type, "@P" + prmIndex++);
+        var prm = local.NodeType == ExpressionType.Parameter ? (ParameterExpression)local : Expression.Parameter(local.Type, "@P" + i);
         _parameters.Add(prm);
       }
       var body = this.Visit(_command.Expression);
@@ -61,7 +59,7 @@ namespace Vita.Data.Linq {
       var localIndex = _locals.IndexOf(node);
       if(localIndex >= 0) {
         return _parameters[localIndex];
-      } //switch
+      }  
       return base.Visit(node); 
     }
 

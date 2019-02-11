@@ -142,6 +142,7 @@ from (`books`.`author` `a$` left join `books`.`user` `t0$` on((`t0$`.`Id` = `a$`
     protected override string NormalizeViewScript(string script) {
       if(string.IsNullOrEmpty(script))
         return script;
+      script = base.NormalizeViewScript(script); 
       // my sql strips INNER, replaces Count(*) with (0)
       script = script.Replace("INNER JOIN", "JOIN").Replace("(*)", "(0)");
       //remove newlines, backquotes, double quotes

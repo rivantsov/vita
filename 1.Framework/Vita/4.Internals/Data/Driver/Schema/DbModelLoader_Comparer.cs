@@ -102,7 +102,7 @@ namespace Vita.Data.Driver {
     }
 
     protected virtual string NormalizeViewScript(string script) {
-      return script;
+      return script.Trim(' ', '\r', '\n', '\t');
     }
 
   }

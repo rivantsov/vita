@@ -73,23 +73,26 @@ namespace Vita.Data.Model {
     private void CompileViews() {
       if (!_dbModel.Driver.Supports(DbFeatures.Views))
         return;
-      var views = _dbModel.Tables.Where(t => t.Kind == EntityKind.View).ToList(); 
+      var views = _dbModel.Tables.Where(t => t.Kind == EntityKind.View).ToList();
+      if(views.Count == 0)
+        return;
+      // create dummy session, needed for LINQ translation 
+      var dummySession = new EntitySession(new OperationContext(this._entityModel.App), EntitySessionKind.Dummy);
       var engine = new LinqEngine(_dbModel);
       var emptyList = new List<string>(); 
       foreach(var viewTbl in views) {
         var entInfo = viewTbl.Entity;
         var expr = entInfo.ViewDefinition.Query.Expression;
-        var viewCmd = new DynamicLinqCommand(LinqCommandSource.View, LinqOperation.Select, expr);
-        LinqCommandAnalyzer.Analyze(_entityModel, viewCmd);
+        var viewCmd = new DynamicLinqCommand(dummySession, LinqCommandSource.View, LinqOperation.Select, expr);
         LinqCommandRewriter.RewriteToLambda(_entityModel, viewCmd);
         var sql = engine.TranslateSelect(viewCmd);
-        var execCmd = new ExecutableLinqCommand(viewCmd); 
-        LinqCommandHelper.EvaluateLocals(execCmd); //in case there are any local variables
         var cmdBuilder = new DataCommandBuilder(_driver, mode: SqlGenMode.NoParameters);
-        cmdBuilder.AddLinqStatement(sql, null);
+        cmdBuilder.AddLinqStatement(sql, viewCmd.LocalValues);
         viewTbl.ViewSql = cmdBuilder.GetSqlText(); //.Trim(' ', '\r', '\n', ';');  
       }
     }
+    private static object[] _emptyArray = new object[] { };
+
 
     private void BuildSequences() {
       if (!_driver.Supports(DbFeatures.Sequences))

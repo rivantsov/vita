@@ -19,10 +19,10 @@ namespace Vita.Data.Linq {
                                                           IList<EntityKeyMemberInfo> orderBy = null) {
       var entType = key.Entity.EntityType;
       var lambdaExpr = BuildSelectFilteredByKeyLambda(key, lockType, orderBy, mask);
-      var cmd = new LinqCommand(LinqCommandSource.PrebuiltQuery, LinqOperation.Select);
-      cmd.Lambda = lambdaExpr;
+      var cmd = new LinqCommand(LinqCommandSource.PrebuiltQuery, LinqOperation.Select, lambdaExpr);
       cmd.ResultShape = QueryResultShape.EntityList;
       cmd.MemberMask = mask;
+      cmd.LockType = lockType; 
       var maskStr = mask.AsHexString();
       cmd.SqlCacheKey = $"CRUD/{key.Entity.Name}/Select-by-key/{key.Name}/Lock:{lockType}/Mask:{maskStr}";
       return cmd; 
@@ -31,8 +31,7 @@ namespace Vita.Data.Linq {
     public static LinqCommand BuildSelectByMemberValueArray(EntityMemberInfo member, EntityMemberMask mask = null) {
       var entType = member.Entity.EntityType;
       var lambdaExpr = BuildSelectByMemberValueArrayLambda(member, mask);
-      var cmd = new LinqCommand(LinqCommandSource.PrebuiltQuery, LinqOperation.Select);
-      cmd.Lambda = lambdaExpr;
+      var cmd = new LinqCommand(LinqCommandSource.PrebuiltQuery, LinqOperation.Select, lambdaExpr);
       cmd.ResultShape = QueryResultShape.EntityList;
       var maskStr = mask.AsHexString();
       cmd.SqlCacheKey = $"CRUD/{member.Entity.Name}/Select-by-member-array/{member.MemberName}/Mask:{maskStr}";
@@ -45,22 +44,22 @@ namespace Vita.Data.Linq {
       var refMember = refInfo.FromMember;
       //build expression
       var sessionPrm = Expression.Parameter(typeof(IEntitySession), "_session");
-      var parentInstance = Expression.Parameter(parent.EntityType, "_parent");
+      var parentPrm = Expression.Parameter(parent.EntityType, "_parent");
       // Build lambda for WHERE
       var cPrm = Expression.Parameter(child.EntityType, "child_");
       var parentRef = Expression.MakeMemberAccess(cPrm, refMember.ClrMemberInfo);
-      var eq = Expression.Equal(parentRef, parentInstance);
+      var eq = Expression.Equal(parentRef, parentPrm);
       var whereLambda = Expression.Lambda(eq, cPrm);
-      // 
-      var genEntSet = LinqExpressionHelper.SessionEntitySetMethod.MakeGenericMethod(child.EntityType);
-      var entSetCall = Expression.Call(sessionPrm, genEntSet);
+
+      var entSet = ExpressionMaker.MakeEntitySetConstant(child.EntityType);
       var genWhereMethod = LinqExpressionHelper.QueryableWhereMethod.MakeGenericMethod(child.EntityType);
-      var whereCall = Expression.Call(genWhereMethod, entSetCall, whereLambda);
+      var whereCall = Expression.Call(genWhereMethod, entSet, whereLambda);
       var genCount = LinqExpressionHelper.QueryableCountMethod.MakeGenericMethod(child.EntityType);
       var countCallExpr = Expression.Call(genCount, whereCall);
 
-      var cmd = new LinqCommand( LinqCommandSource.PrebuiltQuery, LinqOperation.Select);
-      cmd.Lambda = Expression.Lambda(countCallExpr, cPrm);
+      var lambda = Expression.Lambda(countCallExpr, parentPrm);
+      var cmd = new LinqCommand(LinqCommandSource.PrebuiltQuery, LinqOperation.Select, lambda);
+      cmd.SqlCacheKey = $"CRUD/{child.Name}/Count-by-key/{refInfo.FromKey.Name}";
       cmd.Options |= QueryOptions.NoEntityCache; 
       return cmd;
     }

@@ -8,6 +8,7 @@ namespace Vita.Entities.Logging {
 
   public interface ILog {
     void AddEntry(LogEntry entry);
+    void Flush(); 
   }
 
   public interface ILogListener : ILog { }

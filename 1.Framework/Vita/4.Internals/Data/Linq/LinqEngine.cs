@@ -61,12 +61,6 @@ namespace Vita.Data.Linq {
       }
       //Analyze/transform query expression
       var selectExpr = TranslateSelectExpression(command.Lambda.Body, context);
-      /*
-      // If there's at least one parameter that must be converted to literal (ex: value list), we cannot cache the query
-      bool canCache = !context.ExternalValues.Any(v => v.SqlNodeType == SqlExpressionTy=pe..SqlMode == SqlValueMode.Literal);
-      if(!canCache)
-        command.Info.Flags |= QueryOptions.NoQueryCache;
-        */
       //Build SQL, compile row reader
       var sqlBuilder = _dbModel.Driver.CreateLinqSqlBuilder(_dbModel, command);
       var sqlStmt = sqlBuilder.BuildSelectStatement(selectExpr);
@@ -100,17 +94,6 @@ namespace Vita.Data.Linq {
       CheckTablesAlias(context);
       CheckColumnNamesAliases(context);
       return context.CurrentSelect;
-    }
-
-
-
-    static ConcurrentDictionary<Type, Func<IList>> _listCreators = new ConcurrentDictionary<Type, Func<IList>>(); 
-    private Func<IList> GetListCreator(Type rowType) {
-      if(_listCreators.TryGetValue(rowType, out Func<IList> creator))
-        return creator;
-      creator = ReflectionHelper.GetCompiledGenericListCreator(rowType);
-      _listCreators.TryAdd(rowType, creator);
-      return creator; 
     }
 
     /// <summary>
@@ -312,22 +295,14 @@ namespace Vita.Data.Linq {
       }
     }
 
-    /*
-            private Expression<Func<object[], object>> BuildPkReaderFromParameter(IList<ParameterExpression> queryParams, ParameterExpression parameter) {
-              var arrayParam = Expression.Parameter(typeof(object[]), "Prms");
-              var index = queryParams.IndexOf(parameter);
-              var readParam = Expression.Convert(Expression.ArrayAccess(arrayParam, Expression.Constant(index)), parameter.Type);
-              var ent = _dbModel.EntityApp.Model.GetEntityInfo(parameter.Type, throwIfNotFound: true);
-              var pkMembers = ent.PrimaryKey.KeyMembers;
-              if(pkMembers.Count > 1)
-                Util.Throw("Entities with composite key are not supported in this context. Expression: {0}.", parameter);
-              var pkProp = pkMembers[0].Member.ClrMemberInfo;
-              var pkRead = Expression.Convert(Expression.MakeMemberAccess(readParam, pkProp), typeof(object));
-              var lambda = (Expression<Func<object[], object>>)Expression.Lambda(pkRead, arrayParam);
-              return lambda;
-            }
-    */
-
+    static ConcurrentDictionary<Type, Func<IList>> _listCreators = new ConcurrentDictionary<Type, Func<IList>>();
+    private static Func<IList> GetListCreator(Type rowType) {
+      if(_listCreators.TryGetValue(rowType, out Func<IList> creator))
+        return creator;
+      creator = ReflectionHelper.GetCompiledGenericListCreator(rowType);
+      _listCreators.TryAdd(rowType, creator);
+      return creator;
+    }
 
   }//class
 }

@@ -124,8 +124,8 @@ ALTER DATABASE {0} SET MULTI_USER;
       Startup.ActivateApp(_app);
 
       //Run with locks - we should see no errors
-      int ThreadCount = 30;
-      int UpdateCount = 40;
+      int ThreadCount = 30; 
+      int UpdateCount = 50;
       RunTests(LockType.SharedRead, LockType.ForUpdate, ThreadCount, UpdateCount);
       Assert.AreEqual(0, _updateErrorCount, "Expected no update errors");
       Assert.AreEqual(0, _sumErrorCount, "Expected no sum errors");
@@ -168,24 +168,29 @@ ALTER DATABASE {0} SET MULTI_USER;
         tasks[i] = Task.Run(() => RunRandomReadWriteOp(docIds, readLock, writeLock, readWriteCount));
       }
       Task.WaitAll(tasks);
+      _app.Flush();
     }
 
     private void RunRandomReadWriteOp (Guid[] docIds, LockType readLock, LockType writeLock, int readWriteCount) {
       var rand = new Random(Thread.CurrentThread.ManagedThreadId);
       IEntitySession session = null;
+      // Use context with its own buffered op log - all entries related to single load/update operation are buffered, 
+      // and then flushed together at the end of loop body; so they will appear together in the output file
+      var ctx = new OperationContext(_app, log: new BufferedOperationLog(_app));
+
       for(int i = 0; i < readWriteCount; i++) {
+        session = ctx.OpenSession();
         var randomDocId = docIds[rand.Next(docIds.Length)];
         IDoc iDoc; 
         IDocDetail iDet;
         int randomOp = -1;
         try {
           Thread.Yield();
-          session = _app.OpenSession();
           var randomValueName = "N" + rand.Next(5);
           randomOp = rand.Next(7); 
           switch (randomOp) {
             case 0: case 1: //read and check total
-              session.LogMessage("\r\n----------------- Load, check total ---------------------");
+              session.LogMessage("\r\n----------------- Load, check Doc total ---------------------");
               iDoc = session.GetEntity<IDoc>(randomDocId, readLock);
               Thread.Yield(); //to let other thread mess it up
               var valuesSum = iDoc.Details.Sum(v => v.Value);
@@ -195,11 +200,12 @@ ALTER DATABASE {0} SET MULTI_USER;
               }
               Thread.Yield();
               session.ReleaseLocks();
+              session.LogMessage("\r\n-------------- Completed Load/check total ---------------------");
               break;
 
             case 2: case 3: case 4: 
               //insert/update, we give it an edge over deletes, to have 2 upserts for 1 delete
-              session.LogMessage("\r\n----------------- Update/insert value ---------------------");
+              session.LogMessage("\r\n----------------- Update/insert DocDetail ---------------------");
               iDoc = session.GetEntity<IDoc>(randomDocId, writeLock);
               Thread.Yield();
               iDet = iDoc.Details.FirstOrDefault(iv => iv.Name == randomValueName);
@@ -213,14 +219,15 @@ ALTER DATABASE {0} SET MULTI_USER;
               iDoc.Total = iDoc.Details.Sum(v => v.Value);
               Thread.Yield(); 
               session.SaveChanges();
-              
+              session.LogMessage("\r\n------Completed Update/insert doc detail ---------------------");
+
               var entSession = (Vita.Entities.Runtime.EntitySession)session;
               if (entSession.CurrentConnection != null)
                 Debugger.Break(); //check that connection is closed and removed from session
               break;
 
             case 6: //delete if exists
-              session.LogMessage("\r\n----------------- Delete value ---------------------");
+              session.LogMessage("\r\n----------------- Delete doc detail ---------------------");
               //Note: deletes do not throw any errors - if record does not exist (had been just deleted), stored proc do not throw error
               iDoc = session.GetEntity<IDoc>(randomDocId, writeLock);
               Thread.Yield(); //allow others mess up
@@ -232,20 +239,23 @@ ALTER DATABASE {0} SET MULTI_USER;
                 session.SaveChanges(); // even if there's no changes, it will release lock
               } else
                 session.ReleaseLocks();
+              session.LogMessage("\r\n----------------- Completed delete doc detail ---------------------");
               break;
 
           }//switch
         } catch (Exception ex) { //most will be UniqueIndexViolation
           Debug.WriteLine(ex.ToLogString());
           System.Threading.Interlocked.Increment(ref _updateErrorCount);
-          var ctx = session.Context; 
-          ctx.Log.AddEntry(new ErrorLogEntry(ctx, ex));
+          session.Context.Log.AddEntry(new ErrorLogEntry(ctx, ex));
           var entSession = (Vita.Entities.Runtime.EntitySession)session;
           if (entSession.CurrentConnection != null)
-            entSession.CurrentConnection.Close(); 
+            entSession.CurrentConnection.Close();
+          session.Context.Log.Flush();
+          _app.Flush(); 
         } finally {
-          _app.Flush();
+          //_app.Flush();
         }
+        session.Context.Log.Flush();
       }//for i
     }//method
 

@@ -31,7 +31,7 @@ namespace Vita.Entities.Runtime {
     }
 
     public object ExecuteQuery(Expression expression) {
-      var command = new DynamicLinqCommand(LinqCommandSource.Dynamic, LinqOperation.Select, expression);
+      var command = new DynamicLinqCommand(this, LinqCommandSource.Dynamic, LinqOperation.Select, expression);
       var execCommand = new ExecutableLinqCommand(command);
       var result = ExecuteLinqCommand(execCommand);
       return result;
@@ -63,7 +63,7 @@ namespace Vita.Entities.Runtime {
     internal int ExecuteLinqNonQuery<TEntity>(IQueryable baseQuery, LinqOperation operation) {
       Util.CheckParam(baseQuery, nameof(baseQuery));
       var updateEnt = Context.App.Model.GetEntityInfo(typeof(TEntity));
-      var command = new DynamicLinqCommand(LinqCommandSource.Dynamic, operation, baseQuery.Expression, updateEnt);
+      var command = new DynamicLinqCommand(this, LinqCommandSource.Dynamic, operation, baseQuery.Expression, updateEnt);
       var execCommand = new ExecutableLinqCommand(command); 
       var objResult = this.ExecuteLinqCommand(execCommand);
       return (int)objResult;
@@ -81,11 +81,11 @@ namespace Vita.Entities.Runtime {
     }
 
     public LinqCommand GetSelectByKeyCommand(EntityKeyInfo key, LockType lockType, EntityMemberMask mask) {
-      if(mask == null && lockType == LockType.None)
+      if(mask == null && lockType == LockType.None) {
+        key.SelectByKeyCommand = SelectCommandBuilder.BuildSelectByKey(key, null, LockType.None);
         return key.SelectByKeyCommand;
-      else
-        return SelectCommandBuilder.BuildSelectByKey(key, mask, lockType);
-
+      }
+      return SelectCommandBuilder.BuildSelectByKey(key, mask, lockType);
     }
 
     public void ScheduleLinqNonQuery<TEntity>(IQueryable baseQuery, LinqOperation op,
@@ -94,7 +94,7 @@ namespace Vita.Entities.Runtime {
       var model = Context.App.Model;
       var targetEnt = model.GetEntityInfo(typeof(TEntity));
       Util.Check(targetEnt != null, "Generic parameter {0} is not an entity registered in the Model.", typeof(TEntity));
-      var command = new DynamicLinqCommand(LinqCommandSource.Dynamic, op, baseQuery.Expression, targetEnt);
+      var command = new DynamicLinqCommand(this, LinqCommandSource.Dynamic, op, baseQuery.Expression, targetEnt);
       switch(schedule) {
         case CommandSchedule.TransactionStart:
           ScheduledCommandsAtStart = ScheduledCommandsAtStart ?? new List<LinqCommand>();

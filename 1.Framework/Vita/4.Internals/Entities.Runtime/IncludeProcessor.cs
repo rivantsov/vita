@@ -23,7 +23,7 @@ namespace Vita.Entities.Runtime {
     // Includes - when including child list, the list initialized only if it's not empty;
     //    if empty, it remains uninitialized, and on touch fwk fires select query with 0 results
     // Initially found on some external solution, seemed to be broken, but now maybe working. Needs to be retested! 
-    internal static void RunIncludeQueries(EntitySession session, ExecutableLinqCommand command, object mainQueryResult) {
+    internal static void RunIncludeQueries(EntitySession session, LinqCommand command, object mainQueryResult) {
       var flag = false;
       if(!flag)
         return;  //temp disabled
@@ -165,8 +165,8 @@ namespace Vita.Entities.Runtime {
       var targetEntity = refMember.ReferenceInfo.ToKey.Entity;
       var fkMember = refMember.ReferenceInfo.FromKey.ExpandedKeyMembers[0].Member; // r.Book_Id
       var fkValues = GetMemberValuesAsTypedArray(records, fkMember); 
-      var selectCmdInfo = GetSelectByKeyValueArrayCommand(targetEntity.PrimaryKey);
-      var selectCmd = new ExecutableLinqCommand(selectCmdInfo, new object[] { fkValues });
+      var selectCmdInfo = GetSelectByKeyValueArrayCommand(targetEntity.PrimaryKey, null);
+      var selectCmd = new LinqCommand(selectCmdInfo, new object[] { fkValues });
       var entList = (IList) _session.ExecuteLinqCommand(selectCmd);
       if (entList.Count == 0)
         return _emptyList;
@@ -196,11 +196,6 @@ namespace Vita.Entities.Runtime {
       return recList; 
     }
 
-    public LinqCommand GetSelectByKeyValueArrayCommand(EntityKeyInfo key) {
-      return SelectCommandBuilder.BuildSelectByMemberValueArray(key.ExpandedKeyMembers[0].Member);
-    }
-
-
     // Example: records: List<IBookOrder>, listMember: bookOrder.Lines; so we load lines for each book order
     private IList<EntityRecord> RunIncludeForListManyToOne(IList<EntityRecord> records, EntityMemberInfo listMember) {
       var pkInfo = listMember.Entity.PrimaryKey;
@@ -212,9 +207,9 @@ namespace Vita.Entities.Runtime {
       var parentRefMember = listInfo.ParentRefMember; //IBookOrderLine.Order
       var fromKey = parentRefMember.ReferenceInfo.FromKey;
       Util.Check(fromKey.ExpandedKeyMembers.Count == 1, "Composite keys are not supported in Include expressions; member: {0}", parentRefMember);
-      var cmdInfo = GetSelectByKeyValueArrayCommand(fromKey); 
+      var cmdInfo = GetSelectByKeyValueArrayCommand(fromKey, listInfo.OrderBy); 
       Util.Check(cmdInfo != null, "Select command for entity reference {0} not defined.", fromKey);
-      var cmd = new ExecutableLinqCommand(cmdInfo, new object[] { pkValuesArr });
+      var cmd = new LinqCommand(cmdInfo, new object[] { pkValuesArr });
       var childEntities = (IList) _session.ExecuteLinqCommand(cmd); //list of all IBookOrderLine for BookOrder objects in 'records' parameter
       var childRecs = GetRecordList(childEntities); 
       //setup list properties in parent records
@@ -260,8 +255,8 @@ namespace Vita.Entities.Runtime {
       IList<EntityRecord> linkRecs = _emptyList;
       if (pkValues.Length > 0) {
         var fromKey = listInfo.ParentRefMember.ReferenceInfo.FromKey;
-        var cmdInfo = GetSelectByKeyValueArrayCommand(fromKey);
-        var cmd = new ExecutableLinqCommand(cmdInfo, new object[] { pkValues });
+        var cmdInfo = GetSelectByKeyValueArrayCommand(fromKey, listInfo.OrderBy);
+        var cmd = new LinqCommand(cmdInfo, new object[] { pkValues });
         var linkEntList = (IList) _session.ExecuteLinqCommand(cmd);
         linkRecs = GetRecordList(linkEntList);
       }
@@ -285,7 +280,7 @@ namespace Vita.Entities.Runtime {
         Util.Check(targetKey.ExpandedKeyMembers.Count == 1, "Include expression not supported for entities with composite keys, entity: {0}.", targetKey.Entity.Name);
         var targetCmdInfo = GetSelectByKeyValueArrayCommand(linkToTargetKey);
         Util.Check(targetCmdInfo != null, "Select command for entity reference {0} not defined.", linkToTargetKey);
-        var cmd = new ExecutableLinqCommand(targetCmdInfo, new object[] { fkValues });
+        var cmd = new LinqCommand(targetCmdInfo, new object[] { fkValues });
         // ??? that will fail, need to complete refactoring to Linq queries
         var targetEnts = (IList) _session.ExecuteLinqCommand(cmd, withIncludes: false);
         targetRecs = ToRecords(targetEnts);
@@ -330,6 +325,17 @@ namespace Vita.Entities.Runtime {
       for (int i = 0; i < typedArray.Length; i++) 
         typedArray.SetValue(objArray[i], i);
       return typedArray;
+    }
+
+    private static LinqCommand GetSelectByKeyValueArrayCommand(EntityKeyInfo key, IList<EntityKeyMemberInfo> orderBy) {
+      List<EntityKeyMemberInfo> mergedOrderBy;
+      if(orderBy == null)
+        mergedOrderBy = key.KeyMembers;
+      else {
+        mergedOrderBy = new List<EntityKeyMemberInfo>(key.KeyMembers);
+        mergedOrderBy.AddRange(orderBy);
+      }
+      return new LinqCommand(SpecialSelectType.ByKeyArray, key, Locking.LockType.None, mergedOrderBy);   
     }
 
   }//class

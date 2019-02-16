@@ -31,21 +31,21 @@ namespace Vita.Entities.Runtime {
     }
 
     public object ExecuteQuery(Expression expression) {
-      var command = new DynamicLinqCommand(this, LinqCommandSource.Dynamic, LinqOperation.Select, expression);
-      var execCommand = new ExecutableLinqCommand(command);
-      var result = ExecuteLinqCommand(execCommand);
+      var command = LinqCommandFactory.CreateLinqSelect(this, expression);
+      var result = ExecuteLinqCommand(command);
       return result;
     }
 
 
-    public virtual object ExecuteLinqCommand(ExecutableLinqCommand command, bool withIncludes = true) {
+    public virtual object ExecuteLinqCommand(LinqCommand command, bool withIncludes = true) {
       try {
         var result = _dataSource.ExecuteLinqCommand(this, command);
-        switch(command.BaseCommand.Operation) {
+        switch(command.Operation) {
           case LinqOperation.Select:
             Context.App.AppEvents.OnExecutedSelect(this, command);
-            if(withIncludes && (command.BaseCommand.Includes?.Count > 0 || Context.HasIncludes()))
-              IncludeProcessor.RunIncludeQueries(this, command, result);
+            if(withIncludes && (command.Includes?.Count > 0 || Context.HasIncludes()))
+              //IncludeProcessor.RunIncludeQueries(this, command, result);
+              Util.Throw("Include processor disabled.");
             break;
           default:
             Context.App.AppEvents.OnExecutedNonQuery(this, command);
@@ -63,29 +63,18 @@ namespace Vita.Entities.Runtime {
     internal int ExecuteLinqNonQuery<TEntity>(IQueryable baseQuery, LinqOperation operation) {
       Util.CheckParam(baseQuery, nameof(baseQuery));
       var updateEnt = Context.App.Model.GetEntityInfo(typeof(TEntity));
-      var command = new DynamicLinqCommand(this, LinqCommandSource.Dynamic, operation, baseQuery.Expression, updateEnt);
-      var execCommand = new ExecutableLinqCommand(command); 
-      var objResult = this.ExecuteLinqCommand(execCommand);
+      var command = LinqCommandFactory.CreateLinqNonQuery(this, baseQuery.Expression, operation, updateEnt);
+      var objResult = this.ExecuteLinqCommand(command);
       return (int)objResult;
     }
 
     public IEntityRecordContainer SelectByPrimaryKey(EntityInfo entity, object[] keyValues,
             LockType lockType = LockType.None, EntityMemberMask mask = null) {
-      mask = mask ?? entity.AllMembersMask;
-      LinqCommand cmd = GetSelectByKeyCommand(entity.PrimaryKey, lockType, mask);
-      var execCmd = new ExecutableLinqCommand(cmd, keyValues);
-      var list = (IList)ExecuteLinqCommand(execCmd);
+      var cmd = LinqCommandFactory.CreateSelectByKey(this, entity.PrimaryKey, lockType, null, keyValues);
+      var list = (IList)ExecuteLinqCommand(cmd);
       if(list.Count == 0)
         return null;
       return (IEntityRecordContainer)list[0];
-    }
-
-    public LinqCommand GetSelectByKeyCommand(EntityKeyInfo key, LockType lockType, EntityMemberMask mask) {
-      if(mask == null && lockType == LockType.None) {
-        key.SelectByKeyCommand = SelectCommandBuilder.BuildSelectByKey(key, null, LockType.None);
-        return key.SelectByKeyCommand;
-      }
-      return SelectCommandBuilder.BuildSelectByKey(key, mask, lockType);
     }
 
     public void ScheduleLinqNonQuery<TEntity>(IQueryable baseQuery, LinqOperation op,
@@ -94,7 +83,7 @@ namespace Vita.Entities.Runtime {
       var model = Context.App.Model;
       var targetEnt = model.GetEntityInfo(typeof(TEntity));
       Util.Check(targetEnt != null, "Generic parameter {0} is not an entity registered in the Model.", typeof(TEntity));
-      var command = new DynamicLinqCommand(this, LinqCommandSource.Dynamic, op, baseQuery.Expression, targetEnt);
+      var command = LinqCommandFactory.CreateLinqNonQuery(this, baseQuery.Expression, op, targetEnt);
       switch(schedule) {
         case CommandSchedule.TransactionStart:
           ScheduledCommandsAtStart = ScheduledCommandsAtStart ?? new List<LinqCommand>();

@@ -9,13 +9,6 @@ using Vita.Entities.Model;
 
 namespace Vita.Data.Sql {
 
-  public enum SpecialQueryType {
-    SelectByKey,
-    SelectByKeyArray,
-    SelectByKeyExists,
-  }
-
-
 
   public class SqlCacheKeyBuilder {
     List<string> _strings; //might be array or list
@@ -55,13 +48,13 @@ namespace Vita.Data.Sql {
 
     // static helpers
 
-    public static string BuildSpecialSelectKey(SpecialQueryType qryType, LinqOperation op, LockType lockType, 
-             string entityName, string keyName, EntityMemberMask mask, IList<EntityKeyMemberInfo> orderBy) {
-      var maskStr = mask?.AsHexString() ?? "(nomask)";
+    public static string BuildSpecialSelectKey(SpecialCommandSubType selectType, string entityName, string keyName, LockType lockType,
+                                                IList<EntityKeyMemberInfo> orderBy) {
       var ordStr = (orderBy == null) ? "none" : string.Join(",", orderBy);
-      var key = $"SELECT/{qryType}/{op}/Lock:{lockType}/{entityName}/{keyName}/Mask:{maskStr}/OrderBy:{ordStr}";
+      var key = $"SELECT-Special/{selectType}/{entityName}/key:{keyName}/Lock:{lockType}/OrderBy:{ordStr}";
       return key; 
     }
+
     public static string BuildCrudKey(EntityStatus status, string entityName, EntityMemberMask mask) {
       var maskStr = status == EntityStatus.Modified ? mask.AsHexString() : "(nomask)";
       var key = $"CRUD/{entityName}/{status}/Mask:{maskStr}";

@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq.Expressions;
 using System.Text;
+using Vita.Data.Sql;
 using Vita.Entities;
 using Vita.Entities.Locking;
 using Vita.Entities.Model;
@@ -9,7 +10,11 @@ using Vita.Entities.Runtime;
 
 namespace Vita.Data.Linq {
 
-  // TODO: move here LinqNonQueryCommand
+  public enum LinqCommandKind {
+    Special,
+    Dynamic,
+    View,
+  }
 
   public enum LinqOperation {
     Select,
@@ -18,101 +23,154 @@ namespace Vita.Data.Linq {
     Delete,
   }
 
-  public enum LinqCommandSource {
-    PrebuiltQuery,
-    View,
-    Dynamic,
+  public enum SpecialCommandSubType {
+    SelectByKey,
+    SelectByKeyArray,
+    ExistsByKey
+  }
+
+  public interface IMaskSource {
+    EntityMemberMask GetMask(Type entityType);
   }
 
   public class LinqCommand {
-    // source properties, set at creation
-    public LinqCommandSource Source; 
+    public LinqCommandKind Kind;
     public LinqOperation Operation;
-    public EntityInfo UpdateEntity;
-    public EntityMemberMask MemberMask;
-
-    //analysis results
     public string SqlCacheKey;
     public List<Type> EntityTypes = new List<Type>();
-    public List<LambdaExpression> Includes;
-    public LockType LockType;
     public QueryOptions Options;
-    public ParameterExpression[] ExternalParameters;
+    public LockType LockType;
+    public IMaskSource MaskingSource;
 
-    // Rewriter results; can be set directly for prebuilt query 
+    public EntityInfo UpdateEntity; //for LINQ non-query commands
+
     public LambdaExpression Lambda;
+    public Action<LinqCommand> SetupAction; //delayed creator of lambda expression
     public QueryResultShape ResultShape;
 
-
-    public LinqCommand(LinqCommandSource source, LinqOperation op, LambdaExpression lambda = null, EntityInfo updateEntity = null) {
-      Source = source; 
-      Operation = op;
-      Lambda = lambda;
-      UpdateEntity = updateEntity; 
-    }
-  }
-
-  public class DynamicLinqCommand : LinqCommand {
-    public EntitySession Session; 
-    public Expression Expression;
+    public EntitySession Session;
     public List<Expression> Locals = new List<Expression>();
     public object[] LocalValues;
+    public Expression QueryExpression;
 
-    public DynamicLinqCommand(EntitySession session, LinqCommandSource source, LinqOperation op, Expression expr, EntityInfo updateEntity = null)
-                   :base(source, op, null, updateEntity)  {
-      Session = session; 
-      Expression = expr;
-      LinqCommandAnalyzer.Analyze(this); 
-    }
-    public override string ToString() {
-      return Expression + string.Empty;
-    }
-  }
-
-  public class ExecutableLinqCommand {
-    public LinqCommand BaseCommand;
+    public List<LambdaExpression> Includes;
+    public ParameterExpression[] ExternalParameters;
     public object[] ParamValues;
 
-    public ExecutableLinqCommand(LinqCommand baseCommand) {
-      BaseCommand = baseCommand; 
+
+    public LinqCommand(EntitySession session, LinqCommandKind kind, LinqOperation operation) {
+      Session = session; 
+      Kind = kind;
+      Operation = operation;
     }
 
-    public ExecutableLinqCommand(LinqCommand command, object[] paramValues) {
-      BaseCommand = command;
-      ParamValues = paramValues; 
+    public LinqCommand(EntitySession session, Expression queryExpression, LinqCommandKind kind = LinqCommandKind.Dynamic, 
+                        LinqOperation op = LinqOperation.Select, EntityInfo updateEntity = null, Action<LinqCommand> setup = null)
+                         : this(session, kind, op){
+      QueryExpression = queryExpression;
+      UpdateEntity = updateEntity;
+      SetupAction = setup; 
+      LinqCommandAnalyzer.Analyze(this);
     }
 
-    // For pre-built queries, param values are set explicitly. For dynamic linq queries (and views)
-    // they copied from locals
     public void CopyParamValuesFromLocal() {
-      switch(BaseCommand.Source) {
-        case LinqCommandSource.Dynamic:
-        case LinqCommandSource.View:
-          var dynCmd = (DynamicLinqCommand)BaseCommand;
-          ParamValues = dynCmd.LocalValues;
-          break;
-      }//switch
-    }//method
 
+    }
+    
   } //class
 
-  public enum ParamValueSource {
-    LocalVar, //from LocalValue
-    Context, //from OperationContext filters
-    Parameter, // explicit parameter in parameterized query
+  public class SpecialLinqCommand : LinqCommand {
+    public SpecialCommandSubType SubType;
+    public EntityKeyInfo Key;
+    public List<EntityKeyMemberInfo> OrderBy;
+
+    public SpecialLinqCommand(EntitySession session, SpecialCommandSubType subType, EntityKeyInfo key, LockType lockType,
+                      List<EntityKeyMemberInfo> orderBy, object[] paramValues, Action<LinqCommand> setupAction)
+                   : base(session, LinqCommandKind.Special, LinqOperation.Select) {
+      SubType = subType; 
+      Key = key;
+      base.LockType = lockType;
+      OrderBy = orderBy;
+      ParamValues = paramValues;
+      SetupAction = setupAction;
+      this.SqlCacheKey = SqlCacheKeyBuilder.BuildSpecialSelectKey(subType, Key.Entity.Name, key.Name, lockType, orderBy);
+    }
+
   }
 
-  public class ParamValue {
-    public ParameterExpression Parameter;
-    public ParamValueSource ValueSource; 
-    public object Value;
-    public ParamValue(ParameterExpression parameter, ParamValueSource source, object value = null) {
-      Parameter = parameter;
-      ValueSource = source; 
-      Value = value;
+  /*
+  public class LinqCommand: LinqCommandBase {
+    public SpecialSelectType SelectType;
+    public EntityKeyInfo Key;
+    public IList<EntityKeyMemberInfo> OrderBy;
+
+    public LinqCommand(SpecialSelectType selectType, EntityKeyInfo key, LockType lockType, IList<EntityKeyMemberInfo> orderBy)
+                                 : base(LinqCommandKind.SpecialSelect, LinqOperation.Select) {
+      SelectType = selectType;
+      Key = key;
+      LockType = lockType; 
+      OrderBy = orderBy;
+      base.EntityTypes.Add(key.Entity.EntityType);
+      base.SqlCacheKey = SqlCacheKeyBuilder.BuildSpecialSelectKey(selectType, key.Entity.Name, key.Name, lockType, orderBy);
     }
   }
+  */
+
+  /*
+public class LinqCommand : LinqCommandBase {
+  // source properties, set at creation
+
+  //analysis results
 
 
+  public LinqCommand(LinqCommandKind kind, LinqOperation op, LambdaExpression lambda = null, EntityInfo updateEntity = null)
+                     : base(kind, op) {
+    Kind = kind; 
+    Lambda = lambda;
+    UpdateEntity = updateEntity; 
+  }
+}
+
+public class LinqCommand : LinqCommand {
+  public Expression Expression;
+  public EntitySession Session;
+  public List<Expression> Locals = new List<Expression>();
+  public object[] LocalValues;
+
+  public LinqCommand(EntitySession session, LinqCommandKind kind, LinqOperation op, Expression expr, EntityInfo updateEntity = null)
+                 :base(kind, op, null, updateEntity)  {
+    Session = session; 
+    Expression = expr;
+    LinqCommandAnalyzer.Analyze(this); 
+  }
+  public override string ToString() {
+    return Expression + string.Empty;
+  }
+}
+
+public class LinqCommand {
+  public LinqCommandBase BaseCommand;
+  public object[] ParamValues;
+
+  public LinqCommand(LinqCommandBase baseCommand) {
+    BaseCommand = baseCommand; 
+  }
+
+  public LinqCommand(LinqCommandBase command, object[] paramValues) {
+    BaseCommand = command;
+    ParamValues = paramValues; 
+  }
+
+  // For pre-built queries, param values are set explicitly. For dynamic linq queries (and views)
+  // they copied from locals
+  public void CopyParamValuesFromLocal() {
+    var dynCmd = BaseCommand as LinqCommand;
+    if (dynCmd != null) {
+      ParamValues = dynCmd.LocalValues;
+    }
+  }//method
+
+} //class
+*/
 
 }

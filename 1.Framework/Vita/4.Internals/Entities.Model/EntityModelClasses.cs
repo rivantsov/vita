@@ -15,6 +15,7 @@ using Vita.Entities.Runtime;
 using Vita.Entities.Services;
 using Vita.Data.Linq;
 using Vita.Entities.Model.Construction;
+using Vita.Entities.Locking;
 
 namespace Vita.Entities.Model {
 
@@ -59,6 +60,7 @@ namespace Vita.Entities.Model {
     public List<EntityMemberInfo> Members;
     public readonly List<EntityKeyInfo> Keys = new List<EntityKeyInfo>(); 
     public EntityKeyInfo PrimaryKey;
+
     public Dictionary<string, EntityMemberInfo> MembersByName 
           = new Dictionary<string, EntityMemberInfo>(StringComparer.OrdinalIgnoreCase);
     public IList<Type> CompanionTypes = new List<Type>(); // Companion classes or interfaces - derived from Entity, 
@@ -350,9 +352,6 @@ namespace Vita.Entities.Model {
     public List<EntityMemberInfo> ExpandedIncludeMembers = new List<EntityMemberInfo>();
     public EntityKeyInfo IsCopyOf; //for FKs
 
-    public LinqCommand SelectByKeyCommand;
-    public LinqCommand CheckAnyCommand; //counts child records for a given parent - used by CanDelete() method
-
     public bool HasIdentityMember;
     public EntityMemberInfo OwnerMember; //for FK, the ref member
     public Delegate CacheSelectMethod; // compiled method to select in cache
@@ -437,25 +436,8 @@ namespace Vita.Entities.Model {
     public EntityFilter Filter;
     public List<EntityKeyMemberInfo> OrderBy;
 
-    LinqCommand _selectDirectChildRecordsCommand;
-
     public ChildEntityListInfo(EntityMemberInfo ownerMember) {
       OwnerMember = ownerMember;
-    }
-
-    public LinqCommand GetSelectDirectChildRecordsCommand() {
-      if (_selectDirectChildRecordsCommand == null) {
-        var mask = this.ParentRefMember.Entity.AllMembersMask;
-         var cmdInfo = SelectCommandBuilder.BuildSelectByKey(this.ParentRefMember.ReferenceInfo.FromKey, mask, 
-                                                    Locking.LockType.None, OrderBy);
-        if(RelationType == EntityRelationType.ManyToMany) {
-          cmdInfo.Includes = new List<LambdaExpression>();
-          var include = ExpressionMaker.MakeInclude(this.LinkEntity.EntityType, this.OtherEntityRefMember);
-          cmdInfo.Includes.Add(include);
-        }
-        _selectDirectChildRecordsCommand = cmdInfo;
-      } // if 
-      return _selectDirectChildRecordsCommand;
     }
 
   }

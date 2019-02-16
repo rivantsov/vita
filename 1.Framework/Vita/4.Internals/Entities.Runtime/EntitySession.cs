@@ -275,10 +275,11 @@ namespace Vita.Entities.Runtime {
       //check all external ref members
       foreach (var refMember in entInfo.IncomingReferences) {
         // if it is cascading delete, this member is not a problem
-        if (refMember.Flags.IsSet(EntityMemberFlags.CascadeDelete)) continue;
-        var existsCmd = refMember.ReferenceInfo.FromKey.CheckAnyCommand;
-        var execExistsCmd = new ExecutableLinqCommand(existsCmd, new object[] { record.EntityInstance });
-        var exists = ExecuteLinqCommand(execExistsCmd);
+        if (refMember.Flags.IsSet(EntityMemberFlags.CascadeDelete))
+          continue;
+        var fromKey = refMember.ReferenceInfo.FromKey;
+        var checkAnyCmd = LinqCommandFactory.CreateCheckAnyChildRecords(fromKey, record); 
+        var exists = ExecuteLinqCommand(checkAnyCmd);
         if ((bool)exists)
           blockingTypeSet.Add(refMember.Entity.EntityType);
       }

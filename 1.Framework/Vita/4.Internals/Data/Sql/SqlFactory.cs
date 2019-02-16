@@ -13,6 +13,7 @@ using Vita.Data.Runtime;
 
 namespace Vita.Data.Sql {
 
+  // Provides a source of SQL statements for linq/crud commands. Uses SqlBuilders and caches generated SQLs.
   public class SqlFactory {
     DbModel _dbModel;
     DbDriver _driver;
@@ -93,12 +94,7 @@ namespace Vita.Data.Sql {
     }
 
     private SqlStatement TranslateLinqSql(LinqCommand command) {
-      if(command.Lambda == null) {
-        var dynCommand = command as DynamicLinqCommand;
-        // It is not dynamic linq command - it is pre-built linq; but SqlCacheKey is not provided; definitely bug
-        Util.Check(dynCommand != null, "Fatal: lambda expression not set for pre-built query: {0}", command);
-        LinqCommandRewriter.RewriteToLambda(_dbModel.EntityModel, dynCommand);
-      }
+      command.SetupAction?.Invoke(command);
       var sql = _linqEngine.Translate(command);
       return sql;
     }

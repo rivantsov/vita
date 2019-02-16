@@ -31,7 +31,7 @@ namespace Vita.Data.MySql {
       // - which screws up view version comparison in schema update. 
       // another thing - it adds explicit alias to all output columns (same as column name)
       select = base.PreviewSelect(select, lockType);
-      if (select.Command.Source == LinqCommandSource.View) {
+      if (select.Command.Kind == LinqCommandKind.View) {
         int cnt = 0;
         foreach(var t in select.Tables)
           if(string.IsNullOrEmpty(t.Alias))

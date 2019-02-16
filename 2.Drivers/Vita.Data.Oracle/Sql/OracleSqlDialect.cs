@@ -55,15 +55,6 @@ WHERE owner='{table.Schema}' AND table_name = '{table.TableName}'
       AddTemplate("(CASE WHEN {0} THEN {1} ELSE {2} END)", SqlFunctionType.Iif);
       AddTemplate("(CASE WHEN {0} THEN 1 ELSE 0 END)", SqlFunctionType.ConvertBoolToBit);
 
-      /*
-      // Oracle does not allow EXISTS in output clause; 
-      // attempt to replace with (SELECT Count>0 FROM <subquery> Fetch 1) - does not work, investigate this further
-      AddTemplate(@"(
-SELECT (COUNT (*) > 0) 
-    FROM {0}
-    FETCH NEXT 1 ROWS ONLY)", SqlFunctionType.Exists);
-    */
-
     }
 
     // Used in 't.Col IN (<list>)' expressions when list is empty; does not work for all providers

@@ -42,9 +42,9 @@ namespace Vita.Data.Runtime {
         Cache.OnSavedChanges(session);  
     }
 
-    public object ExecuteLinqCommand(EntitySession session, ExecutableLinqCommand command) {
+    public object ExecuteLinqCommand(EntitySession session, LinqCommand command) {
       object result = null;
-      if(Cache != null && command.BaseCommand.Operation == LinqOperation.Select && Cache.TryExecuteSelect(session, command, out result))
+      if(Cache != null && command.Operation == LinqOperation.Select && Cache.TryExecuteSelect(session, command, out result))
         return result;
       result = Database.ExecuteLinqCommand(session, command);
       //If we are returning entities, cache them; if updating - invalidate

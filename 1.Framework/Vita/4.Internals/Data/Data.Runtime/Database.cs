@@ -32,11 +32,11 @@ namespace Vita.Data.Runtime {
     public void Shutdown() {
     }
 
-    public object ExecuteLinqCommand(EntitySession session, ExecutableLinqCommand command) {
-      var conn = GetConnectionWithLock(session, command.BaseCommand.LockType);
+    public object ExecuteLinqCommand(EntitySession session, LinqCommand command) {
+      var conn = GetConnectionWithLock(session, command.LockType);
       try {
         object result;
-        if(command.BaseCommand.Operation == LinqOperation.Select)
+        if(command.Operation == LinqOperation.Select)
           result = ExecuteLinqSelect(session, command, conn);
         else
           result = ExecuteLinqNonQuery(session, command, conn);
@@ -49,10 +49,10 @@ namespace Vita.Data.Runtime {
       }
     }
 
-    public object ExecuteLinqSelect(EntitySession session, ExecutableLinqCommand command, DataConnection conn) {
-      var sql = SqlFactory.GetLinqSql(command.BaseCommand);
+    public object ExecuteLinqSelect(EntitySession session, LinqCommand command, DataConnection conn) {
+      var sql = SqlFactory.GetLinqSql(command);
       command.CopyParamValuesFromLocal();
-      var genMode = command.BaseCommand.Options.IsSet(QueryOptions.NoParameters) ? 
+      var genMode = command.Options.IsSet(QueryOptions.NoParameters) ? 
                              SqlGenMode.NoParameters : SqlGenMode.PreferParam;
       var cmdBuilder = new DataCommandBuilder(this._driver, batchMode: false, mode: genMode);
       cmdBuilder.AddLinqStatement(sql, command.ParamValues);
@@ -61,10 +61,10 @@ namespace Vita.Data.Runtime {
       return dataCmd.ProcessedResult;
     }
 
-    private object ExecuteLinqNonQuery(EntitySession session, ExecutableLinqCommand command, DataConnection conn) {
-      var sql = SqlFactory.GetLinqSql(command.BaseCommand);
+    private object ExecuteLinqNonQuery(EntitySession session, LinqCommand command, DataConnection conn) {
+      var sql = SqlFactory.GetLinqSql(command);
       command.CopyParamValuesFromLocal(); 
-      var fmtOptions = command.BaseCommand.Options.IsSet(QueryOptions.NoParameters) ?
+      var fmtOptions = command.Options.IsSet(QueryOptions.NoParameters) ?
                              SqlGenMode.NoParameters : SqlGenMode.PreferParam;
       var cmdBuilder = new DataCommandBuilder(this._driver);
       cmdBuilder.AddLinqStatement(sql, command.ParamValues);
@@ -165,7 +165,7 @@ namespace Vita.Data.Runtime {
       if(commands == null || commands.Count == 0)
         return; 
       foreach (var cmd in commands)
-          ExecuteLinqNonQuery(session, new ExecutableLinqCommand(cmd), conn);
+          ExecuteLinqNonQuery(session, cmd, conn);
     }
 
     public bool CanProcessMany(DbUpdateTableGroup group) {

@@ -32,7 +32,7 @@ namespace Vita.Samples.BookStore {
       cmd = dbConn.DbConnection.CreateCommand();
       cmd.CommandText = string.Format(@"
 ALTER DATABASE {0} SET SINGLE_USER WITH ROLLBACK IMMEDIATE;
-ALTER DATABASE {0} SET READ_COMMITTED_SNAPSHOT OFF;
+ALTER DATABASE {0} SET READ_COMMITTED_SNAPSHOT ON;
 ALTER DATABASE {0} SET MULTI_USER;
 ", dbName);
       dbConn.ExecuteNonQuery(cmd);

@@ -42,9 +42,10 @@ namespace Vita.Entities.Runtime {
         Entities = new List<IEntityRecordContainer>();
         return;
       }
-      // var recs = OwnerRecord.Session.GetChildRecords(OwnerRecord, OwnerMember.ChildListInfo.ParentRefMember);
-      var selectCmdInfo = this.OwnerMember.ChildListInfo.GetSelectDirectChildRecordsCommand();
-      var selectCmd = new ExecutableLinqCommand(selectCmdInfo, OwnerRecord.PrimaryKey.Values);
+      var fromKey = OwnerMember.ChildListInfo.ParentRefMember.ReferenceInfo.FromKey;
+      var orderBy = OwnerMember.ChildListInfo.OrderBy;
+      var selectCmd = LinqCommandFactory.CreateSelectByKey(OwnerRecord.Session, fromKey, Locking.LockType.None, 
+                                                             orderBy, OwnerRecord.PrimaryKey.Values);
       var objEntList = (IList) OwnerRecord.Session.ExecuteLinqCommand(selectCmd);
       var recContList = new List<IEntityRecordContainer>();
       foreach (var ent in objEntList)

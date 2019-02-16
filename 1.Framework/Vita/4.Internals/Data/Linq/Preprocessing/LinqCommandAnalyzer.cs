@@ -14,7 +14,7 @@ using Vita.Entities.Utilities;
 namespace Vita.Data.Linq {
 
   public class LinqCommandAnalyzer {
-    DynamicLinqCommand _command; 
+    LinqCommand _command; 
     EntityModel _model;
     List<LambdaExpression> _includes = new List<LambdaExpression>();
 
@@ -37,19 +37,17 @@ namespace Vita.Data.Linq {
       Db, // identifies data record value (or derived from it)
     }
 
-    public static void Analyze(DynamicLinqCommand command) {
+    public static void Analyze(LinqCommand command) {
       var scanner = new LinqCommandAnalyzer();
       scanner.AnalyzeCommand(command);
     }
 
-    private void AnalyzeCommand(DynamicLinqCommand command) {
+    private void AnalyzeCommand(LinqCommand command) {
       _command = command;
       _model = command.Session.Context.App.Model;
-      var maskStr = command.MemberMask?.AsHexString() ?? "?";
-      _cacheKeyBuilder = new SqlCacheKeyBuilder("Linq", command.Source.ToString(), 
-                              command.Operation.ToString(), "mask:", maskStr);
+      _cacheKeyBuilder = new SqlCacheKeyBuilder("Linq", command.Kind.ToString(), command.Operation.ToString());
       try {
-        AnalyzeNode(_command.Expression);
+        AnalyzeNode(_command.QueryExpression);
         //copy some values to command 
         command.SqlCacheKey = _cacheKeyBuilder.Key;
         command.EntityTypes = _entityTypes;
@@ -59,9 +57,9 @@ namespace Vita.Data.Linq {
         command.Locals.AddRange(_locals);
         command.ExternalParameters = _externalParams?.ToArray();
         if(command.Locals.Count > 0)
-          LinqCommandHelper.EvaluateLocals(command); 
+          LinqExpressionHelper.EvaluateLocals(command); 
       } catch(Exception ex) {
-        ex.Data["LinqExperssion"] = _command.Expression + string.Empty;
+        ex.Data["LinqExperssion"] = _command.QueryExpression + string.Empty;
         throw;
       }
     }

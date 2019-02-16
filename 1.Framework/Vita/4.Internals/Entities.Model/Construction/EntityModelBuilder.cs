@@ -350,11 +350,8 @@ namespace Vita.Entities.Model.Construction {
               hasUpdatableMembers = true;
           } else
             member.ValueIndex = ent.TransientValuesCount++;
-          if (member.Kind == EntityMemberKind.EntityRef) {
-            member.ReferenceInfo.FromKey.CheckAnyCommand = 
-                 SelectCommandBuilder.BuildChildExistsForEntityRef(this.Model, member.ReferenceInfo);
-          }
         }//foreach member
+
         if (!hasUpdatableMembers)
           ent.Flags |= EntityFlags.NoUpdate;
         ent.RefMembers = ent.Members.Where(m => m.Kind == EntityMemberKind.EntityRef).ToList();

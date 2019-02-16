@@ -28,17 +28,17 @@ namespace Vita.Data.Linq {
 
   public class LinqCommandRewriter : ExpressionVisitor {
     EntityModel _model; 
-    DynamicLinqCommand _command;
+    LinqCommand _command;
     List<Expression> _locals; 
     List<ParameterExpression> _parameters;
 
-    public static void RewriteToLambda(EntityModel model, DynamicLinqCommand command) {
-      var preProc = new LinqCommandRewriter();
-      preProc.RewriteCommand(model, command); 
+    public static void RewriteToLambda(LinqCommand command) {
+      var rewriter = new LinqCommandRewriter();
+      rewriter.RewriteCommand(command); 
     }
 
-    private void RewriteCommand(EntityModel model, DynamicLinqCommand command) {
-      _model = model; 
+    private void RewriteCommand(LinqCommand command) {
+      _model = command.Session.Context.App.Model;
       _command = command;
       _locals = command.Locals;
       //create parameters
@@ -48,7 +48,7 @@ namespace Vita.Data.Linq {
         var prm = local.NodeType == ExpressionType.Parameter ? (ParameterExpression)local : Expression.Parameter(local.Type, "@P" + i);
         _parameters.Add(prm);
       }
-      var body = this.Visit(_command.Expression);
+      var body = this.Visit(_command.QueryExpression);
       _command.Lambda = Expression.Lambda(body, _parameters);
     }
 

@@ -83,8 +83,8 @@ namespace Vita.Data.Model {
       foreach(var viewTbl in views) {
         var entInfo = viewTbl.Entity;
         var expr = entInfo.ViewDefinition.Query.Expression;
-        var viewCmd = new DynamicLinqCommand(dummySession, LinqCommandSource.View, LinqOperation.Select, expr);
-        LinqCommandRewriter.RewriteToLambda(_entityModel, viewCmd);
+        var viewCmd = new LinqCommand(dummySession, expr, LinqCommandKind.View, LinqOperation.Select);
+        LinqCommandRewriter.RewriteToLambda(viewCmd);
         var sql = engine.TranslateSelect(viewCmd);
         var cmdBuilder = new DataCommandBuilder(_driver, mode: SqlGenMode.NoParameters);
         cmdBuilder.AddLinqStatement(sql, viewCmd.LocalValues);

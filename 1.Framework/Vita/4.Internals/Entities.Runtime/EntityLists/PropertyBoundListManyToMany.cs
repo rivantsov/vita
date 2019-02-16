@@ -51,21 +51,10 @@ namespace Vita.Entities.Runtime {
 
       var session = OwnerRecord.Session;
       var listInfo = OwnerMember.ChildListInfo;
-      var cmd = listInfo.GetSelectDirectChildRecordsCommand();
-      var execCmd = new ExecutableLinqCommand(cmd, OwnerRecord.PrimaryKey.Values);
-      var linkEntList = (IList) session.ExecuteLinqCommand(execCmd); 
-      /* Not needed - previous select cmd should have include for target records
-      // Preload target entity records, in addition to link records.
-      // These records will be cached in session, so when we try to read the target entity below it will be already loaded.
-      // Preload is worth doing only if we have 2 or more link records.
-      // Also, we do it only if record is NOT coming from full set cache; if it is, then target records should be in cache too,
-      // so it does not make sense to cache them again in the current session.
-      if (linkEntList.Count > 1 && OwnerRecord.EntityInfo.CachingType != EntityCachingType.FullSet) {
-        cmdInfo = listInfo.SelectByKeyValueCommandM2M;
-        cmd = new LinqCommand(cmdInfo, listInfo.TargetEntity, OwnerRecord.PrimaryKey.Values);
-        session.ExecuteSelect(cmd);
-      }
-      */ 
+      var fromKey = listInfo.ParentRefMember.ReferenceInfo.FromKey;
+      var cmd = LinqCommandFactory.CreateSelectByKey(session, fromKey, Locking.LockType.None, 
+                                                        listInfo.OrderBy, OwnerRecord.PrimaryKey.Values);
+      var linkEntList = (IList) session.ExecuteLinqCommand(cmd); 
 
       // Build LinkRecordsLookup and result entity list
       var targetEntList = new List<IEntityRecordContainer>();

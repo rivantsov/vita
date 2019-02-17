@@ -18,25 +18,22 @@ namespace Vita.Entities.Runtime {
     public static int MaxNestedRunsPerEntityType = 2; //max nested runs per entity type
     private static IList<EntityRecord> _emptyList = new EntityRecord[] { };
 
-    // Aug 2018 - disabled for preview version, needs more work
     //TODO: test and fix the following: 
     // Includes - when including child list, the list initialized only if it's not empty;
     //    if empty, it remains uninitialized, and on touch fwk fires select query with 0 results
-    // Initially found on some external solution, seemed to be broken, but now maybe working. Needs to be retested! 
-    internal static void RunIncludeQueries(EntitySession session, LinqCommand command, object mainQueryResult) {
-      var flag = false;
-      if(!flag)
-        return;  //temp disabled
+    // Initially found in some external solution, seemed to be broken, but now maybe working. Needs to be retested! 
+    internal static void RunIncludeQueries(LinqCommand command, object mainQueryResult) {
+      var session = command.Session;
       // initial checks if there's anything to run
-      var resultShape = command.BaseCommand.ResultShape;
-      if (mainQueryResult == null || resultShape == QueryResultShape.Object)
+      var resultShape = GetResultShape(session.Context.App.Model, mainQueryResult.GetType());
+      if(mainQueryResult == null || resultShape == QueryResultShape.Object)
         return;
-      var allIncludes = session.Context.GetMergedIncludes(command.BaseCommand.Includes);
+      var allIncludes = session.Context.GetMergedIncludes(command.Includes);
       if (allIncludes == null || allIncludes.Count == 0)
         return; 
       // Get records from query result
       var records = new List<EntityRecord>();
-      switch (resultShape) {
+      switch(resultShape) {
         case QueryResultShape.Entity:
           records.Add( EntityHelper.GetRecord(mainQueryResult));
           break;
@@ -164,9 +161,8 @@ namespace Vita.Entities.Runtime {
         return _emptyList;
       var targetEntity = refMember.ReferenceInfo.ToKey.Entity;
       var fkMember = refMember.ReferenceInfo.FromKey.ExpandedKeyMembers[0].Member; // r.Book_Id
-      var fkValues = GetMemberValuesAsTypedArray(records, fkMember); 
-      var selectCmdInfo = GetSelectByKeyValueArrayCommand(targetEntity.PrimaryKey, null);
-      var selectCmd = new LinqCommand(selectCmdInfo, new object[] { fkValues });
+      var fkValues = GetMemberValues(records, fkMember); 
+      var selectCmd = CreateSelectByKeyValueArrayCommand(targetEntity.PrimaryKey, null, fkValues);
       var entList = (IList) _session.ExecuteLinqCommand(selectCmd);
       if (entList.Count == 0)
         return _emptyList;
@@ -202,14 +198,12 @@ namespace Vita.Entities.Runtime {
       var expMembers = pkInfo.ExpandedKeyMembers; 
       Util.Check(expMembers.Count == 1, "Include expression not supported for entities with composite keys, property: {0}.", listMember);
       var pkMember = expMembers[0].Member; // IBookOrder.Id
-      var pkValuesArr = GetMemberValuesAsTypedArray(records, pkMember);
+      var pkValuesArr = GetMemberValues(records, pkMember);
       var listInfo = listMember.ChildListInfo;
       var parentRefMember = listInfo.ParentRefMember; //IBookOrderLine.Order
       var fromKey = parentRefMember.ReferenceInfo.FromKey;
       Util.Check(fromKey.ExpandedKeyMembers.Count == 1, "Composite keys are not supported in Include expressions; member: {0}", parentRefMember);
-      var cmdInfo = GetSelectByKeyValueArrayCommand(fromKey, listInfo.OrderBy); 
-      Util.Check(cmdInfo != null, "Select command for entity reference {0} not defined.", fromKey);
-      var cmd = new LinqCommand(cmdInfo, new object[] { pkValuesArr });
+      var cmd = CreateSelectByKeyValueArrayCommand(fromKey, listInfo.OrderBy, pkValuesArr); 
       var childEntities = (IList) _session.ExecuteLinqCommand(cmd); //list of all IBookOrderLine for BookOrder objects in 'records' parameter
       var childRecs = GetRecordList(childEntities); 
       //setup list properties in parent records
@@ -250,13 +244,12 @@ namespace Vita.Entities.Runtime {
 
       //Link records
       var pkMember = expMembers[0].Member; // IBook.Id
-      var pkValues = GetMemberValuesAsTypedArray(records, pkMember);
+      var pkValues = GetMemberValues(records, pkMember);
       //list of all IBookAuthor for Book objects in 'records' parameter
       IList<EntityRecord> linkRecs = _emptyList;
-      if (pkValues.Length > 0) {
+      if (pkValues.Count > 0) {
         var fromKey = listInfo.ParentRefMember.ReferenceInfo.FromKey;
-        var cmdInfo = GetSelectByKeyValueArrayCommand(fromKey, listInfo.OrderBy);
-        var cmd = new LinqCommand(cmdInfo, new object[] { pkValues });
+        var cmd = CreateSelectByKeyValueArrayCommand(fromKey, listInfo.OrderBy, pkValues);
         var linkEntList = (IList) _session.ExecuteLinqCommand(cmd);
         linkRecs = GetRecordList(linkEntList);
       }
@@ -270,18 +263,15 @@ namespace Vita.Entities.Runtime {
       var expTargetMembers = linkToTargetKey.ExpandedKeyMembers;
       Util.Check(expTargetMembers.Count == 1, "Include expression not supported for entities with composite keys, property: {0}.", listMember.ChildListInfo.OtherEntityRefMember);
       var linkToTargetFk = expTargetMembers[0].Member;
-      var fkValues = GetMemberValuesAsTypedArray(linkRecs, linkToTargetFk);
+      var fkValues = GetMemberValues(linkRecs, linkToTargetFk);
       //list of all IAuthor for Book objects in 'records' parameter
       IList<EntityRecord> targetRecs;
-      if (fkValues.Length == 0)
+      if (fkValues.Count == 0)
         targetRecs = new List<EntityRecord>();
       else {
         var targetKey = linkToTargetMember.ReferenceInfo.ToKey; //IAuthor.Id
         Util.Check(targetKey.ExpandedKeyMembers.Count == 1, "Include expression not supported for entities with composite keys, entity: {0}.", targetKey.Entity.Name);
-        var targetCmdInfo = GetSelectByKeyValueArrayCommand(linkToTargetKey);
-        Util.Check(targetCmdInfo != null, "Select command for entity reference {0} not defined.", linkToTargetKey);
-        var cmd = new LinqCommand(targetCmdInfo, new object[] { fkValues });
-        // ??? that will fail, need to complete refactoring to Linq queries
+        var cmd = CreateSelectByKeyValueArrayCommand(targetKey, null, fkValues);
         var targetEnts = (IList) _session.ExecuteLinqCommand(cmd, withIncludes: false);
         targetRecs = ToRecords(targetEnts);
       }
@@ -318,16 +308,17 @@ namespace Vita.Entities.Runtime {
       return records; 
     }
 
-    private static Array GetMemberValuesAsTypedArray(IList<EntityRecord> records, EntityMemberInfo member) {
-      var objArray = new HashSet<object>(records.Select(r => r.GetValueDirect(member)))
-          .Where(v => v != null && v != DBNull.Value).ToArray();
-      var typedArray = Array.CreateInstance(member.DataType, objArray.Length);
-      for (int i = 0; i < typedArray.Length; i++) 
-        typedArray.SetValue(objArray[i], i);
-      return typedArray;
+    private static IList GetMemberValues(IList<EntityRecord> records, EntityMemberInfo member) {
+      var hset = new HashSet<object>(records.Select(r => r.GetValueDirect(member))); //hashset to remove dupes
+      var objArray = hset.Where(v => v != null && v != DBNull.Value).ToArray();
+      // convert to typed array?
+      var list = (IList) Array.CreateInstance(member.DataType, objArray.Length);
+      for(int i = 0; i < list.Count; i++)
+        list[i] = objArray[i];
+      return list;
     }
 
-    private static LinqCommand GetSelectByKeyValueArrayCommand(EntityKeyInfo key, IList<EntityKeyMemberInfo> orderBy) {
+    private SpecialLinqCommand CreateSelectByKeyValueArrayCommand(EntityKeyInfo key, IList<EntityKeyMemberInfo> orderBy, IList keyValues) {
       List<EntityKeyMemberInfo> mergedOrderBy;
       if(orderBy == null)
         mergedOrderBy = key.KeyMembers;
@@ -335,8 +326,20 @@ namespace Vita.Entities.Runtime {
         mergedOrderBy = new List<EntityKeyMemberInfo>(key.KeyMembers);
         mergedOrderBy.AddRange(orderBy);
       }
-      return new LinqCommand(SpecialSelectType.ByKeyArray, key, Locking.LockType.None, mergedOrderBy);   
+      return LinqCommandFactory.CreateSelectByKeyValueArray(_session, key, mergedOrderBy, keyValues);   
     }
+
+    private static QueryResultShape GetResultShape(EntityModel model, Type outType) {
+      if(typeof(EntityBase).IsAssignableFrom(outType))
+        return QueryResultShape.Entity;
+      if(outType.IsGenericType) {
+        var genArg0 = outType.GetGenericArguments()[0];
+        if(typeof(IEnumerable).IsAssignableFrom(outType) && model.IsEntity(genArg0))
+          return QueryResultShape.EntityList;
+      }
+      return QueryResultShape.Object; // don't know and don't care      
+    }
+
 
   }//class
 }

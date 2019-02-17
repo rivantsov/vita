@@ -27,7 +27,7 @@ namespace Vita.Testing.ExtendedTests {
       Startup.TearDown(); 
     }
 
-    [TestMethod, Ignore("temporarily disabled")]
+    [TestMethod] //, Ignore("temporarily disabled")]
     public void TestLinqInclude() {
       try {
         DisplayAttribute.Disabled = true;   // just for internal debugging, to disable automatic loading of entities for Display
@@ -109,7 +109,8 @@ namespace Vita.Testing.ExtendedTests {
 
       //single entity
       session = app.OpenSession(); 
-      var someBook = session.EntitySet<IBook>().Where(b => b.Price > 0).Include(b => b.Publisher).First();
+      var someBook = session.EntitySet<IBook>().Where(b => b.Price > 0)
+                  .Include(b => b.Publisher).First();
       Assert.IsNotNull(someBook, "Expected a book.");
       _loadCount = 0;
       var pubName = someBook.Publisher.Name;

@@ -76,6 +76,13 @@ namespace Vita.Data.Linq {
     }
 
     public static Expression AddOrderBy(Expression expr, Type entType, EntityMemberInfo member, bool desc) {
+      // Special case - member is entity ref
+      if (member.Kind == EntityMemberKind.EntityRef) {
+        var res = expr;
+        foreach(var fkm in member.ReferenceInfo.FromKey.ExpandedKeyMembers)
+          res = AddOrderBy(res, entType, fkm.Member, desc);
+        return res; 
+      }
       var entPrm = Expression.Parameter(entType, "@e");
       var readM = MakeGetProperty(entPrm, member);
       var lambda = Expression.Lambda(readM, entPrm);

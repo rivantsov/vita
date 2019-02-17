@@ -14,7 +14,7 @@ using Vita.Entities.Utilities;
 namespace Vita.Data.Linq {
 
   public class LinqCommandAnalyzer {
-    LinqCommand _command; 
+    DynamicLinqCommand _command; 
     EntityModel _model;
     List<LambdaExpression> _includes = new List<LambdaExpression>();
 
@@ -37,12 +37,12 @@ namespace Vita.Data.Linq {
       Db, // identifies data record value (or derived from it)
     }
 
-    public static void Analyze(LinqCommand command) {
+    public static void Analyze(DynamicLinqCommand command) {
       var scanner = new LinqCommandAnalyzer();
       scanner.AnalyzeCommand(command);
     }
 
-    private void AnalyzeCommand(LinqCommand command) {
+    private void AnalyzeCommand(DynamicLinqCommand command) {
       _command = command;
       _model = command.Session.Context.App.Model;
       _cacheKeyBuilder = new SqlCacheKeyBuilder("Linq", command.Kind.ToString(), command.Operation.ToString());

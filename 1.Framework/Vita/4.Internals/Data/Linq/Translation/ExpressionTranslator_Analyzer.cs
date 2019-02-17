@@ -1378,6 +1378,9 @@ namespace Vita.Data.Linq.Translation {
         if(parameters.Count > 1) {
           var anyClause = Analyze(parameters[1], tableExpression, subSelectContext);
           RegisterWhere(anyClause, subSelectContext);
+        } else {
+          //TODO: fix this
+          Util.Throw("Queryable.Any() method without parameter is not supported.");
         }
         var subSelect = subSelectContext.CurrentSelect;
         var existsExpr = CreateSqlFunction(SqlFunctionType.Exists, subSelect);

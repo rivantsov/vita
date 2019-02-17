@@ -33,7 +33,20 @@ namespace Vita.Data.Linq {
 
     // Note: command expected to be analyzed already
     public SqlStatement Translate(LinqCommand command) {
-      Util.Check(command.Lambda != null, "Expected rewritten linq command with Lambda property set.");
+      // pre-process; special commands do not produce lambda when command is created - only SqlCacheKey so that SQL 
+      // is looked up in cache and we do not need anything else; building actual query lambda is encoded in setup Action, 
+      // which we invoke here;
+      // also dynamic linq queries postpone rewrite (changing locals to parameters) until late time
+      switch(command) {
+        case SpecialLinqCommand specCmd: 
+          specCmd.SetupAction?.Invoke(specCmd);
+          break;
+        case DynamicLinqCommand dynCmd:
+          if(command.Lambda == null)
+            LinqCommandRewriter.RewriteToLambda(dynCmd);
+          break; 
+      } //switch
+
       try {
         switch(command.Operation) {
           case LinqOperation.Select:
@@ -42,7 +55,7 @@ namespace Vita.Data.Linq {
           case LinqOperation.Delete:
           case LinqOperation.Insert:
           default:
-            return TranslateNonQuery(command);
+            return TranslateNonQuery((DynamicLinqCommand) command);
         } //switch
       } catch(LinqTranslationException) {
         throw; // if it is already Linq translation exception, pass it up.

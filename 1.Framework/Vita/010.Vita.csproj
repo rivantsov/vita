@@ -16,12 +16,10 @@
 
   <ItemGroup>
     <Compile Remove="1.AppModel\Services\Logging\IErrorLogService_Disabled.cs" />
-    <Compile Remove="4.Internals\Entities.Runtime\IncludeProcessor.cs" />
   </ItemGroup>
 
   <ItemGroup>
     <None Include="1.AppModel\Services\Logging\IErrorLogService_Disabled.cs" />
-    <None Include="4.Internals\Entities.Runtime\IncludeProcessor.cs" />
   </ItemGroup>
 
   <ItemGroup>

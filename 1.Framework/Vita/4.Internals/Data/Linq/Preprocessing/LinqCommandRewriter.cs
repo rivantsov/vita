@@ -28,16 +28,16 @@ namespace Vita.Data.Linq {
 
   public class LinqCommandRewriter : ExpressionVisitor {
     EntityModel _model; 
-    LinqCommand _command;
+    DynamicLinqCommand _command;
     List<Expression> _locals; 
     List<ParameterExpression> _parameters;
 
-    public static void RewriteToLambda(LinqCommand command) {
+    public static void RewriteToLambda(DynamicLinqCommand command) {
       var rewriter = new LinqCommandRewriter();
       rewriter.RewriteCommand(command); 
     }
 
-    private void RewriteCommand(LinqCommand command) {
+    private void RewriteCommand(DynamicLinqCommand command) {
       _model = command.Session.Context.App.Model;
       _command = command;
       _locals = command.Locals;

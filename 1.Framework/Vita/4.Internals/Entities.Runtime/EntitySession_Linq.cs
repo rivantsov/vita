@@ -44,8 +44,8 @@ namespace Vita.Entities.Runtime {
           case LinqOperation.Select:
             Context.App.AppEvents.OnExecutedSelect(this, command);
             if(withIncludes && (command.Includes?.Count > 0 || Context.HasIncludes()))
-              //IncludeProcessor.RunIncludeQueries(this, command, result);
-              Util.Throw("Include processor disabled.");
+              IncludeProcessor.RunIncludeQueries(command, result);
+              //Util.Throw("Include processor disabled.");
             break;
           default:
             Context.App.AppEvents.OnExecutedNonQuery(this, command);
@@ -70,7 +70,7 @@ namespace Vita.Entities.Runtime {
 
     public IEntityRecordContainer SelectByPrimaryKey(EntityInfo entity, object[] keyValues,
             LockType lockType = LockType.None, EntityMemberMask mask = null) {
-      var cmd = LinqCommandFactory.CreateSelectByKey(this, entity.PrimaryKey, lockType, null, keyValues);
+      var cmd = LinqCommandFactory.CreateSelectByPrimaryKey(this, entity.PrimaryKey, lockType, keyValues);
       var list = (IList)ExecuteLinqCommand(cmd);
       if(list.Count == 0)
         return null;

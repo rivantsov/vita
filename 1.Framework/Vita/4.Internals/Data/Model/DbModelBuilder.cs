@@ -83,12 +83,14 @@ namespace Vita.Data.Model {
       foreach(var viewTbl in views) {
         var entInfo = viewTbl.Entity;
         var expr = entInfo.ViewDefinition.Query.Expression;
-        var viewCmd = new LinqCommand(dummySession, expr, LinqCommandKind.View, LinqOperation.Select);
+        var viewCmd = new DynamicLinqCommand(dummySession, expr, LinqCommandKind.View, LinqOperation.Select);
         LinqCommandRewriter.RewriteToLambda(viewCmd);
         var sql = engine.TranslateSelect(viewCmd);
         var cmdBuilder = new DataCommandBuilder(_driver, mode: SqlGenMode.NoParameters);
-        cmdBuilder.AddLinqStatement(sql, viewCmd.LocalValues);
-        viewTbl.ViewSql = cmdBuilder.GetSqlText(); //.Trim(' ', '\r', '\n', ';');  
+        //there might be some local values that are transformed into params. But they will be replaced with literals 
+        // when generating final SQL
+        cmdBuilder.AddLinqStatement(sql, viewCmd.ParamValues); 
+        viewTbl.ViewSql = cmdBuilder.GetSqlText();   
       }
     }
     private static object[] _emptyArray = new object[] { };

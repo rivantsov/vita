@@ -51,9 +51,7 @@ namespace Vita.Entities.Runtime {
 
       var session = OwnerRecord.Session;
       var listInfo = OwnerMember.ChildListInfo;
-      var fromKey = listInfo.ParentRefMember.ReferenceInfo.FromKey;
-      var cmd = LinqCommandFactory.CreateSelectByKey(session, fromKey, Locking.LockType.None, 
-                                                        listInfo.OrderBy, OwnerRecord.PrimaryKey.Values);
+      var cmd = LinqCommandFactory.CreateSelectByKeyForListProperty(session, listInfo, OwnerRecord.PrimaryKey.Values);
       var linkEntList = (IList) session.ExecuteLinqCommand(cmd); 
 
       // Build LinkRecordsLookup and result entity list

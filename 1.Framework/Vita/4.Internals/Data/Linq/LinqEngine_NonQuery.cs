@@ -16,7 +16,7 @@ namespace Vita.Data.Linq {
  
   partial class LinqEngine {
 
-    public SqlStatement TranslateNonQuery(LinqCommand command) {
+    public SqlStatement TranslateNonQuery(DynamicLinqCommand command) {
       var translCtx = new TranslationContext(_dbModel, command);
       // convert lambda params into an initial set of ExternalValueExpression objects; 
       foreach(var prm in command.Lambda.Parameters) {

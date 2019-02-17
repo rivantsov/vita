@@ -356,7 +356,11 @@ namespace Vita.Entities.Model {
     public EntityMemberInfo OwnerMember; //for FK, the ref member
     public Delegate CacheSelectMethod; // compiled method to select in cache
     public EntityFilter IndexFilter;
-    public string ExplicitDbKeyName; 
+    public string ExplicitDbKeyName;
+
+    // cached keys, set on first use
+    internal string SqlCacheKey_SelectByPkNoLock;
+    internal string SqlCacheKey_ChildExists;
 
     public EntityKeyInfo(EntityInfo entity, KeyType keyType, 
         EntityMemberInfo ownerMember = null, string alias = null) {
@@ -435,6 +439,8 @@ namespace Vita.Entities.Model {
 
     public EntityFilter Filter;
     public List<EntityKeyMemberInfo> OrderBy;
+
+    internal string SqlCacheKey_SelectChildRecs;
 
     public ChildEntityListInfo(EntityMemberInfo ownerMember) {
       OwnerMember = ownerMember;

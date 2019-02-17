@@ -20,6 +20,21 @@ namespace Vita.Testing.ExtendedTests {
   // Not real tests, simple demos. disabled for now
   public partial class MiscTests {
 
+    [TestMethod, Ignore("To fix - support for Any() method without params")]
+    public void TestLinqAny() {
+
+      var app = Startup.BooksApp;
+      var session = app.OpenSession();
+      session.EnableCache(false);
+      var utcNow = app.TimeService.UtcNow;
+
+      var bkcs = session.EntitySet<IBook>().Where(b => b.Title.StartsWith("c")).FirstOrDefault();
+      // this works
+      var hasReviews1 = session.EntitySet<IBookReview>().Any(br => br.Book == bkcs);
+      // this doesn't work
+      var hasReviews2 = session.EntitySet<IBookReview>().Where(br => br.Book == bkcs).Any();
+    }
+
     [TestMethod]
     public void TestBugFixes() {
 

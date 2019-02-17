@@ -35,7 +35,7 @@ namespace Vita.Data.Sql {
       if(stmt != null)
         return stmt;
       // not in cache - translate
-      stmt = TranslateLinqSql(command);
+      stmt = _linqEngine.Translate(command);
       _driver.SqlDialect.ReviewSqlStatement(stmt, command);
       if(!command.Options.IsSet(QueryOptions.NoQueryCache))
         _sqlCache.Add(command.SqlCacheKey, stmt);
@@ -90,12 +90,6 @@ namespace Vita.Data.Sql {
         return null;
       Util.Check(!string.IsNullOrEmpty(command.SqlCacheKey), "Fatal: SQL cache key is not set for LINQ query: {0}", command);
       var sql = _sqlCache.Lookup(command.SqlCacheKey);
-      return sql;
-    }
-
-    private SqlStatement TranslateLinqSql(LinqCommand command) {
-      command.SetupAction?.Invoke(command);
-      var sql = _linqEngine.Translate(command);
       return sql;
     }
 

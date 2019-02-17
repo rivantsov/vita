@@ -33,7 +33,8 @@ namespace Vita.Data.Linq {
     EntityMemberMask GetMask(Type entityType);
   }
 
-  public class LinqCommand {
+  public abstract class LinqCommand {
+    public EntitySession Session;
     public LinqCommandKind Kind;
     public LinqOperation Operation;
     public string SqlCacheKey;
@@ -42,19 +43,9 @@ namespace Vita.Data.Linq {
     public LockType LockType;
     public IMaskSource MaskingSource;
 
-    public EntityInfo UpdateEntity; //for LINQ non-query commands
-
     public LambdaExpression Lambda;
-    public Action<LinqCommand> SetupAction; //delayed creator of lambda expression
-    public QueryResultShape ResultShape;
-
-    public EntitySession Session;
-    public List<Expression> Locals = new List<Expression>();
-    public object[] LocalValues;
-    public Expression QueryExpression;
 
     public List<LambdaExpression> Includes;
-    public ParameterExpression[] ExternalParameters;
     public object[] ParamValues;
 
 
@@ -64,28 +55,36 @@ namespace Vita.Data.Linq {
       Operation = operation;
     }
 
-    public LinqCommand(EntitySession session, Expression queryExpression, LinqCommandKind kind = LinqCommandKind.Dynamic, 
-                        LinqOperation op = LinqOperation.Select, EntityInfo updateEntity = null, Action<LinqCommand> setup = null)
-                         : this(session, kind, op){
-      QueryExpression = queryExpression;
-      UpdateEntity = updateEntity;
-      SetupAction = setup; 
-      LinqCommandAnalyzer.Analyze(this);
-    }
-
     public void CopyParamValuesFromLocal() {
 
     }
     
   } //class
 
+  public class DynamicLinqCommand : LinqCommand {
+    public Expression QueryExpression;
+    public EntityInfo UpdateEntity; //for LINQ non-query commands
+    public ParameterExpression[] ExternalParameters;
+    public List<Expression> Locals = new List<Expression>();
+
+    public DynamicLinqCommand(EntitySession session, Expression queryExpression, LinqCommandKind kind = LinqCommandKind.Dynamic,
+                        LinqOperation op = LinqOperation.Select, EntityInfo updateEntity = null)
+                         : base(session, kind, op) {
+      QueryExpression = queryExpression;
+      UpdateEntity = updateEntity;
+      LinqCommandAnalyzer.Analyze(this);
+    }
+  }
+
   public class SpecialLinqCommand : LinqCommand {
     public SpecialCommandSubType SubType;
     public EntityKeyInfo Key;
     public List<EntityKeyMemberInfo> OrderBy;
+    public Action<SpecialLinqCommand> SetupAction; //delayed creator of lambda expression
 
-    public SpecialLinqCommand(EntitySession session, SpecialCommandSubType subType, EntityKeyInfo key, LockType lockType,
-                      List<EntityKeyMemberInfo> orderBy, object[] paramValues, Action<LinqCommand> setupAction)
+    public SpecialLinqCommand(EntitySession session, string sqlCacheKey, SpecialCommandSubType subType, 
+                              EntityKeyInfo key, LockType lockType, List<EntityKeyMemberInfo> orderBy, 
+                              object[] paramValues, Action<SpecialLinqCommand> setupAction)
                    : base(session, LinqCommandKind.Special, LinqOperation.Select) {
       SubType = subType; 
       Key = key;
@@ -93,7 +92,7 @@ namespace Vita.Data.Linq {
       OrderBy = orderBy;
       ParamValues = paramValues;
       SetupAction = setupAction;
-      this.SqlCacheKey = SqlCacheKeyBuilder.BuildSpecialSelectKey(subType, Key.Entity.Name, key.Name, lockType, orderBy);
+      this.SqlCacheKey = sqlCacheKey;
     }
 
   }

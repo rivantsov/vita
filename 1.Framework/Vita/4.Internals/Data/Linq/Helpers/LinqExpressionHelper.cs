@@ -12,6 +12,7 @@ using Vita.Data.Linq.Translation;
 using Vita.Data.Linq.Translation.Expressions;
 using System.Collections;
 using Vita.Data.Driver;
+using Vita.Entities.Model;
 
 namespace Vita.Data.Linq {
 
@@ -21,6 +22,7 @@ namespace Vita.Data.Linq {
     public static MethodInfo QueryableSelectMethod;
     public static MethodInfo QueryableWhereMethod;
     public static MethodInfo QueryableAsQueryableMethod;
+    public static MethodInfo QueryableAny1ArgMethod;
     public static MethodInfo QueryableAny2ArgMethod;
     public static MethodInfo QueryableOrderByMethod;
     public static MethodInfo QueryableOrderByDescMethod;
@@ -62,6 +64,7 @@ namespace Vita.Data.Linq {
       }
       QueryableOrderByMethod = allMethods.First(m => m.Name == nameof(Queryable.OrderBy) && m.GetParameters().Length == 2);
       QueryableOrderByDescMethod = allMethods.First(m => m.Name == nameof(Queryable.OrderByDescending) && m.GetParameters().Length == 2);
+      QueryableAny1ArgMethod = allMethods.First(m => m.Name == nameof(Queryable.Any) && m.GetParameters().Length == 1);
       QueryableAny2ArgMethod = allMethods.First(m => m.Name == nameof(Queryable.Any) && m.GetParameters().Length == 2);
       QueryableAsQueryableMethod = allMethods.First(m => m.Name == nameof(Queryable.AsQueryable) && m.IsGenericMethod);
 
@@ -228,34 +231,6 @@ Details: failed converting sub-expression of type {0} to type {1}", expression.T
       return true;
     }
 
-    /*
-    public static void EvaluateCommandParameters(LinqCommand command, EntitySession session = null) {
-      //We proceed in 2 steps: 
-      // 1. We evaluate external parameters (used in lambdas in authorization filters and QueryFilters);
-      //    values are in current OperationContext
-      // 2. Evaluate local expressions which become final query parameters; they may depend on external params
-      ParameterExpression[] extParamArray = null;
-      object[] extParamValues = null; 
-      if(session != null && command.Info.ExternalParameters.Count > 0) {
-        extParamArray = command.Info.ExternalParameters.ToArray();
-        extParamValues = new object[extParamArray.Length];
-        for(int i = 0; i < extParamArray.Length; i++)
-          extParamValues[i] = EvaluateContextParameterExpression(session, extParamArray[i]);
-      }
-      //Evaluate local expressions
-      var locals = command.Locals;
-      if (locals == null) {
-        command.ParameterValues = new object[] { };
-      } else {
-        var prmValues = new object[locals.Count];
-        for(int i = 0; i < locals.Count; i++)
-          prmValues[i] = ExpressionHelper.Evaluate(locals[i], extParamArray, extParamValues);
-        command.ParameterValues = prmValues;
-      }
-    }
-    */
-
-
 
     public static object EvaluateContextParameterExpression(EntitySession session, ParameterExpression parameter) {
       if (typeof(IEntitySession).IsAssignableFrom(parameter.Type))
@@ -267,6 +242,8 @@ Details: failed converting sub-expression of type {0} to type {1}", expression.T
       switch (name) {
         case "userid":
           return context.User.UserId;
+        case "username":
+          return context.User.UserName;
         case "altuserid":
           return context.User.AltUserId;
         default:
@@ -305,10 +282,10 @@ Details: failed converting sub-expression of type {0} to type {1}", expression.T
       }
     }
 
-    public static void EvaluateLocals(LinqCommand command) {
+    public static void EvaluateLocals(DynamicLinqCommand command) {
       var locals = command.Locals;
       if(locals.Count == 0) {
-        command.LocalValues = _emptyArray;
+        command.ParamValues = _emptyArray;
         return;
       }
       // evaluate external parameters - they come from OperationContext
@@ -322,10 +299,10 @@ Details: failed converting sub-expression of type {0} to type {1}", expression.T
       } //if 
 
       // evaluate locals
-      command.LocalValues = new object[locals.Count];
+      command.ParamValues = new object[locals.Count];
       for(int i = 0; i < locals.Count; i++) {
         var local = locals[i];
-        command.LocalValues[i] = ExpressionHelper.Evaluate(locals[i], command.ExternalParameters, extValues);
+        command.ParamValues[i] = ExpressionHelper.Evaluate(locals[i], command.ExternalParameters, extValues);
       }
     } //method
 

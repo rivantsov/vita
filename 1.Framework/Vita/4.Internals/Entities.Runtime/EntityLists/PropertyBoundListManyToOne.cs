@@ -44,8 +44,8 @@ namespace Vita.Entities.Runtime {
       }
       var fromKey = OwnerMember.ChildListInfo.ParentRefMember.ReferenceInfo.FromKey;
       var orderBy = OwnerMember.ChildListInfo.OrderBy;
-      var selectCmd = LinqCommandFactory.CreateSelectByKey(OwnerRecord.Session, fromKey, Locking.LockType.None, 
-                                                             orderBy, OwnerRecord.PrimaryKey.Values);
+      var selectCmd = LinqCommandFactory.CreateSelectByKeyForListProperty(OwnerRecord.Session, OwnerMember.ChildListInfo,
+                                             OwnerRecord.PrimaryKey.Values);
       var objEntList = (IList) OwnerRecord.Session.ExecuteLinqCommand(selectCmd);
       var recContList = new List<IEntityRecordContainer>();
       foreach (var ent in objEntList)

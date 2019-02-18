@@ -26,7 +26,8 @@ namespace Vita.Data.Linq {
   public enum SpecialCommandSubType {
     SelectByKey,
     SelectByKeyArray,
-    ExistsByKey
+    ExistsByKey,
+    ListManyToMany,
   }
 
   public interface IMaskSource {
@@ -81,18 +82,35 @@ namespace Vita.Data.Linq {
     public EntityKeyInfo Key;
     public List<EntityKeyMemberInfo> OrderBy;
     public Action<SpecialLinqCommand> SetupAction; //delayed creator of lambda expression
+    public ChildEntityListInfo ListInfoManyToMany; 
 
     public SpecialLinqCommand(EntitySession session, string sqlCacheKey, SpecialCommandSubType subType, 
                               EntityKeyInfo key, LockType lockType, List<EntityKeyMemberInfo> orderBy, 
-                              object[] paramValues, Action<SpecialLinqCommand> setupAction)
-                   : base(session, LinqCommandKind.Special, LinqOperation.Select) {
+                              object[] paramValues, Action<SpecialLinqCommand> setupAction, 
+                              ChildEntityListInfo listInfoManyToMany = null)
+                              : base(session, LinqCommandKind.Special, LinqOperation.Select) {
+      this.SqlCacheKey = sqlCacheKey;
       SubType = subType; 
       Key = key;
       base.LockType = lockType;
       OrderBy = orderBy;
       ParamValues = paramValues;
       SetupAction = setupAction;
+      ListInfoManyToMany = listInfoManyToMany; 
+    }
+
+    // constructor for many-to-many select
+    public SpecialLinqCommand(EntitySession session, string sqlCacheKey, SpecialCommandSubType subType, 
+                              ChildEntityListInfo listInfoManyToMany, List<EntityKeyMemberInfo> orderBy,
+                              object[] paramValues, Action<SpecialLinqCommand> setupAction)
+                            : base(session, LinqCommandKind.Special, LinqOperation.Select) {
       this.SqlCacheKey = sqlCacheKey;
+      SubType = subType;
+      ListInfoManyToMany = listInfoManyToMany;
+      OrderBy = orderBy;
+      ParamValues = paramValues;
+      SetupAction = setupAction;
+      base.LockType = LockType.None;
     }
 
   }

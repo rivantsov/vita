@@ -10,32 +10,41 @@ using Vita.Entities.Model;
 
 namespace Vita.Entities.Runtime {
 
-  internal class PropertyBoundListManyToOne<TEntity> : PropertyBoundListBase<TEntity> where TEntity: class {
+  internal class PropertyBoundListManyToOne<TEntity> : PropertyBoundListBase<TEntity> where TEntity : class {
 
     public PropertyBoundListManyToOne(EntityRecord ownerRecord, EntityMemberInfo ownerMember) : base(ownerRecord, ownerMember) { }
 
     public override void Notify(BoundListEventType eventType) {
       var session = OwnerRecord.Session;
-      switch (eventType) {
+      switch(eventType) {
         case BoundListEventType.SavingChanges:
-          if (OwnerRecord.Status == EntityStatus.Deleting) 
+          if(OwnerRecord.Status == EntityStatus.Deleting)
             return;
-          if (IsLoaded && IsOrdered && Modified)
+          if(IsLoaded && IsOrdered && Modified)
             AssignPersistentOrder();
           break;
         case BoundListEventType.SavedChanges:
-          if (session.RecordsChanged.Any(r => r.EntityInfo == TargetEntity))
+          if(session.RecordsChanged.Any(r => r.EntityInfo == TargetEntity))
             Entities = null; //to force reload
           Modified = false;
           break;
         case BoundListEventType.CanceledChanges:
-          Entities = null; 
-          Modified = false; 
-          break; 
+          Entities = null;
+          Modified = false;
+          break;
       }//switch
     }//method
 
-    public override void LoadList() {  
+
+    public override void LoadList() {
+      if(this.OwnerRecord.Session.Kind == EntitySessionKind.ConcurrentReadOnly)
+        lock(OwnerRecord)
+          LoadListImpl();
+      else
+        LoadListImpl();
+    }
+
+    public void LoadListImpl() {  
       Modified = false;
       var status = OwnerRecord.Status;
       if (status == EntityStatus.Fantom || status == EntityStatus.New) {

@@ -40,9 +40,16 @@ namespace Vita.Entities.Runtime {
       }//switch
     }//method
 
-    public override void LoadList() { 
+    public override void LoadList() {
+      if(this.OwnerRecord.Session.Kind == EntitySessionKind.ConcurrentReadOnly)
+        lock(OwnerRecord)
+          LoadListImpl();
+      else
+        LoadListImpl();
+    }
+
+    public void LoadListImpl() { 
       Modified = false;
-      LinkRecordsLookup.Clear();
       var status = OwnerRecord.Status;
       if (status == EntityStatus.Fantom || status == EntityStatus.New) {
         Entities = new List<IEntityRecordContainer>();
@@ -52,18 +59,10 @@ namespace Vita.Entities.Runtime {
       var session = OwnerRecord.Session;
       var listInfo = OwnerMember.ChildListInfo;
       var cmd = LinqCommandFactory.CreateSelectByKeyForListProperty(session, listInfo, OwnerRecord.PrimaryKey.Values);
-      var linkEntList = (IList) session.ExecuteLinqCommand(cmd); 
-
-      // Build LinkRecordsLookup and result entity list
-      var targetEntList = new List<IEntityRecordContainer>();
-      for (int i = 0; i < linkEntList.Count; i++) {
-        var linkEnt = (IEntityRecordContainer)linkEntList[i];
-        var linkRec = linkEnt.Record; 
-        var targetEnt = (IEntityRecordContainer)linkRec.GetValue(listInfo.OtherEntityRefMember);
-        targetEntList.Add(targetEnt);
-        LinkRecordsLookup[targetEnt.Record] = linkRec;
-      }
-      Entities = targetEntList;
+      var queryRes = session.ExecuteLinqCommand(cmd);
+      var tupleList = (IList<LinkTuple>)queryRes;
+      Entities = tupleList.Select(t => t.TargetEntity as IEntityRecordContainer).ToList();
+      LinkRecordsLookup = tupleList.ToDictionary(t => EntityHelper.GetRecord(t.TargetEntity), t => EntityHelper.GetRecord(t.LinkEntity));
     }
 
     //We do not create/modify link records when app code manipulates the list. Instead, we wait until Session.SaveChanges 

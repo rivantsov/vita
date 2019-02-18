@@ -75,20 +75,36 @@ namespace Vita.Data.Linq {
       return call;
     }
 
-    public static Expression AddOrderBy(Expression expr, Type entType, EntityMemberInfo member, bool desc) {
+    public static Expression AddOrderBy(Expression entSet, List<EntityKeyMemberInfo> orderBy) {
+      if(orderBy == null || orderBy.Count == 0)
+        return entSet;
+      var entSetOrdered = entSet;
+      foreach(var km in orderBy)
+        entSetOrdered = AddOrderBy(entSetOrdered, km.Member, km.Desc);
+      return entSetOrdered;
+    }
+
+    // targetEntProp is for many-to-many list ordering, when target prop in oder list is on 'target' ent; ex:  
+    //     session.EntitySet<IBookAuthor>().OrderBy(ba => ba.Author.LastName)
+    // in this case targetEntProp => IBookAuthor.Author
+    public static Expression AddOrderBy(Expression entSet, EntityMemberInfo member, bool desc, EntityMemberInfo targetEntProp = null) {
       // Special case - member is entity ref
       if (member.Kind == EntityMemberKind.EntityRef) {
-        var res = expr;
+        var orderedEntSet = entSet;
         foreach(var fkm in member.ReferenceInfo.FromKey.ExpandedKeyMembers)
-          res = AddOrderBy(res, entType, fkm.Member, desc);
-        return res; 
+          orderedEntSet = AddOrderBy(orderedEntSet, fkm.Member, desc);
+        return orderedEntSet; 
       }
+      var entType = entSet.Type.GetGenericArguments()[0];
       var entPrm = Expression.Parameter(entType, "@e");
-      var readM = MakeGetProperty(entPrm, member);
-      var lambda = Expression.Lambda(readM, entPrm);
+      Expression ordEnt = entPrm;
+      if(targetEntProp != null)
+        ordEnt = MakeGetProperty(entPrm, targetEntProp); 
+      var readProp = MakeGetProperty(ordEnt, member);
+      var lambda = Expression.Lambda(readProp, entPrm);
       var orderMethod = desc ? LinqExpressionHelper.QueryableOrderByDescMethod : LinqExpressionHelper.QueryableOrderByMethod;
       var genOrderMethod = orderMethod.MakeGenericMethod(entType, member.DataType);
-      return Expression.Call(null, genOrderMethod, expr, lambda);
+      return Expression.Call(null, genOrderMethod, entSet, lambda);
     }
 
     public static Expression MakeSafeMemberAccess(MemberExpression node) {
@@ -106,10 +122,6 @@ namespace Vita.Data.Linq {
         return value.Value;
       else
         return default(T);
-    }
-
-    public static LambdaExpression MakeSelectFilteredByKeyArray(EntityMemberInfo member) {
-      return null; 
     }
 
     private static Expression MakeEntitytSetWhereListContains<TEnt, TElem>(IList<TElem> list, string memberName) {
@@ -152,7 +164,8 @@ namespace Vita.Data.Linq {
       return pred;
     }
 
-    public static LambdaExpression MakeListContainsPredicate(Type entType, EntityMemberInfo member, ParameterExpression listPrm) {
+    public static LambdaExpression MakeListContainsPredicate(EntityMemberInfo member, ParameterExpression listPrm) {
+      var entType = member.Entity.EntityType;
       var entPrm = Expression.Parameter(entType, "@e");
       var containsMethod = typeof(ICollection<>).MakeGenericType(member.DataType).GetMethod("Contains");
       var readV = MakeGetProperty(entPrm, member);
@@ -183,14 +196,24 @@ namespace Vita.Data.Linq {
       return new EntitySet<TEntity>(null, lockType);
     }
 
-    public static Expression MakeCallWhere(Expression entSet, Type entType, LambdaExpression pred) {
-      var genWhere = _where.MakeGenericMethod(entType);
+    public static Expression MakeCallWhere(Expression entSet, LambdaExpression pred) {
+      var entType = entSet.Type.GetGenericArguments()[0];
+      var genWhere = _whereMethod.MakeGenericMethod(entType);
       return Expression.Call(null, genWhere, entSet, pred); 
+    }
+
+    public static Expression MakeCallSelect(Expression entSet, LambdaExpression pred) {
+      var entType = entSet.Type.GetGenericArguments()[0];
+      var outType = pred.Body.Type; 
+      var genSelect = _selectMethod.MakeGenericMethod(entType, outType);
+      return Expression.Call(null, genSelect, entSet, pred);
     }
 
 
 
-    static MethodInfo _where;
+
+    static MethodInfo _whereMethod;
+    static MethodInfo _selectMethod;
     static MethodInfo _containsMethod;
     static MethodInfo _createEntitySetMethod;
     static MethodInfo _convertNullableMethod;
@@ -198,7 +221,9 @@ namespace Vita.Data.Linq {
 
     static ExpressionMaker() {
 
-      _where = FindQueryableWhere();
+      _whereMethod = FindQueryableWhere();
+      _selectMethod = FindQueryableSelect(); 
+      var methods = typeof(Queryable).GetMethods().Where(m => m.Name == nameof(Queryable.Select)).ToList();
       var flags = BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic; 
       _containsMethod = typeof(Queryable).GetMethods().First(m => m.Name == "Contains" && m.GetParameters().Length == 2);
       _createEntitySetMethod = typeof(ExpressionMaker).GetMethod(nameof(CreateEntitySet), flags);
@@ -219,6 +244,22 @@ namespace Vita.Data.Linq {
           return m;
       }
       Util.Throw("Failed to find Queryable.Where method.");
+      return null;
+    } //method
+
+    private static MethodInfo FindQueryableSelect() {
+      var methods = typeof(Queryable).GetMethods().Where(m => m.Name == nameof(Queryable.Select)).ToList();
+      // there are 2 methods; get one with lambda (cond) with single parameter
+      // static IQueryable<TResult> Select<TSource, TResult>(this IQueryable<TSource> source, Expression<Func<TSource, TResult>> selector); - this one
+      // static IQueryable<TResult> Select<TSource, TResult>(this IQueryable<TSource> source, Expression<Func<TSource, int, TResult>> selector);
+      foreach(var m in methods) {
+        var predType = m.GetParameters()[1].ParameterType;
+        var funcType = predType.GetGenericArguments()[0]; //Func<TSource, TResult>
+        var funcGenArgsCount = funcType.GetGenericArguments().Length;
+        if(funcGenArgsCount == 2)
+          return m;
+      }
+      Util.Throw("Failed to find Queryable.Select method.");
       return null;
     } //method
 

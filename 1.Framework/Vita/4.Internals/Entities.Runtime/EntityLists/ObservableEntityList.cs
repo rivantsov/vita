@@ -32,8 +32,8 @@ namespace Vita.Entities.Runtime {
     // unnecessary database trips. Instead, we set the list to null, and it will be reloaded on the first access. 
     public IList<IEntityRecordContainer> Entities { 
       get {
-        if (_entities == null) 
-          LoadList(); //this should assign Entities and fire CollectionChanged event 
+        if(_entities == null)
+            LoadList(); //this should assign Entities and fire CollectionChanged event 
         return _entities;
       }
       set {
@@ -49,13 +49,7 @@ namespace Vita.Entities.Runtime {
     }
 
     public IList<EntityRecord> GetRecords() {
-      if (!IsLoaded)
-        LoadList();
-      var result = new List<EntityRecord>();
-      var entities = Entities;
-      foreach (var ent in entities)
-        result.Add(ent.Record);
-      return result;
+      return Entities.Select(e => e.Record).ToList();
     }
 
     public virtual TEntity this[int index] {

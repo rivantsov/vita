@@ -48,7 +48,7 @@ namespace Vita.Samples.BookStore {
     [Column(Precision = 20, Scale = 6)] //testing alternative precision column
     Decimal? WholeSalePrice { get; set; }
 
-    [ManyToMany(typeof(IBookAuthor))] //, OrderBy("LastName")] - does not work with Include, for now not supported
+    [ManyToMany(typeof(IBookAuthor))] //, OrderBy("LastName,FirstName")] 
     IList<IAuthor> Authors { get; }
 
     [Nullable]

@@ -19,7 +19,25 @@ namespace Vita.Testing.ExtendedTests {
     }
     [TestCleanup]
     public void TearDown() {
-      Startup.TearDown(); 
+      Startup.TearDown();
+    }
+
+    [TestMethod]
+    public void Test_ManyToMany() {
+      var app = Startup.BooksApp;
+      // Get some IDs
+      var session = app.OpenSession();
+      var csBook = session.EntitySet<IBook>().Single(b => b.Title.StartsWith("c#"));
+      var csBookId = csBook.Id;
+
+      var authors = csBook.Authors;
+      Assert.IsTrue(authors.Count > 0, "Expected authors");
+
+      var tuplesQuery = session.EntitySet<IBookAuthor>().Where(ba => ba.Book.Id == csBookId)
+          .OrderBy(ba => ba.Author.LastName)
+          .Select(ba => new Data.Linq.LinkTuple() { LinkEntity = ba, TargetEntity = ba.Author });
+      var tuples = tuplesQuery.ToList();
+      System.Diagnostics.Debug.WriteLine($"Tuples count: {tuples.Count}");
     }
 
     [TestMethod]

@@ -50,6 +50,7 @@ namespace Vita.Entities.Runtime {
 
     public void LoadListImpl() { 
       Modified = false;
+      LinkRecordsLookup.Clear();
       var status = OwnerRecord.Status;
       if (status == EntityStatus.Fantom || status == EntityStatus.New) {
         Entities = new List<IEntityRecordContainer>();
@@ -58,11 +59,25 @@ namespace Vita.Entities.Runtime {
 
       var session = OwnerRecord.Session;
       var listInfo = OwnerMember.ChildListInfo;
-      var cmd = LinqCommandFactory.CreateSelectByKeyForListProperty(session, listInfo, OwnerRecord.PrimaryKey.Values);
+      var cmd = LinqCommandFactory.CreateSelectByKeyForListPropertyManyToMany(session, listInfo, OwnerRecord.PrimaryKey.Values);
       var queryRes = session.ExecuteLinqCommand(cmd);
       var tupleList = (IList<LinkTuple>)queryRes;
-      Entities = tupleList.Select(t => t.TargetEntity as IEntityRecordContainer).ToList();
-      LinkRecordsLookup = tupleList.ToDictionary(t => EntityHelper.GetRecord(t.TargetEntity), t => EntityHelper.GetRecord(t.LinkEntity));
+      SetData(tupleList); 
+    }
+
+    private void SetData(IList<LinkTuple> tupleList) {
+      LinkRecordsLookup.Clear();
+      var listInfo = OwnerMember.ChildListInfo; 
+      var entities = new List<IEntityRecordContainer>();
+      foreach(var tpl in tupleList) {
+        var linkRec = EntityHelper.GetRecord(tpl.LinkEntity);
+        var targetRec = EntityHelper.GetRecord(tpl.TargetEntity);
+        linkRec.SetValueDirect(listInfo.OtherEntityRefMember, tpl.TargetEntity);
+        entities.Add((IEntityRecordContainer)tpl.TargetEntity);
+        LinkRecordsLookup[targetRec] = linkRec;
+      }
+      Entities = entities;
+      base.Modified = false; 
     }
 
     //We do not create/modify link records when app code manipulates the list. Instead, we wait until Session.SaveChanges 
@@ -98,17 +113,8 @@ namespace Vita.Entities.Runtime {
       return linkRec;
     }
 
-    public override void Init(IList<IEntityRecordContainer> entities, IList<IEntityRecordContainer> linkEntities = null) { 
-      base.Entities = entities;
-      //Fill up link records lookup
-      LinkRecordsLookup.Clear();
-      var linkToTargetMember = this.OwnerMember.ChildListInfo.OtherEntityRefMember;
-      foreach(var linkEnt in linkEntities) {
-        var linkRec =  EntityHelper.GetRecord(linkEnt);
-        var targetEnt = linkRec.GetValue(linkToTargetMember) as EntityBase;
-        LinkRecordsLookup[targetEnt.Record] = linkRec; 
-      }
-      base.Modified = false;
+    public override void Init(object data) {
+      SetData((IList<LinkTuple>)data);
     }
 
   }//class

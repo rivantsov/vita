@@ -13,6 +13,7 @@ using Vita.Data.Linq.Translation.Expressions;
 using System.Collections;
 using Vita.Data.Driver;
 using Vita.Entities.Model;
+using Vita.Entities.Locking;
 
 namespace Vita.Data.Linq {
 
@@ -26,9 +27,16 @@ namespace Vita.Data.Linq {
     public static MethodInfo QueryableAny2ArgMethod;
     public static MethodInfo QueryableOrderByMethod;
     public static MethodInfo QueryableOrderByDescMethod;
+    public static MethodInfo QueryableContainsMethod;
+
 
     public static MethodInfo ListContainsMethod;
     public static MethodInfo SessionEntitySetMethod;
+
+    public static ConstructorInfo LinkTupleConstructorInfo;
+    public static PropertyInfo LinkTupleLinkEntityPropertyInfo;
+    public static PropertyInfo LinkTupleTargetEntityPropertyInfo;
+
 
     static MethodInfo _escapeLikePatternMethod;
     static MethodInfo _stringConcatMethod;
@@ -67,6 +75,11 @@ namespace Vita.Data.Linq {
       QueryableAny1ArgMethod = allMethods.First(m => m.Name == nameof(Queryable.Any) && m.GetParameters().Length == 1);
       QueryableAny2ArgMethod = allMethods.First(m => m.Name == nameof(Queryable.Any) && m.GetParameters().Length == 2);
       QueryableAsQueryableMethod = allMethods.First(m => m.Name == nameof(Queryable.AsQueryable) && m.IsGenericMethod);
+      QueryableContainsMethod = typeof(Queryable).GetMethods().First(m => m.Name == "Contains" && m.GetParameters().Length == 2);
+
+      LinkTupleLinkEntityPropertyInfo = typeof(LinkTuple).GetProperty(nameof(LinkTuple.LinkEntity));
+      LinkTupleTargetEntityPropertyInfo = typeof(LinkTuple).GetProperty(nameof(LinkTuple.TargetEntity));
+      LinkTupleConstructorInfo = typeof(LinkTuple).GetConstructor(Type.EmptyTypes);
 
       ListContainsMethod = typeof(ICollection<>).FindMethod(nameof(IList.Contains), paramCount: 1);  
       SessionEntitySetMethod = typeof(IEntitySession).FindMethod(nameof(IEntitySession.EntitySet));
@@ -269,13 +282,13 @@ Details: failed converting sub-expression of type {0} to type {1}", expression.T
     }
 
     public static bool IsEntitySetMethod(this MethodInfo method) {
-      if(method.Name != "EntitySet" || !method.ReturnType.IsGenericType)
+      if(method.Name != nameof(IEntitySession.EntitySet) || !method.ReturnType.IsGenericType)
         return false;
       switch(method.DeclaringType.Name) {
-        case "IEntitySession":
-        case "EntitySession":
-        case "ViewHelper":
-        case "LockHelper":
+        case nameof(IEntitySession):
+        case nameof(EntitySession):
+        case nameof(ViewHelper):
+        case nameof(LockHelper):
           return true;
         default:
           return false;

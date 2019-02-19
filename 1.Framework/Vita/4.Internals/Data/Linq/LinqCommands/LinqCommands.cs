@@ -28,6 +28,7 @@ namespace Vita.Data.Linq {
     SelectByKeyArray,
     ExistsByKey,
     ListManyToMany,
+    ListManyToManyByArray,
   }
 
   public interface IMaskSource {

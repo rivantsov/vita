@@ -441,6 +441,7 @@ namespace Vita.Entities.Model {
     public List<EntityKeyMemberInfo> OrderBy;
 
     internal string SqlCacheKey_SelectChildRecs;
+    internal string SqlCacheKey_SelectChildRecsForInclude;
 
     public ChildEntityListInfo(EntityMemberInfo ownerMember) {
       OwnerMember = ownerMember;

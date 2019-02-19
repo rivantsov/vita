@@ -34,14 +34,6 @@ namespace Vita.Data.Linq {
       return Expression.GreaterThan(expr, zeroExpr);
     }
 
-    public static LambdaExpression MakeInclude(Type entityType, EntityMemberInfo member) {
-      var prmEnt = Expression.Parameter(entityType, "@e");
-      // Note: have to use MemberAccess here, not MakeGetProperty - IncludeHelper wouldn't understand      
-      var getProp = Expression.MakeMemberAccess(prmEnt, member.ClrMemberInfo);
-      var lambda = Expression.Lambda(getProp, prmEnt);
-      return lambda; 
-    }
-
     public static BinaryExpression MakeBinary(ExpressionType nodeType, Expression left, Expression right) {
       // After replacing arguments with column expressions there might be a problem with nullable columns.
       // The following code compensates for this
@@ -99,8 +91,9 @@ namespace Vita.Data.Linq {
       var entPrm = Expression.Parameter(entType, "@e");
       Expression ordEnt = entPrm;
       if(targetEntProp != null)
-        ordEnt = MakeGetProperty(entPrm, targetEntProp); 
-      var readProp = MakeGetProperty(ordEnt, member);
+        ordEnt = Expression.MakeMemberAccess(entPrm, targetEntProp.ClrMemberInfo);
+      // !! member might be 'hidden' (FK column), so we can't use Expression.MakeMemberAccess as in prior line
+      var readProp = MakeGetProperty(ordEnt, member); 
       var lambda = Expression.Lambda(readProp, entPrm);
       var orderMethod = desc ? LinqExpressionHelper.QueryableOrderByDescMethod : LinqExpressionHelper.QueryableOrderByMethod;
       var genOrderMethod = orderMethod.MakeGenericMethod(entType, member.DataType);
@@ -133,19 +126,6 @@ namespace Vita.Data.Linq {
     private static TProp GetProperty<TEnt, TProp>(TEnt ent, string propName) {
       return default(TProp); //not supposed to be called directly
     }
-    private static Expression<Func<TEnt, TElem>> ToExpression<TEnt, TElem>(Expression<Func<TEnt, TElem>> func) {
-      return func;
-    }
-
-
-    public static LambdaExpression MakeListContainsPredicate_NotUsed(EntityMemberInfo member, ParameterExpression listParam) {
-      // Lambda: (ent) -> Queryable.Contains(listParam, EntityHelper.GetProperty(ent, memberName))
-      var entType = member.Entity.EntityType;
-      var entPrm = Expression.Parameter(entType, "e");
-      return null;
-    }
-
-
 
     public static LambdaExpression MakeKeyPredicate(EntityKeyInfo key, ParameterExpression[] keyValues) {
       var entType = key.Entity.EntityType;
@@ -198,70 +178,41 @@ namespace Vita.Data.Linq {
 
     public static Expression MakeCallWhere(Expression entSet, LambdaExpression pred) {
       var entType = entSet.Type.GetGenericArguments()[0];
-      var genWhere = _whereMethod.MakeGenericMethod(entType);
+      var genWhere = LinqExpressionHelper.QueryableWhereMethod.MakeGenericMethod(entType);
       return Expression.Call(null, genWhere, entSet, pred); 
     }
 
     public static Expression MakeCallSelect(Expression entSet, LambdaExpression pred) {
       var entType = entSet.Type.GetGenericArguments()[0];
       var outType = pred.Body.Type; 
-      var genSelect = _selectMethod.MakeGenericMethod(entType, outType);
+      var genSelect = LinqExpressionHelper.QueryableSelectMethod.MakeGenericMethod(entType, outType);
       return Expression.Call(null, genSelect, entSet, pred);
     }
 
 
+    // builds   lambda: (le) => new LinkTuple() { LinkEntity = le, TargetEntity = le.<otherEntRef>})
+    public static LambdaExpression MakeNewLinkTupleLambda(EntityMemberInfo targetEntMember) {
+      var linkEntType = targetEntMember.Entity.EntityType;
+      var lnkPrm = Expression.Parameter(linkEntType, "@lnk");
+      var newExpr = Expression.New(LinqExpressionHelper.LinkTupleConstructorInfo);
+      var bnd1 = Expression.Bind(LinqExpressionHelper.LinkTupleLinkEntityPropertyInfo, lnkPrm);
+      var targetRead = Expression.MakeMemberAccess(lnkPrm, targetEntMember.ClrMemberInfo);
+      var bnd2 = Expression.Bind(LinqExpressionHelper.LinkTupleTargetEntityPropertyInfo, targetRead);
+      var initExpr = Expression.MemberInit(newExpr, bnd1, bnd2);
+      var lambda = Expression.Lambda(initExpr, lnkPrm);
+      return lambda;
+    }
 
-
-    static MethodInfo _whereMethod;
-    static MethodInfo _selectMethod;
-    static MethodInfo _containsMethod;
     static MethodInfo _createEntitySetMethod;
     static MethodInfo _convertNullableMethod;
     static MethodInfo _getPropertyStubMethod;
 
     static ExpressionMaker() {
-
-      _whereMethod = FindQueryableWhere();
-      _selectMethod = FindQueryableSelect(); 
       var methods = typeof(Queryable).GetMethods().Where(m => m.Name == nameof(Queryable.Select)).ToList();
       var flags = BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic; 
-      _containsMethod = typeof(Queryable).GetMethods().First(m => m.Name == "Contains" && m.GetParameters().Length == 2);
       _createEntitySetMethod = typeof(ExpressionMaker).GetMethod(nameof(CreateEntitySet), flags);
       _getPropertyStubMethod = typeof(ExpressionMaker).GetMethod(nameof(GetPropertyStub), flags);
       _convertNullableMethod = typeof(ExpressionMaker).GetMethod(nameof(ConvertNullableToValueType), flags);
     }
-
-    private static MethodInfo FindQueryableWhere() {
-      var methods = typeof(Queryable).GetMethods().Where(m => m.Name == nameof(Queryable.Where)).ToList();
-      // there are 2 methods; get one with lambda (cond) with single parameter
-      //public static IQueryable<TSource> Where<TSource>(this IQueryable<TSource> source, Expression<Func<TSource, bool>> predicate); // this one!
-      // public static IQueryable<TSource> Where<TSource>(this IQueryable<TSource> source, Expression<Func<TSource, int, bool>> predicate);
-      foreach(var m in methods) {
-        var predType = m.GetParameters()[1].ParameterType;
-        var funcType = predType.GetGenericArguments()[0]; //Func<TSource, bool>
-        var funcGenArgsCount = funcType.GetGenericArguments().Length;
-        if(funcGenArgsCount == 2)
-          return m;
-      }
-      Util.Throw("Failed to find Queryable.Where method.");
-      return null;
-    } //method
-
-    private static MethodInfo FindQueryableSelect() {
-      var methods = typeof(Queryable).GetMethods().Where(m => m.Name == nameof(Queryable.Select)).ToList();
-      // there are 2 methods; get one with lambda (cond) with single parameter
-      // static IQueryable<TResult> Select<TSource, TResult>(this IQueryable<TSource> source, Expression<Func<TSource, TResult>> selector); - this one
-      // static IQueryable<TResult> Select<TSource, TResult>(this IQueryable<TSource> source, Expression<Func<TSource, int, TResult>> selector);
-      foreach(var m in methods) {
-        var predType = m.GetParameters()[1].ParameterType;
-        var funcType = predType.GetGenericArguments()[0]; //Func<TSource, TResult>
-        var funcGenArgsCount = funcType.GetGenericArguments().Length;
-        if(funcGenArgsCount == 2)
-          return m;
-      }
-      Util.Throw("Failed to find Queryable.Select method.");
-      return null;
-    } //method
-
   } //class
 }

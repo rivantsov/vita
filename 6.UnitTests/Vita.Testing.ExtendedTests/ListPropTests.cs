@@ -23,24 +23,6 @@ namespace Vita.Testing.ExtendedTests {
     }
 
     [TestMethod]
-    public void Test_ManyToMany() {
-      var app = Startup.BooksApp;
-      // Get some IDs
-      var session = app.OpenSession();
-      var csBook = session.EntitySet<IBook>().Single(b => b.Title.StartsWith("c#"));
-      var csBookId = csBook.Id;
-
-      var authors = csBook.Authors;
-      Assert.IsTrue(authors.Count > 0, "Expected authors");
-
-      var tuplesQuery = session.EntitySet<IBookAuthor>().Where(ba => ba.Book.Id == csBookId)
-          .OrderBy(ba => ba.Author.LastName)
-          .Select(ba => new Data.Linq.LinkTuple() { LinkEntity = ba, TargetEntity = ba.Author });
-      var tuples = tuplesQuery.ToList();
-      System.Diagnostics.Debug.WriteLine($"Tuples count: {tuples.Count}");
-    }
-
-    [TestMethod]
     public void TestListProperties() {
       var app = Startup.BooksApp; 
       // Get some IDs
@@ -94,21 +76,6 @@ namespace Vita.Testing.ExtendedTests {
       csBook.Authors.Add(jack);
       session.SaveChanges(); //we just verify that it works
 
-      /*
-      // Filtered list properties. Publisher.FictionBooks is a filtered list property
-      session = app.OpenSession();
-      var kidPub = session.GetEntity<IPublisher>(kidPubId);
-      var fictionBookCount = kidPub.FictionBooks.Count;
-      Assert.IsTrue(fictionBookCount > 0, "Expected some fiction books");
-      var allFicton = kidPub.FictionBooks.All(b => b.Category == BookCategory.Fiction);
-      Assert.IsTrue(allFicton, "Expected all fiction books");
-      //Linq query with list properties with filter
-      var qry = session.EntitySet<IPublisher>().Where(p => p.Id == kidPubId).SelectMany(p => p.FictionBooks);
-      var fictionBooksByKidPub = qry.ToList();
-      var cmd = session.GetLastCommand();
-      allFicton = fictionBooksByKidPub.All(b => b.Category == BookCategory.Fiction);
-      Assert.IsTrue(allFicton, "Expected fiction books only from LINQ query");
-      */
     }//method
 
     [TestMethod] 

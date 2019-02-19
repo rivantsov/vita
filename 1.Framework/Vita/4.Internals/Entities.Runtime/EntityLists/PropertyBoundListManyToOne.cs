@@ -53,7 +53,7 @@ namespace Vita.Entities.Runtime {
       }
       var fromKey = OwnerMember.ChildListInfo.ParentRefMember.ReferenceInfo.FromKey;
       var orderBy = OwnerMember.ChildListInfo.OrderBy;
-      var selectCmd = LinqCommandFactory.CreateSelectByKeyForListProperty(OwnerRecord.Session, OwnerMember.ChildListInfo,
+      var selectCmd = LinqCommandFactory.CreateSelectByKeyForListPropertyManyToOne(OwnerRecord.Session, OwnerMember.ChildListInfo,
                                              OwnerRecord.PrimaryKey.Values);
       var objEntList = (IList) OwnerRecord.Session.ExecuteLinqCommand(selectCmd);
       var recContList = new List<IEntityRecordContainer>();
@@ -74,8 +74,8 @@ namespace Vita.Entities.Runtime {
       }
     }//method
 
-    public override void Init(IList<IEntityRecordContainer> entities, IList<IEntityRecordContainer> linkEntities = null) {
-      base.Entities = entities;
+    public override void Init(object data) {
+      this.Entities = (IList<IEntityRecordContainer>)data;
       base.Modified = false;
     }
 

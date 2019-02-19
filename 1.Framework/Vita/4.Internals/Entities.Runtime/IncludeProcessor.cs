@@ -23,14 +23,16 @@ namespace Vita.Entities.Runtime {
     //    if empty, it remains uninitialized, and on touch fwk fires select query with 0 results
     // Initially found in some external solution, seemed to be broken, but now maybe working. Needs to be retested! 
     internal static void RunIncludeQueries(LinqCommand command, object mainQueryResult) {
-      var session = command.Session;
       // initial checks if there's anything to run
-      var resultShape = GetResultShape(session.Context.App.Model, mainQueryResult.GetType());
-      if(mainQueryResult == null || resultShape == QueryResultShape.Object)
+      if(mainQueryResult == null)
         return;
+      var session = command.Session;
       var allIncludes = session.Context.GetMergedIncludes(command.Includes);
-      if (allIncludes == null || allIncludes.Count == 0)
-        return; 
+      if(allIncludes == null || allIncludes.Count == 0)
+        return;
+      var resultShape = GetResultShape(session.Context.App.Model, mainQueryResult.GetType());
+      if(resultShape == QueryResultShape.Object)
+        return;
       // Get records from query result
       var records = new List<EntityRecord>();
       switch(resultShape) {
@@ -161,9 +163,9 @@ namespace Vita.Entities.Runtime {
         return _emptyList;
       var targetEntity = refMember.ReferenceInfo.ToKey.Entity;
       var fkMember = refMember.ReferenceInfo.FromKey.ExpandedKeyMembers[0].Member; // r.Book_Id
-      var fkValues = GetMemberValues(records, fkMember); 
-      var selectCmd = CreateSelectByKeyValueArrayCommand(targetEntity.PrimaryKey, null, fkValues);
-      var entList = (IList) _session.ExecuteLinqCommand(selectCmd);
+      var fkValues = GetMemberValues(records, fkMember);
+      var selectCmd = LinqCommandFactory.CreateSelectByKeyValueArray(_session, targetEntity.PrimaryKey, null, fkValues);
+      var entList = (IList) _session.ExecuteLinqCommand(selectCmd, withIncludes: false);
       if (entList.Count == 0)
         return _emptyList;
       var recList = GetRecordList(entList);
@@ -203,8 +205,8 @@ namespace Vita.Entities.Runtime {
       var parentRefMember = listInfo.ParentRefMember; //IBookOrderLine.Order
       var fromKey = parentRefMember.ReferenceInfo.FromKey;
       Util.Check(fromKey.ExpandedKeyMembers.Count == 1, "Composite keys are not supported in Include expressions; member: {0}", parentRefMember);
-      var cmd = CreateSelectByKeyValueArrayCommand(fromKey, listInfo.OrderBy, pkValuesArr); 
-      var childEntities = (IList) _session.ExecuteLinqCommand(cmd); //list of all IBookOrderLine for BookOrder objects in 'records' parameter
+      var selectCmd = LinqCommandFactory.CreateSelectByKeyArrayForListPropertyManyToOne(_session, listInfo, pkValuesArr);
+      var childEntities = (IList) _session.ExecuteLinqCommand(selectCmd, withIncludes: false); //list of all IBookOrderLine for BookOrder objects in 'records' parameter
       var childRecs = GetRecordList(childEntities); 
       //setup list properties in parent records
       var fk = fromKey.ExpandedKeyMembers[0].Member; //IBookOrderLine.Order_Id
@@ -215,9 +217,9 @@ namespace Vita.Entities.Runtime {
         var childList = parent.ValuesTransient[listMember.ValueIndex] as IPropertyBoundList; //BookOrder.Lines, list object
         if (childList != null && childList.IsLoaded)
           continue; 
-        var grpChildEntities = g.Select(r => r.EntityInstance).ToList(); 
         if (childList == null)         
           childList = parent.InitChildEntityList(listMember);
+        var grpChildEntities = g.Select(r => r.EntityInstance).ToList();
         childList.Init(grpChildEntities);
       }
       // If for some parent records child lists were empty, we need set the list property to empty list, 
@@ -233,79 +235,43 @@ namespace Vita.Entities.Runtime {
     // Example: records: List<IBook>, listMember: book.Author; so we load authors list for each book
     private IList<EntityRecord> RunIncludeForListManyToMany(IList<EntityRecord> records, EntityMemberInfo listMember) {
       var pkInfo = listMember.Entity.PrimaryKey;
-      var expMembers = pkInfo.ExpandedKeyMembers;
-      Util.Check(expMembers.Count == 1, "Include expression not supported for entities with composite keys, property: {0}.", listMember);
+      var keyMembers = pkInfo.ExpandedKeyMembers;
+      Util.Check(keyMembers.Count == 1, "Include expression not supported for entities with composite keys, property: {0}.", listMember);
       var listInfo = listMember.ChildListInfo;
-      Util.Check(listInfo.OrderBy == null && listInfo.Filter == null, "Include facility not supported for lists with filter or OrderBy attribute. List: {0}", listMember.MemberName);
-      var parentRefMember = listInfo.ParentRefMember; //IBookAuthor.Book
-      var parentRefKey = parentRefMember.ReferenceInfo.FromKey;
-      Util.Check(parentRefKey.ExpandedKeyMembers.Count == 1, 
-           "Composite keys are not supported in Include expressions; member: {0}", parentRefMember);
 
-      //Link records
-      var pkMember = expMembers[0].Member; // IBook.Id
-      var pkValues = GetMemberValues(records, pkMember);
-      //list of all IBookAuthor for Book objects in 'records' parameter
-      IList<EntityRecord> linkRecs = _emptyList;
-      if (pkValues.Count > 0) {
-        var fromKey = listInfo.ParentRefMember.ReferenceInfo.FromKey;
-        var cmd = CreateSelectByKeyValueArrayCommand(fromKey, listInfo.OrderBy, pkValues);
-        var linkEntList = (IList) _session.ExecuteLinqCommand(cmd);
-        linkRecs = GetRecordList(linkEntList);
-      }
-      var parentRefFk = parentRefKey.ExpandedKeyMembers[0].Member;
-      //each group is list of IBookAuthor for a single book; group key is BookAuthor.BookId
-      var groupedLinkRecs = linkRecs.GroupBy(rec => rec.GetValueDirect(parentRefFk)).ToList(); 
+      // PK values of records
+      var pkValues = GetMemberValues(records, keyMembers[0].Member);
+      //run include query; it will return LinkTuple list
+      var cmd = LinqCommandFactory.CreateSelectByKeyArrayForListPropertyManyToMany(_session, listInfo, pkValues);
+      var tuples = (IList<LinkTuple>) _session.ExecuteLinqCommand(cmd, withIncludes: false);
 
-      //Target records 
-      var linkToTargetMember = listMember.ChildListInfo.OtherEntityRefMember;
-      var linkToTargetKey = linkToTargetMember.ReferenceInfo.FromKey;
-      var expTargetMembers = linkToTargetKey.ExpandedKeyMembers;
-      Util.Check(expTargetMembers.Count == 1, "Include expression not supported for entities with composite keys, property: {0}.", listMember.ChildListInfo.OtherEntityRefMember);
-      var linkToTargetFk = expTargetMembers[0].Member;
-      var fkValues = GetMemberValues(linkRecs, linkToTargetFk);
-      //list of all IAuthor for Book objects in 'records' parameter
-      IList<EntityRecord> targetRecs;
-      if (fkValues.Count == 0)
-        targetRecs = new List<EntityRecord>();
-      else {
-        var targetKey = linkToTargetMember.ReferenceInfo.ToKey; //IAuthor.Id
-        Util.Check(targetKey.ExpandedKeyMembers.Count == 1, "Include expression not supported for entities with composite keys, entity: {0}.", targetKey.Entity.Name);
-        var cmd = CreateSelectByKeyValueArrayCommand(targetKey, null, fkValues);
-        var targetEnts = (IList) _session.ExecuteLinqCommand(cmd, withIncludes: false);
-        targetRecs = ToRecords(targetEnts);
-      }
-      //fill out lists
-      foreach (var linkGroup in groupedLinkRecs) {
-        var pkValue = new EntityKey(pkInfo, linkGroup.Key); // BookAuthor.Book_id
-        var parent = _session.GetRecord(pkValue); // Book
+      // Group by parent record, and push groups/lists into individual records
+      var fkMember = listInfo.ParentRefMember.ReferenceInfo.FromKey.ExpandedKeyMembers[0].Member;
+      var tupleGroups = tuples.GroupBy(t => EntityHelper.GetRecord(t.LinkEntity).GetValueDirect(fkMember)).ToList(); 
+      foreach(var g in tupleGroups) {
+        var pkValue = new EntityKey(pkInfo, g.Key); // Order_Id -> BookOrder.Id
+        var parent = _session.GetRecord(pkValue); // BookOrder
         var childList = parent.ValuesTransient[listMember.ValueIndex] as IPropertyBoundList; //BookOrder.Lines, list object
-        if (childList != null && childList.IsLoaded)
+        if(childList != null && childList.IsLoaded)
           continue;
-        if (childList == null)
+        if(childList == null)
           childList = parent.InitChildEntityList(listMember);
-        var linkEntities = linkGroup.Select(r => r.EntityInstance).ToList();
-        var targetEntities = linkGroup.Select(r => (IEntityRecordContainer) r.GetValue(linkToTargetMember)).ToList(); // touch and collect bookAuthor.Author references; 
-        childList.Init(targetEntities, linkEntities);
+        var groupTuples = g.ToList();
+        childList.Init(groupTuples);
       }
-      // If for some parent records child lists were empty, we need set the list property to empty list, 
-      // If it remains null, it will be considered not loaded, and app will attempt to load it again on first touch
-      var empty = new IEntityRecordContainer[] { };
-      foreach (var parent in records) {
-        var value = parent.ValuesTransient[listMember.ValueIndex];
-        if (value == null) {
-          var list = parent.InitChildEntityList(listMember);
-          list.Init(empty, empty);
-        }
+      // Init/clear all lists that were NOT loaded
+      var emptyTuples = new List<LinkTuple>();
+      foreach(var rec in records) {
+        var childList = rec.ValuesTransient[listMember.ValueIndex] as IPropertyBoundList; //BookOrder.Lines, list object
+        if(childList != null && childList.IsLoaded)
+          continue;
+        if(childList == null)
+          childList = rec.InitChildEntityList(listMember);
+        childList.Init(emptyTuples);
       }
-      return linkRecs;
-    }
-
-    private static IList<EntityRecord> ToRecords(IList entities) {
-      var records = new List<EntityRecord>();
-      foreach(IEntityRecordContainer e in entities)
-        records.Add(EntityHelper.GetRecord(e));
-      return records; 
+      // collect all target records as function result
+      var targetRecords = tuples.Select(t => EntityHelper.GetRecord(t.TargetEntity)).ToList();
+      return targetRecords; 
     }
 
     private static IList GetMemberValues(IList<EntityRecord> records, EntityMemberInfo member) {
@@ -316,17 +282,6 @@ namespace Vita.Entities.Runtime {
       for(int i = 0; i < list.Count; i++)
         list[i] = objArray[i];
       return list;
-    }
-
-    private SpecialLinqCommand CreateSelectByKeyValueArrayCommand(EntityKeyInfo key, IList<EntityKeyMemberInfo> orderBy, IList keyValues) {
-      List<EntityKeyMemberInfo> mergedOrderBy;
-      if(orderBy == null)
-        mergedOrderBy = key.KeyMembers;
-      else {
-        mergedOrderBy = new List<EntityKeyMemberInfo>(key.KeyMembers);
-        mergedOrderBy.AddRange(orderBy);
-      }
-      return LinqCommandFactory.CreateSelectByKeyValueArray(_session, key, mergedOrderBy, keyValues);   
     }
 
     private static QueryResultShape GetResultShape(EntityModel model, Type outType) {

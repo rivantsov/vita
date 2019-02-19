@@ -10,6 +10,7 @@ using Vita.Entities.Locking;
 using Vita.Entities.Model;
 using Vita.Data.Sql;
 using Vita.Entities.Runtime;
+using System.Collections;
 
 namespace Vita.Data.Linq {
 
@@ -34,24 +35,8 @@ namespace Vita.Data.Linq {
                                          keyValues, Setup_SelectByKey);
     }
 
-    public static SpecialLinqCommand CreateSelectByKeyForListProperty(EntitySession session, ChildEntityListInfo listInfo, object[] keyValues) {
-      var fromKey = listInfo.ParentRefMember.ReferenceInfo.FromKey;
-      listInfo.SqlCacheKey_SelectChildRecs = listInfo.SqlCacheKey_SelectChildRecs ??
-        SqlCacheKeyBuilder.BuildSpecialSelectKey(SpecialCommandSubType.SelectByKey, fromKey.Entity.Name, fromKey.Name, LockType.None, null);
-      switch(listInfo.RelationType) {
-        case EntityRelationType.ManyToOne:
-          // it is simply select-by-key command
-          return new SpecialLinqCommand(session, listInfo.SqlCacheKey_SelectChildRecs, SpecialCommandSubType.SelectByKey, fromKey, LockType.None,
-                                         listInfo.OrderBy, keyValues, Setup_SelectByKey);
-        case EntityRelationType.ManyToMany:
-        default:
-          return new SpecialLinqCommand(session, listInfo.SqlCacheKey_SelectChildRecs, SpecialCommandSubType.ListManyToMany, 
-                                        listInfo, listInfo.OrderBy, keyValues, Setup_SelectManyToMany);
-      }
-    }
-
     public static SpecialLinqCommand CreateSelectByKeyValueArray(EntitySession session, EntityKeyInfo key, 
-                                     List<EntityKeyMemberInfo> orderBy, System.Collections.IList keyValues) {
+                                     List<EntityKeyMemberInfo> orderBy, IList keyValues) {
       var sqlCacheKey = SqlCacheKeyBuilder.BuildSpecialSelectKey(SpecialCommandSubType.SelectByKeyArray, 
                    key.Entity.Name, key.Name, LockType.None, orderBy);
       // build the command
@@ -66,6 +51,52 @@ namespace Vita.Data.Linq {
           childKey.Name, LockType.None, null);
       return new SpecialLinqCommand(record.Session, childKey.SqlCacheKey_ChildExists, SpecialCommandSubType.ExistsByKey, childKey,
                     LockType.None, null, record.PrimaryKey.Values, Setup_CheckChildExists);
+    }
+
+    public static SpecialLinqCommand CreateSelectByKeyForListPropertyManyToOne(EntitySession session, ChildEntityListInfo listInfo, object[] keyValues) {
+      Util.Check(listInfo.RelationType == EntityRelationType.ManyToOne, "Fatal: expected many-to-one list.");
+      var fromKey = listInfo.ParentRefMember.ReferenceInfo.FromKey;
+      listInfo.SqlCacheKey_SelectChildRecs = listInfo.SqlCacheKey_SelectChildRecs ??
+        SqlCacheKeyBuilder.BuildSpecialSelectKey(SpecialCommandSubType.SelectByKey, fromKey.Entity.Name, fromKey.Name, LockType.None, null);
+      // it is simply select-by-key command
+      return new SpecialLinqCommand(session, listInfo.SqlCacheKey_SelectChildRecs, SpecialCommandSubType.SelectByKey, fromKey, LockType.None,
+                                     listInfo.OrderBy, keyValues, Setup_SelectByKey);
+    }
+
+    public static SpecialLinqCommand CreateSelectByKeyForListPropertyManyToMany(EntitySession session, 
+                        ChildEntityListInfo listInfo, object[] keyValues) {
+      Util.Check(listInfo.RelationType == EntityRelationType.ManyToMany, "Fatal: expected many-to-many list.");
+      var fromKey = listInfo.ParentRefMember.ReferenceInfo.FromKey;
+      listInfo.SqlCacheKey_SelectChildRecs = listInfo.SqlCacheKey_SelectChildRecs ??
+        SqlCacheKeyBuilder.BuildSpecialSelectKey(SpecialCommandSubType.SelectByKey, fromKey.Entity.Name, fromKey.Name, LockType.None, null);
+      return new SpecialLinqCommand(session, listInfo.SqlCacheKey_SelectChildRecs, SpecialCommandSubType.ListManyToMany,
+                                    listInfo, listInfo.OrderBy, keyValues, Setup_SelectManyToMany);
+    }
+
+    public static SpecialLinqCommand CreateSelectByKeyArrayForListPropertyManyToOne(EntitySession session, 
+                                                                ChildEntityListInfo listInfo, IList keyValues) {
+      Util.Check(listInfo.RelationType == EntityRelationType.ManyToOne, "Fatal: expected many-to-one list.");
+      var fromKey = listInfo.ParentRefMember.ReferenceInfo.FromKey;
+      listInfo.SqlCacheKey_SelectChildRecsForInclude = listInfo.SqlCacheKey_SelectChildRecsForInclude ??
+        SqlCacheKeyBuilder.BuildSpecialSelectKey(SpecialCommandSubType.SelectByKeyArray, fromKey.Entity.Name, fromKey.Name, LockType.None, null);
+      // it is simply select-by-key-array command
+      var orderBy = fromKey.ExpandedKeyMembers.Merge(listInfo.OrderBy);
+      var paramValues = new object[] { keyValues };
+      return new SpecialLinqCommand(session, listInfo.SqlCacheKey_SelectChildRecsForInclude, SpecialCommandSubType.SelectByKeyArray, 
+                                     fromKey, LockType.None, orderBy, paramValues, Setup_SelectByKeyValueArray);
+    }
+
+    public static SpecialLinqCommand CreateSelectByKeyArrayForListPropertyManyToMany(EntitySession session,
+           ChildEntityListInfo listInfo, IList keyValues) {
+      Util.Check(listInfo.RelationType == EntityRelationType.ManyToMany, "Fatal: expected many-to-many list.");
+      var fromKey = listInfo.ParentRefMember.ReferenceInfo.FromKey;
+      listInfo.SqlCacheKey_SelectChildRecsForInclude = listInfo.SqlCacheKey_SelectChildRecsForInclude ??
+        SqlCacheKeyBuilder.BuildSpecialSelectKey(SpecialCommandSubType.ListManyToManyByArray, fromKey.Entity.Name, fromKey.Name, LockType.None, null);
+      // it is simply select-by-key-array command
+      var orderBy = fromKey.ExpandedKeyMembers.Merge(listInfo.OrderBy);
+      var paramValues = new object[] { keyValues };
+      return new SpecialLinqCommand(session, listInfo.SqlCacheKey_SelectChildRecsForInclude, SpecialCommandSubType.ListManyToManyByArray,
+                                     listInfo, orderBy, paramValues, Setup_SelectByValueArrayManyToMany);
     }
 
 
@@ -130,7 +161,7 @@ namespace Vita.Data.Linq {
           .OrderBy(ba => ba.Author.LastName)
           .Select(ba => new Data.Linq.LinkTuple() { LinkEntity = ba, TargetEntity = ba.Author });
       
-      the query returns list of tuples <LinkEnt, TargetEnt>       
+      the query returns list of LinkTuple objects <LinkEnt, TargetEnt>       
 
       */
       var listInfo = command.ListInfoManyToMany;
@@ -140,34 +171,39 @@ namespace Vita.Data.Linq {
       var linkEntSet = listInfo.LinkEntity.EntitySetConstant;
       var entSetFiltered = ExpressionMaker.MakeCallWhere(linkEntSet, wherePred);
       var targetRefMember = listInfo.OtherEntityRefMember;
-      var entSetOrdered = AddOrderByManyToMany(entSetFiltered, listInfo.LinkEntity, listInfo.OtherEntityRefMember, listInfo.OrderBy);
-      var newTupleLambda = MakeNewLinkTuple(listInfo.OtherEntityRefMember);
+      var entSetOrdered = AddOrderByManyToMany(entSetFiltered, listInfo.LinkEntity, listInfo.OtherEntityRefMember, command.OrderBy);
+      var newTupleLambda = ExpressionMaker.MakeNewLinkTupleLambda(listInfo.OtherEntityRefMember);
       var selectTuple = ExpressionMaker.MakeCallSelect(entSetOrdered, newTupleLambda);
       command.Lambda = Expression.Lambda(selectTuple, prms);
     }
 
-
-    // builds   lambda: (le) => new LinkTuple() { LinkEntity = le, TargetEntity = le.<otherEntRef>})
-    private static LambdaExpression MakeNewLinkTuple(EntityMemberInfo targetEntMember) {
-      if(_linkTupleConstructor == null) {
-        _linkTupleLinkEntity = typeof(LinkTuple).GetProperty(nameof(LinkTuple.LinkEntity));
-        _linkTupleTargetEntity = typeof(LinkTuple).GetProperty(nameof(LinkTuple.TargetEntity));
-        _linkTupleConstructor = typeof(LinkTuple).GetConstructor(Type.EmptyTypes);
-      }
-      var linkEntType = targetEntMember.Entity.EntityType;
-      var lnkPrm = Expression.Parameter(linkEntType, "@lnk");
-      var newExpr = Expression.New(_linkTupleConstructor);
-      var bnd1 = Expression.Bind(_linkTupleLinkEntity, lnkPrm);
-      var targetRead = Expression.MakeMemberAccess(lnkPrm, targetEntMember.ClrMemberInfo);
-      var bnd2 = Expression.Bind(_linkTupleTargetEntity, targetRead);
-      var initExpr = Expression.MemberInit(newExpr, bnd1, bnd2);
-      var lambda = Expression.Lambda(initExpr, lnkPrm);
-      return lambda; 
+    private static void Setup_SelectByValueArrayManyToMany(SpecialLinqCommand command) {
+      var listInfo = command.ListInfoManyToMany;
+      var fkMember = listInfo.ParentRefMember.ReferenceInfo.FromKey.ExpandedKeyMembers[0].Member;
+      var listType = typeof(IList<>).MakeGenericType(fkMember.DataType);
+      var listPrm = Expression.Parameter(listType, "@list");
+      var entType = listInfo.LinkEntity.EntityType;
+      var wherePred = ExpressionMaker.MakeListContainsPredicate(fkMember, listPrm);
+      var linkEntSet = fkMember.Entity.EntitySetConstant;
+      var entSetFiltered = ExpressionMaker.MakeCallWhere(linkEntSet, wherePred);
+      var targetRefMember = listInfo.OtherEntityRefMember;
+      var entSetOrdered = AddOrderByManyToMany(entSetFiltered, listInfo.LinkEntity, listInfo.OtherEntityRefMember, command.OrderBy);
+      var newTupleLambda = ExpressionMaker.MakeNewLinkTupleLambda(listInfo.OtherEntityRefMember);
+      var selectTuple = ExpressionMaker.MakeCallSelect(entSetOrdered, newTupleLambda);
+      command.Lambda = Expression.Lambda(selectTuple, listPrm);
     }
 
-    static ConstructorInfo _linkTupleConstructor;
-    static PropertyInfo _linkTupleLinkEntity;
-    static PropertyInfo _linkTupleTargetEntity; 
+    public static List<EntityKeyMemberInfo> Merge(this List<EntityKeyMemberInfo> x, List<EntityKeyMemberInfo> y) {
+      if(x == null || x.Count == 0)
+        return y;
+      if(y == null || y.Count == 0)
+        return x;
+      var merged = new List<EntityKeyMemberInfo>();
+      merged.AddRange(x);
+      merged.AddRange(y);
+      return merged;
+    }
+
 
     public static Expression AddOrderByManyToMany(Expression linkEntSet, EntityInfo linkEnt, EntityMemberInfo targetProp, 
                                                   List<EntityKeyMemberInfo> orderBy) {

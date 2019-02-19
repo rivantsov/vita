@@ -17,7 +17,7 @@ namespace Vita.Entities.Runtime {
   public interface IPropertyBoundList {
     void Notify(BoundListEventType eventType);
     bool IsLoaded { get; }
-    void Init(IList<IEntityRecordContainer> entities, IList<IEntityRecordContainer> linkEntities = null);
+    void Init(object data);
   }
 
   internal abstract class PropertyBoundListBase<TEntity> : ObservableEntityList<TEntity>, IPropertyBoundList where TEntity: class {
@@ -50,7 +50,7 @@ namespace Vita.Entities.Runtime {
     #region IPropertyBoundList Members
     public abstract void Notify(BoundListEventType eventType);
 
-    public abstract void Init(IList<IEntityRecordContainer> entities, IList<IEntityRecordContainer> linkEntities = null);
+    public abstract void Init(object data);
     #endregion
   }
 

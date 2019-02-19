@@ -23,14 +23,6 @@ namespace Vita.Data.Linq {
     Delete,
   }
 
-  public enum SpecialCommandSubType {
-    SelectByKey,
-    SelectByKeyArray,
-    ExistsByKey,
-    ListManyToMany,
-    ListManyToManyByArray,
-  }
-
   public interface IMaskSource {
     EntityMemberMask GetMask(Type entityType);
   }
@@ -46,9 +38,9 @@ namespace Vita.Data.Linq {
     public IMaskSource MaskingSource;
 
     public LambdaExpression Lambda;
+    public object[] ParamValues;
 
     public List<LambdaExpression> Includes;
-    public object[] ParamValues;
 
 
     public LinqCommand(EntitySession session, LinqCommandKind kind, LinqOperation operation) {
@@ -57,10 +49,6 @@ namespace Vita.Data.Linq {
       Operation = operation;
     }
 
-    public void CopyParamValuesFromLocal() {
-
-    }
-    
   } //class
 
   public class DynamicLinqCommand : LinqCommand {
@@ -79,34 +67,29 @@ namespace Vita.Data.Linq {
   }
 
   public class SpecialLinqCommand : LinqCommand {
-    public SpecialCommandSubType SubType;
     public EntityKeyInfo Key;
     public List<EntityKeyMemberInfo> OrderBy;
     public Action<SpecialLinqCommand> SetupAction; //delayed creator of lambda expression
     public ChildEntityListInfo ListInfoManyToMany; 
 
-    public SpecialLinqCommand(EntitySession session, string sqlCacheKey, SpecialCommandSubType subType, 
+    public SpecialLinqCommand(EntitySession session, string sqlCacheKey, 
                               EntityKeyInfo key, LockType lockType, List<EntityKeyMemberInfo> orderBy, 
-                              object[] paramValues, Action<SpecialLinqCommand> setupAction, 
-                              ChildEntityListInfo listInfoManyToMany = null)
+                              object[] paramValues, Action<SpecialLinqCommand> setupAction)
                               : base(session, LinqCommandKind.Special, LinqOperation.Select) {
       this.SqlCacheKey = sqlCacheKey;
-      SubType = subType; 
       Key = key;
       base.LockType = lockType;
       OrderBy = orderBy;
       ParamValues = paramValues;
       SetupAction = setupAction;
-      ListInfoManyToMany = listInfoManyToMany; 
     }
 
     // constructor for many-to-many select
-    public SpecialLinqCommand(EntitySession session, string sqlCacheKey, SpecialCommandSubType subType, 
+    public SpecialLinqCommand(EntitySession session, string sqlCacheKey, 
                               ChildEntityListInfo listInfoManyToMany, List<EntityKeyMemberInfo> orderBy,
                               object[] paramValues, Action<SpecialLinqCommand> setupAction)
                             : base(session, LinqCommandKind.Special, LinqOperation.Select) {
       this.SqlCacheKey = sqlCacheKey;
-      SubType = subType;
       ListInfoManyToMany = listInfoManyToMany;
       OrderBy = orderBy;
       ParamValues = paramValues;

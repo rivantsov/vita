@@ -72,7 +72,7 @@ namespace Vita.Entities.Logging {
         } catch(Exception ex) {
           var text = "Error saving activation log: " + ex.ToLogString();
           Trace.WriteLine(text);
-          Debugger.Break();
+          //Debugger.Break();
         }
 
       }

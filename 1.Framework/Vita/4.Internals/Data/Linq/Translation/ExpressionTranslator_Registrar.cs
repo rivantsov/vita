@@ -274,6 +274,19 @@ namespace Vita.Data.Linq.Translation {
     }
 
     /// <summary>
+    /// Some methods, like Single(), Count(), etc. can get an extra parameter, specifying a restriction.
+    /// This method checks if the parameter is specified, and adds it to the WHERE clauses
+    /// </summary>
+    /// <param name="table"></param>
+    /// <param name="parameters"></param>
+    /// <param name="extraParameterIndex"></param>
+    /// <param name="context"></param>
+    private void CheckWhere(Expression table, IList<Expression> parameters, int extraParameterIndex, TranslationContext context) {
+      if(extraParameterIndex >= 0 && extraParameterIndex < parameters.Count) // a lambda can be specified here, this is a restriction
+        RegisterWhere(Analyze(parameters[extraParameterIndex], table, context), context);
+    }
+
+    /// <summary>
     /// Registers all columns of a table.
     /// </summary>
     /// <param name="tableExpression"></param>

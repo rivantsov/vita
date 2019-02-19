@@ -48,10 +48,10 @@ namespace Vita.Data.Sql {
 
     // static helpers
 
-    public static string BuildSpecialSelectKey(SpecialCommandSubType selectType, string entityName, string keyName, LockType lockType,
+    public static string BuildSpecialSelectKey(string subType, string entityName, string keyName, LockType lockType,
                                                 IList<EntityKeyMemberInfo> orderBy) {
       var ordStr = (orderBy == null) ? "none" : string.Join(",", orderBy);
-      var key = $"SELECT-Special/{selectType}/{entityName}/key:{keyName}/Lock:{lockType}/OrderBy:{ordStr}";
+      var key = $"CRUD-SELECT/{subType}/{entityName}/key:{keyName}/Lock:{lockType}/OrderBy:{ordStr}";
       return key; 
     }
 

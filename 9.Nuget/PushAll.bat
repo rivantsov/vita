@@ -1,4 +1,4 @@
-SET pver=2.1.4
+SET pver=2.2.0
 Echo Version: "%pver%"
 dir Nupkg\*.nupkg
 @echo off

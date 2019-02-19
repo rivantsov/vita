@@ -283,14 +283,14 @@ namespace Vita.Data.Linq.Translation {
           return new SqlFunctionExpression(SqlFunctionType.SequenceNextValue, expression.Type, new Expression[] { seqConst });
         default:
           Util.Throw("Unknown native db function {0}", method.Name);
-          return null; 
+          return null;
       }
 
     }
     private Expression AnalyzeUnknownCall(MethodCallExpression expression, IList<Expression> parameters, TranslationContext context) {
       var method = expression.Method;
       switch(method.Name) {
-        case nameof(object.ToString): 
+        case nameof(object.ToString):
           return AnalyzeToString(method, parameters, context);
         case nameof(IList.Contains):
           // handle List.Contains
@@ -307,14 +307,14 @@ namespace Vita.Data.Linq.Translation {
             goto default;
 
         case nameof(ExpressionMaker.GetPropertyStub): //generalized way of accessing entity prop: book.Editor_Id
-          if (method.DeclaringType == typeof(ExpressionMaker)) {
+          if(method.DeclaringType == typeof(ExpressionMaker)) {
             var tableExpr = (TableExpression)Analyze(parameters[0], context);
             var constMemberName = (ConstantExpression)parameters[1];
             var memberName = (string)constMemberName.Value;
             var columnExpr = RegisterColumnByMemberName(tableExpr, memberName, context);
             return columnExpr;
           }
-          break; 
+          break;
 
         default:
           //TODO: add support for custom functions through Linq engine extensions
@@ -437,9 +437,9 @@ namespace Vita.Data.Linq.Translation {
       if(limit.HasValue)
         AddLimit(Expression.Constant(limit.Value), context);
       var table = Analyze(parameters[0], context);
-      if (parameters.Count > 1) {
+      if(parameters.Count > 1) {
         var predicate = Analyze(parameters[1], parameters, context);
-        RegisterWhere(predicate, context); 
+        RegisterWhere(predicate, context);
       }
       //Create query results processor
       var rowType = parameters[0].Type;
@@ -457,7 +457,7 @@ namespace Vita.Data.Linq.Translation {
         var operand0 = Analyze(parameters[0], context);
         Expression projectionOperand;
 
-        if(context.CurrentSelect.Operands.Count() > 0 || context.CurrentSelect.Group.Count > 0 ) {
+        if(context.CurrentSelect.Operands.Count() > 0 || context.CurrentSelect.Group.Count > 0) {
           // No TableInfo in projection
           operand0 = new SubSelectExpression(context.CurrentSelect, operand0.Type, "source", null);
           context.NewParentSelect();
@@ -477,12 +477,12 @@ namespace Vita.Data.Linq.Translation {
         } else {
           if(parameters.Count > 1)
             projectionOperand = Analyze(parameters[1], operand0, context);
-          else 
+          else
             projectionOperand = operand0;
-            if(aggregateType == AggregateType.Count && parameters.Count > 1) {
-              RegisterWhere(projectionOperand, context);
-              projectionOperand = null; 
-            }
+          if(aggregateType == AggregateType.Count && parameters.Count > 1) {
+            RegisterWhere(projectionOperand, context);
+            projectionOperand = null;
+          }
         }
 
         if(projectionOperand is TableExpression)
@@ -514,7 +514,7 @@ namespace Vita.Data.Linq.Translation {
             RegisterWhere(predicate, context);
             predicate = null;
             specialExpr = CreateAggregate(aggregateType);
-          } else 
+          } else
             specialExpr = CreateAggregate(aggregateType, predicate);
         } else {
           specialExpr = CreateAggregate(aggregateType);
@@ -1003,7 +1003,7 @@ namespace Vita.Data.Linq.Translation {
     private SqlFunctionExpression CreateConcat(Expression arg1, Expression arg2) {
       // optimization for multiple strings concatenated
       var c1 = arg1 as SqlFunctionExpression;
-      if (c1 != null && c1.FunctionType == SqlFunctionType.Concat) {
+      if(c1 != null && c1.FunctionType == SqlFunctionType.Concat) {
         c1.Operands.Add(arg2);
         return c1;
       }
@@ -1108,7 +1108,7 @@ namespace Vita.Data.Linq.Translation {
           //derivedTableDefinitionBuilderContext.ExpectDerivedTableDefinition = true;
           var expression = Analyze(parameters[2], new[] { tableExpression, projectionExpression },
                                     derivedTableContext);
-          return expression; 
+          return expression;
       }
       return null; //never happens
     }
@@ -1325,7 +1325,7 @@ namespace Vita.Data.Linq.Translation {
       RegisterWhere(whereExpression, allBuilderContext);
       var currSelect = allBuilderContext.CurrentSelect;
       var existsExpr = new SqlFunctionExpression(SqlFunctionType.Exists, typeof(bool), currSelect);
-      var notExistsExpr = Expression.Not(existsExpr); 
+      var notExistsExpr = Expression.Not(existsExpr);
       return notExistsExpr;
     }
 
@@ -1336,7 +1336,9 @@ namespace Vita.Data.Linq.Translation {
     /// <param name="context"></param>
     /// <returns></returns>
     protected virtual Expression AnalyzeAny(IList<Expression> parameters, TranslationContext context) {
-      /* RI: 12/17 disabling this for now
+      // RI: changing cond to NOT
+      // TODO: fix this!
+      //  if(context.IsExternalInExpressionChain) {
       if(context.IsExternalInExpressionChain) {
         var tableExpression = Analyze(parameters[0], context);
         Expression projectionOperand;
@@ -1348,8 +1350,7 @@ namespace Vita.Data.Linq.Translation {
         var groupOperand0 = tableExpression as GroupExpression;
         if(groupOperand0 != null) {
           if(parameters.Count > 1) {
-            projectionOperand = Analyze(parameters[1], groupOperand0.GroupedExpression,
-                                        context);
+            projectionOperand = Analyze(parameters[1], groupOperand0.GroupedExpression, context);
           } else
             projectionOperand = Analyze(groupOperand0.GroupedExpression, context);
         } else {
@@ -1365,29 +1366,30 @@ namespace Vita.Data.Linq.Translation {
           projectionOperand = new GroupExpression(projectionOperand, groupOperand0.KeyExpression, childColumns);
         }
 
-        return CreateSqlFunction(SqlFunctionType.Exists, projectionOperand);
+        var res = CreateSqlFunction(SqlFunctionType.Exists, context.CurrentSelect);// projectionOperand);
+        context.NewParentSelect();
+        return res; 
       } else {
-      */
-        var subSelectContext = context.NewSelect();
-        var tableExpression = Analyze(parameters[0], subSelectContext);
+        //*/
+        var anyExprContext = context.NewSelect();
+      var tableExpression = Analyze(parameters[0], anyExprContext);
 
-        if(!(tableExpression is TableExpression))
-          tableExpression = Analyze(tableExpression, subSelectContext);
+      if(!(tableExpression is TableExpression))
+        tableExpression = Analyze(tableExpression, anyExprContext);
 
-        // from here we build a custom clause: EXists
-        if(parameters.Count > 1) {
-          var anyClause = Analyze(parameters[1], tableExpression, subSelectContext);
-          RegisterWhere(anyClause, subSelectContext);
-        } else {
-          //TODO: fix this
-          Util.Throw("Queryable.Any() method without parameter is not supported.");
-        }
-        var subSelect = subSelectContext.CurrentSelect;
-        var existsExpr = CreateSqlFunction(SqlFunctionType.Exists, subSelect);
-        // anyBuilderContext.CurrentSelect = currSelect.ChangeOperands(new Expression[] { existsExpr }, currSelect.Operands);
-        // we now switch back to current context
+      // from here we build a custom clause: EXists
+      if(parameters.Count > 1) {
+        var anyClause = Analyze(parameters[1], tableExpression, anyExprContext);
+        RegisterWhere(anyClause, anyExprContext);
+      } else {
+        //TODO: fix this
+        //Util.Throw("Queryable.Any() method without parameter is not supported.");
+      }
+        var currSelect = anyExprContext.CurrentSelect;
+        var existsExpr = CreateSqlFunction(SqlFunctionType.Exists, currSelect);
+        anyExprContext.CurrentSelect = currSelect.ChangeOperands(new Expression[] { existsExpr }, currSelect.Operands);
         return existsExpr;
-      // }
+      }
     }
 
     protected virtual Expression AnalyzeLikeStart(IList<Expression> parameters, TranslationContext context) {
@@ -1406,9 +1408,9 @@ namespace Vita.Data.Linq.Translation {
       var forceIgnoreCase = context.Command.Options.IsSet(QueryOptions.ForceIgnoreCase);
       //The main goal is to provide automatic escaping of pattern (of wildcard characters)
       var newExpr = Analyze(expr, context);
-      var sqlDialect = _dbModel.Driver.SqlDialect; 
+      var sqlDialect = _dbModel.Driver.SqlDialect;
       var escapeChar = sqlDialect.LikeEscapeChar;
-      var wildcards = sqlDialect.LikeWildCardChars; 
+      var wildcards = sqlDialect.LikeWildCardChars;
       //Special case - constant 
       if(operand.NodeType == ExpressionType.Constant) {
         var opValue = ((ConstantExpression)operand).Value as string;

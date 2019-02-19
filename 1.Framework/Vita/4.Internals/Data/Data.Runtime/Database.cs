@@ -51,7 +51,6 @@ namespace Vita.Data.Runtime {
 
     public object ExecuteLinqSelect(EntitySession session, LinqCommand command, DataConnection conn) {
       var sql = SqlFactory.GetLinqSql(command);
-      command.CopyParamValuesFromLocal();
       var genMode = command.Options.IsSet(QueryOptions.NoParameters) ? 
                              SqlGenMode.NoParameters : SqlGenMode.PreferParam;
       var cmdBuilder = new DataCommandBuilder(this._driver, batchMode: false, mode: genMode);
@@ -63,7 +62,6 @@ namespace Vita.Data.Runtime {
 
     private object ExecuteLinqNonQuery(EntitySession session, LinqCommand command, DataConnection conn) {
       var sql = SqlFactory.GetLinqSql(command);
-      command.CopyParamValuesFromLocal(); 
       var fmtOptions = command.Options.IsSet(QueryOptions.NoParameters) ?
                              SqlGenMode.NoParameters : SqlGenMode.PreferParam;
       var cmdBuilder = new DataCommandBuilder(this._driver);

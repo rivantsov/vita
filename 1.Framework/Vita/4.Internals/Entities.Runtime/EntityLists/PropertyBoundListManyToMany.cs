@@ -9,6 +9,13 @@ using Vita.Entities.Model;
 
 namespace Vita.Entities.Runtime {
 
+  [System.Diagnostics.DebuggerDisplay("{LinkEntity}")]
+  public class LinkTuple {
+    public object LinkEntity { get; set; }
+    public object TargetEntity { get; set; }
+  }
+
+
   internal class PropertyBoundListManyToMany<TEntity> : PropertyBoundListBase<TEntity> where TEntity : class {
     //Lookup table for link records. (Entity) => LinkRecord
     public Dictionary<EntityRecord, EntityRecord> LinkRecordsLookup = new Dictionary<EntityRecord, EntityRecord>();

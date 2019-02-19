@@ -14,12 +14,15 @@ using System.Collections;
 
 namespace Vita.Data.Linq {
 
-  public class LinkTuple {
-    public object LinkEntity { get; set; }
-    public object TargetEntity { get; set; } 
-  }
-
   public static class LinqCommandFactory {
+    public const string Tag_SelectByPk = "By-PK";
+    public const string Tag_SelectByKey = "By-Key";
+    public const string Tag_SelectByKeyArray = "By-Key-Array";
+    public const string Tag_ExistsByKey = "Exists-By-Key";
+    public const string Tag_SelectByKeyListPropertyManyToMany = "By-Key-ListProp-m2m";
+    public const string Tag_SelectByKeyArrayListPropertyManyToOne = "By-Key-Array-ListProp-m2one";
+    public const string Tag_SelectByKeyArrayListPropertyManyToMany = "By-Key-Array-ListProp-m2m";
+
     // for special linq commands: to avoid regenerating sql cache key we 'cache' it inside Key or ListInfo meta objects
 
     public static SpecialLinqCommand CreateSelectByPrimaryKey(EntitySession session, EntityKeyInfo key, LockType lockType, object[] keyValues) {
@@ -27,29 +30,27 @@ namespace Vita.Data.Linq {
       string sqlCacheKey;
       if (lockType == LockType.None) 
         sqlCacheKey = key.SqlCacheKey_SelectByPkNoLock = key.SqlCacheKey_SelectByPkNoLock ??
-          SqlCacheKeyBuilder.BuildSpecialSelectKey(SpecialCommandSubType.SelectByKey, key.Entity.Name, key.Name, lockType, null);
+          SqlCacheKeyBuilder.BuildSpecialSelectKey(Tag_SelectByPk, key.Entity.Name, key.Name, LockType.None, null);
       else
-        sqlCacheKey = SqlCacheKeyBuilder.BuildSpecialSelectKey(SpecialCommandSubType.SelectByKey, key.Entity.Name, key.Name, lockType, null);
+        sqlCacheKey = SqlCacheKeyBuilder.BuildSpecialSelectKey(Tag_SelectByPk, key.Entity.Name, key.Name, lockType, null);
       // build the command
-      return new SpecialLinqCommand(session, sqlCacheKey, SpecialCommandSubType.SelectByKey, key, lockType, null, 
+      return new SpecialLinqCommand(session, sqlCacheKey, key, lockType, null, 
                                          keyValues, Setup_SelectByKey);
     }
 
     public static SpecialLinqCommand CreateSelectByKeyValueArray(EntitySession session, EntityKeyInfo key, 
                                      List<EntityKeyMemberInfo> orderBy, IList keyValues) {
-      var sqlCacheKey = SqlCacheKeyBuilder.BuildSpecialSelectKey(SpecialCommandSubType.SelectByKeyArray, 
-                   key.Entity.Name, key.Name, LockType.None, orderBy);
+      var sqlCacheKey = SqlCacheKeyBuilder.BuildSpecialSelectKey(Tag_SelectByKeyArray, key.Entity.Name, key.Name, LockType.None, orderBy);
       // build the command
       var paramValues = new object[] { keyValues };
-      return new SpecialLinqCommand(session, sqlCacheKey, SpecialCommandSubType.SelectByKeyArray, key, LockType.None, orderBy,
-                                         paramValues, Setup_SelectByKeyValueArray);
+      return new SpecialLinqCommand(session, sqlCacheKey, key, LockType.None, orderBy, paramValues, Setup_SelectByKeyValueArray);
     }
 
     public static SpecialLinqCommand CreateCheckAnyChildRecords(EntityKeyInfo childKey, EntityRecord record) {
       childKey.SqlCacheKey_ChildExists = childKey.SqlCacheKey_ChildExists ??
-        SqlCacheKeyBuilder.BuildSpecialSelectKey(SpecialCommandSubType.ExistsByKey, childKey.Entity.Name,
+        SqlCacheKeyBuilder.BuildSpecialSelectKey(Tag_ExistsByKey, childKey.Entity.Name,
           childKey.Name, LockType.None, null);
-      return new SpecialLinqCommand(record.Session, childKey.SqlCacheKey_ChildExists, SpecialCommandSubType.ExistsByKey, childKey,
+      return new SpecialLinqCommand(record.Session, childKey.SqlCacheKey_ChildExists, childKey,
                     LockType.None, null, record.PrimaryKey.Values, Setup_CheckChildExists);
     }
 
@@ -57,9 +58,9 @@ namespace Vita.Data.Linq {
       Util.Check(listInfo.RelationType == EntityRelationType.ManyToOne, "Fatal: expected many-to-one list.");
       var fromKey = listInfo.ParentRefMember.ReferenceInfo.FromKey;
       listInfo.SqlCacheKey_SelectChildRecs = listInfo.SqlCacheKey_SelectChildRecs ??
-        SqlCacheKeyBuilder.BuildSpecialSelectKey(SpecialCommandSubType.SelectByKey, fromKey.Entity.Name, fromKey.Name, LockType.None, null);
+        SqlCacheKeyBuilder.BuildSpecialSelectKey(Tag_SelectByKey, fromKey.Entity.Name, fromKey.Name, LockType.None, null);
       // it is simply select-by-key command
-      return new SpecialLinqCommand(session, listInfo.SqlCacheKey_SelectChildRecs, SpecialCommandSubType.SelectByKey, fromKey, LockType.None,
+      return new SpecialLinqCommand(session, listInfo.SqlCacheKey_SelectChildRecs, fromKey, LockType.None,
                                      listInfo.OrderBy, keyValues, Setup_SelectByKey);
     }
 
@@ -68,8 +69,8 @@ namespace Vita.Data.Linq {
       Util.Check(listInfo.RelationType == EntityRelationType.ManyToMany, "Fatal: expected many-to-many list.");
       var fromKey = listInfo.ParentRefMember.ReferenceInfo.FromKey;
       listInfo.SqlCacheKey_SelectChildRecs = listInfo.SqlCacheKey_SelectChildRecs ??
-        SqlCacheKeyBuilder.BuildSpecialSelectKey(SpecialCommandSubType.SelectByKey, fromKey.Entity.Name, fromKey.Name, LockType.None, null);
-      return new SpecialLinqCommand(session, listInfo.SqlCacheKey_SelectChildRecs, SpecialCommandSubType.ListManyToMany,
+        SqlCacheKeyBuilder.BuildSpecialSelectKey(Tag_SelectByKeyListPropertyManyToMany, fromKey.Entity.Name, fromKey.Name, LockType.None, null);
+      return new SpecialLinqCommand(session, listInfo.SqlCacheKey_SelectChildRecs,
                                     listInfo, listInfo.OrderBy, keyValues, Setup_SelectManyToMany);
     }
 
@@ -78,11 +79,11 @@ namespace Vita.Data.Linq {
       Util.Check(listInfo.RelationType == EntityRelationType.ManyToOne, "Fatal: expected many-to-one list.");
       var fromKey = listInfo.ParentRefMember.ReferenceInfo.FromKey;
       listInfo.SqlCacheKey_SelectChildRecsForInclude = listInfo.SqlCacheKey_SelectChildRecsForInclude ??
-        SqlCacheKeyBuilder.BuildSpecialSelectKey(SpecialCommandSubType.SelectByKeyArray, fromKey.Entity.Name, fromKey.Name, LockType.None, null);
+        SqlCacheKeyBuilder.BuildSpecialSelectKey(Tag_SelectByKeyArrayListPropertyManyToOne, fromKey.Entity.Name, fromKey.Name, LockType.None, null);
       // it is simply select-by-key-array command
       var orderBy = fromKey.ExpandedKeyMembers.Merge(listInfo.OrderBy);
       var paramValues = new object[] { keyValues };
-      return new SpecialLinqCommand(session, listInfo.SqlCacheKey_SelectChildRecsForInclude, SpecialCommandSubType.SelectByKeyArray, 
+      return new SpecialLinqCommand(session, listInfo.SqlCacheKey_SelectChildRecsForInclude, 
                                      fromKey, LockType.None, orderBy, paramValues, Setup_SelectByKeyValueArray);
     }
 
@@ -91,11 +92,11 @@ namespace Vita.Data.Linq {
       Util.Check(listInfo.RelationType == EntityRelationType.ManyToMany, "Fatal: expected many-to-many list.");
       var fromKey = listInfo.ParentRefMember.ReferenceInfo.FromKey;
       listInfo.SqlCacheKey_SelectChildRecsForInclude = listInfo.SqlCacheKey_SelectChildRecsForInclude ??
-        SqlCacheKeyBuilder.BuildSpecialSelectKey(SpecialCommandSubType.ListManyToManyByArray, fromKey.Entity.Name, fromKey.Name, LockType.None, null);
+        SqlCacheKeyBuilder.BuildSpecialSelectKey(Tag_SelectByKeyArrayListPropertyManyToMany, fromKey.Entity.Name, fromKey.Name, LockType.None, null);
       // it is simply select-by-key-array command
       var orderBy = fromKey.ExpandedKeyMembers.Merge(listInfo.OrderBy);
       var paramValues = new object[] { keyValues };
-      return new SpecialLinqCommand(session, listInfo.SqlCacheKey_SelectChildRecsForInclude, SpecialCommandSubType.ListManyToManyByArray,
+      return new SpecialLinqCommand(session, listInfo.SqlCacheKey_SelectChildRecsForInclude,
                                      listInfo, orderBy, paramValues, Setup_SelectByValueArrayManyToMany);
     }
 

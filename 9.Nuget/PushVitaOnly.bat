@@ -1,4 +1,4 @@
- SET pver=2.1.1
+ SET pver=2.2.1
 Echo Version: "%pver%"
 dir Nupkg\vita.%pver%.nupkg
 @echo off

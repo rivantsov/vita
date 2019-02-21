@@ -42,7 +42,9 @@ namespace Vita.Entities.Runtime {
         var takePlusOne = searchParams.Take + 1;
         var pageQuery = orderedQuery.Skip(searchParams.Skip).Take(takePlusOne);
         var rows = pageQuery.ToList();
-        if (rows.Count < takePlusOne)
+        
+        if (rows.Count > 0 && rows.Count < takePlusOne)
+          // important (bug #74) - we must check rows.Count > 0, that any rows returned
           //We see the last row, we do not need to run total query
           return new SearchResults<TEntity>() { Results = rows, TotalCount = searchParams.Skip + rows.Count };
         // we received more than Take number of rows; it means we need to run TotalCount
@@ -50,7 +52,10 @@ namespace Vita.Entities.Runtime {
         var queryCmd = session.GetLastCommand();
         var totalCount = baseQuery.Count(); //use baseQuery here, without OrderBy, Skip, Take
         session.SetLastCommand(queryCmd); //restore main query command
-        rows.RemoveAt(rows.Count - 1); //remove last extra row
+
+        //remove last extra row - we queried for 1 extra
+        if (rows.Count > 0)
+          rows.RemoveAt(rows.Count - 1); 
         var results = new SearchResults<TEntity>() { Results = rows, TotalCount = totalCount };
         return results;
       } catch (Exception ex) {

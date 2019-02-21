@@ -75,6 +75,13 @@ OFFSET @P4 ROWS FETCH NEXT @P5 ROWS ONLY;
       bookResults = session.SearchBooks(searchParams);
       Assert.IsTrue(bookResults.Results.Count > 3, "Must return all books");
 
+      // bug, issue #74 - when Skip is large value > Count(entities), then search returns total count == skip value 
+      var totalCount = session.EntitySet<IBook>().Count(); 
+      searchParams = new BookSearch() { Skip = 200, Take = 10 };
+      bookResults = session.SearchBooks(searchParams);
+      Assert.AreEqual(totalCount, bookResults.TotalCount, "Total count mismatch for larget Skip value");
+
+
     }
 
     private void PrintLastSql(IEntitySession session) {

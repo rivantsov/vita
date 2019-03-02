@@ -6,9 +6,9 @@
     <authors>Roman Ivantsov</authors>
     <owners>Roman Ivantsov</owners>
     <projectUrl>https://github.com/rivantsov/vita</projectUrl>
-    <licenseUrl>https://github.com/rivantsov/vita/blob/master/LICENSE</licenseUrl>
+    <license type="expression">MIT</license>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
-    <description>VITA ORM core library, .NET Standard platform</description>
+    <description>VITA ORM core library</description>
     <releaseNotes></releaseNotes>
     <copyright>Copyright Roman Ivantsov 2018</copyright>
     <tags>VITA ORM LINQ</tags>

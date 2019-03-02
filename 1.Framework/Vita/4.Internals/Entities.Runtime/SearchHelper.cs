@@ -47,14 +47,14 @@ namespace Vita.Entities.Runtime {
           // important (bug #74) - we must check rows.Count > 0, that any rows returned
           //We see the last row, we do not need to run total query
           return new SearchResults<TEntity>() { Results = rows, TotalCount = searchParams.Skip + rows.Count };
-        // we received more than Take number of rows; it means we need to run TotalCount
+        // we received more than Take number of rows (or zero); it means we need to run TotalCount
         //save main query command, and restore it after total query; in debugging main query is more interesting than total query
         var queryCmd = session.GetLastCommand();
         var totalCount = baseQuery.Count(); //use baseQuery here, without OrderBy, Skip, Take
         session.SetLastCommand(queryCmd); //restore main query command
 
-        //remove last extra row - we queried for 1 extra
-        if (rows.Count > 0)
+        //remove last extra row if it is there - we queried for 1 extra
+        if (rows.Count > searchParams.Take && rows.Count > 0)
           rows.RemoveAt(rows.Count - 1); 
         var results = new SearchResults<TEntity>() { Results = rows, TotalCount = totalCount };
         return results;

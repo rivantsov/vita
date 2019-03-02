@@ -6,7 +6,7 @@
     <authors>Roman Ivantsov</authors>
     <owners>Roman Ivantsov</owners>
     <projectUrl>https://github.com/rivantsov/vita</projectUrl>
-    <licenseUrl>https://github.com/rivantsov/vita/blob/master/LICENSE</licenseUrl>
+    <license type="expression">MIT</license>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
     <description>Login module based on VITA Framework.</description>
     <releaseNotes></releaseNotes>

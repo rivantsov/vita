@@ -6,7 +6,7 @@
     <authors>Roman Ivantsov</authors>
     <owners>Roman Ivantsov</owners>
     <projectUrl>https://github.com/rivantsov/vitacore</projectUrl>
-    <licenseUrl>https://github.com/rivantsov/vitacore/blob/master/LICENSE</licenseUrl>
+    <license type="expression">MIT</license>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
     <description>VITA ORM driver for Oracle Server. </description>
     <releaseNotes></releaseNotes>

@@ -9,7 +9,6 @@ using Vita.Entities;
 using Vita.Entities.DbInfo;
 using Vita.Entities.Services;
 using Vita.Modules.Login;
-using Vita.Modules.Login.Api;
 
 namespace Vita.Samples.BookStore {
 
@@ -39,10 +38,12 @@ namespace Vita.Samples.BookStore {
 
       var loginModule = new LoginModule(loginArea, loginStt);
 
+      /* SlimApi not migrated yet
       //api config - register controllers defined in Vita.Modules.Login assembly; books controllers are registered by BooksModule
       base.ApiConfiguration.RegisterControllerTypes(
         typeof(LoginController), typeof(PasswordResetController), typeof(LoginSelfServiceController), typeof(LoginAdministrationController)
         );
+        */
     }
 
   }//class

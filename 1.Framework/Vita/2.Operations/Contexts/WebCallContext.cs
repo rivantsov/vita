@@ -95,6 +95,10 @@ namespace Vita.Entities.Api {
     // list of custom indicators for use by app that will be saved in web call log
     public IList<string> CustomTags = new List<string>(); 
 
+    public WebCallContext(OperationContext opContext) {
+      this.OperationContext = opContext; 
+    }
+
     public WebCallContext(object request, DateTime receivedOn, long tickCountStart, 
                           Func<string, IList<Cookie>> cookieGetter, Func<string, IList<string>> headerGetter) {
       RequestMessage = request; 

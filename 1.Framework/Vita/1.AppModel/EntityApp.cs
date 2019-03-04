@@ -72,7 +72,8 @@ namespace Vita.Entities {
     /// </remarks>
     public IEntityClassProvider EntityClassProvider;
 
-    public ApiConfiguration ApiConfiguration = new ApiConfiguration();
+    // SlimApi not ported
+    // public ApiConfiguration ApiConfiguration = new ApiConfiguration();
 
     public Sizes.SizeTable SizeTable = Sizes.GetDefaultSizes();
 

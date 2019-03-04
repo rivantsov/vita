@@ -47,8 +47,7 @@ namespace Vita.Testing.ExtendedTests {
       if(AppSettings != null)
         return;
       var builder = new ConfigurationBuilder();
-      builder.SetBasePath(Directory.GetCurrentDirectory()).AddJsonFile("appSettings.json");
-      
+      builder.SetBasePath(Directory.GetCurrentDirectory()).AddJsonFile("appSettings.json");      
       AppSettings = builder.Build();
     }
 
@@ -155,6 +154,7 @@ namespace Vita.Testing.ExtendedTests {
                 namingPolicy: customNamingPolicy);
 
       //Test: remap login schema into login2
+      // Remapping schemas might used in MySql, where schemas are actually databases
       // if (ServerType == DbServerType.MsSql)
       //    DbSettings.ModelConfig.MapSchema("login", "login2");
     }
@@ -206,8 +206,6 @@ namespace Vita.Testing.ExtendedTests {
     }
 
     private static void CreateSampleData() {
-      // We create sample data multiple times, so later test wipes out data from previous test. 
-      // We do not wipe out certain tables
       DataUtility.DeleteAllData(BooksApp, exceptEntities: new Type[] {typeof(IDbInfo), typeof(IDbModuleInfo)}); 
       SampleDataGenerator.CreateUnitTestData(BooksApp);
     }

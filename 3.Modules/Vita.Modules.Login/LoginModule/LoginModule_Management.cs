@@ -8,7 +8,6 @@ using System.Text;
 
 using Vita.Entities;
 using Vita.Entities.Services;
-using Vita.Modules.Login.Api;
 
 namespace Vita.Modules.Login {
 

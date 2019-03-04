@@ -9,7 +9,6 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 using Vita.Entities;
 using Vita.Modules.Login;
-using Vita.Modules.Login.Api;
 
 namespace Vita.Testing.ExtendedTests {
 

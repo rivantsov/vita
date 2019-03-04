@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Vita.Entities.Api {
+namespace Vita.Entities {
 
   /// <summary>A helper container class for a single value returned by Web API. </summary>
   /// <remarks>There is a reported bug in Angular: ngresource reads a string as an array of characters. 

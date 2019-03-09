@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
@@ -24,9 +25,10 @@ namespace Vita.Samples.BookStore.Api {
 
     // This method gets called by the runtime. Use this method to add services to the container.
     public void ConfigureServices(IServiceCollection services) {
-      services.AddIdentity();
-      services.AddDefaultIdentity<UserInfo>();
-      services.AddDefaultTokenProvider
+      var jwtSecret = Configuration["JwtSecret"];
+      var jwtSecretBytes = Encoding.ASCII.GetBytes(jwtSecret);
+      var jwtKey = new SymmetricSecurityKey(jwtSecretBytes);
+      SetupJwtAuthentication(services, jwtKey); 
       services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_1);
     }
 
@@ -46,13 +48,8 @@ namespace Vita.Samples.BookStore.Api {
       // web call context handler
       var handler = new WebCallContextHandler(entApp, null);
       app.UseWebCallContextHandler(handler);
-
-      // identity 
-
-
-
+      
       app.UseAuthentication();
-
       app.UseMvc();
     }
 
@@ -70,7 +67,7 @@ namespace Vita.Samples.BookStore.Api {
       return booksApp; 
     }
 
-    private void SetupJwtAuthentication(IServiceCollection services) {
+    private void SetupJwtAuthentication(IServiceCollection services, SymmetricSecurityKey secKey) {
       services.AddAuthentication(x =>
       {
         x.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
@@ -80,14 +77,16 @@ namespace Vita.Samples.BookStore.Api {
         x.Events = new JwtBearerEvents {
           OnTokenValidated = context =>
           {
+            var claims = context.Principal.Claims;
+            /*
             //var userService = context.HttpContext.RequestServices.GetRequiredService<IUserService>();
-            var claims = context.Principal.Claims; 
             var userId = int.Parse(context.Principal.Identity.Name); 
             var user = userService.GetById(userId);
             if (user == null) {
                     // return unauthorized if user no longer exists
                     context.Fail("Unauthorized");
             }
+            */
             return Task.CompletedTask;
           }
         };
@@ -95,7 +94,7 @@ namespace Vita.Samples.BookStore.Api {
         x.SaveToken = true;
         x.TokenValidationParameters = new TokenValidationParameters {
           ValidateIssuerSigningKey = true,
-          IssuerSigningKey = new SymmetricSecurityKey(key),
+          IssuerSigningKey = secKey, // new SymmetricSecurityKey(secKkey),
           ValidateIssuer = false,
           ValidateAudience = false
         };

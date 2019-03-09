@@ -13,8 +13,11 @@ namespace Vita.Samples.BookStore.Api {
 
   [Route("mylogin"), LoggedInOnly]
   public class LoginSelfServiceController : BaseApiController {
-    ILoginManagementService _loginManager;
-     //_loginManager = Context.App.GetService<ILoginManagementService>(); 
+     ILoginManagementService _loginManager;
+
+    public LoginSelfServiceController() {
+      _loginManager = OpContext.App.GetService<ILoginManagementService>();
+    }
 
     /// <summary>Returns login information for the current user. </summary>
     /// <returns>An object with information about login.</returns>

@@ -19,9 +19,11 @@ namespace Vita.Samples.BookStore.Api {
   public class PasswordResetController : BaseApiController {
     LoginModuleSettings _loginSettings; 
     ILoginProcessService _processService;
-    // _processService = context.App.GetService<ILoginProcessService>();
-    //  _loginSettings = Context.App.GetConfig<LoginModuleSettings>();
 
+    public PasswordResetController() {
+       _processService = OpContext.App.GetService<ILoginProcessService>();
+       _loginSettings = OpContext.App.GetConfig<LoginModuleSettings>();
+    }
 
     /// <summary>Starts password reset process. </summary>
     /// <param name="request">The data object with Captcha value (if used) and authentication factor (email).</param>

@@ -18,11 +18,11 @@ namespace Vita.Samples.BookStore.Api {
   // Handles Login/logout operations
   [Route("login")]
   public class LoginController : BaseApiController {
-    ILoginService _loginService;
-    ILoginProcessService _processService;
-    //_loginService = Context.App.GetService<ILoginService>();
-    //_processService = Context.App.GetService<ILoginProcessService>();
+    ILoginService _loginService; 
 
+    public LoginController() {
+      _loginService = OpContext.App.GetService<ILoginService>();
+    }
     /// <summary>Performs user login with user name and password.</summary>
     /// <param name="request">The request object.</param>
     /// <returns>An object containing login attempt result.</returns>
@@ -31,6 +31,7 @@ namespace Vita.Samples.BookStore.Api {
       OpContext.ThrowIfNull(request, ClientFaultCodes.ContentMissing, "LoginRequest", "Content object missing in API request.");
       OpContext.WebContext.Flags |= WebCallFlags.Confidential;
       //Login using LoginService
+      
       var loginResult = _loginService.Login(this.OpContext, request.UserName, request.Password, request.TenantId, request.DeviceToken);
       var login = loginResult.Login;
       switch(loginResult.Status) {
@@ -62,7 +63,8 @@ namespace Vita.Samples.BookStore.Api {
     [HttpDelete, Route("")]
     public void Logout() {
       if(OpContext.User.Kind != UserKind.AuthenticatedUser)
-        return; 
+        return;
+      
       _loginService.Logout(this.OpContext);
     } // method
 
@@ -91,7 +93,8 @@ namespace Vita.Samples.BookStore.Api {
       var factor = process.Login.ExtraFactors.FirstOrDefault(f => f.FactorType == pinRequest.FactorType); 
       OpContext.ThrowIfNull(factor, ClientFaultCodes.ObjectNotFound, "factor", 
         "Login factor (email or phone) not setup in user account; factor type: {0}", pinRequest.FactorType);
-      await _processService.SendPinAsync(process, factor); 
+      var processService = OpContext.App.GetService<ILoginProcessService>();
+      await processService.SendPinAsync(process, factor); 
     }
 
     /// <summary>Asks the server to verify the pin entered by the user or extracted from URL in email. </summary>
@@ -103,7 +106,8 @@ namespace Vita.Samples.BookStore.Api {
       var process = GetMutiFactorProcess(session, request.ProcessToken);
       OpContext.ThrowIfNull(process, ClientFaultCodes.ObjectNotFound, "Process", "Process not found or expired.");
       OpContext.ThrowIfEmpty(request.Pin, ClientFaultCodes.ValueMissing, "Pin", "Pin value missing.");
-      var result = _processService.SubmitPin(process, request.Pin);
+      var processService = OpContext.App.GetService<ILoginProcessService>();
+      var result = processService.SubmitPin(process, request.Pin);
       session.SaveChanges();
       return result; 
     }
@@ -121,6 +125,7 @@ namespace Vita.Samples.BookStore.Api {
       OpContext.ThrowIf(process.PendingFactors != ExtraFactorTypes.None, ClientFaultCodes.InvalidValue, "PendingFactors",
         "Multi-factor login process not completed, verification pending: {0}.", process.PendingFactors);
       var login = process.Login;
+      
       var loginResult = _loginService.CompleteMultiFactorLogin(OpContext, login);
       var displayName = OpContext.App.GetUserDispalyName(OpContext.User);
       session.SaveChanges(); 
@@ -146,9 +151,9 @@ namespace Vita.Samples.BookStore.Api {
       OpContext.ThrowIfEmpty(processToken, ClientFaultCodes.ValueMissing, "processToken", "ProcessToken value missing");
       OpContext.ThrowIfEmpty(pin, ClientFaultCodes.ValueMissing, "pin", "Pin value missing");
       var session = OpContext.OpenSession();
-      var process = _processService.GetActiveProcess(session, LoginProcessType.FactorVerification, processToken);
-      OpContext.ThrowIfNull(process, ClientFaultCodes.ObjectNotFound, "processToken", "Login process not found or expired.");
       var processService = OpContext.App.GetService<ILoginProcessService>();
+      var process = processService.GetActiveProcess(session, LoginProcessType.FactorVerification, processToken);
+      OpContext.ThrowIfNull(process, ClientFaultCodes.ObjectNotFound, "processToken", "Login process not found or expired.");
       var result = processService.SubmitPin(process, pin);
       session.SaveChanges();
       return result; 
@@ -161,7 +166,8 @@ namespace Vita.Samples.BookStore.Api {
     public IList<SecretQuestion> GetUserSecretQuestions(string token) {
       var session = OpContext.OpenSession();
       var process = GetMutiFactorProcess(session, token);
-      var qs = _processService.GetUserSecretQuestions(process.Login);
+      var processService = OpContext.App.GetService<ILoginProcessService>();
+      var qs = processService.GetUserSecretQuestions(process.Login);
       return qs.Select(q => q.ToModel()).ToList();
     }
 
@@ -174,7 +180,8 @@ namespace Vita.Samples.BookStore.Api {
       OpContext.WebContext.MarkConfidential();
       var session = OpContext.OpenSession();
       var process = GetMutiFactorProcess(session, token);
-      var result = _processService.CheckAllSecretQuestionAnswers(process, answers);
+      var processService = OpContext.App.GetService<ILoginProcessService>();
+      var result = processService.CheckAllSecretQuestionAnswers(process, answers);
       return result;
     }
 
@@ -189,7 +196,8 @@ namespace Vita.Samples.BookStore.Api {
       var process = GetMutiFactorProcess(session, token);
       var storedAnswer = process.Login.SecretQuestionAnswers.FirstOrDefault(a => a.Question.Id == answer.QuestionId);
       OpContext.ThrowIfNull(storedAnswer, ClientFaultCodes.InvalidValue, "questionId", "Question is not registered user question.");
-      var success = _processService.CheckSecretQuestionAnswer(process, storedAnswer.Question, answer.Answer);
+      var processService = OpContext.App.GetService<ILoginProcessService>();
+      var success = processService.CheckSecretQuestionAnswer(process, storedAnswer.Question, answer.Answer);
       return success;
     }
 
@@ -216,7 +224,8 @@ namespace Vita.Samples.BookStore.Api {
 
     private ILoginProcess GetMutiFactorProcess(IEntitySession session, string token, bool throwIfNotFound = true) {
       OpContext.ThrowIfEmpty(token, ClientFaultCodes.ValueMissing, "token", "Process token may not be empty.");
-      var process = _processService.GetActiveProcess(session, LoginProcessType.MultiFactorLogin, token);
+      var processService = OpContext.App.GetService<ILoginProcessService>();
+      var process = processService.GetActiveProcess(session, LoginProcessType.MultiFactorLogin, token);
       if(throwIfNotFound)
         OpContext.ThrowIfNull(process, ClientFaultCodes.ObjectNotFound, "LoginProcess", "Invalid login process token - process not found or expired.");
       return process; 

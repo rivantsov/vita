@@ -18,6 +18,9 @@ namespace Vita.Web {
   /// dependent on WebApi infrastructure. </para>
   /// </remarks>
   //[CheckModelState] //ensures that exception is thrown automatically if there were failures in request data deserialization. 
+  // ApiController is optional, we use it here for one effect - the [FromBody] attribute will be 
+  // automatically inferred for complex input parameters
+  [ApiController]
   public class BaseApiController : ControllerBase {
 
     protected OperationContext OpContext => WebContext.OperationContext;
@@ -32,10 +35,7 @@ namespace Vita.Web {
 
     public virtual void Init() {
       Util.Check(this.ControllerContext != null, "Controller not initialized, ControllerContext is null");
-      var items = this.ControllerContext.HttpContext.Items;
-      Util.Check(items.TryGetValue(WebCallContext.WebCallContextKey, out object webContextObj), 
-        "Failed to retrieve WebCallContext from request context, WebCallContextHandler middleware is not installed.");
-      _webContext = (WebCallContext)webContextObj; 
+      _webContext = base.HttpContext.GetWebCallContext(); 
     }
 
     protected virtual IEntitySession OpenSession() {

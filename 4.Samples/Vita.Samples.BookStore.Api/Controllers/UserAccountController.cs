@@ -9,12 +9,17 @@ using Vita.Entities.Locking;
 using Vita.Entities.Api;
 using Microsoft.AspNetCore.Mvc;
 using Vita.Web;
+using Microsoft.AspNetCore.Authorization;
 
 namespace Vita.Samples.BookStore.Api {
 
   // Secured, authenticated-only controller for managing user-owned data
-  [Route("user"), LoggedInOnly]
-  class UserAccountController : BaseApiController {
+  [Route("api/user"), Authorize]
+  public class UserAccountController : BaseApiController {
+
+    public UserAccountController() {
+
+    }
 
     #region User
     [HttpGet]
@@ -154,22 +159,18 @@ namespace Vita.Samples.BookStore.Api {
       var itemEnt = session.GetEntity<IBookOrderLine>(id);
       OpContext.ThrowIfNull(itemEnt, ClientFaultCodes.ObjectNotFound, "BookId", "Book not found.");
       //Lock order
-      var order = session.GetEntity<IBookOrder>(itemEnt.Order.Id, LockType.ForUpdate);
+      var cart = GetOpenOrder(session, LockType.ForUpdate);
       session.DeleteEntity(itemEnt);
       itemEnt.Order.ScheduleUpdateTotal(); 
       session.SaveChanges();
     }
 
-    public class CartSumbitArgs {
-      public string Coupon { get; set; }
-    }
     [HttpPut, Route("cart/submit")]
-    public BookOrder SubmitOrder([FromQuery] CartSumbitArgs args) {
-      //we use this args object to allow optional coupon parameter
+    public BookOrder SubmitOrder(string coupon = null) {
       var session = OpenSession();
       var cart = GetOpenOrder(session, LockType.ForUpdate);
       OpContext.ThrowIfNull(cart, ClientFaultCodes.InvalidAction, "Cart", "Cart is empty, cannot submit order.");
-      cart.CompleteOrder(args.Coupon);
+      cart.CompleteOrder(coupon);
       session.SaveChanges(); 
       return cart.ToModel(details: true);
     }
@@ -251,7 +252,8 @@ namespace Vita.Samples.BookStore.Api {
     public void DeleteReview(Guid id) {
       var session = OpenSession();
       var review = session.GetEntity<IBookReview>(id);
-      OpContext.ThrowIfNull(review, ClientFaultCodes.ObjectNotFound, "ReviewId", "Review with ID '{0}' not found.", id);
+      OpContext.ThrowIfNull(review, ClientFaultCodes.ObjectNotFound, 
+                "ReviewId", "Review with ID '{0}' not found.", id);
       session.DeleteEntity(review);
       session.SaveChanges();
     }

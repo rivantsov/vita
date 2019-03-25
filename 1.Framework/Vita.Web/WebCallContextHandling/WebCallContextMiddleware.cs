@@ -27,7 +27,6 @@ namespace Vita.Web {
       }
       await _handler.EndRequest(context);
     }
-  }
 
-
+  }//class
 }

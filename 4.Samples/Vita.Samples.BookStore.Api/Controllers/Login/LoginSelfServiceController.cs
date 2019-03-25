@@ -11,7 +11,7 @@ using Vita.Web;
 
 namespace Vita.Samples.BookStore.Api {
 
-  [Route("mylogin"), LoggedInOnly]
+  [Route("api/mylogin"), LoggedInOnly]
   public class LoginSelfServiceController : BaseApiController {
      ILoginManagementService _loginManager;
 

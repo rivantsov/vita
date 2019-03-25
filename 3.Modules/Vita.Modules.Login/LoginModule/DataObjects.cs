@@ -83,7 +83,9 @@ namespace Vita.Modules.Login {
     public string UserDisplayName;
     /// <summary>For multi-factor login, the token identifying the server-side process that controls the multi-factor verification.</summary>
     public string MultiFactorProcessToken;
-    public Guid? SessionId; 
+    public Guid? SessionId;
+
+    public string AuthenticationToken; 
   }
 
 

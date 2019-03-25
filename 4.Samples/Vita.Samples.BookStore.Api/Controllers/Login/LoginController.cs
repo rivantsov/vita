@@ -16,12 +16,10 @@ using Vita.Web;
 namespace Vita.Samples.BookStore.Api {
 
   // Handles Login/logout operations
-  [Route("login")]
+  [Route("api/login")]
   public class LoginController : BaseApiController {
-    ILoginService _loginService; 
 
     public LoginController() {
-      _loginService = OpContext.App.GetService<ILoginService>();
     }
     /// <summary>Performs user login with user name and password.</summary>
     /// <param name="request">The request object.</param>
@@ -31,8 +29,9 @@ namespace Vita.Samples.BookStore.Api {
       OpContext.ThrowIfNull(request, ClientFaultCodes.ContentMissing, "LoginRequest", "Content object missing in API request.");
       OpContext.WebContext.Flags |= WebCallFlags.Confidential;
       //Login using LoginService
-      
-      var loginResult = _loginService.Login(this.OpContext, request.UserName, request.Password, request.TenantId, request.DeviceToken);
+
+      var loginService = OpContext.App.GetService<ILoginService>();
+      var loginResult = loginService.Login(this.OpContext, request.UserName, request.Password, request.TenantId, request.DeviceToken);
       var login = loginResult.Login;
       switch(loginResult.Status) {
         case LoginAttemptStatus.PendingMultifactor:
@@ -54,9 +53,19 @@ namespace Vita.Samples.BookStore.Api {
             UserName = login.UserName, UserDisplayName = displayName,
             UserId = login.UserId, AltUserId = login.AltUserId, LoginId = login.Id,
             PasswordExpiresDays = login.GetExpiresDays(), Actions = loginResult.Actions, LastLoggedInOn = loginResult.LastLoggedInOn,
-            SessionId = loginResult.SessionId
+            SessionId = loginResult.SessionId,
+            AuthenticationToken = CreateAuthToken()
           };
       }//switch
+    }
+
+    private string CreateAuthToken() {
+      var tokenCreator = OpContext.App.GetService<IAuthenticationTokenCreator>();
+      var claims = OpContext.GetDefaultClaims();
+      var loginStt = OpContext.App.GetConfig<LoginModuleSettings>();
+      var expires = OpContext.App.TimeService.UtcNow.Add(loginStt.LoginTokenExpiration);
+      var token = tokenCreator.CreateToken(claims, expires);
+      return token; 
     }
 
     /// <summary>Logs out the user. </summary>
@@ -64,8 +73,9 @@ namespace Vita.Samples.BookStore.Api {
     public void Logout() {
       if(OpContext.User.Kind != UserKind.AuthenticatedUser)
         return;
-      
-      _loginService.Logout(this.OpContext);
+
+      var loginService = OpContext.App.GetService<ILoginService>();
+      loginService.Logout(this.OpContext);
     } // method
 
     //Duplicate of method in PasswordResetController - that's ok I think
@@ -125,8 +135,9 @@ namespace Vita.Samples.BookStore.Api {
       OpContext.ThrowIf(process.PendingFactors != ExtraFactorTypes.None, ClientFaultCodes.InvalidValue, "PendingFactors",
         "Multi-factor login process not completed, verification pending: {0}.", process.PendingFactors);
       var login = process.Login;
-      
-      var loginResult = _loginService.CompleteMultiFactorLogin(OpContext, login);
+
+      var loginService = OpContext.App.GetService<ILoginService>();
+      var loginResult = loginService.CompleteMultiFactorLogin(OpContext, login);
       var displayName = OpContext.App.GetUserDispalyName(OpContext.User);
       session.SaveChanges(); 
       return new LoginResponse() {

@@ -6,6 +6,7 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace Vita.Entities.Utilities {
+
   public static class HexUtil {
 
     // efficient bytes to string method

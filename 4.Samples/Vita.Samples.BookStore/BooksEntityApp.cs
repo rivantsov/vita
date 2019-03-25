@@ -13,6 +13,8 @@ using Vita.Modules.Login;
 namespace Vita.Samples.BookStore {
 
   public class BooksEntityApp : EntityApp {
+    public static BooksEntityApp Instance; 
+
     public const string CurrentVersion = "1.2.1.0";
 
     public BooksModule MainModule;
@@ -44,6 +46,7 @@ namespace Vita.Samples.BookStore {
         typeof(LoginController), typeof(PasswordResetController), typeof(LoginSelfServiceController), typeof(LoginAdministrationController)
         );
         */
+      Instance = this; 
     }
 
   }//class

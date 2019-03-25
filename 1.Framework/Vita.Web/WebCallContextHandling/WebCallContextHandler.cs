@@ -24,13 +24,15 @@ namespace Vita.Web {
   /// </summary>
   public class WebCallContextHandler: IWebCallNotificationService {
     public readonly EntityApp  App; 
-    public readonly WebCallContextHandlerSettings Settings; 
+    public readonly WebCallContextHandlerSettings Settings;
+    public VitaJwtTokenHandler AuthTokenHandler; 
 
     /*
     IWebCallLogService _webCallLog;
     IErrorLogService _errorLog;
     IUserSessionService _sessionService; 
     */
+
 
     public WebCallContextHandler(EntityApp app, WebCallContextHandlerSettings settings) {
       App = app;

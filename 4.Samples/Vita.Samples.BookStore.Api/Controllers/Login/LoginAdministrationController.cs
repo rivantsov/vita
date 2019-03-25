@@ -10,7 +10,7 @@ using Vita.Modules.Login;
 using Vita.Web;
 
 namespace Vita.Samples.BookStore.Api {
-  [Route("logins")] //, LoggedInOnly, Secured ]
+  [Route("api/logins")] //, LoggedInOnly, Secured ]
   public class LoginAdministrationController : BaseApiController {
     ILoginAdministrationService _adminService => OpContext.App.GetService<ILoginAdministrationService>(); 
       

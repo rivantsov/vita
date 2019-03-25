@@ -82,7 +82,6 @@ namespace Vita.Testing.ExtendedTests {
         var loginConfig = BooksApp.GetConfig<Modules.Login.LoginModuleSettings>();
         loginConfig.MessagingService = LoginMessagingService;
 
-        // for SQLite- drop and copy database
         //Reset Db and drop schema objects; first set schema list 
         var resetDb = AppSettings["ResetDatabase"] == "true";
         if(resetDb) {

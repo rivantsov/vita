@@ -15,7 +15,7 @@ using Vita.Web;
 namespace Vita.Samples.BookStore.Api {
 
   // Handles Password reset
-  [Route("passwordreset")] 
+  [Route("api/passwordreset")] 
   public class PasswordResetController : BaseApiController {
     LoginModuleSettings _loginSettings; 
     ILoginProcessService _processService;

@@ -96,7 +96,8 @@ namespace Vita.Entities.Api {
     public IList<string> CustomTags = new List<string>(); 
 
     public WebCallContext(OperationContext opContext) {
-      this.OperationContext = opContext; 
+      this.OperationContext = opContext;
+      opContext.WebContext = this; 
     }
 
     public WebCallContext(object request, DateTime receivedOn, long tickCountStart, 

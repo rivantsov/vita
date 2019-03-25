@@ -54,7 +54,7 @@ namespace Vita.Data.Runtime {
       foreach(var lcmd in commands) {
         CheckCurrentCommand();
         var sql = _sqlFactory.GetLinqSql(lcmd);
-        _commandBuilder.AddLinqStatement(sql, null); 
+        _commandBuilder.AddLinqStatement(sql, lcmd.ParamValues); 
       }//foreach schCmd
     }
 

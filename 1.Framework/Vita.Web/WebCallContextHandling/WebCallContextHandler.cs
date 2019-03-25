@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
+using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
@@ -48,12 +49,30 @@ namespace Vita.Web {
 
     public Task BeginRequest(HttpContext httpContext) {
       var opCtx = new OperationContext(this.App);
-      var webCtx = new WebCallContext(opCtx);
-      httpContext.Items[WebCallContext.WebCallContextKey] = webCtx; 
+      var webCtx = opCtx.WebContext = new WebCallContext(opCtx);
+      httpContext.SetWebCallContext(webCtx);
+      OnWebCallStarting(webCtx); 
       return Task.CompletedTask;
     }
-    public Task EndRequest(HttpContext ctx, Exception ex = null) {
-      return Task.CompletedTask; 
+
+    public async Task EndRequest(HttpContext httpContext, Exception ex = null) {
+      var webCtx = httpContext.GetWebCallContext();
+      var resp = httpContext.Response; 
+      if (ex != null) {
+        var bodyWriter = new StreamWriter(resp.Body);
+        switch (ex) {
+          case ClientFaultException cfex:
+            resp.StatusCode = (int) HttpStatusCode.BadRequest;
+            await httpContext.WriteResponse(cfex.Faults); // writes resp respecting content negotiation
+            break;
+          default:
+            resp.StatusCode = (int)HttpStatusCode.InternalServerError;
+            bodyWriter.Write(ex.Message);
+            break; 
+        }
+        bodyWriter.Flush(); 
+      }
+      OnWebCallCompleting(webCtx); 
     }
 
     public WebCallContext CreateWebCallContext(HttpContext httpCtx, EntityApp app) {
@@ -74,19 +93,12 @@ namespace Vita.Web {
 
     // Fires WebCallStarting event - UserSessionService loads user session and attaches it to context, setting up currently logged in user
     private void OnWebCallStarting(WebCallContext webCtx) {
-      var evt = WebCallStarting;
-      if (evt != null) {
-        evt(this, new WebCallEventArgs(webCtx));
-        // if(webCtx.ResponseMessage != null)
-        //callInfo.Response = webCtx.ResponseMessage as HttpResponseMessage;
-      }
+      WebCallStarting?.Invoke(this, new WebCallEventArgs(webCtx));
     }
 
 
-    private void OnWebCallEnding(WebCallContext webCtx) {
-      var evt = WebCallCompleting;
-      if (evt != null)
-        evt(this, new WebCallEventArgs(webCtx));
+    private void OnWebCallCompleting(WebCallContext webCtx) {
+      WebCallCompleting?.Invoke(this, new WebCallEventArgs(webCtx));
     }
     #endregion
 

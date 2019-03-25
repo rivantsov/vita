@@ -85,10 +85,20 @@ namespace Vita.UnitTests.Web {
       // change options to None to disable logging of test client calls        
       Client = new ApiClient(serviceUrl, clientContext, clientName : "TestClient", nameMapping: ApiNameMapping.Default, 
            badRequestContentType: typeof(List<ClientFault>));
+      Client.Settings.PreviewResponse += ApiClient_PreviewResponse;
       ApiClient.SharedHttpClientHandler.AllowAutoRedirect = false; //we need it for Redirect test
     }
 
-    private static void CreateSampleData() {
+    private static void ApiClient_PreviewResponse(object sender, ApiCallEventArgs e) {
+      var callInfo = e.CallInfo; 
+      if (callInfo.Exception != null) {
+        switch (callInfo.Exception) {
+          case null: return;
+          case BadRequestException bre:
+            callInfo.Exception = new ClientFaultException((IList<ClientFault>)bre.Details);
+            break; 
+        }
+      }
     }
 
     static IWebHost _webHost; 

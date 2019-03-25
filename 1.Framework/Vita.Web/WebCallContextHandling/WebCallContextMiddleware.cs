@@ -21,11 +21,10 @@ namespace Vita.Web {
       await _handler.BeginRequest(context);
       try {
         await _next(context);
+        await _handler.EndRequest(context);
       } catch (Exception ex) {
         await _handler.EndRequest(context, ex);
-        throw;
       }
-      await _handler.EndRequest(context);
     }
 
   }//class

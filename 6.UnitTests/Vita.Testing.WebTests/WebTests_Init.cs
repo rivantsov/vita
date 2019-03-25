@@ -14,12 +14,13 @@ namespace Vita.UnitTests.Web {
   [TestClass]
   public partial class WebTests  {
 
-    [TestInitialize]
-    public void InitTest() {
+    [ClassInitialize]
+    public static void InitTest(TestContext ctx) {
       Web.TestStartup.Init();
     }
-    [TestCleanup]
-    public void TestCleanup() {
+
+    [ClassCleanup]
+    public static void TestCleanup() {
       Web.TestStartup.ShutDown();
     }
 

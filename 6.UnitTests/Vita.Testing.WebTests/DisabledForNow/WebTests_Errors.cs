@@ -12,6 +12,8 @@ using Vita.Entities;
 using Vita.Web;
 using Vita.Samples.BookStore.Api;
 using Vita.Samples.BookStore;
+using Vita.Tools.Testing;
+using Vita.RestClient;
 
 namespace Vita.UnitTests.Web {
 
@@ -20,17 +22,17 @@ namespace Vita.UnitTests.Web {
     // Testing saving client errors (in java script) on the server, using clienterror POST endpoint
     [TestMethod]
     public void TestClientErrorPost() {
-      var client = Startup.Client;
+      var client = TestStartup.Client;
       var clientError = new ClientError() {
         Id = Guid.NewGuid(), //optional 
         AppName = "TestApp", Message = "Client Error Message", Details = "Client Error Details",
-        LocalTime = Startup.BooksApp.TimeService.Now.AddMinutes(-5) //pretend it happened 5 minutes ago
+        LocalTime = TestStartup.BooksApp.TimeService.Now.AddMinutes(-5) //pretend it happened 5 minutes ago
       };
       var serverErrorId = client.ExecutePost<ClientError, Guid>(clientError, "api/logs-post/clienterrors");
       Assert.AreEqual(clientError.Id, serverErrorId, "Failed to submit client error, IDs do not match");
 
       //Verify record exists in database
-      var serverSession = Startup.BooksApp.OpenSystemSession();
+      var serverSession = TestStartup.BooksApp.OpenSystemSession();
       var errInfo = serverSession.GetEntity<IErrorLog>(serverErrorId);
       Assert.IsNotNull(errInfo, "Failed to get server error record.");
       Assert.AreEqual(clientError.Message, errInfo.Message, "message does not match");
@@ -118,7 +120,7 @@ namespace Vita.UnitTests.Web {
       // 3. Post malformed Json
 
       IWebCallLog logEntry;
-      var webStt = Startup.BooksApp.GetConfig<WebCallContextHandlerSettings>();
+      var webStt = TestStartup.BooksApp.GetConfig<WebCallContextHandlerSettings>();
       var savedLogLevel = webStt.LogLevel;
       // Set web log level to Basic - details are not logged unless there's error
       webStt.LogLevel = Entities.Services.LogLevel.Basic;
@@ -154,7 +156,7 @@ namespace Vita.UnitTests.Web {
 
       // AuthorizationException on the server: Diego tries to delete Dora's review. ------------------------------------------------------------- 
       // This should result in Unauthorized response from the server, with error details logged on the server and returned in response body
-      var serverSession = Startup.BooksApp.OpenSession();
+      var serverSession = TestStartup.BooksApp.OpenSession();
       var doraReviewId = serverSession.EntitySet<IBookReview>().First(r => r.User.UserName == "Dora").Id;
 
       LoginAs("Diego");

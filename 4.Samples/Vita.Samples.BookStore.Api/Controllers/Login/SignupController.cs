@@ -13,7 +13,7 @@ namespace Vita.Samples.BookStore.Api {
 
   /// <summary> Signup functionality - creating user accounts for web visitors (customers)
   /// </summary>
-  [Route("signup")]
+  [Route("api/signup")]
   public class SignupController : BaseApiController {
 
     [HttpPost]

@@ -13,7 +13,6 @@ using Vita.Samples.BookStore;
 using Vita.Entities;
 using Vita.Modules.Login;
 using Vita.Samples.BookStore.Api;
-using Vita.RestClient.Sync;
 using Vita.Tools.Testing;
 using Vita.RestClient;
 
@@ -103,12 +102,6 @@ namespace Vita.UnitTests.Web {
       Assert.IsNotNull(tempPwd, "Expected password");
       Assert.IsFalse(string.IsNullOrWhiteSpace(tempPwd.Password), "Expected non-empty one-time password");
       Assert.IsTrue(tempPwd.ExpiresHours > 0, "Expected expiration hours > 0.");
-      // System will email Cartman with temp password, automatically
-
-      var pwdEmail = TestStartup.GetLastMessageTo(cartmanEmail);
-      Assert.IsNotNull(pwdEmail, "One-time password notification not sent.");
-      var pwdFromEmail = (string)pwdEmail.GetString(LoginNotificationKeys.OneTimePassword);
-      Assert.AreEqual(tempPwd.Password, pwdFromEmail, "Temp passwords do not match.");
 
       // Let's check if temp pwd works
       Logout();
@@ -195,7 +188,7 @@ namespace Vita.UnitTests.Web {
       processTokenBox = client.ExecutePost<object, BoxedValue<string>>(null, "api/mylogin/factors/{0}/pin", emailFactor.Id);
       var pinEmail = TestStartup.GetLastMessageTo(ferbEmail);
       Assert.IsNotNull(pinEmail, "Pin email not received.");
-      var pin = pinEmail.GetString("Pin"); //get pin from email
+      var pin = pinEmail.Pin; //get pin from email
       Assert.IsFalse(string.IsNullOrEmpty(pin), "Expected non-null pin");
       //submit pin
       // method 1 - endpoint for logged in user, used when user copy/pastes pin on a page
@@ -253,7 +246,7 @@ namespace Vita.UnitTests.Web {
       Assert.AreEqual(PasswordStrength.Strong, strength, "Expected Strong result.");
       // actually change
       var status = client.ExecutePut<PasswordChangeInfo, HttpStatusCode>(pwdChange, "api/mylogin/password");
-      Assert.AreEqual(HttpStatusCode.NoContent, status, "Password change failed");
+      Assert.AreEqual(HttpStatusCode.OK, status, "Password change failed");
       //verify it
       Logout();
       ferbLogin = LoginAs(ferbUserName, pwdChange.NewPassword);
@@ -283,16 +276,16 @@ namespace Vita.UnitTests.Web {
       // 2. Send pin using email 
       var sendPinRequest = new SendPinRequest() { ProcessToken = processToken, FactorType = ExtraFactorTypes.Email, Factor = ferbEmail };
       var httpStatus = client.ExecutePost<SendPinRequest, HttpStatusCode>(sendPinRequest, "api/passwordreset/pin/send");
-      Assert.AreEqual(HttpStatusCode.NoContent, httpStatus, "Failed to send pin.");
+      Assert.AreEqual(HttpStatusCode.OK, httpStatus, "Failed to send pin.");
       // 3. Ferb receives email - we check our mock email service, retrieve the message and pin
       pinEmail = TestStartup.GetLastMessageTo(ferbEmail);
       Assert.IsNotNull(pinEmail, "Email with pin not received.");
-      pin = (string)pinEmail.GetString("Pin");
+      pin = pinEmail.Pin;
       Assert.IsTrue(!string.IsNullOrWhiteSpace(pin), "Failed to receive/extract pin.");
       // 4. Ferb copies pin from email and enters it in a page. The UI submits the pin
       var checkPinReq = new VerifyPinRequest() { ProcessToken = processToken, Pin = pin };
       httpStatus = client.ExecutePut<VerifyPinRequest, HttpStatusCode>(checkPinReq, "api/passwordreset/pin/verify");
-      Assert.AreEqual(HttpStatusCode.NoContent, httpStatus, "Failed to submit pin.");
+      Assert.AreEqual(HttpStatusCode.OK, httpStatus, "Failed to submit pin.");
       // 5. UI retrieves the process to see if pin was correct and to see further steps. 
       //    If the pin was correct, the email is confirmed, and now we can retrieve the process object; otherwise the call would return null.
       process = client.ExecuteGet<LoginProcess>("api/passwordreset/process?token={0}", processToken);
@@ -325,7 +318,7 @@ namespace Vita.UnitTests.Web {
       // 9. Verify that email notification was sent about password change
       var notifEmail = TestStartup.GetLastMessageTo(ferbEmail);
       Assert.IsNotNull(notifEmail, "Password change notification was not sent.");
-      Assert.AreEqual(LoginNotificationTypes.PasswordReset, notifEmail.Type, "Expected password change message.");
+      Assert.AreEqual(LoginMessageType.PasswordResetCompleted, notifEmail.MessageType, "Expected password change message.");
       // 10. Try to login with changed password
       ferbLogin = LoginAs(ferbUserName, oldPassword);
       Assert.AreEqual(LoginAttemptStatus.Success, ferbLogin.Status, "Login failed after reset.");
@@ -362,11 +355,11 @@ namespace Vita.UnitTests.Web {
       // Email: Ask server to send pin by email
       sendPinRequest = new SendPinRequest() { ProcessToken = processToken, FactorType = ExtraFactorTypes.Email };
       httpStatus = client.ExecutePost<SendPinRequest, HttpStatusCode>(sendPinRequest, "api/login/multifactor/pin/send");
-      Assert.AreEqual(HttpStatusCode.NoContent, httpStatus, "Expected NoContent status");
+      Assert.AreEqual(HttpStatusCode.OK, httpStatus, "Expected OK status");
       //Get message with pin from mock inbox and extract pin
       pinEmail = TestStartup.GetLastMessageTo(ferbEmail);
       Assert.IsNotNull(pinEmail, "Email with pin not sent.");
-      pin = pinEmail.GetString("Pin");
+      pin = pinEmail.Pin;
       // Ferb copies pin from email and enters it in UI. UI submits the pin 
       checkPinReq = new VerifyPinRequest() { ProcessToken = processToken, Pin = pin };
       success = client.ExecutePut<VerifyPinRequest, bool>(checkPinReq, "api/login/multifactor/pin/verify");
@@ -391,7 +384,7 @@ namespace Vita.UnitTests.Web {
       ferbLogin = client.ExecutePost<MultifactorLoginRequest, LoginResponse>(mfCompleteReq, "api/login/multifactor/complete");
       Assert.IsNotNull(ferbLogin, "Failed to complete login.");
       Assert.AreEqual(LoginAttemptStatus.Success, ferbLogin.Status, "Expected success status");
-      client.AddRequestHeader("Authorization", ferbLogin.AuthenticationToken); //we have to add it explicitly here
+      client.AddAuthorizationHeader(ferbLogin.AuthenticationToken); //we have to add it explicitly here
       // Ferb identifies the computer as personal (safe) device, and sets to skip multi-factor on this device
       var deviceInfo = new DeviceInfo() { Type = DeviceType.Computer, TrustLevel = DeviceTrustLevel.AllowSingleFactor };
       //register the computer 

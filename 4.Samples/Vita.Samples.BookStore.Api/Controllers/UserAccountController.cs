@@ -201,12 +201,12 @@ namespace Vita.Samples.BookStore.Api {
     #endregion
 
     #region Reviews
-    [HttpPost, Route("reviews"), LoggedInOnly]
+    [HttpPost, Route("reviews"), Authorize]
     public BookReview AddReview(BookReview review) {
       return CreateUpdateReview(review, create: true);
     }
 
-    [HttpPut, Route("reviews"), LoggedInOnly]
+    [HttpPut, Route("reviews"), Authorize]
     public BookReview UpdateReview(BookReview review) {
       return CreateUpdateReview(review, create: false);
     }

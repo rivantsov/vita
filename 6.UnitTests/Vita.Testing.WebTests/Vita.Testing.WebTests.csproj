@@ -7,22 +7,21 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="DisabledForNow\WebTests_Errors.cs" />
+    <Compile Remove="DisabledForNow\WebTests_LogViewer.cs" />
+    <Compile Remove="DisabledForNow\WebTests_Session.cs" />
+    <Compile Remove="DisabledForNow\WebTests_SpecialCases.cs" />
     <Compile Remove="WebTests_Errors.cs" />
-    <Compile Remove="WebTests_Login.cs" />
     <Compile Remove="WebTests_LogViewer.cs" />
-    <Compile Remove="WebTests_OAuth.cs" />
     <Compile Remove="WebTests_Session.cs" />
-    <Compile Remove="WebTests_SpecialCases.cs" />
     <Compile Remove="_Program.cs" />
   </ItemGroup>
 
   <ItemGroup>
-    <None Include="WebTests_Errors.cs" />
-    <None Include="WebTests_Login.cs" />
-    <None Include="WebTests_LogViewer.cs" />
-    <None Include="WebTests_OAuth.cs" />
-    <None Include="WebTests_Session.cs" />
-    <None Include="WebTests_SpecialCases.cs" />
+    <None Include="DisabledForNow\WebTests_Errors.cs" />
+    <None Include="DisabledForNow\WebTests_SpecialCases.cs" />
+    <None Include="DisabledForNow\WebTests_LogViewer.cs" />
+    <None Include="DisabledForNow\WebTests_Session.cs" />
     <None Include="_Program.cs" />
   </ItemGroup>
 

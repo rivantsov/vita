@@ -144,7 +144,9 @@ namespace Vita.Samples.BookStore.Api {
         Status = LoginAttemptStatus.Success, SessionId = loginResult.SessionId,
         UserName = login.UserName, UserDisplayName = displayName,
         UserId = login.UserId, AltUserId = login.AltUserId, LoginId = login.Id,
-        PasswordExpiresDays = login.GetExpiresDays(), Actions = loginResult.Actions, LastLoggedInOn = loginResult.LastLoggedInOn
+        PasswordExpiresDays = login.GetExpiresDays(), Actions = loginResult.Actions,
+        LastLoggedInOn = loginResult.LastLoggedInOn,
+        AuthenticationToken = CreateAuthToken()
       };
     }//method
 

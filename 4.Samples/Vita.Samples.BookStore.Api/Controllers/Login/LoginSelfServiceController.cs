@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Vita.Entities;
 using Vita.Entities.Api;
@@ -11,13 +12,15 @@ using Vita.Web;
 
 namespace Vita.Samples.BookStore.Api {
 
-  [Route("api/mylogin"), LoggedInOnly]
+  [Route("api/mylogin"), Authorize]
   public class LoginSelfServiceController : BaseApiController {
-     ILoginManagementService _loginManager;
 
-    public LoginSelfServiceController() {
-      _loginManager = OpContext.App.GetService<ILoginManagementService>();
-    }
+     ILoginManagementService LoginManager {
+      get {
+        _loginManager = _loginManager ?? OpContext.App.GetService<ILoginManagementService>();
+        return _loginManager; 
+      }
+    } ILoginManagementService _loginManager;
 
     /// <summary>Returns login information for the current user. </summary>
     /// <returns>An object with information about login.</returns>
@@ -38,7 +41,7 @@ namespace Vita.Samples.BookStore.Api {
       var login = GetCurrentLogin(session);
       OpContext.ThrowIfNull(login, ClientFaultCodes.ContentMissing, "LoginInfo", "LoginInfo is missing.");
       OpContext.ThrowIf(loginInfo.Id != login.Id, ClientFaultCodes.InvalidValue, "Id", "Invalid login Id, must match current user's login id.");
-      _loginManager.UpdateLogin(login, loginInfo);
+      LoginManager.UpdateLogin(login, loginInfo);
       session.SaveChanges(); 
       return login.ToModel(); 
     }
@@ -48,7 +51,7 @@ namespace Vita.Samples.BookStore.Api {
     [HttpGet, Route("allquestions")]
     public List<SecretQuestion> GetStandardSecretQuestions() {
       var session = OpContext.OpenSession(); //opening system session, no need for authorization
-      var questions = _loginManager.GetAllSecretQuestions(session);
+      var questions = LoginManager.GetAllSecretQuestions(session);
       return questions.Select(q => q.ToModel()).ToList();
     }
 
@@ -58,7 +61,7 @@ namespace Vita.Samples.BookStore.Api {
     public List<SecretQuestion> GetMySecretQuestions() {
       var session = OpenSession();
       var login = GetCurrentLogin(session);
-      var questions = _loginManager.GetUserSecretQuestions(login);
+      var questions = LoginManager.GetUserSecretQuestions(login);
       return questions.Select(q => q.ToModel()).ToList();
     }
 
@@ -68,8 +71,8 @@ namespace Vita.Samples.BookStore.Api {
     public void SetUserSecretQuestionAnswers(List<SecretQuestionAnswer> answers) {
       var session = OpenSession();
       var login = GetCurrentLogin(session);
-      _loginManager.UpdateUserQuestionAnswers(login, answers);
-      _loginManager.CheckLoginFactorsSetupCompleted(login);
+      LoginManager.UpdateUserQuestionAnswers(login, answers);
+      LoginManager.CheckLoginFactorsSetupCompleted(login);
       session.SaveChanges(); 
     }
 
@@ -79,7 +82,7 @@ namespace Vita.Samples.BookStore.Api {
     public void ReorderUserQuestionAnswers(IList<Guid> ids) {
       var session = OpenSession();
       var login = GetCurrentLogin(session);
-      _loginManager.ReorderUserQuestionAnswers(login, ids);
+      LoginManager.ReorderUserQuestionAnswers(login, ids);
       session.SaveChanges(); 
     }
 
@@ -89,7 +92,7 @@ namespace Vita.Samples.BookStore.Api {
     public IList<LoginExtraFactor> GetUserFactors() {
       var session = OpenSession();
       var login = GetCurrentLogin(session);
-      return _loginManager.GetUserFactors(login); 
+      return LoginManager.GetUserFactors(login); 
     }
 
     /// <summary>Returns an information on user extra factor identified by ID.</summary>
@@ -99,7 +102,7 @@ namespace Vita.Samples.BookStore.Api {
     public LoginExtraFactor GetUserFactor(Guid factorId) {
       var session = OpenSession();
       var login = GetCurrentLogin(session);
-      return _loginManager.GetUserFactor(login, factorId);
+      return LoginManager.GetUserFactor(login, factorId);
     }
 
 
@@ -111,8 +114,8 @@ namespace Vita.Samples.BookStore.Api {
     public LoginExtraFactor AddUserFactor(LoginExtraFactor factor) {
       var session = OpenSession();
       var login = GetCurrentLogin(session);
-      var newFactor = _loginManager.AddFactor(login, factor.Type, factor.Value);
-      _loginManager.CheckLoginFactorsSetupCompleted(login);
+      var newFactor = LoginManager.AddFactor(login, factor.Type, factor.Value);
+      LoginManager.CheckLoginFactorsSetupCompleted(login);
       session.SaveChanges();
       return newFactor; 
     }
@@ -128,9 +131,9 @@ namespace Vita.Samples.BookStore.Api {
       OpContext.ThrowIfNull(iFactor, ClientFaultCodes.ObjectNotFound, "factor", "Factor not found, ID: {0}", factor.Id);
       if (factor.Type == ExtraFactorTypes.GoogleAuthenticator)
         factor.Value = Modules.Login.GoogleAuthenticator.GoogleAuthenticatorUtil.GenerateSecret();
-      var updFactor = _loginManager.UpdateFactor(iFactor, factor.Value);
+      var updFactor = LoginManager.UpdateFactor(iFactor, factor.Value);
       session.SaveChanges();
-      _loginManager.CheckLoginFactorsSetupCompleted(login);
+      LoginManager.CheckLoginFactorsSetupCompleted(login);
       session.SaveChanges();
       return updFactor;
     }
@@ -150,7 +153,7 @@ namespace Vita.Samples.BookStore.Api {
       OpContext.ThrowIf(iFactor.Login != login, ClientFaultCodes.InvalidAction, "id", "Factor does not belong to current user.");
       OpContext.ThrowIf(iFactor.FactorType != ExtraFactorTypes.GoogleAuthenticator, ClientFaultCodes.InvalidAction,
           "FactorType", "Factor is not GoogleAuthenticator.");
-      return _loginManager.GetGoogleAuthenticatorQRUrl(iFactor); 
+      return LoginManager.GetGoogleAuthenticatorQRUrl(iFactor); 
     }
 
     /// <summary>Deletes user extra factor. </summary>
@@ -163,7 +166,7 @@ namespace Vita.Samples.BookStore.Api {
       OpContext.ThrowIfNull(factor, ClientFaultCodes.ObjectNotFound, "factor", "Factor not found, ID: {0}", id);
       session.DeleteEntity(factor); 
       session.SaveChanges();
-      _loginManager.CheckLoginFactorsSetupCompleted(login);
+      LoginManager.CheckLoginFactorsSetupCompleted(login);
     }
 
     //Email/phone verification
@@ -222,7 +225,7 @@ namespace Vita.Samples.BookStore.Api {
       OpContext.ThrowIfNull(changeInfo, ClientFaultCodes.ContentMissing, "Password", "Password change info is missing.");
       var session = OpenSession();
       var login = GetCurrentLogin(session);
-      _loginManager.ChangePassword(login, changeInfo.OldPassword, changeInfo.NewPassword);
+      LoginManager.ChangePassword(login, changeInfo.OldPassword, changeInfo.NewPassword);
       session.SaveChanges();
     }
 
@@ -256,7 +259,7 @@ namespace Vita.Samples.BookStore.Api {
       if(!string.IsNullOrWhiteSpace(device.Token))
         deviceEnt = login.GetDevice(device.Token);
       if(deviceEnt == null)
-        deviceEnt = _loginManager.RegisterTrustedDevice(login, device.Type, device.TrustLevel);
+        deviceEnt = LoginManager.RegisterTrustedDevice(login, device.Type, device.TrustLevel);
       else {
         deviceEnt.TrustLevel = device.TrustLevel;
       }
@@ -277,7 +280,7 @@ namespace Vita.Samples.BookStore.Api {
 
 
     private ILogin GetCurrentLogin(IEntitySession session) {
-      var login = _loginManager.GetLogin(session);
+      var login = LoginManager.GetLogin(session);
       OpContext.ThrowIfNull(login, ClientFaultCodes.ObjectNotFound, "Login", "Login not found for user: {0}.", OpContext.User.UserName);
       return login; 
     }

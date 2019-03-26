@@ -4,14 +4,11 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System.Net;
 
 using Vita.Entities;
-using Vita.UnitTests.Common;
-using Vita.Modules.Logging;
 using Vita.Samples.BookStore;
 using Vita.Samples.BookStore.Api;
-using Vita.Modules.WebClient.Sync;
-using Vita.Modules.WebClient;
-using Vita.Common;
 using System.Threading.Tasks;
+using Vita.Tools.Testing;
+using Vita.RestClient;
 
 namespace Vita.UnitTests.Web {
 
@@ -20,7 +17,7 @@ namespace Vita.UnitTests.Web {
     // Tests special methods in controller
     [TestMethod]
     public void TestSpecialMethods() {
-      var client = Startup.Client;
+      var client = TestStartup.Client;
       Logout(); // just in case there's still session there from other tests
 
       //Test date handling in URL
@@ -66,7 +63,7 @@ namespace Vita.UnitTests.Web {
 
     [TestMethod]
     public void TestDiagnosticsController() {
-      var client = Startup.Client;
+      var client = TestStartup.Client;
       var acceptText = "application/text,text/plain";
       //Heartbeat
       DiagnosticsController.Reset();
@@ -88,8 +85,10 @@ namespace Vita.UnitTests.Web {
       Assert.IsTrue(currOffset.StartsWith("Current offset: 0 minutes"), "Expected no offset");
 
       //test that heartbeat call is not logged in web log - controller method sets log level to None
-      var serverSession = Startup.BooksApp.OpenSession();
-      var hbeatEntry = serverSession.EntitySet<IWebCallLog>().Where(wl => wl.Url.Contains("heartbeat")).FirstOrDefault();
+      var serverSession = TestStartup.BooksApp.OpenSession();
+
+      // fix this
+      var hbeatEntry = new object(); // serverSession.EntitySet<IWebCallLog>().Where(wl => wl.Url.Contains("heartbeat")).FirstOrDefault();
       Assert.IsNull(hbeatEntry, "Expected no heartbeat entry in web log.");
     }
 
@@ -104,7 +103,7 @@ namespace Vita.UnitTests.Web {
     // We then retrieve this report thru second call and verify that connection was in fact closed properly. 
     [TestMethod]
     public void TestDbConnectionHandling() {
-      var client = Startup.Client;
+      var client = TestStartup.Client;
       var ok = client.ExecuteGet<string>("api/special/connectiontest");
       Assert.AreEqual("OK", ok, "Connection test did not return OK");
       //get report
@@ -115,7 +114,7 @@ namespace Vita.UnitTests.Web {
 
     [TestMethod]
     public void TestAsyncServerMethod() {
-      var client = Startup.Client;
+      var client = TestStartup.Client;
       var result = client.ExecuteGet<string>("api/special/getdateasync");
       Assert.IsTrue(!string.IsNullOrWhiteSpace(result), "Async method call failed.");
     }
@@ -125,7 +124,7 @@ namespace Vita.UnitTests.Web {
       AsyncHelper.RunSync(() => TestClientCallAsyncImpl());      
     }
     public async Task TestClientCallAsyncImpl() {
-      var client = Startup.Client;
+      var client = TestStartup.Client;
       //Test WebApiClient.CallAsync
       var res2 = await client.SendAsync<object, string>(System.Net.Http.HttpMethod.Get, null, "api/special/getdateasync");
       Assert.IsTrue(!string.IsNullOrWhiteSpace(res2), "Async method call failed.");

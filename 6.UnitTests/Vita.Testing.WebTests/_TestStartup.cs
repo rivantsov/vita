@@ -7,22 +7,20 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Configuration;
 using System.Diagnostics;
-
-using Vita.Entities;
-using Vita.Entities.Services;
-using Vita.Web;
-using Vita.Data;
-using Vita.Data.Model;
-using Vita.Data.MsSql;
-
-using Vita.Samples.BookStore;
-using Vita.Samples.BookStore.SampleData;
-using Vita.RestClient;
 using Microsoft.Extensions.Configuration;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore;
+
+using Vita.Entities;
+using Vita.Data;
+using Vita.Data.MsSql;
 using Vita.Tools;
 using Vita.Entities.DbInfo;
+using Vita.Modules.Login.Mocks;
+
+using Vita.RestClient;
+using Vita.Samples.BookStore;
+using Vita.Samples.BookStore.SampleData;
 
 namespace Vita.UnitTests.Web {
 
@@ -31,6 +29,7 @@ namespace Vita.UnitTests.Web {
     public static ApiClient Client;
     public static string LogFilePath;
     internal static IConfigurationRoot AppSettings;
+    public static MockLoginMessagingService LoginMessagingService;
 
     public static void Init() {
       try {
@@ -63,8 +62,12 @@ namespace Vita.UnitTests.Web {
       BooksApp.LogPath = LogFilePath; 
       //Add mock email/sms service
       // NotificationListener = new NotificationListener(BooksApp, blockAll: true);
-      //Set magic captcha in login settings, so we can pass captcha in unit tests
-      var loginStt = BooksApp.GetConfig<Vita.Modules.Login.LoginModuleSettings>();
+      // Setup mock messaging service
+      LoginMessagingService = new MockLoginMessagingService();
+      var loginConfig = BooksApp.GetConfig<Modules.Login.LoginModuleSettings>();
+      loginConfig.MessagingService = LoginMessagingService;
+
+
       BooksApp.Init();
       //connect to database
       var driver = new MsSqlDbDriver();
@@ -119,12 +122,10 @@ namespace Vita.UnitTests.Web {
       _webHost.StopAsync().Wait(); 
     }
 
-    /*
-    public static NotificationMessage GetLastMessageTo(string email) {
+    public static SentMessageInfo GetLastMessageTo(string email) {
       System.Threading.Thread.Sleep(50); //sending messages is async, make sure bkgr thread done its job
-      return NotificationListener.GetLastMessageTo(email);
+      return LoginMessagingService.SentMessages.LastOrDefault(m => m.Email == email);
     }
-    */
 
 
   }//class

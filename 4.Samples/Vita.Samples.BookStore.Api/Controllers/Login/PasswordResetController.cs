@@ -17,23 +17,25 @@ namespace Vita.Samples.BookStore.Api {
   // Handles Password reset
   [Route("api/passwordreset")] 
   public class PasswordResetController : BaseApiController {
-    LoginModuleSettings _loginSettings; 
-    ILoginProcessService _processService;
 
-    public PasswordResetController() {
-       _processService = OpContext.App.GetService<ILoginProcessService>();
-       _loginSettings = OpContext.App.GetConfig<LoginModuleSettings>();
-    }
+
+    ILoginProcessService ProcessService {
+      get {
+        _processService = _processService ?? OpContext.App.GetService<ILoginProcessService>();
+        return _processService; 
+      }
+    } ILoginProcessService _processService;
 
     /// <summary>Starts password reset process. </summary>
     /// <param name="request">The data object with Captcha value (if used) and authentication factor (email).</param>
     /// <returns>Process token identifying the started process. </returns>
     [HttpPost, Route("start")]
     public BoxedValue<string> Start(PasswordResetStartRequest request) {
-      var obscured = _loginSettings.Options.IsSet(LoginModuleOptions.ConcealMembership);
-      var processToken = _processService.GenerateProcessToken(); 
+      var loginStt = OpContext.App.GetConfig<LoginModuleSettings>();
+      var obscured = loginStt.Options.IsSet(LoginModuleOptions.ConcealMembership);
+      var processToken = ProcessService.GenerateProcessToken(); 
       var session = OpContext.OpenSession(); 
-      var emailFactor = _processService.FindLoginExtraFactor(session, ExtraFactorTypes.Email, request.Factor);
+      var emailFactor = ProcessService.FindLoginExtraFactor(session, ExtraFactorTypes.Email, request.Factor);
       if(emailFactor == null) {
         // If we need to conceal membership (we are a public porn site), we have to pretend it went ok, and return processToken
         // so that we do not disclose if user's email is/is not in our database
@@ -47,9 +49,10 @@ namespace Vita.Samples.BookStore.Api {
       //check we can start login
       var login = emailFactor.Login;
       if(login.Flags.IsSet(LoginFlags.DoNotConcealMembership))
-        obscured = false; 
+        obscured = false;
 
-      bool accountBlocked = login.Flags.IsSet(LoginFlags.Disabled) || (login.Flags.IsSet(LoginFlags.Suspended) && !_loginSettings.Options.IsSet(LoginModuleOptions.AllowPasswordResetOnSuspended)); 
+      bool accountBlocked = login.Flags.IsSet(LoginFlags.Disabled) || (login.Flags.IsSet(LoginFlags.Suspended) && 
+            !loginStt.Options.IsSet(LoginModuleOptions.AllowPasswordResetOnSuspended)); 
       if(accountBlocked) {
         if(obscured)
           return new BoxedValue<string>(processToken);
@@ -58,7 +61,7 @@ namespace Vita.Samples.BookStore.Api {
       }
       //A flag in login entity may override default conceal settings - to allow more convenient disclosure for 
       // special members (stuff members or partners)
-      var process = _processService.StartProcess(login, LoginProcessType.PasswordReset, processToken);
+      var process = ProcessService.StartProcess(login, LoginProcessType.PasswordReset, processToken);
       return new BoxedValue<string>(processToken); 
     }
 
@@ -100,13 +103,13 @@ namespace Vita.Samples.BookStore.Api {
       if(process == null)
         return; //no indication process exist or not
       OpContext.ThrowIf(process.CurrentFactor != null, ClientFaultCodes.InvalidAction, "token", "The previous process step is not completed."); 
-      var iFactor = _processService.FindLoginExtraFactor(process.Login, request.Factor);
+      var iFactor = ProcessService.FindLoginExtraFactor(process.Login, request.Factor);
       //now having completed at least one extra factor, we can openly indicate that we could not find next factor
       OpContext.ThrowIfNull(iFactor, ClientFaultCodes.InvalidValue, "factor", "Login factor (email or phone) is not found for a user.");
       //Check that factor type is one in the pending steps
       var factorOk = process.PendingFactors.IsSet(iFactor.FactorType);
       OpContext.ThrowIf(!factorOk, ClientFaultCodes.InvalidValue, "factor", "Login factor type attempted (email or phone) is not pending in the process.");
-      await _processService.SendPinAsync(process, iFactor, request.Factor); //we use factor from request, to avoid unencrypting twice
+      await ProcessService.SendPinAsync(process, iFactor, request.Factor); //we use factor from request, to avoid unencrypting twice
     }
 
     /// <summary>Verifies pin received by user in email or SMS. </summary>
@@ -117,7 +120,7 @@ namespace Vita.Samples.BookStore.Api {
       var process = GetActiveProcess(session, request.ProcessToken, confirmedOnly: false);
       OpContext.ThrowIfEmpty(request.Pin, ClientFaultCodes.ValueMissing, "pin", "Pin value missing");
       if(process != null) 
-        _processService.SubmitPin(process, request.Pin);
+        ProcessService.SubmitPin(process, request.Pin);
     }
 
     /// <summary>Aborts the password reset process.</summary>
@@ -129,7 +132,7 @@ namespace Vita.Samples.BookStore.Api {
       var session = OpContext.OpenSession();
       var process = GetActiveProcess(session, token, confirmedOnly: false); 
       if(process != null) 
-        _processService.AbortPasswordReset(process);
+        ProcessService.AbortPasswordReset(process);
     }
 
     /// <summary>Returns a list of secret questions for a user. </summary>
@@ -141,7 +144,7 @@ namespace Vita.Samples.BookStore.Api {
       var process = GetActiveProcess(session, token);
       if(process == null)
         return new List<SecretQuestion>();
-      var qs = _processService.GetUserSecretQuestions(process.Login);
+      var qs = ProcessService.GetUserSecretQuestions(process.Login);
       var list = qs.Select(q => q.ToModel()).ToList();
       return list; 
     }
@@ -159,7 +162,7 @@ namespace Vita.Samples.BookStore.Api {
         return false;
       var storedAnswer = process.Login.SecretQuestionAnswers.FirstOrDefault(a => a.Question.Id == answer.QuestionId);
       OpContext.ThrowIfNull(storedAnswer, ClientFaultCodes.InvalidValue, "questionId", "Question is not registered user question.");
-      var success = _processService.CheckSecretQuestionAnswer(process, storedAnswer.Question, answer.Answer); 
+      var success = ProcessService.CheckSecretQuestionAnswer(process, storedAnswer.Question, answer.Answer); 
       return success; 
     }
 
@@ -174,7 +177,7 @@ namespace Vita.Samples.BookStore.Api {
       var process = GetActiveProcess(session, token);
       if(process == null)
         return false;
-      var result = _processService.CheckAllSecretQuestionAnswers(process, answers);
+      var result = ProcessService.CheckAllSecretQuestionAnswers(process, answers);
       return result; 
     }
 
@@ -189,13 +192,13 @@ namespace Vita.Samples.BookStore.Api {
       var process = GetActiveProcess(session, token);
       if(process == null)
         return false;
-      await _processService.ResetPasswordAsync(process, changeInfo.NewPassword);
+      await ProcessService.ResetPasswordAsync(process, changeInfo.NewPassword);
       return true;
     }
 
     //Private utilities
     private ILoginProcess GetActiveProcess(IEntitySession session, string token, bool confirmedOnly = true) {
-      var process = _processService.GetActiveProcess(session, LoginProcessType.PasswordReset, token);
+      var process = ProcessService.GetActiveProcess(session, LoginProcessType.PasswordReset, token);
       if(process == null)
         return null;
       if(confirmedOnly && process.CompletedFactors == ExtraFactorTypes.None)

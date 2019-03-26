@@ -21,6 +21,7 @@ using Vita.Tools;
 using Vita.Entities.DbInfo;
 using Vita.Tools.Testing;
 using Vita.Data.Sql;
+using Vita.Modules.Login.Mocks;
 //using Microsoft.Data.Sqlite;
 
 namespace Vita.Testing.ExtendedTests {

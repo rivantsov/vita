@@ -315,13 +315,6 @@ namespace Vita.Entities {
       this.User = new UserInfo(userId, userName, UserKind.AuthenticatedUser, altUserId);
     }
 
-    public Claim[] GetDefaultClaims() {
-      return new Claim[] {
-        new Claim(nameof(User.UserId), User.UserId.ToString()),
-        new Claim(nameof(User.UserName), User.UserName),
-        new Claim(nameof(User.AltUserId), User.AltUserId.ToString(CultureInfo.InvariantCulture)),
-      };
-    }
   }//class
 
 } //ns

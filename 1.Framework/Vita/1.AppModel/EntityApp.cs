@@ -17,6 +17,8 @@ using Vita.Entities.Utilities;
 using Vita.Data.Runtime;
 using System.Threading.Tasks;
 using System.Threading;
+using System.Security.Claims;
+using System.Globalization;
 
 namespace Vita.Entities {
 
@@ -319,12 +321,6 @@ namespace Vita.Entities {
 
     #endregion
 
-    #region Methods to override (optionally)
-    public virtual string GetUserDispalyName(UserInfo user) {
-      return user.UserName;
-    }
-    #endregion
-
 
     #region Init, connect, shutdown
 
@@ -372,6 +368,25 @@ namespace Vita.Entities {
     }
 
     #endregion 
+
+    #region Methods to override (optionally)
+    public virtual string GetUserDispalyName(UserInfo user) {
+      return user.UserName;
+    }
+
+    public virtual IList<Claim> GetUserClaims(OperationContext userContext) {
+      var user = userContext.User;
+      return new List<Claim> {
+        new Claim(nameof(user.UserId), user.UserId.ToString()),
+        new Claim(nameof(user.UserName), user.UserName),
+        new Claim(nameof(user.AltUserId), user.AltUserId.ToString(CultureInfo.InvariantCulture)),
+      };
+    }    
+
+    #endregion
+
+
+
   }//class
 
 }//ns

@@ -61,7 +61,7 @@ namespace Vita.Samples.BookStore.Api {
 
     private string CreateAuthToken() {
       var tokenCreator = OpContext.App.GetService<IAuthenticationTokenCreator>();
-      var claims = OpContext.GetDefaultClaims();
+      var claims = OpContext.App.GetUserClaims(OpContext);
       var loginStt = OpContext.App.GetConfig<LoginModuleSettings>();
       var expires = OpContext.App.TimeService.UtcNow.Add(loginStt.LoginTokenExpiration);
       var token = tokenCreator.CreateToken(claims, expires);

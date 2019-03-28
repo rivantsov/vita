@@ -74,7 +74,7 @@ namespace Vita.UnitTests.Web {
 
 
       // Kevin is store admin
-      LoginAs("kevin");
+      LoginAs("kevin"); 
 
       // Test login search
       // No criteria, just skip/take
@@ -119,7 +119,7 @@ namespace Vita.UnitTests.Web {
     }
 
     [TestMethod]
-    public void TestLoginFailedTrigger() {
+    public void TestLoginMultipleFailures() {
       var client = TestStartup.Client;
       //first try successful login
       var resp = LoginAs("stan");

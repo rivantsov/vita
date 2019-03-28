@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Vita.Entities;
 using Vita.Entities.Api;
@@ -10,7 +11,7 @@ using Vita.Modules.Login;
 using Vita.Web;
 
 namespace Vita.Samples.BookStore.Api {
-  [Route("api/logins")] //, LoggedInOnly, Secured ]
+  [Route("api/logins"), Authorize(Roles = "StoreAdmin")] 
   public class LoginAdministrationController : BaseApiController {
     ILoginAdministrationService _adminService => OpContext.App.GetService<ILoginAdministrationService>(); 
       

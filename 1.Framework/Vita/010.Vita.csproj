@@ -20,6 +20,7 @@
     <Compile Remove="1.AppModel\SlimeApi_Disabled\SlimApiAttributes.cs" />
     <Compile Remove="1.AppModel\SlimeApi_Disabled\SlimApiController.cs" />
     <Compile Remove="1.AppModel\Services\Logging\IErrorLogService_Disabled.cs" />
+    <Compile Remove="4.Internals\Utilities\BufferingQueue.cs" />
   </ItemGroup>
 
   <ItemGroup>

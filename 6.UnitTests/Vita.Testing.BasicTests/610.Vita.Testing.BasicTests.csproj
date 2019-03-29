@@ -12,6 +12,7 @@
 
   <ItemGroup>
     <Compile Remove="BufferingQueueComparePerfTests.cs" />
+    <Compile Remove="BufferingQueueTests.cs" />
     <Compile Remove="HashCryptTests_MOVETOEXT.cs" />
   </ItemGroup>
 

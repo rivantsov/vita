@@ -515,7 +515,7 @@ namespace Vita.Entities.Runtime {
         if(!targetEntInfo.Flags.IsSet(EntityFlags.HasIdentity))
           continue;
         var target = this.GetValueDirect(refM);
-        if(target == null)
+        if(target == null || target == DBNull.Value)
           continue;
         var targetRec = EntityHelper.GetRecord(target);
         if(targetRec.Status != EntityStatus.New)

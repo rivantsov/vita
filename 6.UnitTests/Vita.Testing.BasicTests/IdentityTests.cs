@@ -15,6 +15,8 @@ namespace Vita.Testing.BasicTests.IdentityTests {
     [Size(30)]
     string Model { get; set; }
     IPerson Owner { get; set; }
+    [Nullable]
+    IPerson CoOwner { get; set; } //testing identity with no batch for PgSql
   }
 
   [Entity]
@@ -53,11 +55,14 @@ namespace Vita.Testing.BasicTests.IdentityTests {
       if(Startup.ServerType == Data.Driver.DbServerType.SQLite)
         DeleteAllData(); 
       var session = _app.OpenSession();
+      // test for PgSql with batches off
+      ((Entities.Runtime.EntitySession)session).SetOption(Entities.Runtime.EntitySessionOptions.DisableBatchMode, true);
       var john = session.NewEntity<IPerson>();
       john.Name = "John S";
       var car1 = session.NewEntity<ICar>();
       car1.Model = "Beatle";
       car1.Owner = john;
+      car1.CoOwner = null; 
       var car2 = session.NewEntity<ICar>();
       car2.Model = "Explorer";
       car2.Owner = john;

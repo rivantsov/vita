@@ -60,9 +60,9 @@ namespace Vita.Samples.BookStore {
                              Count = g.Sum(l => l.Quantity),
                              Publisher = g.Key.Publisher,
                              Total = g.Sum(l => l.Price * l.Quantity),
-                             LineCount = g.Count() // to satisfy MS SQL requriement to include Count_BIG
+                             LineCount = g.LongCount() // to satisfy MS SQL requriement to include Count_BIG
                            };
-      RegisterView<IBookSales>(bookSalesQuery, DbViewOptions.Materialized);
+      RegisterView<IBookSales>(bookSalesQuery, DbViewOptions.Materialized, viewName: "vBookSales_mat");
 
       // Other version of bookSales, with subqueries without grouping (testing bug fix: view output columns must have aliases)
       var bookSalesQuery2 = from b in bookSet

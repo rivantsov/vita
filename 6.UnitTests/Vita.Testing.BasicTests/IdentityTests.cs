@@ -5,6 +5,7 @@ using System.Linq;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 using Vita.Entities;
+using Vita.Entities.Runtime;
 
 namespace Vita.Testing.BasicTests.IdentityTests {
   // Using both int and long as identity columns, just to test proper type conversions
@@ -15,6 +16,9 @@ namespace Vita.Testing.BasicTests.IdentityTests {
     [Size(30)]
     string Model { get; set; }
     IPerson Owner { get; set; }
+    // Testing a bug for non-batch mode, when ref prop is null (and target has identity PK)
+    [Nullable]
+    IPerson CoOwner { get; set; }
   }
 
   [Entity]
@@ -41,23 +45,32 @@ namespace Vita.Testing.BasicTests.IdentityTests {
 
     [TestCleanup]
     public void TestCleanup() {
-      if(_app != null)
+      if (_app != null)
         _app.Flush();
     }
 
-
     [TestMethod]
     public void TestIdentityColumns() {
+      // test with and without batch mode
+      TestIdentityColumns(false);
+      TestIdentityColumns(true); 
+    }
+
+    public void TestIdentityColumns(bool batchMode) {
       _app = new IdentityTestsEntityApp();
       Startup.ActivateApp(_app);
-      if(Startup.ServerType == Data.Driver.DbServerType.SQLite)
-        DeleteAllData(); 
-      var session = _app.OpenSession();
+      //if(Startup.ServerType == Data.Driver.DbServerType.SQLite)
+      DeleteAllData();
+      // We create session this way to set the batch mode flag
+      var ctx = new OperationContext(_app); 
+      IEntitySession session = new EntitySession(ctx, 
+        options: batchMode ? EntitySessionOptions.None : EntitySessionOptions.DisableBatchMode);
       var john = session.NewEntity<IPerson>();
       john.Name = "John S";
       var car1 = session.NewEntity<ICar>();
       car1.Model = "Beatle";
       car1.Owner = john;
+      car1.CoOwner = null; 
       var car2 = session.NewEntity<ICar>();
       car2.Model = "Explorer";
       car2.Owner = john;

@@ -248,7 +248,7 @@ namespace Vita.Data.Runtime {
       if(!fkCol.Flags.IsSet(DbColumnFlags.IdentityForeignKey))
         return false;
       var targetRef = rec.GetValueDirect(fkCol.Member.ForeignKeyOwner);
-      if(targetRef == DBNull.Value)
+      if(targetRef == null || targetRef == DBNull.Value)
         return false;
       var targetRec = (EntityRecord)targetRef;
       if(targetRec.Status != EntityStatus.New)

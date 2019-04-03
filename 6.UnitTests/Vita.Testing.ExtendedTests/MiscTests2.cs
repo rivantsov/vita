@@ -176,7 +176,7 @@ namespace Vita.Testing.ExtendedTests {
       session.EnableCache(false);
       if(Startup.ServerType == DbServerType.Postgres) {
         //Postgres requires to manually refresh materialized views
-        session.ExecuteNonQuery(@"Refresh materialized view ""books"".""vBookSales"";");
+        session.ExecuteNonQuery(@"Refresh materialized view ""books"".""vBookSales_mat"";");
         //session.ExecuteNonQuery(@"Refresh materialized view ""books"".""vAuthorUser"";");
       }
 

@@ -201,6 +201,7 @@ namespace Vita.Data.Linq.Translation {
         case "Contains":
           return AnalyzeContains(parameters, context);
         case "Count":
+        case "LongCount":
           return AnalyzeAggregate(AggregateType.Count, parameters, context);
         case "Sum":
           return AnalyzeAggregate(AggregateType.Sum, parameters, context);
@@ -211,8 +212,8 @@ namespace Vita.Data.Linq.Translation {
 
 
         default:
-          if(IsQueryable(method.DeclaringType))
-            Util.Throw("Queryable method {0} not supported.", method.Name);
+          //if(IsQueryable(method.DeclaringType))
+          Util.Throw("Queryable/Enumerable method {0} not supported.", method.Name);
           return null;
       }
     }

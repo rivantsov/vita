@@ -1,5 +1,4 @@
-﻿using Microsoft.Data.Sqlite;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Linq;
@@ -14,6 +13,7 @@ using Vita.Entities;
 using Vita.Entities.Logging;
 using Vita.Entities.Model;
 using Vita.Entities.Utilities;
+using System.Data.SQLite; 
 
 namespace Vita.Data.SQLite {
   public class SQLiteDbModelLoader : DbModelLoader {
@@ -27,6 +27,8 @@ namespace Vita.Data.SQLite {
       var tblTables = ExecuteSelect("select type, tbl_name, sql from sqlite_master where type='table' OR type='view';");
       foreach(var tblRow in tblTables.Rows) {
         var tblName = tblRow.GetAsString("tbl_name");
+        if (tblName.StartsWith("sqlite_"))
+          continue; // sqlite_sequence and other sys tables - ignore
         var isView = tblRow.GetAsString("type") == "view";
         var objType = isView ? DbObjectType.View : DbObjectType.Table;
         var tableSql = tblRow.GetAsString("sql");
@@ -49,11 +51,15 @@ namespace Vita.Data.SQLite {
           var notNull = colRow.GetAsInt("notnull");
           var dftValue = colRow.GetAsString("dflt_value");
           var typeInfo = GetSqliteTypeInfo(typeName, nullable: notNull == 0, dft: dftValue);
-          if (typeInfo == null) {
+          if (typeInfo == null)
+            typeInfo = GetSqliteTypeInfo("text", nullable: notNull == 0, dft: dftValue); //default to text!
+          /*
+          {
             LogError(
               "Failed to find TypeInfo for SQL data type [{0}]. Table(view) {1}, column {2}.", typeName, tblName, colName);
             continue;
           }
+          */
           var isNullable = notNull == 0; 
           var colInfo = new DbColumnInfo(tbl, colName, typeInfo, isNullable);
           // check PK flag, save the column if the flag is set
@@ -154,7 +160,8 @@ namespace Vita.Data.SQLite {
       script = script.Trim(_viewTrimChars);
       return script;
     }
-    static char[] _viewTrimChars = new char[] { ' ', '\r', '\n', ';' }; //strip ending ;
+
+    static readonly char[] _viewTrimChars = new char[] { ' ', '\r', '\n', ';' }; //strip ending ;
 
     protected static string StripFirstLine(string newV) {
       newV = newV.Substring(newV.IndexOf(Environment.NewLine) + Environment.NewLine.Length);

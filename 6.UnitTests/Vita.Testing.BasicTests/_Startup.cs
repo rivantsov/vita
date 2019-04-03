@@ -62,8 +62,7 @@ namespace Vita.Testing.BasicTests {
       else
         DbOptions &= ~DbOptions.UseBatchMode;
       //check connection
-      string error;
-      if(!DataUtility.TestConnection(Driver, ConnectionString, out error)) {
+      if(!DataUtility.TestConnection(Driver, ConnectionString, out var error)) {
         Util.Throw("Failed to connect to the database: {0} \r\n  Connection string: {1}", error, ConnectionString);
       }
     }

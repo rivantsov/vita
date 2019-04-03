@@ -4,7 +4,7 @@ using System.Data;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using Microsoft.Data.Sqlite;
+using System.Data.SQLite;
 
 using Vita.Data.Driver;
 using Vita.Data.Model;
@@ -24,7 +24,7 @@ namespace Vita.Data.SQLite {
     public const DbOptions DefaultSQLiteDbOptions = DbOptions.UseRefIntegrity | DbOptions.ShareDbModel
                                                   | DbOptions.AutoIndexForeignKeys | DbOptions.AddSchemaToTableNames;
 
-    private bool _autoEnableFK; 
+    private readonly bool _autoEnableFK; 
 
     //Parameterless constructor is needed for tools
     /// <summary>Creates driver instance with enabled Foreign key checks.</summary>
@@ -43,26 +43,10 @@ namespace Vita.Data.SQLite {
     }
 
     public override IDbConnection CreateConnection(string connectionString) {
-      var conn = new SqliteConnection(connectionString);
-      // enable FKs; for original SQLite driver, it was a flag in connection string
-      // in MS SQLite provider you have to run pragma when you open connection
-      if (_autoEnableFK)
-        conn.StateChange += Conn_StateChange;
+      var conn = new SQLiteConnection(connectionString);
+      // trying to stop provider from automatically converting strings to date
+      conn.Flags |= SQLiteConnectionFlags.NoVerifyTypeAffinity | SQLiteConnectionFlags.NoVerifyTextAffinity;      
       return conn; 
-    }
-
-    // MS SQLite driver does not have conn string parameter for enabling FKs - unlike original SQLite driver; instead you have to run this pragma command
-    // when you open the connection
-    private void Conn_StateChange(object sender, StateChangeEventArgs e) {
-      if(e.CurrentState == ConnectionState.Open) {
-        var conn = (IDbConnection)sender; 
-        var cmd = conn.CreateCommand();
-        cmd.CommandText = "PRAGMA foreign_keys=ON;";
-        cmd.ExecuteNonQuery();
-        // we need to dispose 
-        cmd.Connection = null;
-        cmd.Dispose(); 
-      }
     }
 
     public override DbLinqSqlBuilder CreateLinqSqlBuilder(DbModel dbModel, LinqCommand command) {
@@ -79,7 +63,7 @@ namespace Vita.Data.SQLite {
       return new SQLiteDbModelLoader(settings, log); 
     }
     public override IDbCommand CreateCommand() {
-      return new SqliteCommand();
+      return new SQLiteCommand();
     }
 
 
@@ -122,11 +106,11 @@ namespace Vita.Data.SQLite {
 
      */
     public override void ClassifyDatabaseException(DataAccessException dataException, IDbCommand command = null) {
-      var sqlEx = dataException.InnerException as SqliteException;
+      var sqlEx = dataException.InnerException as SQLiteException;
       if(sqlEx == null) return;
-      dataException.ProviderErrorNumber = sqlEx.SqliteErrorCode;
+      dataException.ProviderErrorNumber = sqlEx.ErrorCode;
       var msg = sqlEx.Message; 
-      switch(sqlEx.SqliteErrorCode) {
+      switch(sqlEx.ErrorCode) {
         case 19: // SqliteErrorCodes.Constraint:
           if(msg.Contains("UNIQUE")) {
             dataException.SubType = DataAccessException.SubTypeUniqueIndexViolation;

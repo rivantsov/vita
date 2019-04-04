@@ -287,7 +287,7 @@ namespace Vita.Testing.BasicTests.Misc {
       int Timeout = 5000; //5 sec for my laptop
       switch(Startup.ServerType) {
         case DbServerType.SQLite:
-          Timeout = 10000; //10 sec, SQLite runs a bit slower
+          Timeout = 15000; //10 sec, SQLite runs a bit slower
           break;
       }
       Assert.IsTrue(ticks < Timeout, "Too much time for multiple reaq/writes test, ms: " + ticks);

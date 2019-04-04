@@ -282,16 +282,16 @@ namespace Vita.Testing.BasicTests.Misc {
         jack.FirstName = "John_" + i;
         session.SaveChanges();
       }
-      var ticks = timeService.ElapsedMilliseconds - start; // Expected: MS SQL - 1600ms, SQL CE - 450 ms
+      var timeMs = timeService.ElapsedMilliseconds - start; // Expected: MS SQL - 1600ms, SQL CE - 450 ms
 
-      int Timeout = 5000; //5 sec for my laptop
+      int Timeout = 5000; //5 sec for my laptop is OK
       switch(Startup.ServerType) {
         case DbServerType.SQLite:
-          Timeout = 15000; //10 sec, SQLite runs a bit slower
+          Timeout = 10000; //10 sec, SQLite runs a bit slower
           break;
       }
-      Assert.IsTrue(ticks < Timeout, "Too much time for multiple reaq/writes test, ms: " + ticks);
-      System.Diagnostics.Debug.WriteLine("\r\nTestMultipleReadWrites: ticks = " + ticks + "\r\n");
+      Assert.IsTrue(timeMs < Timeout, "Too much time for multiple reaq/writes test, ms: " + timeMs);
+      System.Diagnostics.Debug.WriteLine("\r\nTestMultipleReadWrites: ticks = " + timeMs + "\r\n");
     }
 
     [TestMethod]

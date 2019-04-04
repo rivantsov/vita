@@ -48,9 +48,9 @@ namespace Vita.Data.SQLite {
       //  we handle it in code.
       // Important - we need to to set type name (affinity) to smth special, not just 'date' - otherwise provider recognizes
       // it and starts converting dates in DbReader and this blows up. Did not find any reliable way to disable this behavior
-      var tdDate = AddDbTypeDef("str_date", typeof(string), mapColumnType: false, toLiteral: DateTimeToLiteral );
+      var tdDate = AddDbTypeDef("date", typeof(string), mapColumnType: false, toLiteral: DateTimeToLiteral );
       Map(typeof(DateTime), tdDate);
-      var tdTime = AddDbTypeDef("str_time", typeof(string), mapColumnType: false, toLiteral: TimeSpanToLiteral);
+      var tdTime = AddDbTypeDef("time", typeof(string), mapColumnType: false, toLiteral: TimeSpanToLiteral);
       Map(typeof(TimeSpan), tdTime);
       var tdBool =  AddDbTypeDef("bool", typeof(Int32), mapColumnType: false, toLiteral: BoolToBitLiteral );
       Map(typeof(bool), tdBool);
@@ -151,12 +151,15 @@ namespace Vita.Data.SQLite {
         return null;
       // We store Time/Timespan in db as strings and handle conversions; but suprisingly, sometimes provider/DbReader 
       // 'guesses' the type and and converts it; this happens sometimes in LINQ. We handle it here
-      if (value is TimeSpan)
-        return (TimeSpan)value;
-      var str = (string)value;
-      if (TimeSpan.TryParse(str, out var result))
-        return result;
-      Util.Throw("Failed to convert string to TimeSpan: {0}", str);
+      switch(value) {
+        case TimeSpan ts: return ts;
+        case DateTime dt: return dt.TimeOfDay;
+        case string str:
+          if (TimeSpan.TryParse(str, out var result))
+            return result;
+          break; 
+      }
+      Util.Throw("Failed to convert db value to TimeSpan: {0}, type: {1}", value, value.GetType());
       return null;
     }
 

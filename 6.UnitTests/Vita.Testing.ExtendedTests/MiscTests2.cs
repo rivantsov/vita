@@ -124,8 +124,9 @@ namespace Vita.Testing.ExtendedTests {
       Assert.IsTrue(lstBooksNotPublished.Count > 0, "Failed to find not published book.");
 
       //Testing that SQLite DbCommand is disconnected - this releases server-side resources
-      if(Startup.ServerType == DbServerType.SQLite) 
-        TryMoveSqliteFile(); 
+      // Disabling this test - it does not work if you have connection pooling (pooling=true in conn string)
+      //if(Startup.ServerType == DbServerType.SQLite) 
+       // TryMoveSqliteFile(); 
 
       //Test new/delete entity - this was a bug
       session = app.OpenSession();
@@ -137,6 +138,7 @@ namespace Vita.Testing.ExtendedTests {
     }
 
     //Testing that SQLite DbCommand is disconnected - this releases server-side resources
+    // Note: does not work if connection pooling enabled (pooling = true in conn string)
     private void TryMoveSqliteFile() {
       if(Startup.ServerType != DbServerType.SQLite)
         return; 

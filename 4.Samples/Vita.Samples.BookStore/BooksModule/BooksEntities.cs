@@ -244,7 +244,7 @@ namespace Vita.Samples.BookStore {
     string Title { get; set; }
     string Publisher { get; set; }
     int Count { get; set; }
-    Decimal Total { get; set; }
+    Decimal? Total { get; set; }
   }
 
   public interface IBookSales2 {
@@ -252,8 +252,10 @@ namespace Vita.Samples.BookStore {
     Guid Id { get; set; }
     string Title { get; set; }
     string Publisher { get; set; }
+    // On purpose: both columns come from aggregate and might be null in View results;
+    // We make Count not nullable, Total nullable - to check proper handling 
     int Count { get; set; }
-    Decimal Total { get; set; }
+    Decimal? Total { get; set; }
   }
 
   public interface IFictionBook : IBook { }

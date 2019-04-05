@@ -65,6 +65,7 @@ namespace Vita.Data.Model {
       if (_primaryKeyColumns.Count > 0 && PrimaryKeyIsNull(dataRecord))
         return null;
       var entRec = new EntityRecord(_tableInfo.Entity, EntityStatus.Loading);
+      bool isView = _tableInfo.Entity.Kind == EntityKind.View; 
       object dbValue = null;
       OutColumnMapping colMap = null; 
       //for-i loop is more efficient than foreach
@@ -72,9 +73,15 @@ namespace Vita.Data.Model {
         try {
           colMap = _columns[i];
           var isNull = dataRecord.IsDBNull(colMap.ReaderColumnIndex);
-          if(isNull)
-            dbValue = DBNull.Value;
-          else {
+          if(isNull) {
+            // Views might have NULLs unexpectedly in columns like Count() or Sum() - LINQ expr has non-nullable type, but in fact 
+            // the column in Db is nullable
+            if (isView && !colMap.DbColumn.Flags.IsSet(DbColumnFlags.Nullable))
+              dbValue = colMap.DbColumn.Member.DefaultValue;
+            else
+              dbValue = DBNull.Value;
+          } else {
+            // not NULL
             dbValue = colMap.DbColumn.TypeInfo.ColumnReader(dataRecord, colMap.ReaderColumnIndex);
             var conv = colMap.DbColumn.Converter.ColumnToProperty;
             if(dbValue != null && conv != null)

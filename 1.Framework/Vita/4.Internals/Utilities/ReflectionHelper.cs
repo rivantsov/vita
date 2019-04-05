@@ -275,6 +275,7 @@ namespace Vita.Entities.Utilities {
       return typeof(Nullable<>).MakeGenericType(valueType);
     }
 
+
     /*
     public static Type GetValueTypeFromNullable(this Type nullableValueType) {
       var isNullableValueType = nullableValueType.GetTypeInfo().IsGenericType && 

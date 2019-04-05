@@ -129,6 +129,7 @@ ALTER DATABASE {0} SET MULTI_USER;
       RunTests(LockType.SharedRead, LockType.ForUpdate, ThreadCount, UpdateCount);
       Assert.AreEqual(0, _updateErrorCount, "Expected no update errors");
       Assert.AreEqual(0, _sumErrorCount, "Expected no sum errors");
+      Trace.WriteLine("Lock test completed");
 
       //Uncomment to see errros when run without locks; commented to save time of running unit tests
       /*   

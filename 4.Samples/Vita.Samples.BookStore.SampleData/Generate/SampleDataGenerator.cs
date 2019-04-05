@@ -90,6 +90,7 @@ Covers c# 4.0.";
       winBook.Authors.Add(authorJohn);
       winBook.CoverImage = LoadImageFromResource(session, "winBookCover.jpg");
       var comicBook = session.NewBook(BookEdition.Paperback, BookCategory.Fiction, "IronMan", null, kidPub, null, 3);
+
       //Coupons
       var coupon1 = session.NewCoupon("C1", 10, DateTime.Now.AddMonths(1));
       var coupon2 = session.NewCoupon("C2", 10, DateTime.Now.AddMonths(1));

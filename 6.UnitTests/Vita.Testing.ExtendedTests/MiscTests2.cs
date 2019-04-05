@@ -192,6 +192,14 @@ namespace Vita.Testing.ExtendedTests {
       var msList = msQuery.ToList();
       Assert.IsTrue(msList.Count > 0, "Expected MS Books sales.");
 
+      // BookSales2 - has NULL columns
+      // test for bug fix - Count and Total are NULL for a book without sales (IronMan book)
+      var bookSalesFromView = session.GetEntities<IBookSales2>();
+      Assert.IsTrue(bookSalesFromView.Count > 0, "Expected rows in BookSales2");
+      foreach (var bk in bookSalesFromView) {
+        Trace.WriteLine($"  Book '{bk.Title}', Copies sold: {bk.Count}, Total: {bk.Total}");
+      }
+
       //Another view IFictionBook
       var fictBooks = session.GetEntities<IFictionBook>();
       Assert.IsTrue(fictBooks.Count > 0, "Expected fiction books");

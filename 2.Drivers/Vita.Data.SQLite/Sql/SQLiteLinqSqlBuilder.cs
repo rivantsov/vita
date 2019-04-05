@@ -1,17 +1,10 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
 
 using Vita.Data.Driver;
 using Vita.Data.Linq;
 using Vita.Data.Linq.Translation.Expressions;
 using Vita.Data.Model;
-using Vita.Data.Runtime;
 using Vita.Data.Sql;
-using Vita.Entities;
-using Vita.Entities.Model;
-using Vita.Entities.Runtime;
-using Vita.Entities.Utilities;
 
 namespace Vita.Data.SQLite {
   public class SQLiteLinqSqlBuilder : DbLinqSqlBuilder {

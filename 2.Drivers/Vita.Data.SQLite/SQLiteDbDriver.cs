@@ -1,17 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Data;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Data.SQLite;
 
 using Vita.Data.Driver;
 using Vita.Data.Model;
 using Vita.Entities;
-using Vita.Entities.Model;
 using Vita.Entities.Logging;
 using Vita.Data.Linq;
+
+using System.Data.SQLite;
 
 namespace Vita.Data.SQLite {
 
@@ -24,18 +21,11 @@ namespace Vita.Data.SQLite {
     public const DbOptions DefaultSQLiteDbOptions = DbOptions.UseRefIntegrity | DbOptions.ShareDbModel
                                                   | DbOptions.AutoIndexForeignKeys | DbOptions.AddSchemaToTableNames;
 
-    private readonly bool _autoEnableFK; 
-
     //Parameterless constructor is needed for tools
     /// <summary>Creates driver instance with enabled Foreign key checks.</summary>
-    public SQLiteDbDriver() : this(true) {
+    public SQLiteDbDriver() : base(DbServerType.SQLite, SQLiteFeatures) {
       base.TypeRegistry = new SQLiteTypeRegistry(this);
-      base.SqlDialect = new SQLiteDbSqlDialect(this); 
-    }
-
-    /// <summary>Creates driver instance.</summary>
-    public SQLiteDbDriver(bool autoEnableFK) : base(DbServerType.SQLite, SQLiteFeatures) {
-      _autoEnableFK = autoEnableFK;
+      base.SqlDialect = new SQLiteDbSqlDialect(this);
     }
 
     public override DbOptions GetDefaultOptions() {
@@ -43,10 +33,10 @@ namespace Vita.Data.SQLite {
     }
 
     public override IDbConnection CreateConnection(string connectionString) {
-      var conn = new SQLiteConnection(connectionString);
-      // trying to stop provider from automatically converting strings to date
-      conn.Flags |= SQLiteConnectionFlags.NoVerifyTypeAffinity | SQLiteConnectionFlags.NoVerifyTextAffinity;      
-      return conn; 
+      return new SQLiteConnection(connectionString);
+    }
+    public override IDbCommand CreateCommand() {
+      return new SQLiteCommand();
     }
 
     public override DbLinqSqlBuilder CreateLinqSqlBuilder(DbModel dbModel, LinqCommand command) {
@@ -61,9 +51,6 @@ namespace Vita.Data.SQLite {
     }
     public override DbModelLoader CreateDbModelLoader(DbSettings settings, IActivationLog log) {
       return new SQLiteDbModelLoader(settings, log); 
-    }
-    public override IDbCommand CreateCommand() {
-      return new SQLiteCommand();
     }
 
 

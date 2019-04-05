@@ -7,10 +7,9 @@ using System.Threading.Tasks;
 
 using Vita.Entities;
 using Vita.Entities.Model;
-using Vita.Data.Driver;
 using Vita.Entities.Utilities;
+using Vita.Data.Driver;
 using Vita.Data.Driver.TypeSystem;
-using System.Data.SQLite;
 
 namespace Vita.Data.SQLite {
 

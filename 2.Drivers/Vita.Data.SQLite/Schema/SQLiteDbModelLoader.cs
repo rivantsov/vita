@@ -12,8 +12,6 @@ using Vita.Data.Model;
 using Vita.Entities;
 using Vita.Entities.Logging;
 using Vita.Entities.Model;
-using Vita.Entities.Utilities;
-using System.Data.SQLite; 
 
 namespace Vita.Data.SQLite {
   public class SQLiteDbModelLoader : DbModelLoader {
@@ -166,9 +164,14 @@ namespace Vita.Data.SQLite {
     protected static string StripFirstLine(string newV) {
       newV = newV.Substring(newV.IndexOf(Environment.NewLine) + Environment.NewLine.Length);
       return newV.Trim(_viewTrimChars);
-
     }
 
+    // Methods of IDbObjectComparer
+    public override bool ColumnsMatch(DbColumnInfo oldColumn, DbColumnInfo newColumn, out string description) {
+      // no types in SQLite, so columns match if their names match; this method is called only when names match
+      description = null; 
+      return true; 
+    }
   }//class
 
   //* SQLite Error codes

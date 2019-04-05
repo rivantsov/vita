@@ -17,14 +17,20 @@ namespace Vita.Data.SQLite {
     public static string DateTimeFormat = "yyyy'-'MM'-'dd' 'HH':'mm':'ss.fff";
     public static string TimeFormat = @"hh\:mm\:ss";
 
+    // these are 2 special type defs, we use explicit refs to these
+    public readonly DbTypeDef IntTypeDef;
+    public readonly DbTypeDef Int64TypeDef; 
+
     public SQLiteTypeRegistry(SQLiteDbDriver driver) : base(driver) {
       
       // For all int types SQLite provider returns Int64, not sure about actual storage; so we set ColOutType to Int64 here for Int32 type
       var tdInt = AddDbTypeDef("int", typeof(Int32), mapColumnType: false, aliases: "integer");
       MapMany(new[] { typeof(byte), typeof(sbyte), typeof(Int16), typeof(UInt16), typeof(Int32), typeof(UInt32) }, tdInt);
+      IntTypeDef = tdInt; 
 
       var tdInt64 = AddDbTypeDef("int64", typeof(Int64));
       MapMany(new[] { typeof(Int64), typeof(UInt64) }, tdInt64);
+      Int64TypeDef = tdInt64;
 
       var tdReal = AddDbTypeDef("real", typeof(double));
       MapMany(new[] { typeof(Single), typeof(double), typeof(decimal) }, tdReal);
@@ -61,17 +67,28 @@ namespace Vita.Data.SQLite {
 
     public override DbTypeInfo GetDbTypeInfo(EntityMemberInfo forMember) {
       if (forMember.Flags.IsSet(EntityMemberFlags.Identity)) {
-        return base.GetDbTypeInfo("int64", forMember);
+        return base.GetDbTypeInfo(Int64TypeDef.Name, forMember); //identity cols are always int64
       }
-      return base.GetDbTypeInfo(forMember);
+      var typeInfo =  base.GetDbTypeInfo(forMember);
+      // DbDataReader for SQLite provider (both from MS and SQLite team) is quite unstable in types returned.
+      // GetValue(i) sometimes returns int32, sometimes int64; this causes failure of converters. 
+      // We use GetInt32 to ensure it is int32 
+      if (typeInfo.TypeDef == IntTypeDef) {
+        typeInfo.ColumnReader = IntColumnReader;
+      }
+      return typeInfo; 
+    }
+
+    private object IntColumnReader(IDataRecord rec, int index) {
+      return rec.GetInt32(index); 
     }
 
     public static object IntToBool(object value) {
       if (value == null || value == DBNull.Value)
         return null;
       switch (value) {
-        case Int32 i: return i == 0;
-        case Int64 i: return i == 0;
+        case Int32 i: return i != 0;
+        case Int64 i: return i != 0;
         case bool b: return b;
         default:
           return null;

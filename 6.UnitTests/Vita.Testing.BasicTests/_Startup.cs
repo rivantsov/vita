@@ -43,8 +43,22 @@ namespace Vita.Testing.BasicTests {
       ServerType = serverType;
       if (ServerType == DbServerType.SQLite)
         DeleteSqliteDbFile(); //it will be created on connect, creat-option in conn string
+
+      Driver = DataUtility.CreateDriver(ServerType);
+
       //Load connection string
       var connStringName = ServerType.ToString() + "ConnectionString";
+
+      // For SQLite we can use either provider
+      var useMsSqlite = AppConfig["UseMsSqliteProvider"] == "true";
+      if (ServerType == DbServerType.SQLite && useMsSqlite) {
+        var sqliteDriver = (Data.SQLite.SQLiteDbDriver)Driver;
+        sqliteDriver.ConnectionFactory = (s) => new Microsoft.Data.Sqlite.SqliteConnection(s);
+        sqliteDriver.CommandFactory = () => new Microsoft.Data.Sqlite.SqliteCommand();
+        connStringName += "_MS";
+      }
+
+
       var connString = AppConfig[connStringName];
       Util.Check(!string.IsNullOrEmpty(connString), "Connection string not found for key: {0}.", connStringName);
       if(connString.Contains("{bin}")) {
@@ -53,7 +67,8 @@ namespace Vita.Testing.BasicTests {
         connString = connString.Replace("{bin}", binFolder);
       }
       ConnectionString = connString;
-      Driver = DataUtility.CreateDriver(ServerType); 
+
+
       DbOptions = Driver.GetDefaultOptions();
       //enable batch
       var useBatch = AppConfig["useBatchMode"] == "true";

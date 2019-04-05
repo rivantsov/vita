@@ -21,11 +21,23 @@ namespace Vita.Data.SQLite {
     public const DbOptions DefaultSQLiteDbOptions = DbOptions.UseRefIntegrity | DbOptions.ShareDbModel
                                                   | DbOptions.AutoIndexForeignKeys | DbOptions.AddSchemaToTableNames;
 
+    public Func<string, IDbConnection> ConnectionFactory;
+    public Func<IDbCommand> CommandFactory; 
+
     //Parameterless constructor is needed for tools
     /// <summary>Creates driver instance with enabled Foreign key checks.</summary>
     public SQLiteDbDriver() : base(DbServerType.SQLite, SQLiteFeatures) {
       base.TypeRegistry = new SQLiteTypeRegistry(this);
       base.SqlDialect = new SQLiteDbSqlDialect(this);
+      ConnectionFactory = DefaultConnectionFactory;
+      CommandFactory = DefaultCommandFactory;
+    }
+
+    private IDbConnection DefaultConnectionFactory(string connString) {
+      return new SQLiteConnection(connString); 
+    }
+    private IDbCommand DefaultCommandFactory() {
+      return new SQLiteCommand(); 
     }
 
     public override DbOptions GetDefaultOptions() {
@@ -33,10 +45,10 @@ namespace Vita.Data.SQLite {
     }
 
     public override IDbConnection CreateConnection(string connectionString) {
-      return new SQLiteConnection(connectionString);
+      return ConnectionFactory(connectionString); 
     }
     public override IDbCommand CreateCommand() {
-      return new SQLiteCommand();
+      return CommandFactory();
     }
 
     public override DbLinqSqlBuilder CreateLinqSqlBuilder(DbModel dbModel, LinqCommand command) {
@@ -93,11 +105,13 @@ namespace Vita.Data.SQLite {
 
      */
     public override void ClassifyDatabaseException(DataAccessException dataException, IDbCommand command = null) {
-      var sqlEx = dataException.InnerException as SQLiteException;
-      if(sqlEx == null) return;
-      dataException.ProviderErrorNumber = sqlEx.ErrorCode;
-      var msg = sqlEx.Message; 
-      switch(sqlEx.ErrorCode) {
+      var inner = dataException.InnerException;
+      if (inner == null)
+        return;
+      var msg = inner.Message;
+      var errorCode = GetErrorCode(inner); 
+      dataException.ProviderErrorNumber = errorCode;
+      switch(errorCode) {
         case 19: // SqliteErrorCodes.Constraint:
           if(msg.Contains("UNIQUE")) {
             dataException.SubType = DataAccessException.SubTypeUniqueIndexViolation;
@@ -107,6 +121,17 @@ namespace Vita.Data.SQLite {
           } 
           break; 
       }
+    }
+
+    private int GetErrorCode(Exception ex) {
+      var sqliteEx = ex as SQLiteException;
+      if (sqliteEx != null)
+        return sqliteEx.ErrorCode;
+      // we support MS SQLite provider, so it might be MS SqliteException; we use reflection to get error code
+      var prop = ex.GetType().GetProperty("SqliteErrorCode");
+      if (prop == null)
+        return 0; 
+      return (int) prop.GetValue(ex);
     }
 
     // error message: "SQLite Error 19: 'UNIQUE constraint failed: misc_Driver.LicenseNumber'."

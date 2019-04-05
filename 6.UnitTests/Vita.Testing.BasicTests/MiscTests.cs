@@ -291,7 +291,7 @@ namespace Vita.Testing.BasicTests.Misc {
           break;
       }
       Assert.IsTrue(timeMs < Timeout, "Too much time for multiple reaq/writes test, ms: " + timeMs);
-      System.Diagnostics.Debug.WriteLine("\r\nTestMultipleReadWrites: ticks = " + timeMs + "\r\n");
+      System.Diagnostics.Trace.WriteLine("\r\nTestMultipleReadWrites: time = " + timeMs + " ms \r\n");
     }
 
     [TestMethod]

@@ -132,27 +132,27 @@ namespace Vita.Data.Oracle {
     }
 
     protected override DbTypeInfo CreateDbTypeInfo(Type clrType, DbTypeDef typeDef, long size = 0, byte prec = 0, byte scale = 0) {
-      var mapping = base.CreateDbTypeInfo(clrType, typeDef, size, prec, scale);
+      var typeInfo = base.CreateDbTypeInfo(clrType, typeDef, size, prec, scale);
       // Big trouble - Oracle provider returns different value types in numeric columns with scale ==0 (integers)
       // depending on precision value 
       if (typeDef == NumericTypeDef) {
-        if (mapping.Scale == 0) {
-          if(mapping.Precision <= 4) {
-            mapping.ColumnOutType = typeof(Int16);
-            mapping.ColumnReader = (rec, i) => rec.GetInt16(i);
-          } else if(mapping.Precision <= 9) {
-            mapping.ColumnOutType = typeof(Int32); 
-            mapping.ColumnReader = (rec, i) => rec.GetInt32(i);
-          } else if(mapping.Precision <= 18) {
-            mapping.ColumnOutType = typeof(Int64); 
-            mapping.ColumnReader = (rec, i) => rec.GetInt64(i);
+        if (typeInfo.Scale == 0) {
+          if(typeInfo.Precision <= 4) {
+            typeInfo.ColumnOutType = typeof(Int16);
+            typeInfo.ColumnReader = (rec, i) => rec.GetInt16(i);
+          } else if(typeInfo.Precision <= 9) {
+            typeInfo.ColumnOutType = typeof(Int32); 
+            typeInfo.ColumnReader = (rec, i) => rec.GetInt32(i);
+          } else if(typeInfo.Precision <= 18) {
+            typeInfo.ColumnOutType = typeof(Int64); 
+            typeInfo.ColumnReader = (rec, i) => rec.GetInt64(i);
           } else {
-            mapping.ColumnOutType = typeof(decimal); 
-            mapping.ColumnReader = (rec, i) => rec.GetDecimal(i);
+            typeInfo.ColumnOutType = typeof(decimal); 
+            typeInfo.ColumnReader = (rec, i) => rec.GetDecimal(i);
           }
         } // if mapping.Scale == 0
       } // if storageType ==
-      return mapping; 
+      return typeInfo; 
     }
 
     public override string FormatTypeSpec(DbTypeDef typeDef, long size = 0, byte prec = 0, byte scale = 0) {

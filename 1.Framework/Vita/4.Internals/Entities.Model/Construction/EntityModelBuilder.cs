@@ -161,24 +161,13 @@ namespace Vita.Entities.Model.Construction {
           ok = false;
           continue; //next prop 
         }
-        if (!TypesMatch(outProp.PropertyType, entProp.PropertyType)) {
+        if (!ConvertHelper.UnderlyingTypesMatch(outProp.PropertyType, entProp.PropertyType)) {
           LogError("View definition error ({0}): data type for view property '{1}' ({2} ) does not match query output property type ({3}) .",
             view.EntityType, entProp.Name, entProp.PropertyType, outProp.PropertyType);
           ok = false;
         }
       }// foeach entProp
       return ok; 
-    }
-
-    private bool TypesMatch(Type t1, Type t2) {
-      if (t1 == t2)
-        return true;
-      // in case these are nullable
-      if (t1.IsNullableValueType())
-        t1 = Nullable.GetUnderlyingType(t1);
-      if (t2.IsNullableValueType())
-        t2 = Nullable.GetUnderlyingType(t2);
-      return t1 == t2; 
     }
 
     // Verify that entities referenced in properties are registered.

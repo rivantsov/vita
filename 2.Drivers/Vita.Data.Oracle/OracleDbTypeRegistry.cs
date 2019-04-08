@@ -2,11 +2,13 @@
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Data;
-using System.Linq; 
+using System.Linq;
 using System.Text;
 
 using Vita.Data.Driver;
 using Vita.Data.Driver.TypeSystem;
+using Vita.Entities.Model;
+using Vita.Entities.Utilities;
 
 namespace Vita.Data.Oracle {
 
@@ -127,10 +129,30 @@ namespace Vita.Data.Oracle {
       return base.GetDbTypeInfo(typeName, size, prec, scale);
     }
 
-    public override DbValueConverter GetDbValueConverter(DbTypeInfo typeInfo, Type memberType) {
-      return base.GetDbValueConverter(typeInfo, memberType);
+    public override DbValueConverter GetDbValueConverter(DbTypeInfo typeInfo, EntityMemberInfo member) {
+      var conv = base.GetDbValueConverter(typeInfo, member);
+      // Fix for materialized views; BookSalesMat.Count supposed to return int/long, but returns decimal 
+      if (member.Entity.Kind == EntityKind.View && member.DataType.IsInt()) {
+        var oldConv = conv.ColumnToPropertyUnsafe;
+        conv.ColumnToPropertyUnsafe = v => {
+          if (v is decimal) {
+            v = (long)(Decimal)v;
+            v = ConvertHelper.ChangeType(v, conv.ColumnType);
+          }
+          v = oldConv(v);
+          return v;
+        };
+      }
+      return conv;
     }
 
+    public override DbTypeInfo GetDbTypeInfo(EntityMemberInfo forMember) {
+      if (forMember.Entity.Kind == EntityKind.View) {
+
+      }
+      var typeInfo = base.GetDbTypeInfo(forMember);
+      return typeInfo; 
+    }
     protected override DbTypeInfo CreateDbTypeInfo(Type clrType, DbTypeDef typeDef, long size = 0, byte prec = 0, byte scale = 0) {
       var typeInfo = base.CreateDbTypeInfo(clrType, typeDef, size, prec, scale);
       // Big trouble - Oracle provider returns different value types in numeric columns with scale ==0 (integers)

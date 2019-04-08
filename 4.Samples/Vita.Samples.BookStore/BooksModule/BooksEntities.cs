@@ -238,22 +238,23 @@ namespace Vita.Samples.BookStore {
 
   // Views ----------------------------------------
   public interface IBookSales {
-    [UniqueClusteredIndex] //SQL Server - required to define other indexes
-    Guid Id { get; set; }
-    [Index]
-    string Title { get; set; }
-    string Publisher { get; set; }
-    int Count { get; set; }
-    Decimal? Total { get; set; }
-  }
-
-  public interface IBookSales2 {
     [PrimaryKey] // does not create PK on view in DB, but allows treat view as entity: GetEntity<>(pk)
     Guid Id { get; set; }
     string Title { get; set; }
     string Publisher { get; set; }
     // On purpose: both columns come from aggregate and might be null in View results;
     // We make Count not nullable, Total nullable - to check proper handling 
+    int Count { get; set; }
+    Decimal? Total { get; set; }
+  }
+
+  // For materialized view
+  public interface IBookSalesMat {
+    [UniqueClusteredIndex] //SQL Server - required to define other indexes
+    Guid Id { get; set; }
+    [Index]
+    string Title { get; set; }
+    string Publisher { get; set; }
     int Count { get; set; }
     Decimal? Total { get; set; }
   }

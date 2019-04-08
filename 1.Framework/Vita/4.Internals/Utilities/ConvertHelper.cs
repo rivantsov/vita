@@ -58,8 +58,24 @@ namespace Vita.Entities.Utilities {
       if(valueType == typeof(string))
         return FromString((string)value, type);
       //else try default Convert
+      // but check if it is nullable value type
+      type = Nullable.GetUnderlyingType(type) ?? type; 
+      if (ReflectionHelper.IsNullableValueType(type))
+        type = Nullable.GetUnderlyingType(type); 
       return Convert.ChangeType(value, type);
     }
+
+    public static bool UnderlyingTypesMatch(Type t1, Type t2) {
+      if (t1 == t2)
+        return true;
+      // in case these are nullable
+      if (t1.IsNullableValueType())
+        t1 = Nullable.GetUnderlyingType(t1);
+      if (t2.IsNullableValueType())
+        t2 = Nullable.GetUnderlyingType(t2);
+      return t1 == t2;
+    }
+
 
     public static object FromString(string value, Type type) {
       var ti = type.GetTypeInfo(); 

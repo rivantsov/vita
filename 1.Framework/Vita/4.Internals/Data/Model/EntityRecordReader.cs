@@ -72,22 +72,27 @@ namespace Vita.Data.Model {
       for (int i = 0; i < _columns.Count; i++) {
         try {
           colMap = _columns[i];
+          var dbCol = colMap.DbColumn;
           var isNull = dataRecord.IsDBNull(colMap.ReaderColumnIndex);
           if(isNull) {
             // Views might have NULLs unexpectedly in columns like Count() or Sum() - LINQ expr has non-nullable type, but in fact 
-            // the column in Db is nullable
-            if (isView && !colMap.DbColumn.Flags.IsSet(DbColumnFlags.Nullable))
-              dbValue = colMap.DbColumn.Member.DefaultValue;
+            // the view column can return NULL
+            if (isView && !dbCol.Flags.IsSet(DbColumnFlags.Nullable))
+              dbValue = dbCol.Member.DefaultValue;
             else
               dbValue = DBNull.Value;
           } else {
             // not NULL
-            dbValue = colMap.DbColumn.TypeInfo.ColumnReader(dataRecord, colMap.ReaderColumnIndex);
-            var conv = colMap.DbColumn.Converter.ColumnToProperty;
+            dbValue = dbCol.TypeInfo.ColumnReader(dataRecord, colMap.ReaderColumnIndex);
+            var conv = dbCol.Converter.ColumnToProperty;
             if(dbValue != null && conv != null)
               dbValue = conv(dbValue);
+            // quick fix: views sometimes have out columns changed from expected 
+            if (isView && !ConvertHelper.UnderlyingTypesMatch(dbCol.Member.DataType, dbValue.GetType())) {
+              dbValue = ConvertHelper.ChangeType(dbValue, dbCol.Member.DataType);
+            }
           }
-          var member = colMap.DbColumn.Member;
+          var member = dbCol.Member;
           entRec.ValuesOriginal[member.ValueIndex] = dbValue; 
         } catch (Exception ex) {
           ex.AddValue("DataRecord", dataRecord);

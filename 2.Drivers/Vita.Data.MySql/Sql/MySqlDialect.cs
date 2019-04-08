@@ -65,5 +65,5 @@ namespace Vita.Data.MySql {
       return base.AddDbParameter(command, ph, value);
     }
 
-  }
+  } //class
 }

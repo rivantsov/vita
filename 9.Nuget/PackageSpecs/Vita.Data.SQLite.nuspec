@@ -17,7 +17,7 @@
          <dependency id="Vita" version="$version$"/>
        </group>	
        <group>
-         <dependency id="Microsoft.Data.Sqlite" version="2.0.1" />
+         <dependency id="System.Data.Sqlite" version="1.0.110" />
        </group>	
     </dependencies>
   </metadata>

@@ -29,8 +29,8 @@ namespace Vita.Data.Driver.TypeSystem {
 
     public virtual DbTypeInfo GetDbTypeInfo(EntityMemberInfo forMember) {
       var colType = forMember.DataType.GetUnderlyingStorageClrType();
-      if(DbTypesByClrType.TryGetValue(colType, out var mapping))
-          return mapping;
+      if(DbTypesByClrType.TryGetValue(colType, out var typeInfo))
+          return typeInfo;
       // direct mapping by col type (CLR type) not found. 
       DbTypeDef storageType = null;
       // find by value kind
@@ -80,8 +80,8 @@ namespace Vita.Data.Driver.TypeSystem {
       return this.Converters.GetConverter(columnType, memberType);
     }
 
-    public virtual DbValueConverter GetDbValueConverter(DbTypeInfo mapping, Type memberType) {
-      return this.GetDbValueConverter(mapping.ColumnOutType, memberType); 
+    public virtual DbValueConverter GetDbValueConverter(DbTypeInfo typeInfo, EntityMemberInfo member) {
+      return this.GetDbValueConverter(typeInfo.ColumnOutType, member.DataType); 
     }
   } //class
 

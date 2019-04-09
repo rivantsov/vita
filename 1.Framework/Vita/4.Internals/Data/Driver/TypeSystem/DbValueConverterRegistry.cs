@@ -69,7 +69,7 @@ namespace Vita.Data.Driver {
 
   }
 
-  public class DbValueConverterRegistryNew {
+  public class DbValueConverterRegistry {
 
     #region nested classes
     public class TypeTuple : IEquatable<TypeTuple> {
@@ -97,7 +97,7 @@ namespace Vita.Data.Driver {
 
     IDictionary<TypeTuple, DbValueConverter> _converters = new ConcurrentDictionary<TypeTuple, DbValueConverter>();
 
-    public DbValueConverterRegistryNew() {
+    public DbValueConverterRegistry() {
       BuildDefaultConverters(typeof(byte), typeof(sbyte), typeof(Int16), typeof(UInt16), typeof(Int32), typeof(UInt32),
         typeof(Int64), typeof(UInt64));
       BuildDefaultConverters(typeof(Single), typeof(double), typeof(decimal));

@@ -14,6 +14,9 @@ namespace Vita.Samples.BookStore {
   // We also define a small static extension class to add handy entity-creation methods.
   public partial class BooksModule : EntityModule {
     public static readonly Version CurrentVersion = new Version("1.4.0.0");
+
+    public const string BookSalesMatViewName = "vBookSales_mat";
+
     // Event codes for scheduled events
     public const string EventCodeRestock = "Restock";
     public const string EventCodeAskBookReview = "AskBookReview";
@@ -62,16 +65,16 @@ namespace Vita.Samples.BookStore {
                              Total = g.Sum(l => l.Price * l.Quantity),
                              LineCount = g.LongCount() // to satisfy MS SQL requriement to include Count_BIG
                            };
-      RegisterView<IBookSales>(bookSalesQuery, DbViewOptions.Materialized, viewName: "vBookSales_mat");
+      RegisterView<IBookSalesMat>(bookSalesQuery, DbViewOptions.Materialized, viewName: BookSalesMatViewName);
 
       // Other version of bookSales, with subqueries without grouping (testing bug fix: view output columns must have aliases)
       var bookSalesQuery2 = from b in bookSet
                             select new {
-                              Id = b.Id, Title = b.Title, Publisher = b.Publisher.Name,
+                              Id = b.Id, Title = b.Title, Publisher = b.Publisher.Name,                              
                               Count = bolSet.Where(bol => bol.Book == b).Sum(bol => bol.Quantity),
                               Total = bolSet.Where(bol => bol.Book == b).Sum(bol => bol.Price * bol.Quantity)
                             };
-      RegisterView<IBookSales2>(bookSalesQuery2);  
+      RegisterView<IBookSales>(bookSalesQuery2);  
 
       //Fiction books query
       var fictionCat = BookCategory.Fiction; // use local var to check that it is translated to literal, not parameter

@@ -124,8 +124,9 @@ namespace Vita.Testing.ExtendedTests {
       Assert.IsTrue(lstBooksNotPublished.Count > 0, "Failed to find not published book.");
 
       //Testing that SQLite DbCommand is disconnected - this releases server-side resources
-      if(Startup.ServerType == DbServerType.SQLite) 
-        TryMoveSqliteFile(); 
+      // Disabling this test - it does not work if you have connection pooling (pooling=true in conn string)
+      //if(Startup.ServerType == DbServerType.SQLite) 
+       // TryMoveSqliteFile(); 
 
       //Test new/delete entity - this was a bug
       session = app.OpenSession();
@@ -137,6 +138,7 @@ namespace Vita.Testing.ExtendedTests {
     }
 
     //Testing that SQLite DbCommand is disconnected - this releases server-side resources
+    // Note: does not work if connection pooling enabled (pooling = true in conn string)
     private void TryMoveSqliteFile() {
       if(Startup.ServerType != DbServerType.SQLite)
         return; 
@@ -173,26 +175,39 @@ namespace Vita.Testing.ExtendedTests {
     public void TestDbViews() {
       var app = Startup.BooksApp;
       var session = app.OpenSession();
-      session.EnableCache(false);
       if(Startup.ServerType == DbServerType.Postgres) {
         //Postgres requires to manually refresh materialized views
-        session.ExecuteNonQuery(@"Refresh materialized view ""books"".""vBookSales_mat"";");
+        session.ExecuteNonQuery($@"Refresh materialized view ""books"".""{BooksModule.BookSalesMatViewName}"";");
         //session.ExecuteNonQuery(@"Refresh materialized view ""books"".""vAuthorUser"";");
       }
 
-      //Using GetAll
-      var bookSales = session.GetEntities<IBookSales>();
-      Assert.IsTrue(bookSales.Count > 0, "Expected book sales records");
-      //Using Linq
-      var msQuery = from bs in session.EntitySet<IBookSales>()
-                    where bs.Publisher == "MS Books"
-                    select bs;
-      var msList = msQuery.ToList();
-      Assert.IsTrue(msList.Count > 0, "Expected MS Books sales.");
+      Trace.WriteLine("Materialized view, GetEntities");
+      var bookSales1 = session.GetEntities<IBookSalesMat>();
+      Assert.IsTrue(bookSales1.Count > 0, "Expected book sales records");
+      foreach (var bk in bookSales1)
+        Trace.WriteLine($"  Book '{bk.Title}', Copies sold: {bk.Count}, Total: {bk.Total}");
 
-      //Another view IFictionBook
+      Trace.WriteLine("Materialized view, LINQ + auto-obj");
+      var matViewQuery = from bs in session.EntitySet<IBookSalesMat>()
+                         select new { Title = bs.Title, Count = bs.Count, Total = bs.Total };
+      var bookSales2 = matViewQuery.ToList();
+      Assert.IsTrue(bookSales2.Count > 0, "Expected MS Books sales.");
+      foreach (var bk in bookSales2) 
+        Trace.WriteLine($"  Book '{bk.Title}', Copies sold: {bk.Count}, Total: {bk.Total}");
+
+      // test for bug fix - Count and Total are NULL for a book without sales (IronMan book)
+      Trace.WriteLine("Regular view, GetEntities");
+      var bookSales3 = session.GetEntities<IBookSales>();
+      Assert.IsTrue(bookSales3.Count > 0, "Expected rows in BookSales2");
+      foreach (var bk in bookSales3)
+        Trace.WriteLine($"  Book '{bk.Title}', Copies sold: {bk.Count}, Total: {bk.Total}");
+
+
+      //Another view vFictionBooks
+      Trace.WriteLine("Regular view FictionBooks, GetEntities");
       var fictBooks = session.GetEntities<IFictionBook>();
       Assert.IsTrue(fictBooks.Count > 0, "Expected fiction books");
+
       //Using LINQ
       var firstFictBook = session.EntitySet<IFictionBook>().Where(b => b.Price > 0).FirstOrDefault();
       Assert.IsNotNull(firstFictBook, "Expected fiction book.");

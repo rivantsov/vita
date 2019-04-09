@@ -676,15 +676,21 @@ namespace Vita.Data.Linq.Translation {
       var memberInfo = expression.Member;
       var memberType = memberInfo.GetMemberReturnType();
       var memberName = memberInfo.Name;
-      if(!isStaticMemberAccess && memberName == "Count")
-        return AnalyzeAggregate(AggregateType.Count, new[] { expression.Expression }, context);
 
-      if(!isStaticMemberAccess)
+      if(!isStaticMemberAccess) {
+        // special case - expr like book.Authors.Count
+        if (memberName == "Count") {
+          var objExprType = expression.Expression.Type;
+          if (objExprType.IsGenericType && typeof(IList<>).IsAssignableFrom(objExprType.GetGenericTypeDefinition()))
+            return AnalyzeAggregate(AggregateType.Count, new[] { expression.Expression }, context);
+        }
         objectExpression = Analyze(expression.Expression, context);
+
+      }
 
       //RI: check if objectExpression is a subquery (EntityQuery) wrapped into a constant. We get this in join queries that use sub-queres
       // saved in local variables
-      if(objectExpression.NodeType == ExpressionType.Constant &&
+      if (objectExpression.NodeType == ExpressionType.Constant &&
            typeof(EntityQuery).IsAssignableFrom(objectExpression.Type)) {
         var constExpr = (ConstantExpression)objectExpression;
         var entQuery = constExpr.Value as EntityQuery;
@@ -1156,15 +1162,18 @@ namespace Vita.Data.Linq.Translation {
       if(parameters.Count == 5) {
         var outerExpr = Analyze(parameters[0], context);
         var innerExpr = Analyze(parameters[1], context);
+        
+         // 2019/4 - enabling joins with subqueries
         var innerTable = innerExpr as TableExpression;
         // TODO: fix this. When joined table is a subquery, we have this exception
         if(innerTable == null)
           Util.Throw("Join with sub-query is not supported. Sub-query: {0}.", innerExpr);
+     
         // RI: check if key selectors return Entity: if yes, change to PK
         var outerSel = CheckJoinKeySelector(parameters[2], context);
         var innerSel = CheckJoinKeySelector(parameters[3], context);
         var outerKeySelector = Analyze(outerSel, outerExpr, context);
-        var innerKeySelector = Analyze(innerSel, innerTable, context);
+        var innerKeySelector = Analyze(innerSel, innerExpr, context);
         // from here, we have two options to join:
         // 1. left and right are tables, we can use generic expressions (most common)
         // 2. left is something else (a meta table)
@@ -1174,7 +1183,7 @@ namespace Vita.Data.Linq.Translation {
           if(outerKeyColumn == null)
             Util.Throw("S0701: No way to find left table for Join");
           outerTable = outerKeyColumn.Table;
-        }
+        } 
         var joinExpr = ExpressionMaker.MakeBinary(ExpressionType.Equal, outerKeySelector, innerKeySelector);
         innerTable.Join(joinType, outerTable, joinExpr,
                         string.Format("join{0}", context.EnumerateAllTables().Count()));

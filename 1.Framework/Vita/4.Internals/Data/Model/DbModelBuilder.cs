@@ -159,7 +159,7 @@ namespace Vita.Data.Model {
       if(dbTypeInfo == null)
         return null;
       var dbColumn = new DbColumnInfo(member, table, colName, dbTypeInfo);
-      dbColumn.Converter = _driver.TypeRegistry.GetDbValueConverter(dbTypeInfo, member.DataType); 
+      dbColumn.Converter = _driver.TypeRegistry.GetDbValueConverter(dbTypeInfo, member); 
       if (dbColumn.Converter == null) {
         LogError($"Member {member}, type {member.DataType}: failed to find DbConverter to db type {dbTypeInfo.DbTypeSpec}");
         return null; 

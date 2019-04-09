@@ -22,7 +22,7 @@ namespace Vita.Data.Driver.TypeSystem {
     // direct mappings for types that do not need args (size, prec) and are not unlimited
     public ConcurrentDictionary<Type, DbTypeInfo> DbTypesByClrType = new ConcurrentDictionary<Type, DbTypeInfo>();
 
-    public DbValueConverterRegistryNew Converters = new DbValueConverterRegistryNew();
+    public DbValueConverterRegistry Converters = new DbValueConverterRegistry();
 
     public DbTypeRegistry(DbDriver driver) {
       Driver = driver;

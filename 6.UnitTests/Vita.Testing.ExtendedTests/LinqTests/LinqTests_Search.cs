@@ -14,19 +14,8 @@ using Vita.Samples.BookStore.Api;
 
 namespace Vita.Testing.ExtendedTests {
 
-  [TestClass]
-  public class LinqSearchTests {
+  public partial class LinqTests {
 
-    [TestInitialize]
-    public void TestInit() {
-      Startup.InitApp();
-    }
-
-    [TestCleanup]
-    public void TearDown() {
-      Startup.TearDown();
-    }
-  
     [TestMethod]
     public void TestLinqSearch() {
       // SQLite sometimes fails this test (fails to find a book), but only when running ALL tests in extended project, 
@@ -82,12 +71,6 @@ OFFSET @P4 ROWS FETCH NEXT @P5 ROWS ONLY;
       Assert.AreEqual(totalCount, bookResults.TotalCount, "Total count mismatch for larget Skip value");
 
 
-    }
-
-    private void PrintLastSql(IEntitySession session) {
-      //Printout SQL query that was executed
-      var cmd = session.GetLastCommand();
-      Debug.WriteLine(cmd.ToLogString());
     }
 
   }

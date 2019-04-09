@@ -22,7 +22,7 @@ namespace Vita.Data.Driver.TypeSystem {
     // Used by Linq - by default goes to Converters dict
     DbValueConverter GetDbValueConverter(Type columnType, Type memberType);
 
-    DbValueConverter GetDbValueConverter(DbTypeInfo typeInfo, Type memberType);
+    DbValueConverter GetDbValueConverter(DbTypeInfo typeInfo, EntityMemberInfo member);
   }
 
 

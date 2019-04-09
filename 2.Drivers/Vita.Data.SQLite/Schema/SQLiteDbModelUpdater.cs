@@ -120,7 +120,7 @@ namespace Vita.Data.SQLite {
       // See https://www.sqlite.org/autoinc.html
       // auto-inc columns is always INT64, but s
       if(column.Flags.IsSet(DbColumnFlags.Identity))
-        return column.ColumnNameQuoted +  " INTEGER PRIMARY KEY NOT NULL"; //
+        return column.ColumnNameQuoted + " INTEGER PRIMARY KEY AUTOINCREMENT  NOT NULL"; //
       else 
        return base.GetColumnSpec(column, options);
     }

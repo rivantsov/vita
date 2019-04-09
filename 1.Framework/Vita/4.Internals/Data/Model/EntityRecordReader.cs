@@ -65,22 +65,34 @@ namespace Vita.Data.Model {
       if (_primaryKeyColumns.Count > 0 && PrimaryKeyIsNull(dataRecord))
         return null;
       var entRec = new EntityRecord(_tableInfo.Entity, EntityStatus.Loading);
+      bool isView = _tableInfo.Entity.Kind == EntityKind.View; 
       object dbValue = null;
       OutColumnMapping colMap = null; 
       //for-i loop is more efficient than foreach
       for (int i = 0; i < _columns.Count; i++) {
         try {
           colMap = _columns[i];
+          var dbCol = colMap.DbColumn;
           var isNull = dataRecord.IsDBNull(colMap.ReaderColumnIndex);
-          if(isNull)
-            dbValue = DBNull.Value;
-          else {
-            dbValue = colMap.DbColumn.TypeInfo.ColumnReader(dataRecord, colMap.ReaderColumnIndex);
-            var conv = colMap.DbColumn.Converter.ColumnToProperty;
+          if(isNull) {
+            // Views might have NULLs unexpectedly in columns like Count() or Sum() - LINQ expr has non-nullable type, but in fact 
+            // the view column can return NULL
+            if (isView && !dbCol.Flags.IsSet(DbColumnFlags.Nullable))
+              dbValue = dbCol.Member.DefaultValue;
+            else
+              dbValue = DBNull.Value;
+          } else {
+            // not NULL
+            dbValue = dbCol.TypeInfo.ColumnReader(dataRecord, colMap.ReaderColumnIndex);
+            var conv = dbCol.Converter.ColumnToProperty;
             if(dbValue != null && conv != null)
               dbValue = conv(dbValue);
+            // quick fix: views sometimes have out columns changed from expected 
+            if (isView && !ConvertHelper.UnderlyingTypesMatch(dbCol.Member.DataType, dbValue.GetType())) {
+              dbValue = ConvertHelper.ChangeType(dbValue, dbCol.Member.DataType);
+            }
           }
-          var member = colMap.DbColumn.Member;
+          var member = dbCol.Member;
           entRec.ValuesOriginal[member.ValueIndex] = dbValue; 
         } catch (Exception ex) {
           ex.AddValue("DataRecord", dataRecord);

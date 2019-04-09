@@ -111,8 +111,9 @@ namespace Vita.Entities.Model.Construction {
           // Create entityInfo for the view
           var entInfo = AddEntity(module, view.EntityType, EntityKind.View);
           entInfo.ViewDefinition = view;
-          if (!string.IsNullOrEmpty(view.Name))
+          if (!string.IsNullOrEmpty(view.Name)) {
             entInfo.TableName = view.Name;
+          }
         }//foreach view
       }
     }//method
@@ -160,7 +161,7 @@ namespace Vita.Entities.Model.Construction {
           ok = false;
           continue; //next prop 
         }
-        if (outProp.PropertyType != entProp.PropertyType) {
+        if (!ConvertHelper.UnderlyingTypesMatch(outProp.PropertyType, entProp.PropertyType)) {
           LogError("View definition error ({0}): data type for view property '{1}' ({2} ) does not match query output property type ({3}) .",
             view.EntityType, entProp.Name, entProp.PropertyType, outProp.PropertyType);
           ok = false;

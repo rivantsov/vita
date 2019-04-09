@@ -12,17 +12,7 @@ using Vita.Samples.BookStore;
 
 namespace Vita.Testing.ExtendedTests {
 
-  [TestClass]
-  public class LinqNonQueryTests {
-
-    [TestInitialize]
-    public void TestInit() {
-      Startup.InitApp();
-    }
-    [TestCleanup]
-    public void TearDown() {
-      Startup.TearDown(); 
-    }
+  public partial class LinqTests {
 
     [TestMethod]
     public void TestLinqNonQuery_Update () {

@@ -21,17 +21,18 @@ namespace Vita.Entities.Model.Construction {
     public static string ConstructKeyName(this EntityKeyInfo key) {
       Util.Check(key.IsExpanded(), "KeyMembers list must be expanded, cannot construct name. Entity: {0}, keytype: {1}", 
           key.Entity.Name, key.KeyType);
-      var prefix = GetKeyNamePrefix(key.KeyType);
       var entity = key.Entity;
-      if(key.KeyType.IsSet(KeyType.PrimaryKey)) {
-        return prefix + entity.Name;
+      var tName = entity.TableName ?? entity.Name;
+      var prefix = GetKeyNamePrefix(key.KeyType);
+      if (key.KeyType.IsSet(KeyType.PrimaryKey)) {
+        return prefix + tName;
       } else if (key.KeyType.IsSet(KeyType.ForeignKey)) {
         var target = key.OwnerMember.ReferenceInfo.ToKey.Entity;
-        return prefix + key.Entity.Name + "_" + target.Name;
+        return prefix + tName + "_" + (target.TableName ?? target.Name);
       } else {
         var members = key.GetMemberNames();
         string memberNames = string.Join(string.Empty, members).Replace("_", string.Empty); //remove underscores in names 
-        return prefix + entity.Name + "_" + memberNames;
+        return prefix + tName + "_" + memberNames;
       }
     }
 

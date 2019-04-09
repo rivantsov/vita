@@ -39,28 +39,18 @@ namespace Vita.Data.Linq.Translation.Expressions {
     }
 
 
-    /// <summary>
-    /// Set table join
-    /// </summary>
-    /// <param name="joinType"></param>
-    /// <param name="joinedTable"></param>
-    /// <param name="joinExpression"></param>
-    public void Join(TableJoinType joinType, TableExpression joinedTable, Expression joinExpression) {
+    public void Join(TableJoinType joinType, Expression joinedExpr, Expression joinExpression) {
       //RI: special case - inner joins on top of outer joins should become outer joins as well
-      if(joinedTable.JoinedTable != null && (joinedTable.JoinType & TableJoinType.FullOuter) != 0)
+      var joinedTable = joinedExpr as TableExpression;
+      if (joinedTable == null)
+        Util.Check(false, "Joins with subqueries not supported, joined expr: {0}", joinedExpr);
+      if(joinedTable != null && joinedTable.JoinedTable != null && (joinedTable.JoinType & TableJoinType.FullOuter) != 0)
         joinType |= joinedTable.JoinType;
       JoinExpression = joinExpression;
       JoinType = joinType;
       JoinedTable = joinedTable;
     }
 
-    /// <summary>
-    /// Set table join
-    /// </summary>
-    /// <param name="joinType"></param>
-    /// <param name="joinedTable"></param>
-    /// <param name="joinExpression"></param>
-    /// <param name="joinID"></param>
     public void Join(TableJoinType joinType, TableExpression joinedTable, Expression joinExpression, string joinID) {
       Join(joinType, joinedTable, joinExpression);
       JoinID = joinID;

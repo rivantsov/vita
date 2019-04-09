@@ -16,7 +16,7 @@ namespace Vita.Testing.ExtendedTests {
 
 
   [TestClass]
-  public class LinqTests {
+  public partial class LinqTests {
 
     [TestInitialize]
     public void TestInit() {
@@ -28,6 +28,17 @@ namespace Vita.Testing.ExtendedTests {
       Startup.TearDown();
     }
 
+    private static void LogLastQuery(IEntitySession session) {
+      /*
+      Debug.WriteLine("---------------------------------------------------------------------------------------");
+      var lastCmd = session.GetLastLinqCommand();
+      if(lastCmd != null)
+        Debug.WriteLine("Query: " + lastCmd.ToString());
+      var command = session.GetLastCommand();
+      if(command != null)
+        Debug.WriteLine("SQL:" + command.CommandText);
+       */
+    }
 
 
     #region Helper objects for LINQ test
@@ -343,11 +354,6 @@ namespace Vita.Testing.ExtendedTests {
     }
 
 
-    private bool IsAttachedTo(object entity, IEntitySession session) {
-      var recSession = EntityHelper.GetSession(entity);
-      return recSession == session;
-    }
-
     [TestMethod]
     public void TestLinqLikeOperator() {
       //We test escaping wildcards
@@ -486,79 +492,6 @@ namespace Vita.Testing.ExtendedTests {
     }
 
     [TestMethod]
-    public void TestLinqArrayContains() {
-      var app = Startup.BooksApp;
-      var session = app.OpenSession();
-
-      var bookOrders = session.EntitySet<IBookOrder>();
-      //Note: for debugging use table that is not fully cached, so we use IBookOrder entity
-
-      // Test retrieving orders by Id-in-list
-      var someOrders = bookOrders.Take(2).ToList();
-      var someOrderIds = someOrders.Select(o => o.Id).ToArray();
-      var qSomeOrders = from bo in bookOrders
-                        where someOrderIds.Contains(bo.Id)
-                        select bo;
-      var someOrders2 = qSomeOrders.ToList();
-      var cmd = session.GetLastCommand(); //just for debugging
-      Assert.AreEqual(someOrderIds.Length, someOrders2.Count, "Test Array.Contains failed: order counts do not match.");
-
-      // Try again with a single Id
-      var arrOneId = new Guid[] { someOrderIds[0] };
-      var qOrders = from bo in bookOrders
-                    where arrOneId.Contains(bo.Id)
-                    select bo;
-      var orders = qOrders.ToList();
-      Assert.AreEqual(1, orders.Count, "Test Array.Contains with one Id failed: order counts do not match.");
-
-      // Again with empty list
-      var arrEmpty = new Guid[] { };
-      var qNoBooks = from b in session.EntitySet<IBook>()
-                     where arrEmpty.Contains(b.Id)
-                     select b;
-      var noBooks = qNoBooks.ToList();
-      cmd = session.GetLastCommand();
-      Assert.AreEqual(0, noBooks.Count, "Test Array.Contains with empty array failed, expected 0 entities");
-
-      // Empty list, no parameters option - should be 'literal empty list' there, depends on server type
-      qNoBooks = from b in session.EntitySet<IBook>().WithOptions(QueryOptions.NoParameters)
-                 where arrEmpty.Contains(b.Id)
-                 select b;
-      noBooks = qNoBooks.ToList();
-      cmd = session.GetLastCommand();
-      Assert.AreEqual(0, noBooks.Count, "Expected 0 entities, empty-list-contains with literal empty list");
-      Assert.AreEqual(0, cmd.Parameters.Count, "Expected 0 db params with NoParameters option");
-
-      // Again with list, not array
-      var orderIdsList = someOrderIds.ToList();
-      qOrders = from bo in bookOrders
-                where orderIdsList.Contains(bo.Id)
-                select bo;
-      orders = qOrders.ToList();
-      Assert.AreEqual(orderIdsList.Count, orders.Count,
-          "Test constList.Contains, repeated query failed: order counts do not match.");
-
-      // Again with NoParameters options - force using literals
-      qOrders = from bo in bookOrders.WithOptions(QueryOptions.NoParameters)
-                where orderIdsList.Contains(bo.Id)
-                select bo;
-      orders = qOrders.ToList();
-      Assert.AreEqual(orderIdsList.Count, orders.Count,
-          "Test constList.Contains, no-parameters linq query failed: order counts do not match.");
-      cmd = session.GetLastCommand();
-      Assert.AreEqual(0, cmd.Parameters.Count, "NoParameters option - expected no db parameters");
-
-
-      // Test intList.Contains()
-      var userTypes = new UserType[] { UserType.Customer, UserType.Author };
-      var qOrders2 = from bo in bookOrders
-                     where userTypes.Contains(bo.User.Type)
-                     select bo;
-      var orders2 = qOrders2.ToList();
-      Assert.IsTrue(orders2.Count > 0, "No orders by type found.");
-    }
-
-    [TestMethod]
     public void TestSqlCache() {
 
       var app = Startup.BooksApp;
@@ -606,106 +539,6 @@ namespace Vita.Testing.ExtendedTests {
 
       SqlCacheLogHelper.FlushSqlCacheLog(); 
     }
-
-    [TestMethod]
-    public void TestLinqBoolBitColumns() {
-      // We test that LINQ engine correctly handles bit fields
-      var app = Startup.BooksApp;
-      var session = app.OpenSession();
-      var users = session.EntitySet<IUser>();
-
-      bool boolParam = true;
-      //Bug fix, handling expressions like 'ent.BoolProp & boolValue == ent.BoolProp'
-      var q0 = from u in users
-               where (u.IsActive && boolParam) == u.IsActive
-               select u;
-      var lstUsers0 = q0.ToList();
-
-      // MS SQL, MySql : bit field is integer, so
-      // expression over bit field: 'u.IsActive==true' should be replaced with 'u.IsActive = 1'; we also check ! operator and bool parameter
-      // Postgress has boolean data type, so it should be used as is.
-      var q2 = from u in users
-               where u.IsActive && u.IsActive == true && u.IsActive == boolParam && true || boolParam || !u.IsActive
-               select u;
-      var lstUsers2 = q2.ToList();
-      LogLastQuery(session);
-      Assert.IsTrue(lstUsers2.Count > 0, "Bit field expr test failed");
-
-      // bool/bit field used in Where expressions directly - should be replaced with 'u.IsActive = 1'
-      var q1 = from u in users
-               where u.IsActive
-               select u;
-      var lstUsers1 = q1.ToList();
-      Assert.IsTrue(lstUsers1.Count > 0, "No active users found.");
-
-      // Using bit field in anon type initializer
-      var q3 = from u in users
-                 //where u.IsActive
-               select new { U = u.UserName, A = u.IsActive };
-      var lstUsers3 = q3.ToList();
-      Assert.IsTrue(lstUsers3.Count > 0, "Bit field - use in anon object failed.");
-
-      Startup.BooksApp.Flush();
-    }
-
-
-    [TestMethod]
-    public void TestLinqBoolOutputColumns() {
-      // We test that LINQ engine correctly handles bool values in return columns
-      var app = Startup.BooksApp;
-      var session = app.OpenSession();
-
-      // Some servers (MS SQL, Oracle) do not support bool as valid output type
-      //   So SQL like "SELECT (2 > 1) As BoolValue" fails
-      // LINQ engine automatically adds IIF(<boolValue>, 1, 0)
-      // Another trouble: MySql stores bools as UInt64, but comparison results in Int64
-      // Oracle does not allow queries without FROM, so engine automatically adds 'FROM dual' which if fake FROM clause
-      session = app.OpenSession();
-      var hasFiction = session.EntitySet<IBook>().Any(b => b.Category == BookCategory.Fiction);
-      Assert.IsTrue(hasFiction, "Expected hasFiction to be true");
-
-      // another variation
-      var books = session.EntitySet<IBook>().Where(b => b.Authors.All(a => a.LastName != null)).ToArray();
-      Assert.IsTrue(books.Length > 0, "Expected all books");
-
-
-    }
-    [TestMethod]
-    public void TestLinqContains() {
-
-      var app = Startup.BooksApp;
-      var session = app.OpenSession();
-      var orderLines = session.EntitySet<IBookOrderLine>();
-
-      // Find books that have NOT been ordered - try by IDs
-      var q0 = from b in session.EntitySet<IBook>()
-               where !orderLines.Select(bol => bol.Book.Id).Contains(b.Id)
-               select b;
-      var list0 = q0.ToList();
-      LogLastQuery(session);
-      Assert.IsTrue(list0.Count > 0, "Query for not ordered books (Ids) failed.");
-
-      // The same, only using directly book reference
-      // entitySet.Contains(ent) - this also works
-      var qBooksNotPurchased = from b in session.EntitySet<IBook>()
-                               where !orderLines.Select(bol => bol.Book).Contains(b)
-                               select b;
-      var lstBooksNotPurchased = qBooksNotPurchased.ToList();
-      LogLastQuery(session);
-      Assert.IsTrue(lstBooksNotPurchased.Count > 0, "Query with Contains(book) failed.");
-
-      //One very special case - pub.Books.Contains(...) method. In this case, Contains is not Queryable.Contains, but ICollection.Contains(item)
-      // - because pub.Books is IList<IBook>, so compiler picks Contains instance method on the class/interface, before extension method. 
-      // SQL translator makes special treatment of this case
-      var csBook = session.EntitySet<IBook>().First(b => b.Title == "c# Programming");
-      var qCsBkPub = from pub in session.EntitySet<IPublisher>()
-                     where pub.Books.Contains(csBook)
-                     select pub;
-      var csBookPubs = qCsBkPub.ToList();
-      LogLastQuery(session);
-      Assert.IsTrue(csBookPubs.Count == 1, "Query publisher by book failed. ");
-
-    } //method
 
     [TestMethod]
     public void TestLinqSpecialQueries() {
@@ -802,45 +635,6 @@ namespace Vita.Testing.ExtendedTests {
       } // if !Oracle
     }
 
-    [TestMethod]
-    public void TestLinqWithNullables() {
-      var session = Startup.BooksApp.OpenSession();
-      session.EnableCache(false); //We are testing real SQLs
-
-      //First query using literal null; this alwasy worked OK, SQL generated is "WHERE b.Abstract IS NULL"
-      var qNotPublished = from b in session.EntitySet<IBook>()
-                                  where b.PublishedOn == null
-                                  select b;
-      var booksNotPublished = qNotPublished.ToList();
-      var countNotPublished = booksNotPublished.Count;
-      Assert.IsTrue(countNotPublished > 0, "Expected non-published book ");
-
-      // Bug fix. Using a variable instead of literal null.
-      //   Before fix: the query was using 'WHERE b.PublishedOn = @P1", which fails to match null values
-      //   After fix: the SQL is 'WHERE (b.Abstract == @P1 OR (b.Abstract IS NULL) AND (@P1 IS NULL))'
-      DateTime? nullDate = null;
-      var qNotPublished2 = from b in session.EntitySet<IBook>()
-                                  where b.PublishedOn == nullDate
-                                  select b;
-      var booksNotPublished2 = qNotPublished2.ToList();
-      var countNotPublished2 = booksNotPublished2.Count;
-      Assert.AreEqual(countNotPublished, countNotPublished2, "Null query failed, expected the same book count.");
-
-
-      // Nullable entity refs and strings
-      IUser someEditor = null;
-      string someCode = null;
-      var qNullCompare = from b in session.EntitySet<IBook>()
-                         where b.SpecialCode == someCode || b.Editor == someEditor  
-                         select b;
-      var booksNullCompare = qNullCompare.ToList();
-      var cmd = session.GetLastCommand();
-      Assert.IsTrue(booksNullCompare.Count > 0, "Expected some books without editor");
-
-
-
-    }
-
     // [TestMethod]
     public void TestLinqUnionExcept() {
       //Some seemingly simple queries that caused problems for LINQ engine initially
@@ -874,93 +668,6 @@ namespace Vita.Testing.ExtendedTests {
         LogLastQuery(session);
         Assert.IsTrue(listEx12.Count == 2, "Except query2 failed.");
       }
-    }
-
-    //There are 4 overloads of Queryable.GroupBy that we need to support (another 4 with IComparer as last parameter are not supported).
-    // Test them all here.
-    [TestMethod]
-    public void TestLinqGroupBy() {
-      var app = Startup.BooksApp;
-      var session = app.OpenSession();
-      session.EnableCache(false); 
-
-      //overload #1; for this method grouping occurs in CLR
-      var query1 = session.EntitySet<IBook>().GroupBy(b => b.Publisher.Id);
-      var list1 = query1.ToList();
-      LogLastQuery(session);
-      Assert.IsTrue(list1.Count > 0, "overload #1 failed.");
-
-      //overload #2; grouping in CLR
-      // Select pairs of publisher id, book titles
-      var query2 = session.EntitySet<IBook>().GroupBy(b => b.Publisher.Id, b => b.Title); ;
-      var list2 = query2.ToList();
-      LogLastQuery(session);
-      Assert.IsTrue(list2.Count > 0, "overload #2 failed.");
-      //slight variation of #2, with autotype and New
-      var query2b = session.EntitySet<IBook>().GroupBy(b => b.Publisher.Id, b => new { Title = b.Title, Price = b.Price }); ;
-      var list2b = query2b.ToList();
-      LogLastQuery(session);
-      Assert.IsTrue(list2b.Count > 0, "overload #2-B failed.");
-      
-      //overload #3 - grouping in SQL
-      // Select pairs of publisher id, book count, average price
-      var query3 = session.EntitySet<IBook>().GroupBy(b => b.Publisher.Id, 
-        (id, books) => new {Id = id, Count = books.Count(), AvgPrice = books.Average(b=>b.Price)});
-      var list3 = query3.ToList();
-      LogLastQuery(session);
-      Assert.IsTrue(list3.Count > 0, "overload #3 failed.");
-
-
-      // SQL-like syntax Group-By
-      var booksByCat = from b in session.EntitySet<IBook>()
-                       group b by b.Category into g
-                       orderby g.Key
-                       select new { Category = g.Key, BookCount = g.Count(), MaxPrice = g.Max(b => b.Price) };
-      var lstBooksByCat = booksByCat.ToList();
-      LogLastQuery(session);
-      Assert.IsTrue(lstBooksByCat.Count > 0, "GroupBy test returned 0 groups.");
-
-      //Some special queries
-      // - groupBy followed by Select
-      var queryS1 = session.EntitySet<IBook>().GroupBy(b => b.Publisher.Id).Select(g => new { Id = g.Key, Count = g.Count() });
-      var listS1 = queryS1.ToList();
-      LogLastQuery(session);
-      Assert.IsTrue(listS1.Count > 0, "Special test 1 failed.");
-
-      // -- select followed by GroupBy
-      var queryS2 = session.EntitySet<IBook>().Join(
-          session.EntitySet<IPublisher>(), b => b.Publisher.Id, p => p.Id, (b, p) => new { PubId = p.Id, BookId = b.Id })
-               .GroupBy(bp => bp.PubId, (pubId, pairs) => new { PubId = pubId, BookCount = pairs.Count() });
-      var listS2 = queryS2.ToList();
-      LogLastQuery(session);
-      Assert.IsTrue(listS2.Count > 0, "Special test 2 (select followed by GroupBy) failed.");
-
-      // GroupBy nullable field - this is a special case; Null values will come out as type default in group key;
-      // So for authors that are not users (author.User is null), the resulting group will have key = Guid.Empty
-      // this fails with entity cache
-      session.EnableCache(false);
-      var queryS3 = session.EntitySet<IAuthor>().GroupBy(a => a.User.Id).Select(g => new { Id = g.Key, Count = g.Count() });
-      var listS3 = queryS3.ToList();
-      LogLastQuery(session);
-      Assert.IsTrue(listS3.Count > 0, "Special test 3 (Group by nullable key) failed.");
-
-      //Aggregates with fake group by - returning agregates without group by
-      var dora = session.EntitySet<IUser>().First(u => u.UserName == "Dora");
-      //get count, average of book order
-      var doraOrderStats = from ord in session.EntitySet<IBookOrder>()
-                       where ord.User == dora
-                       group ord by 0 into g
-                       select new { Count = g.Count(), Avg = g.Average(o => o.Total) };
-      var stats = doraOrderStats.ToList();
-      Assert.AreEqual(1, stats.Count, "Expected 1 stats record");
-      var stat0 = stats[0]; 
-      Assert.IsTrue(stat0.Count > 0 && stat0.Avg > 0, "Expected non-zero count and avg.");
-      /* SQL: 
-          SELECT COUNT_BIG(*) AS "Count", AVG("Total") AS "Avg"
-          FROM "books"."BookOrder"
-          WHERE ("User_Id" = @P0)
-       */
-
     }
 
     [TestMethod]
@@ -1049,140 +756,6 @@ namespace Vita.Testing.ExtendedTests {
       // Now get 'all' orders - it should return only Dora's orders
       var doraOrders = doraSession.EntitySet<IBookOrder>().ToList();
       Assert.IsTrue(doraOrders.Count > 0, "Failed to find Dora's orders.");
-
-
-      
-    }
-
-    private static void LogLastQuery(IEntitySession session) {
-/*
-      Debug.WriteLine("---------------------------------------------------------------------------------------");
-      var lastCmd = session.GetLastLinqCommand();
-      if(lastCmd != null)
-        Debug.WriteLine("Query: " + lastCmd.ToString());
-      var command = session.GetLastCommand();
-      if(command != null)
-        Debug.WriteLine("SQL:" + command.CommandText);
- */ 
-    }
-
-
-    [TestMethod]
-    public void TestLinqReturnCustomObject() {
-      var session = Startup.BooksApp.OpenSession();
-      var books = session.EntitySet<IBook>();
-
-      // query with custom type in output (not anon type)
-      var qBkInfos = from b in books
-                     where b.Price > 1
-                     select new BookInfo() {Price = b.Price,  Title = b.Title, Publisher = b.Publisher.Name};
-      var lstBkInfos = qBkInfos.ToList();
-      Assert.IsTrue(lstBkInfos.Count > 0, "BookInfo query failed.");
-
-      // Same with non-default constructor
-      var qBkInfos2 = from b in books
-                      where b.Price > 1
-                      select new BookInfo(b.Title, b.Publisher.Name, b.Price) { Title = b.Title };
-      var lstBkInfos2 = qBkInfos2.ToList();
-      Assert.IsTrue(lstBkInfos2.Count > 0, "BookInfo query failed.");
-
-      // bug fix - Linq with out object filled from GroupBy over nullable key
-      // book.Editor is nullable; b.Editor.Id is translated into Guid? expression. 
-      // Linq engine adds a conversion that return default(Guid) if coming value is null. 
-      // We also test enum and string values
-      var bkCounts = books
-        .Select(b => new EditorObj() {
-          EditorId = b.Editor.Id, UserName = b.Editor.UserName, UserType = b.Editor.Type
-        }
-        ).ToList();
-      Assert.IsTrue(bkCounts.Count > 0, "Expected some objects");
-
-    }
-
-    //Helper class to use as output in queries - testing LINQ engine with custom (non-anon) output types
-    [DebuggerDisplay("{Title},{Publisher},{Price}")]
-    class BookInfo {
-      public string Title;
-      public string Publisher;
-      public decimal Price;
-
-      public BookInfo() { }
-      public BookInfo(string title, string publisher, decimal price) {
-        Title = title;
-        Publisher = publisher;
-        Price = price;
-      }
-    }
-
-    class EditorObj {
-      public Guid EditorId;
-      public UserType UserType;
-      public string UserName; 
-    }
-
-
-    [TestMethod]
-    public void TestLinqDates() {
-      // SQLite date/time functions return strings, so tests do not work
-      if (Startup.ServerType == DbServerType.SQLite) 
-        return; 
-
-      var session = Startup.BooksApp.OpenSession();
-      var books = session.EntitySet<IBook>();
-      var bk1 = books.First();
-
-      session.EnableCache(false);
-      var createdOn = bk1.CreatedOn;
-      IList<IBook> bookList;
-      IDbCommand cmd; 
-
-      bookList = books.Where(b => b.CreatedOn.Date == createdOn.Date).ToList();
-      cmd = session.GetLastCommand();
-      Assert.IsTrue(bookList.Count > 0, "Expected some book by CreatedOn.Date");
-
-      switch (Startup.ServerType) {
-        //MySql, Postgres, Oracle TIME() not supported
-        case DbServerType.MySql: case DbServerType.Postgres:   case DbServerType.Oracle:
-          break; 
-        default: 
-          bookList = books.Where(b => b.CreatedOn.TimeOfDay == createdOn.TimeOfDay).ToList();
-          cmd = session.GetLastCommand();
-          Assert.IsTrue(bookList.Count > 0, "Expected some book by CreatedOn.TimeOfDay");
-          break; 
-      }
-
-      bookList = books.Where(b => b.CreatedOn.Year == createdOn.Year).ToList();
-      cmd = session.GetLastCommand();
-      Assert.IsTrue(bookList.Count > 0, "Expected some book by CreatedOn.Year");
-
-      bookList = books.Where(b => b.CreatedOn.Day == createdOn.Day).ToList();
-      cmd = session.GetLastCommand();
-      Assert.IsTrue(bookList.Count > 0, "Expected some book by CreatedOn.Day");
-    }
-
-    [TestMethod]
-    public void TestLinqArrayParameters() {
-      // We test MsSql and Postgres here, but it should work for other servers - for these arrays will be converted to literals
-      var session = Startup.BooksApp.OpenSession();
-      session.EnableCache(false);
-      // count prog books reviews 
-      var progReviewCount = session.EntitySet<IBookReview>().Where(r => r.Book.Category == BookCategory.Programming).Count(); 
-      var progBooks = session.EntitySet<IBook>().Where(b => b.Category == BookCategory.Programming).ToList();
-
-      //This array will be passed to db as parameter; MS SQL - converted to DataTable, Postgres - as an array
-      var bookIds = progBooks.Select(b => b.Id).ToArray();
-      var reviewQuery = session.EntitySet<IBookReview>().Where(r => bookIds.Contains(r.Book.Id));
-      var reviews = reviewQuery.ToList();
-      Assert.AreEqual(progReviewCount, reviews.Count, "Invalid review count");
-      var cmd = session.GetLastCommand();
-      //Debug.WriteLine(cmd.CommandText);
-
-      //try list of strings (not array)
-      var names = new List<string>(new string[] { "John", "Duffy", "Dora" });
-      var selUsers = session.EntitySet<IUser>().Where(u => names.Contains(u.UserName)).ToList();
-      Assert.AreEqual(names.Count, selUsers.Count, "Expected some users");
-      cmd = session.GetLastCommand();
-      //Debug.WriteLine(cmd.CommandText);
     }
 
 

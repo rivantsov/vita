@@ -60,7 +60,6 @@ namespace Vita.Web {
     }
 
     public Task BeginRequest(HttpContext httpContext) {
-      var s = httpContext.RequestServices;
       var opCtx = new OperationContext(this.App);
       var webCtx = opCtx.WebContext = new WebCallContext(opCtx);
       httpContext.SetWebCallContext(webCtx);

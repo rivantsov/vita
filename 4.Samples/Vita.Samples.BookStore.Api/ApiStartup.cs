@@ -50,7 +50,8 @@ namespace Vita.Samples.BookStore.Api {
       app.UseHttpsRedirection();
 
       // Vita middleware
-      var stt = new VitaWebMiddlewareSettings();
+      var s = app.ApplicationServices;
+      var stt = new VitaWebMiddlewareSettings(); 
       app.UseMiddleware<VitaWebMiddleware>(EntityApp, stt);
       
       app.UseAuthentication();

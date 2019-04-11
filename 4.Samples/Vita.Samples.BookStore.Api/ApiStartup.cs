@@ -21,13 +21,20 @@ namespace Vita.Samples.BookStore.Api {
     public ApiStartup(IConfiguration configuration) {
       Configuration = configuration;
     }
-    WebCallContextHandler _vitaWebCallContextHandler;
 
     public IConfiguration Configuration { get; }
+    public BooksEntityApp EntityApp; 
 
     // This method gets called by the runtime. Use this method to add services to the container.
     public void ConfigureServices(IServiceCollection services) {
-      _vitaWebCallContextHandler = CreateWebCallContextHandler(services);  
+      // entity app
+      var connStr = Configuration["MsSqlConnectionString"];
+      EntityApp = SetupBooksApp(connStr);
+      //jwt token handler
+      var jwtSecret = Configuration["JwtSecret"];
+      var jwtHandler = new VitaJwtTokenHandler(jwtSecret);
+      jwtHandler.SetupJwtAuthentication(services, EntityApp);
+
       services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_1);
     }
 
@@ -42,25 +49,12 @@ namespace Vita.Samples.BookStore.Api {
 
       app.UseHttpsRedirection();
 
-      // web call context handler
-      app.UseMiddleware<WebCallContextMiddleware>(_vitaWebCallContextHandler);
+      // Vita middleware
+      var stt = new VitaWebMiddlewareSettings();
+      app.UseMiddleware<VitaWebMiddleware>(EntityApp, stt);
       
       app.UseAuthentication();
       app.UseMvc();
-    }
-
-    private WebCallContextHandler CreateWebCallContextHandler(IServiceCollection services) {
-      // entity app
-      var connStr = Configuration["MsSqlConnectionString"];
-      var entApp = SetupBooksApp(connStr);
-
-      var jwtSecret = Configuration["JwtSecret"];
-      var jwtHandler = new VitaJwtTokenHandler(jwtSecret);
-      jwtHandler.SetupJwtAuthentication(services, entApp);
-
-      var handler = new WebCallContextHandler(entApp, null);
-      handler.AuthTokenHandler = jwtHandler; 
-      return handler; 
     }
 
     private BooksEntityApp SetupBooksApp(string connString) {

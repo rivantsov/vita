@@ -14,12 +14,8 @@ using Vita.Entities.Api;
 namespace Vita.Web {
   public static class WebHelper {
 
-    public static bool IsSet(this WebHandlerOptions options, WebHandlerOptions option) {
+    public static bool IsSet(this WebOptions options, WebOptions option) {
       return (options & option) != 0;
-    }
-
-    public static bool IsSet(this WebTokenDirection flags, WebTokenDirection flag) {
-      return (flags & flag) != 0;
     }
 
     public static WebCallContext GetWebCallContext(this HttpContext httpContext) {

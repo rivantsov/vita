@@ -20,13 +20,13 @@ namespace Vita.Web {
 
  
   /// <summary>AspNetCore middleware 
-  /// Creates and injects into HTTP request object the WebCallContext, OperationContext holding all information about the web call. 
+  /// Creates and injects into HTTP context the WebCallContext (with OperationContext) holding all information about the web call. 
   /// Provides automatic web call logging and exception/error logging.  
   /// </summary>
-  public class WebCallContextHandler: IWebCallNotificationService {
-    public readonly EntityApp  App; 
-    public readonly WebCallContextHandlerSettings Settings;
-    public VitaJwtTokenHandler AuthTokenHandler; 
+  public class VitaWebMiddleware : IWebCallNotificationService {
+    readonly RequestDelegate _next;
+    public readonly EntityApp App;
+    public readonly VitaWebMiddlewareSettings Settings;
 
     /*
     IWebCallLogService _webCallLog;
@@ -35,19 +35,32 @@ namespace Vita.Web {
     */
 
 
-    public WebCallContextHandler(EntityApp app, WebCallContextHandlerSettings settings) {
+    public VitaWebMiddleware(RequestDelegate next, EntityApp app, VitaWebMiddlewareSettings settings) {
+      _next = next;
       App = app;
-      Settings = settings ?? new WebCallContextHandlerSettings();
+      Settings = settings ?? new VitaWebMiddlewareSettings();
       App.RegisterConfig(Settings);
       /*
       _webCallLog = App.GetService<IWebCallLogService>();
       _errorLog = App.GetService<IErrorLogService>();
       _sessionService = App.GetService<IUserSessionService>();
       */
-      App.RegisterService<IWebCallNotificationService>(this); 
+      App.RegisterService<IWebCallNotificationService>(this);
+
+    }
+
+    public async Task InvokeAsync(HttpContext context) {
+      await BeginRequest(context);
+      try {
+        await _next(context);
+        await EndRequest(context);
+      } catch (Exception ex) {
+        await EndRequest(context, ex);
+      }
     }
 
     public Task BeginRequest(HttpContext httpContext) {
+      var s = httpContext.RequestServices;
       var opCtx = new OperationContext(this.App);
       var webCtx = opCtx.WebContext = new WebCallContext(opCtx);
       httpContext.SetWebCallContext(webCtx);

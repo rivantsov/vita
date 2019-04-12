@@ -1,31 +1,33 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
-using System.Security.Principal;
 using System.Text;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
+using System.IdentityModel.Tokens.Jwt;
+
 using Vita.Entities;
-using Vita.Entities.Api;
 
 namespace Vita.Web {
-  public interface IAuthenticationTokenCreator {
+  public interface IAuthenticationTokenHandler {
     string CreateToken(IList<Claim> claims, DateTime expires);
   }
 
-  public class VitaJwtTokenHandler : IAuthenticationTokenCreator {
-    byte[] JwtSecretBytes;
+  public class VitaJwtTokenHandler : IAuthenticationTokenHandler {
+    EntityApp _entityApp;
     SymmetricSecurityKey JwtKey; 
 
-    public VitaJwtTokenHandler(string jwtSecret) {
-      JwtSecretBytes = Encoding.ASCII.GetBytes(jwtSecret);
-      JwtKey = new SymmetricSecurityKey(JwtSecretBytes);
+    public VitaJwtTokenHandler(EntityApp entityApp, IServiceCollection services, string jwtSecret) {
+      _entityApp = entityApp;
+      var secretBytes = Encoding.ASCII.GetBytes(jwtSecret);
+      JwtKey = new SymmetricSecurityKey(secretBytes);
+      SetupJwtAuthentication(services);
+      _entityApp.RegisterService<IAuthenticationTokenHandler>(this);
     }
 
-    public void SetupJwtAuthentication(IServiceCollection services, EntityApp entityApp) {
+    private void SetupJwtAuthentication(IServiceCollection services) {
       services.AddAuthentication(x => {
         x.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
         x.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
@@ -44,7 +46,6 @@ namespace Vita.Web {
           ValidateAudience = false
         };
       });
-      entityApp.RegisterService<IAuthenticationTokenCreator>(this); 
     }
 
     public Task OnJwtTokenValidated(TokenValidatedContext context) {
@@ -64,7 +65,6 @@ namespace Vita.Web {
       var token = tokenHandler.CreateToken(tokenDescriptor);
       var tokenStr = tokenHandler.WriteToken(token);
       return tokenStr; 
-
     }
 
   }

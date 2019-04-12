@@ -23,7 +23,7 @@ namespace Vita.Samples.BookStore.Api {
     }
 
     public IConfiguration Configuration { get; }
-    public BooksEntityApp EntityApp; 
+    public BooksEntityApp EntityApp;
 
     // This method gets called by the runtime. Use this method to add services to the container.
     public void ConfigureServices(IServiceCollection services) {
@@ -32,8 +32,8 @@ namespace Vita.Samples.BookStore.Api {
       EntityApp = SetupBooksApp(connStr);
       //jwt token handler
       var jwtSecret = Configuration["JwtSecret"];
-      var jwtHandler = new VitaJwtTokenHandler(jwtSecret);
-      jwtHandler.SetupJwtAuthentication(services, EntityApp);
+      var jwtTokenHandler = new VitaJwtTokenHandler(EntityApp, services, jwtSecret);
+      services.Add(new ServiceDescriptor(typeof(IAuthenticationTokenHandler), jwtTokenHandler));
 
       services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_1);
     }

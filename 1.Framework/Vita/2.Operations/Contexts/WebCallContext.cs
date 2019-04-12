@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Net;
 using System.Text;
@@ -28,6 +29,10 @@ namespace Vita.Entities.Api {
     HideResponseBody = Confidential | NoLogResponseBody,
   }
 
+  public interface IHttpContextWrapper {
+    object HttpContext { get; }
+  }
+
   /// <summary>Provides an access to web-related parameters to the middle-tier code.</summary>
   /// <remarks>
   /// Instantiated by WebCallContextHandler; the current instance is available through OperationContext.WebContext property. 
@@ -50,6 +55,7 @@ namespace Vita.Entities.Api {
     public string IPAddress;
     public string ControllerName;
     public string MethodName;
+
     //Request/response objects
     public object RequestMessage { get; set; } //In running code should be HttpRequestMessage instance
     public object ResponseMessage { get; set; } //In running code should be HttpResponseMessage instance 
@@ -100,12 +106,13 @@ namespace Vita.Entities.Api {
       opContext.WebContext = this; 
     }
 
-    public WebCallContext(object request, DateTime receivedOn, long tickCountStart, 
+    public WebCallContext(OperationContext context, object request, 
                           Func<string, IList<Cookie>> cookieGetter, Func<string, IList<string>> headerGetter) {
+      this.OperationContext = context; 
       RequestMessage = request; 
       Id = Guid.NewGuid();
-      CreatedOn = receivedOn;
-      TickCountStart = tickCountStart;
+      CreatedOn = this.OperationContext.App.TimeService.UtcNow;
+      TickCountStart = Stopwatch.GetTimestamp();
       GetIncomingCookies = cookieGetter ?? (x => null); 
       GetIncomingHeader = headerGetter ?? (x => null); 
     }

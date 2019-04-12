@@ -60,7 +60,7 @@ namespace Vita.Samples.BookStore.Api {
     }
 
     private string CreateAuthToken() {
-      var tokenCreator = OpContext.App.GetService<IAuthenticationTokenCreator>();
+      var tokenCreator = OpContext.App.GetService<IAuthenticationTokenHandler>();
       var claims = OpContext.App.GetUserClaims(OpContext);
       var loginStt = OpContext.App.GetConfig<LoginModuleSettings>();
       var expires = OpContext.App.TimeService.UtcNow.Add(loginStt.LoginTokenExpiration);

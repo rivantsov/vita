@@ -61,9 +61,10 @@ namespace Vita.Web {
 
     public Task BeginRequest(HttpContext httpContext) {
       var opCtx = new OperationContext(this.App);
-      var webCtx = opCtx.WebContext = new WebCallContext(opCtx);
+      var webCtx = opCtx.WebContext = new WebCallContext(opCtx, httpContext);
       httpContext.SetWebCallContext(webCtx);
-      OnWebCallStarting(webCtx); 
+      httpContext.Request.Host.
+      OnWebCallStarting(webCtx);
       return Task.CompletedTask;
     }
 

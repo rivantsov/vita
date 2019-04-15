@@ -10,6 +10,7 @@ using Vita.Entities;
 using Vita.Entities.Api;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Routing;
 
 namespace Vita.Web {
 
@@ -35,7 +36,7 @@ namespace Vita.Web {
 
     public virtual void Init() {
       Util.Check(this.ControllerContext != null, "Controller not initialized, ControllerContext is null");
-      _webContext = base.HttpContext.GetWebCallContext(); 
+      _webContext = base.HttpContext.GetWebCallContext();
     }
 
     protected virtual IEntitySession OpenSession() {

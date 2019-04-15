@@ -119,11 +119,9 @@ namespace Vita.UnitTests.Web {
       Assert.IsTrue(!string.IsNullOrWhiteSpace(result), "Async method call failed.");
     }
 
+
     [TestMethod]
-    public void TestClientCallAsync() {
-      AsyncHelper.RunSync(() => TestClientCallAsyncImpl());      
-    }
-    public async Task TestClientCallAsyncImpl() {
+    public async Task TestClientCallAsync() {
       var client = TestStartup.Client;
       //Test WebApiClient.CallAsync
       var res2 = await client.SendAsync<object, string>(System.Net.Http.HttpMethod.Get, null, "api/special/getdateasync");

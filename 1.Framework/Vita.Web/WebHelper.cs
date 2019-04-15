@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Net;
 using System.Text;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Builder;
@@ -39,5 +40,24 @@ namespace Vita.Web {
       return selectedFormatter.WriteAsync(formatterContext);
     }
 
+    public static void SetResponseHeader(this WebCallContext context, string name, string value) {
+      context.EnsureResponseInfo();
+      context.Response.Headers[name] = value; 
+    }
+    public static void SetResponse(this WebCallContext context, object body = null, string contentType = "text/plain",
+                                      HttpStatusCode? status = null ) {
+      context.EnsureResponseInfo(); 
+      if (body != null) {
+        context.Response.Body = body;
+        context.Response.ContentType = contentType;
+      }
+      if (status != null)
+        context.Response.HttpStatus = status.Value;
+    }
+
+    public static void EnsureResponseInfo(this WebCallContext context) {
+      if (context.Response == null)
+        context.Response = new ResponseInfo();
+    }
   }
 }

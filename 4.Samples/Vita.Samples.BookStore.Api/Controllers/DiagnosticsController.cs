@@ -51,9 +51,8 @@ namespace Vita.Samples.BookStore.Api {
       _lastCalledOn = new DateTime(2000, 1, 1);
     }
 
-    [HttpGet, Route("heartbeat")]
+    [HttpGet("heartbeat")]
     public string GetHeartbeat() {
-      OpContext.WebContext.OutgoingHeaders.Add("Content-type", "text/plain");
       var utcNow = OpContext.App.TimeService.UtcNow;
       if(_lastCalledOn.AddSeconds(HeartbeatPauseSeconds) > utcNow)
         return AsPlainText(TimeframeLockout);
@@ -71,7 +70,7 @@ namespace Vita.Samples.BookStore.Api {
     }//method
 
     private string AsPlainText(string value) {
-      OpContext.WebContext.OutgoingResponseContent = value; 
+      OpContext.WebContext.SetResponse(value);
       return value; 
     }
 

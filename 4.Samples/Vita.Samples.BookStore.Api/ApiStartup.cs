@@ -34,8 +34,10 @@ namespace Vita.Samples.BookStore.Api {
       var jwtSecret = Configuration["JwtSecret"];
       var jwtTokenHandler = new VitaJwtTokenHandler(EntityApp, services, jwtSecret);
       services.Add(new ServiceDescriptor(typeof(IAuthenticationTokenHandler), jwtTokenHandler));
+      services.AddRouting();
+      // add action filter
+      services.AddMvc() .SetCompatibilityVersion(CompatibilityVersion.Version_2_1);
 
-      services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_1);
     }
 
     // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -50,11 +52,11 @@ namespace Vita.Samples.BookStore.Api {
       app.UseHttpsRedirection();
 
       // Vita middleware
-      var s = app.ApplicationServices;
       var stt = new VitaWebMiddlewareSettings(); 
       app.UseMiddleware<VitaWebMiddleware>(EntityApp, stt);
       
       app.UseAuthentication();
+
       app.UseMvc();
     }
 

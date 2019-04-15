@@ -10,6 +10,8 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http.Extensions;
+using Microsoft.AspNetCore.Routing;
 using Vita.Entities;
 using Vita.Entities.Api;
 using Vita.Entities.Runtime;
@@ -50,7 +52,7 @@ namespace Vita.Web {
     }
 
     public async Task InvokeAsync(HttpContext context) {
-      await BeginRequest(context);
+      var webCtx = BeginRequest(context);
       try {
         await _next(context);
         await EndRequest(context);
@@ -59,17 +61,28 @@ namespace Vita.Web {
       }
     }
 
-    public Task BeginRequest(HttpContext httpContext) {
+    public WebCallContext BeginRequest(HttpContext httpContext) {
+      var req = httpContext.Request;
+      var reqInfo = new RequestInfo() {
+        HttpMethod = req.Method,
+        Url = req.GetDisplayUrl(),
+        UrlHost = req.Host.Value,
+        UrlPath = req.Path,
+        ContentType = req.ContentType,
+        ContentSize = req.ContentLength,
+        Headers = req.Headers.ToDictionary(h => h.Key, h => string.Join(" ", h.Value)),
+        IPAddress = httpContext.Connection.RemoteIpAddress.ToString()
+      };
       var opCtx = new OperationContext(this.App);
-      var webCtx = opCtx.WebContext = new WebCallContext(opCtx, httpContext);
+      var webCtx = opCtx.WebContext = new WebCallContext(opCtx, httpContext, reqInfo);
       httpContext.SetWebCallContext(webCtx);
-      httpContext.Request.Host.
       OnWebCallStarting(webCtx);
-      return Task.CompletedTask;
+      return webCtx; 
     }
 
     public async Task EndRequest(HttpContext httpContext, Exception ex = null) {
       var webCtx = httpContext.GetWebCallContext();
+      RetrieveRoutingData(httpContext, webCtx); 
       var resp = httpContext.Response; 
       if (ex != null) {
         var bodyWriter = new StreamWriter(resp.Body);
@@ -88,15 +101,14 @@ namespace Vita.Web {
       OnWebCallCompleting(webCtx); 
     }
 
-    public WebCallContext CreateWebCallContext(HttpContext httpCtx, EntityApp app) {
-      WebCallContext webCtx = null; // new WebCallContext(); 
-      webCtx.OperationContext = new OperationContext(app, UserInfo.Anonymous, webCtx);
-      //webCtx.OperationContext.SetExternalCancellationToken(cancellationToken);
-      var request = httpCtx.Request;
-      // webCtx.RequestUrl = httpCtx.Request. request.ur.RequestUri.ToString();
-      webCtx.HttpMethod = request.Method.ToString().ToUpperInvariant();
-      webCtx.RequestSize = request.Headers.ContentLength;
-      return webCtx;
+    private void RetrieveRoutingData(HttpContext httpContext, WebCallContext webCtx) {
+      var routeData = httpContext.GetRouteData();
+      if (routeData == null)
+        return; 
+      routeData.Values.TryGetValue("action", out var action);
+      webCtx.MethodName = action?.ToString();
+      routeData.Values.TryGetValue("controller", out var contr);
+      webCtx.ControllerName = contr?.ToString();
     }
 
     #region IWebCallNotificationService implementation

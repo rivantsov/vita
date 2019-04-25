@@ -14,6 +14,7 @@ using Microsoft.AspNetCore.Http.Extensions;
 using Microsoft.AspNetCore.Routing;
 using Vita.Entities;
 using Vita.Entities.Api;
+using Vita.Entities.Logging;
 using Vita.Entities.Runtime;
 using Vita.Entities.Services;
 
@@ -73,7 +74,9 @@ namespace Vita.Web {
         Headers = req.Headers.ToDictionary(h => h.Key, h => string.Join(" ", h.Value)),
         IPAddress = httpContext.Connection.RemoteIpAddress.ToString()
       };
-      var opCtx = new OperationContext(this.App);
+      var opCtx = new OperationContext(this.App, 
+        log: new BufferedOperationLog(this.App),
+        connectionMode: this.Settings.ConnectionReuseMode);
       var webCtx = opCtx.WebContext = new WebCallContext(opCtx, httpContext, reqInfo);
       httpContext.SetWebCallContext(webCtx);
       OnWebCallStarting(webCtx);
@@ -82,6 +85,7 @@ namespace Vita.Web {
 
     public async Task EndRequest(HttpContext httpContext, Exception ex = null) {
       var webCtx = httpContext.GetWebCallContext();
+      webCtx.OperationContext.DisposeAll(); // dispose/close conn
       RetrieveRoutingData(httpContext, webCtx); 
       var resp = httpContext.Response; 
       if (ex != null) {
@@ -98,7 +102,28 @@ namespace Vita.Web {
         }
         bodyWriter.Flush(); 
       }
+      if (webCtx.Response != null) {
+        SetExplicitResponse(webCtx.Response, httpContext);
+      }
       OnWebCallCompleting(webCtx); 
+    }
+
+    private void SetExplicitResponse(ResponseInfo wantedResponse, HttpContext httpContext) {
+      if (wantedResponse.HttpStatus != null)
+        httpContext.Response.StatusCode = (int) wantedResponse.HttpStatus.Value; 
+      if (wantedResponse.Body != null) {
+        switch(wantedResponse.Body) {
+          case string s:
+            //httpContext.WriteResponse(s); 
+            httpContext.Response.ContentType = wantedResponse.ContentType ?? "text/plain";
+            httpContext.Response.Body = new MemoryStream(Encoding.UTF8.GetBytes(s));
+            return;
+          case byte[] bytes:
+            httpContext.WriteResponse(bytes);
+            //httpResponse.ContentType = wantedResponse.ContentType ?? "application/octet-stream";
+            return; 
+        }
+      }
     }
 
     private void RetrieveRoutingData(HttpContext httpContext, WebCallContext webCtx) {

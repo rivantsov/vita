@@ -98,35 +98,14 @@ namespace Vita.Samples.BookStore.Api {
       bool isClosed = e.CurrentState == ConnectionState.Closed;
       //Check that it is being closed by proper calls, not by garbage collector cleaning up
       var callStack = Environment.StackTrace;
-      bool calledConnClose = callStack.Contains("Vita.Data.DataConnection.Close()");
-      bool calledPostProcessResponse = callStack.Contains("Vita.Web.WebCallContextHandler.PostProcessResponse(");
-      _connectionCloseReport = string.Format("{0},{1},{2}", isClosed, calledConnClose, calledPostProcessResponse);
+      bool calledFromVitaConnClose = callStack.Contains("Vita.Data.Runtime.DataConnection.Close()");
+      bool calledFromVitaMiddleware = callStack.Contains("Vita.Web.VitaWebMiddleware.EndRequest");
+      _connectionCloseReport = string.Format("{0},{1},{2}", isClosed, calledFromVitaConnClose, calledFromVitaMiddleware);
     }
 
     [HttpGet("connectiontestreport")]
     public string GetConnectionnTestReport() {
       return _connectionCloseReport;
-    }
-
-    // Testing DateTime values in URL. It turns out by default WebApi uses 'model binding' for URL parameters, which 
-    // results in datetime in URL (sent as UTC) to be converted to local datetime (local for server). 
-    // This is inconsistent with DateTime values in body (json) - by default NewtonSoft deserializer treats them as UTC values
-    // VITA provides a fix - it automatcally detects local datetimes and converts them to UTC
-    // The test sends the datetime parameter to server and receives the ToString() representation; then it compares it to original. 
-    // With VITA's fix, they should be identical
-    [HttpGet("datetostring")]
-    public string GetUrlDateToString(DateTime dt) {
-      return dt.ToString("u");
-    }
-
-    // this is a variation, when datetime is nullable in URL - typical case for search queries
-    public class DateBox {
-      public DateTime? Date { get; set; }
-    }
-    [HttpGet("datetostring2")]
-    public string GetUrlDateToString([FromQuery] DateBox dateBox) {
-      var dt = dateBox.Date; 
-      return dt == null ? string.Empty : dt.Value.ToString("u");
     }
 
     //Testing the bug fix - calling method with redirect was failing in attempt to deserialize response
@@ -145,7 +124,7 @@ namespace Vita.Samples.BookStore.Api {
     /// <summary>Internal testing only. Test method to play with thread deadlocks.</summary>
     /// <returns>Does not return, hangs forever - thread deadlock.</returns>
     [HttpGet("deadlock")]
-    public async Task<string> TestAsyncWithDeadlock() {
+    public async Task<IActionResult> TestAsyncWithDeadlock() {
       await Task.Delay(50);
       //this should deadlock
       var result = DoDelaySyncIncorrect();
@@ -155,18 +134,18 @@ namespace Vita.Samples.BookStore.Api {
     /// <summary>Internal testing only: test sync/async bridge</summary>
     /// <returns>Current time</returns>
     [HttpGet("nodeadlock")]
-    public async Task<string> TestAsyncNoDeadlock() {
+    public async Task<IActionResult> TestAsyncNoDeadlock() {
       await Task.Delay(50);
       return DoDelaySyncCorrect();
     }
 
-    private string DoDelaySyncCorrect() {
+    private IActionResult DoDelaySyncCorrect() {
       AsyncHelper.RunSync(() => DoDelayAsync()); //this is our helper method, we test it here under IIS
       return AsPlainText("Time: " + DateTime.Now.ToString("hh:MM:ss"));
     }
 
     // something made up, what might work in console but not under IIS (SynchronizationContext is special!)
-    private string DoDelaySyncIncorrect() {
+    private IActionResult DoDelaySyncIncorrect() {
       var task = DoDelayAsync();
       var aw = task.GetAwaiter();
       while(!aw.IsCompleted)
@@ -178,9 +157,8 @@ namespace Vita.Samples.BookStore.Api {
       await Task.Delay(1000);
     }
 
-    private string AsPlainText(string value) {
-      OpContext.WebContext.SetResponse(value);
-      return value;
+    private IActionResult AsPlainText(string value) {
+      return Content(value, "text/plain");
     }
     #endregion
 

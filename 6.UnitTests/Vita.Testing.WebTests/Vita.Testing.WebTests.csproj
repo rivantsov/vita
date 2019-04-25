@@ -7,17 +7,17 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="DisabledForNow\WebTests_ErrorLog.cs" />
     <Compile Remove="DisabledForNow\WebTests_Errors.cs" />
     <Compile Remove="DisabledForNow\WebTests_LogViewer.cs" />
     <Compile Remove="DisabledForNow\WebTests_Session.cs" />
-    <Compile Remove="WebTests_Errors.cs" />
     <Compile Remove="WebTests_LogViewer.cs" />
     <Compile Remove="WebTests_Session.cs" />
     <Compile Remove="_Program.cs" />
   </ItemGroup>
 
   <ItemGroup>
-    <None Include="DisabledForNow\WebTests_Errors.cs" />
+    <None Include="DisabledForNow\WebTests_ErrorLog.cs" />
     <None Include="DisabledForNow\WebTests_LogViewer.cs" />
     <None Include="DisabledForNow\WebTests_Session.cs" />
     <None Include="_Program.cs" />

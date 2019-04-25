@@ -88,11 +88,11 @@ namespace Vita.UnitTests.Web {
       // change options to None to disable logging of test client calls        
       Client = new ApiClient(serviceUrl, clientContext, clientName : "TestClient", nameMapping: ApiNameMapping.Default, 
            badRequestContentType: typeof(List<ClientFault>));
-      Client.Settings.PreviewResponse += ApiClient_PreviewResponse;
+      Client.Settings.ReceivedError += ApiClient_ReceivedError;
       ApiClient.SharedHttpClientHandler.AllowAutoRedirect = false; //we need it for Redirect test
     }
 
-    private static void ApiClient_PreviewResponse(object sender, ApiCallEventArgs e) {
+    private static void ApiClient_ReceivedError(object sender, ApiCallEventArgs e) {
       var callInfo = e.CallInfo; 
       if (callInfo.Exception != null) {
         switch (callInfo.Exception) {

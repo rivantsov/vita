@@ -20,33 +20,17 @@ namespace Vita.UnitTests.Web {
       var client = TestStartup.Client;
       Logout(); // just in case there's still session there from other tests
 
-      //Test date handling in URL
-      // Web Api converts all datetime values in URL to local datetime. VITA provides automatic fix for this. 
-      var dt = new DateTime(2016, 1, 7, 18, 19, 20, DateTimeKind.Utc); //some fixed date in UTC
-      var strdt = dt.ToString("u"); // 'u' pattern displays differently local and UTC time values, we use to check local/UTC dates handling
-      var strdtRet = client.ExecuteGet<string>("api/special/datetostring?dt={0}", strdt);
-      Assert.AreEqual(strdt, strdtRet, "Returned date string does not match.");
-      // another method with [FromUrl] input box
-      var strdtRet2 = client.ExecuteGet<string>("api/special/datetostring2?date={0}", strdt);
-      Assert.AreEqual(strdt, strdtRet2, "(FromULR parameter) Returned date string does not match.");
-
       //Test values handling in URL
       var gd = new Guid("729C7EA4-F3C5-11E4-88C8-F0DEF1783701");
       var foo = client.ExecuteGet<string>("api/special/foo/{0}/{1}", 1, gd); //foo/(int)/(guid)
       Assert.AreEqual("Foo:1," + gd, foo);
       // 'bars' method requires login
-      var exc = TestUtil.ExpectFailWith<ClientFaultException>(() => client.ExecuteGet<string>("api/special/bars?q=Q"));
-      Assert.AreEqual("Authentication required.", exc.Faults[0].Message); 
+      var exc = TestUtil.ExpectFailWith<ApiException>(() => client.ExecuteGet<string>("api/special/bars?q=Q"));
+      Assert.AreEqual(HttpStatusCode.Unauthorized, exc.Status, "Expected Unauthorized"); 
       LoginAs("Dora");
       var bars = client.ExecuteGet<string>("api/special/bars?q=Q");
       Assert.AreEqual("bars:Q", bars);
       Logout(); 
-      //Test singleton controller
-      var sfoo = client.ExecuteGet<string>("api/singleton/foo?p1={0}", "abc");
-      Assert.AreEqual("Foo:abc", sfoo, "Singleton method failed.");
-      //Test classic WebApi controller
-      var cfoo = client.ExecuteGet<string>("api/classic/foo?p1={0}", "abc");
-      Assert.AreEqual("Foo:abc", cfoo, "Classic Api controller call failed.");
 
       // Call getBook with bad book id - will return NotFound custom code - 
       //    it is done on purpose by controller, instead of simply returning null
@@ -58,7 +42,6 @@ namespace Vita.UnitTests.Web {
       Assert.AreEqual(HttpStatusCode.Redirect, apiExc.Status, "Expected redirect status");
 
     }
-
 
 
     [TestMethod]
@@ -84,12 +67,14 @@ namespace Vita.UnitTests.Web {
       currOffset = client.ExecuteGetString(acceptText, "api/diagnostics/timeoffset/0");
       Assert.IsTrue(currOffset.StartsWith("Current offset: 0 minutes"), "Expected no offset");
 
+      /*
       //test that heartbeat call is not logged in web log - controller method sets log level to None
       var serverSession = TestStartup.BooksApp.OpenSession();
 
       // fix this
-      var hbeatEntry = new object(); // serverSession.EntitySet<IWebCallLog>().Where(wl => wl.Url.Contains("heartbeat")).FirstOrDefault();
+      var hbeatEntry = serverSession.EntitySet<IWebCallLog>().Where(wl => wl.Url.Contains("heartbeat")).FirstOrDefault();
       Assert.IsNull(hbeatEntry, "Expected no heartbeat entry in web log.");
+      */
     }
 
     // Tests KeepOpen connection mode (default for web controllers). In this mode, the connection to database is kept alive in entity session between db calls, 
@@ -112,21 +97,6 @@ namespace Vita.UnitTests.Web {
       Assert.AreEqual("True,True,True", report, "Connection report does not match expected value");
     }
 
-    [TestMethod]
-    public void TestAsyncServerMethod() {
-      var client = TestStartup.Client;
-      var result = client.ExecuteGet<string>("api/special/getdateasync");
-      Assert.IsTrue(!string.IsNullOrWhiteSpace(result), "Async method call failed.");
-    }
-
-
-    [TestMethod]
-    public async Task TestClientCallAsync() {
-      var client = TestStartup.Client;
-      //Test WebApiClient.CallAsync
-      var res2 = await client.SendAsync<object, string>(System.Net.Http.HttpMethod.Get, null, "api/special/getdateasync");
-      Assert.IsTrue(!string.IsNullOrWhiteSpace(res2), "Async method call failed.");
-    }
 
   }//class
 }

@@ -148,6 +148,8 @@ namespace Vita.Entities {
     }
 
     public void DisposeAll() {
+      if (_disposables == null || _disposables.Count == 0)
+        return; 
       var allAlive = _disposables.ToArray().Where(wr => wr.IsAlive);
       foreach(var wr in allAlive)
         (wr.Target as IDisposable)?.Dispose();

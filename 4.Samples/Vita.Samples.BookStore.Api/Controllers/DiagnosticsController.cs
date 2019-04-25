@@ -38,7 +38,7 @@ namespace Vita.Samples.BookStore.Api {
 
 
 
-    public static bool EnableTimeOffset;
+    public static bool EnableTimeOffset = true;
     static DateTime _lastCalledOn;
     public const string TimeframeLockout = "Denied: wait 5 Seconds";
     public const string StatusOK = "StatusOK";
@@ -52,9 +52,9 @@ namespace Vita.Samples.BookStore.Api {
     }
 
     [HttpGet("heartbeat")]
-    public string GetHeartbeat() {
+    public IActionResult GetHeartbeat() {
       var utcNow = OpContext.App.TimeService.UtcNow;
-      if(_lastCalledOn.AddSeconds(HeartbeatPauseSeconds) > utcNow)
+      if (_lastCalledOn.AddSeconds(HeartbeatPauseSeconds) > utcNow)
         return AsPlainText(TimeframeLockout);
       _lastCalledOn = utcNow;
       try {
@@ -69,9 +69,8 @@ namespace Vita.Samples.BookStore.Api {
       }
     }//method
 
-    private string AsPlainText(string value) {
-      OpContext.WebContext.SetResponse(value);
-      return value; 
+    private IActionResult AsPlainText(string value) {
+      return Content(value, "text/plain");
     }
 
 
@@ -89,7 +88,7 @@ namespace Vita.Samples.BookStore.Api {
     }
 
     [HttpGet, Route("timeoffset")]
-    public string GetTimeOffset() {
+    public IActionResult GetTimeOffset() {
       if(!EnableTimeOffset)
         return AsPlainText(FunctionNotEnabled);
       var utcNow = OpContext.App.TimeService.UtcNow;
@@ -98,7 +97,7 @@ namespace Vita.Samples.BookStore.Api {
     }
 
     [HttpGet, Route("timeoffset/{minutes}")]
-    public string SetTimeOffset(int minutes) {
+    public IActionResult SetTimeOffset(int minutes) {
       if(!EnableTimeOffset)
         return AsPlainText(FunctionNotEnabled);
       OpContext.App.TimeService.SetCurrentOffset(TimeSpan.FromMinutes(minutes));

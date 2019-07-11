@@ -67,6 +67,7 @@ namespace Vita.Testing.BasicTests.IdentityTests {
         options: batchMode ? EntitySessionOptions.None : EntitySessionOptions.DisableBatchMode);
       var john = session.NewEntity<IPerson>();
       john.Name = "John S";
+      //john.Name = "Джон Ш"; //Russian
       var car1 = session.NewEntity<ICar>();
       car1.Model = "Beatle";
       car1.Owner = john;

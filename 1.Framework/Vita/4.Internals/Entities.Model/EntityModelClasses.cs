@@ -114,7 +114,7 @@ namespace Vita.Entities.Model {
       //Check for generic types - happens in modules with generic entities (interfaces), provided for customization
       if(Name.Contains('`'))
         Name = Name.Substring(0, Name.IndexOf('`'));
-      if(EntityType.GetTypeInfo().IsInterface && Name.Length > 1 && Name.StartsWith("I"))
+      if(EntityType.IsInterface && Name.Length > 1 && Name.StartsWith("I"))
         Name = Name.Substring(1);
       FullName = Area.Name + "." + Name;
       EntitySetConstant = ExpressionMaker.MakeEntitySetConstant(this.EntityType); 

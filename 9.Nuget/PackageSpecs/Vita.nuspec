@@ -10,7 +10,7 @@
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
     <description>VITA ORM core library</description>
     <releaseNotes></releaseNotes>
-    <copyright>Copyright Roman Ivantsov 2018</copyright>
+    <copyright>Copyright Roman Ivantsov 2019</copyright>
     <tags>VITA ORM LINQ</tags>
     <dependencies>
        <group>

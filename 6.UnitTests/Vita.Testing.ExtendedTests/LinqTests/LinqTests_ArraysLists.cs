@@ -91,7 +91,7 @@ namespace Vita.Testing.ExtendedTests {
 
     [TestMethod]
     public void TestLinqArrayParameters() {
-      // We test MsSql and Postgres here, but it should work for other servers - for these arrays will be converted to literals
+      // Not all servers support array parameters
       var session = Startup.BooksApp.OpenSession();
       session.EnableCache(false);
       // count prog books reviews 

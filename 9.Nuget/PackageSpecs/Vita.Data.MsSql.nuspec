@@ -5,7 +5,7 @@
     <version>$version$</version>
     <authors>Roman Ivantsov</authors>
     <owners>Roman Ivantsov</owners>
-    <projectUrl>https://github.com/rivantsov/vitacore</projectUrl>
+    <projectUrl>https://github.com/rivantsov/vita</projectUrl>
     <license type="expression">MIT</license>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
     <description>VITA ORM driver for MS SQL Server. </description>
@@ -17,7 +17,7 @@
          <dependency id="Vita" version="$version$"/>
        </group>	
        <group>
-         <dependency id="System.Data.SqlClient" version="4.4.3"/>
+         <dependency id="System.Data.SqlClient" version="4.6.0"/>
        </group>	
     </dependencies>
   </metadata>

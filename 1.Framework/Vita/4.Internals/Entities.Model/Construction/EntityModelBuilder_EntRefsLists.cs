@@ -95,7 +95,6 @@ namespace Vita.Entities.Model.Construction {
     private void ProcessOneToManyListMember(EntityMemberInfo member) {
       var listInfo = member.ChildListInfo = new ChildEntityListInfo(member);
       listInfo.RelationType = EntityRelationType.ManyToOne;
-      var entType = member.Entity.EntityType;
       var targetType = member.DataType.GetGenericArguments()[0];
       listInfo.TargetEntity = this.Model.GetEntityInfo(targetType, true);
       var oneToManyAttr = member.Attributes.OfType<OneToManyAttribute>().FirstOrDefault();
@@ -109,11 +108,12 @@ namespace Vita.Entities.Model.Construction {
         }
         oneToManyAttr.ThisEntityRef = fkMember.MemberName;
         listInfo.ParentRefMember = fkMember;
-      } else
+      } else {
         // no explicit attr
-        listInfo.ParentRefMember = listInfo.TargetEntity.FindEntityRefMember(null, entType, member, this.Log);
+        listInfo.ParentRefMember = listInfo.TargetEntity.FindEntityRefMember(null, member.Entity.EntityType, member, this.Log);
+      }
       //Check that reference is found
-      if(listInfo.ParentRefMember == null)
+      if (listInfo.ParentRefMember == null)
         this.Log.Error("EntityList member {0}: could not find reference property in target entity. ", member.ToString());
       else
         //Set back reference to list from ref member

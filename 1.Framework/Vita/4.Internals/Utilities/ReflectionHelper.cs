@@ -173,12 +173,14 @@ namespace Vita.Entities.Utilities {
       return false;
     }
 
-    public static bool IsGenericList(this Type type) {
-      if (!type.GetTypeInfo().IsGenericType) return false; 
+    public static bool IsGenericList(Type type) {
+      if (!type.IsGenericType)
+        return false;
       var genType = type.GetGenericTypeDefinition();
-      var result = typeof(IList<>).IsAssignableFrom(genType);
-      return result; 
+      var result = genType.ImplementsInterface(typeof(IList)); 
+      return result;
     }
+
     public static bool IsGenericCollection(this Type type) {
       if (!type.GetTypeInfo().IsGenericType) return false;
       var genType = type.GetGenericTypeDefinition();

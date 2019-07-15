@@ -11,6 +11,8 @@ namespace Vita.Entities.MetaD1 {
     public string Name; 
     public List<JoinPart> Joins = new List<JoinPart>();
     public List<JoinPartMember> GroupBy = new List<JoinPartMember>();
+    public List<OrderBySpec> DefaultOrderBy;
+    public List<ViewFilter> AvailableFilters = new List<ViewFilter>(); 
 
     public EntityView(EntityInfo entity) {
       var jEnt = new JoinPart() { Entity = entity };
@@ -19,26 +21,14 @@ namespace Vita.Entities.MetaD1 {
     }
   }
 
-  public class JoinPartMember {
-    public string Name; 
-    public EntityMemberInfo SourceMember;
-    public JoinPart JoinPart;
-  }
-
-  public class AggregateMember: JoinPartMember {
-    public AggregateType Aggregate;
-    public string AggregateExpression;
-    public string Expr;
-
-  }
-
   public class JoinPart {
     public TableJoinType JoinType;
     public string Alias;
     // Either Entity or View is null
     public EntityInfo Entity; //for simple, one-entity part
     public EntityView View;  // for part which is View itself
-    public List<JoinPartLink> JoinLinks;
+    public List<JoinPartLink> JoinLinks = new List<JoinPartLink>();
+    public List<JoinPartMember> Members = new List<JoinPartMember>();
   }
 
   public class JoinPartLink {
@@ -46,4 +36,45 @@ namespace Vita.Entities.MetaD1 {
     public JoinPartMember OtherMember;
   }
 
+  public class JoinPartMember {
+    public string Name;
+    public EntityMemberInfo SourceMember;
+    public JoinPart JoinPart;
+  }
+
+  public class AggregateMember : JoinPartMember {
+    public AggregateType Aggregate;
+    public string AggregateExpression;
+    public string Expr;
+  }
+
+  public class OrderBySpec {
+    public JoinPartMember Member;
+    public bool Desc; 
+  }
+
+  public class ViewFilter {
+    public JoinPartMember Member;
+    public ViewParam Param; 
+  }
+
+  // Querying the view
+  public class ViewQuery {
+    public EntityView View;
+    public List<JoinPartMember> OutMembers = new List<JoinPartMember>();
+    public List<OrderBySpec> OrderBy;
+    public int Skip;
+    public int Take = 10;
+    public List<ViewParamValue> ParamValues = new List<ViewParamValue>(); 
+  }
+
+  public class ViewParam {
+    public string Name;
+    public Type Type; 
+  }
+
+  public class ViewParamValue {
+    public ViewParam Param;
+    public object Value; 
+  }
 }

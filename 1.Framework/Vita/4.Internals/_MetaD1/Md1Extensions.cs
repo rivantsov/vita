@@ -5,6 +5,7 @@ using System.Linq.Expressions;
 using System.Text;
 using Vita.Data.Linq;
 using Vita.Data.Linq.Translation.Expressions;
+using Vita.Data.Model;
 using Vita.Entities.Model;
 using Vita.Entities.Runtime;
 
@@ -44,8 +45,8 @@ namespace Vita.Entities.MetaD1 {
       return list; 
     }
 
-    public static object ExecuteViewQuery(this IEntitySession session, ViewQuery query) {
-      var lambda = BuildViewQueryLambda(session, query);
+    public static object ExecuteViewQuery(this IEntitySession session, ViewQuery query, DbModel dbModel) {
+      var select = BuildSelect(session, query, dbModel);
       var linqCmd = new Md1LinqCommand(session, query, lambda: null);
       var entSession = (EntitySession)session;
       var result = entSession.ExecuteLinqCommand(linqCmd);
@@ -54,24 +55,55 @@ namespace Vita.Entities.MetaD1 {
     }
 
     // ------------------ Building lambda -----------------------------------
-    public static LambdaExpression BuildViewQueryLambda(IEntitySession session, ViewQuery query) {
+    public static LambdaExpression BuildSelect(IEntitySession session, ViewQuery query, DbModel dbModel) {
+      var select = new SelectExpression(null);
       // var model = session.Context.App.Model;
       var view = query.View;
-      var entSet0 = view.GetRoot().Entity.EntitySetConstant;
-
-      var currExpr = entSet0;
-      for(int i = 1; i < view.Joins.Count; i++) {
+      var tblLkp = new Dictionary<JoinPart, TableExpression>();      
+      for(int i = 0; i < view.Joins.Count; i++) {
         var part = view.Joins[i];
-        var entSet = part.Entity.EntitySetConstant;
-        // For now handling only joins using refs, like bk => pub,  
+        var tblInfo = dbModel.GetTable(part.Entity);
+        var tblExpr = new TableExpression(tblInfo);
+        tblExpr.Alias = part.Alias;
+        select.Tables.Add(tblExpr);
+        tblLkp[part] = tblExpr; 
+        if (i == 0)
+          continue; 
         var lnkMember = part.JoinLinks[0].OtherMember;
-        Util.Check(lnkMember != null, "Invlid join link, OtherMember may not be null"); 
-        var joinExpr = Queryable.Join(currExpr, entSet, ;
+        Util.Check(lnkMember != null, "Invlid join link, OtherMember may not be null");
+        tblExpr.Join()
       }
-      
+      // setup joins 
+      foreach(var de in tblLkp) {
+        var part = de.Key;
+        if (part.JoinLinks.Count == 0)
+          continue;
+        var lnkMember = part.JoinLinks[0].OtherMember;
+        Util.Check(lnkMember != null, "Invlid join link, OtherMember may not be null");
+        var fromTbl = tblLkp[lnkMember.JoinPart];
+        var joinedTbl = de.Value;
+        // build joinExpr
+        var fromCol = FindCreateColumn(select, fromTbl, lnkMember.SourceMember);
+        var toPkMember = joinedTbl.TableInfo.PrimaryKey.KeyColumns[0];
+        var toCol = FindCreateColumn(select, joinedTbl, joinedTbl)
+        fromTbl.Join(TableJoinType.Inner, joinedTbl, joinExpr, joinedTbl.Alias);
+      }
 
     }
-  }
 
+    private static ColumnExpression FindCreateColumn(SelectExpression select, TableExpression table, EntityMemberInfo member) {
+      var col = select.Columns.FirstOrDefault(c => c.Table == table && c.ColumnInfo.Member == member);
+      if (col != null)
+        return col;
+      var colInfo = table.TableInfo.GetColumnByMemberName(member.MemberName);
+      col = new ColumnExpression(table, colInfo);
+      select.Columns.Add(col);
+      return col; 
+    }
+
+    private static DbTableInfo GetTable(this DbModel dbModel, EntityInfo entity) {
+      return dbModel.Tables.First(t => t.Entity == entity);
+    }
+  }
 
 }

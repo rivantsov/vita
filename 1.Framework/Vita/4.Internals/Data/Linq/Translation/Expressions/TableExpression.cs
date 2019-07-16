@@ -39,11 +39,11 @@ namespace Vita.Data.Linq.Translation.Expressions {
     }
 
 
-    public void Join(TableJoinType joinType, Expression joinedExpr, Expression joinExpression) {
+    public void Join(TableJoinType joinType, Expression joinedTbl, Expression joinExpression) {
       //RI: special case - inner joins on top of outer joins should become outer joins as well
-      var joinedTable = joinedExpr as TableExpression;
+      var joinedTable = joinedTbl as TableExpression;
       if (joinedTable == null)
-        Util.Check(false, "Joins with subqueries not supported, joined expr: {0}", joinedExpr);
+        Util.Check(false, "Joins with subqueries not supported, joined expr: {0}", joinedTbl);
       if(joinedTable != null && joinedTable.JoinedTable != null && (joinedTable.JoinType & TableJoinType.FullOuter) != 0)
         joinType |= joinedTable.JoinType;
       JoinExpression = joinExpression;

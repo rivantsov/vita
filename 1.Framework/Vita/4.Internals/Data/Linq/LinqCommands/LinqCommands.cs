@@ -9,6 +9,7 @@ using Vita.Entities.Model;
 using Vita.Entities.Runtime;
 
 namespace Vita.Data.Linq {
+  using Vita.Data.Linq.Translation.Expressions;
 
   public enum LinqCommandKind {
     Special,
@@ -41,6 +42,7 @@ namespace Vita.Data.Linq {
     public object[] ParamValues;
 
     public List<LambdaExpression> Includes;
+    public SelectExpression SelectExpression;
 
 
     public LinqCommand(EntitySession session, LinqCommandKind kind, LinqOperation operation) {

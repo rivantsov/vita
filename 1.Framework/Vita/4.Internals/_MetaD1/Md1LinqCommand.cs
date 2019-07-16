@@ -7,14 +7,18 @@ using Vita.Data.Linq;
 using Vita.Entities.Runtime;
 
 namespace Vita.Entities.MetaD1 {
+
+  using Vita.Data.Linq.Translation.Expressions;
+
   public class Md1LinqCommand: LinqCommand {
 
-    public ViewQuery Query; 
+    public ViewQuery Query;
 
-    public Md1LinqCommand(IEntitySession session, ViewQuery query, LambdaExpression lambda)
+    public Md1LinqCommand(IEntitySession session, ViewQuery query, SelectExpression select)
             : base ((EntitySession)session, LinqCommandKind.View, LinqOperation.Select) {
       Query = query;
-      base.Lambda = lambda; 
+      SelectExpression = select;
+      SelectExpression.Command = this; 
     }
   }
 }

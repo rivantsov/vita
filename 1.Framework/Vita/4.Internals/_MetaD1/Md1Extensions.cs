@@ -10,6 +10,10 @@ using Vita.Entities.Model;
 using Vita.Entities.Runtime;
 
 namespace Vita.Entities.MetaD1 {
+  using System.Data;
+  using Vita.Data.Linq.Translation;
+  using Vita.Entities.Utilities;
+
   public static class Md1Extensions {
 
     // book -> book + publisher
@@ -47,62 +51,122 @@ namespace Vita.Entities.MetaD1 {
 
     public static object ExecuteViewQuery(this IEntitySession session, ViewQuery query, DbModel dbModel) {
       var select = BuildSelect(session, query, dbModel);
-      var linqCmd = new Md1LinqCommand(session, query, lambda: null);
+      var linqCmd = new Md1LinqCommand(session, query, select);
+      linqCmd.Lambda = Expression.Lambda(select, new ParameterExpression[] {});
+      linqCmd.Options |= QueryOptions.NoQueryCache;
       var entSession = (EntitySession)session;
       var result = entSession.ExecuteLinqCommand(linqCmd);
-
       return result;
     }
 
-    // ------------------ Building lambda -----------------------------------
-    public static LambdaExpression BuildSelect(IEntitySession session, ViewQuery query, DbModel dbModel) {
+    // ------------------ Building SelectExpr -----------------------------------
+    public static SelectExpression BuildSelect(IEntitySession session, ViewQuery query, DbModel dbModel) {
       var select = new SelectExpression(null);
       // var model = session.Context.App.Model;
       var view = query.View;
-      var tblLkp = new Dictionary<JoinPart, TableExpression>();      
-      for(int i = 0; i < view.Joins.Count; i++) {
-        var part = view.Joins[i];
-        var tblInfo = dbModel.GetTable(part.Entity);
+      var tblLkp = new Dictionary<JoinPart, TableExpression>();
+      foreach(var joinEnt in view.Joins) {
+        var tblInfo = dbModel.GetTable(joinEnt.Entity);
         var tblExpr = new TableExpression(tblInfo);
-        tblExpr.Alias = part.Alias;
+        tblExpr.Alias = tblInfo.DefaultSqlAlias + "$";
         select.Tables.Add(tblExpr);
-        tblLkp[part] = tblExpr; 
-        if (i == 0)
-          continue; 
-        var lnkMember = part.JoinLinks[0].OtherMember;
-        Util.Check(lnkMember != null, "Invlid join link, OtherMember may not be null");
-        tblExpr.Join()
+        tblLkp[joinEnt] = tblExpr; 
       }
+
+      if (tblLkp.Count > 1)
+        CheckTableAliases(tblLkp.Values.ToList()); 
       // setup joins 
       foreach(var de in tblLkp) {
         var part = de.Key;
         if (part.JoinLinks.Count == 0)
           continue;
         var lnkMember = part.JoinLinks[0].OtherMember;
-        Util.Check(lnkMember != null, "Invlid join link, OtherMember may not be null");
-        var fromTbl = tblLkp[lnkMember.JoinPart];
+        Util.Check(lnkMember != null, "Invalid join link, OtherMember may not be null");
+        var baseTbl = tblLkp[lnkMember.JoinPart];
         var joinedTbl = de.Value;
+
         // build joinExpr
-        var fromCol = FindCreateColumn(select, fromTbl, lnkMember.SourceMember);
-        var toPkMember = joinedTbl.TableInfo.PrimaryKey.KeyColumns[0];
-        var toCol = FindCreateColumn(select, joinedTbl, joinedTbl)
-        fromTbl.Join(TableJoinType.Inner, joinedTbl, joinExpr, joinedTbl.Alias);
+        var joinType = lnkMember.SourceMember.Flags.IsSet(EntityMemberFlags.Nullable) ? TableJoinType.LeftOuter : TableJoinType.Inner;
+        Expression joinExpr = null;
+        var fromMembers = lnkMember.SourceMember.ReferenceInfo.FromKey.ExpandedKeyMembers.Select(km => km.Member).ToList();
+        var toCols = joinedTbl.TableInfo.PrimaryKey.KeyColumns.Select(kc => kc.Column).ToList();
+        for(int i = 0; i < fromMembers.Count; i++) {
+          var fkMember = fromMembers[i];
+          var pkCol = toCols[i]; 
+          var fkColExpr = FindCreateColumn(select, baseTbl, fkMember);
+          var pkColExpr = FindCreateColumn(select, joinedTbl, pkCol);
+          var eqExpr = Expression.Equal(fkColExpr, pkColExpr);
+          joinExpr = joinExpr == null ? eqExpr : Expression.And(joinExpr, eqExpr);
+        }
+        // It should be in this way (joinedTbl.Join...) due to some internal mechanics in Linq translator
+        joinedTbl.Join(joinType, baseTbl, joinExpr);
+      } //foreach de
+
+      // Limit/offset
+      if (query.Skip > 0 || query.Take > 0) {
+        select.Offset = Expression.Constant(query.Skip);
+        select.Limit = Expression.Constant(query.Take);
       }
 
+      // order by
+      var orderBy = query.OrderBy.Count > 0 ? query.OrderBy : query.View.DefaultOrderBy;
+      if (orderBy.Count > 0) {
+        foreach(var spec in orderBy) {
+          var part = spec.Member.JoinPart;
+          var tbl = tblLkp[part];
+          var col = FindCreateColumn(select, tbl, spec.Member.SourceMember);
+          select.OrderBy.Add(new OrderByExpression(spec.Desc, col));
+        }
+      }
+
+      // RowReader
+      select.RowReaderLambda = ToLambda((rec, s) => ReadViewRow(rec, s, query.View));
+
+      return select; 
+    }
+
+    private static void CheckTableAliases(IList<TableExpression> tables) {
+      var aliases = new StringSet(); 
+      foreach(var tbl in tables) {
+        if (aliases.Contains(tbl.Alias)) {
+          var baseAlias = tbl.Alias;
+          int index = 1;
+          do {
+            tbl.Alias = baseAlias + (index++);
+          }
+          while (aliases.Contains(tbl.Alias));
+        } //if
+        aliases.Add(tbl.Alias);
+      } //foreach tbl
     }
 
     private static ColumnExpression FindCreateColumn(SelectExpression select, TableExpression table, EntityMemberInfo member) {
       var col = select.Columns.FirstOrDefault(c => c.Table == table && c.ColumnInfo.Member == member);
       if (col != null)
         return col;
-      var colInfo = table.TableInfo.GetColumnByMemberName(member.MemberName);
+      var colInfo = table.TableInfo.Columns.First(c => c.Member == member);
       col = new ColumnExpression(table, colInfo);
       select.Columns.Add(col);
       return col; 
     }
+    private static ColumnExpression FindCreateColumn(SelectExpression select, TableExpression table, DbColumnInfo colInfo) {
+      var col = select.Columns.FirstOrDefault(c => c.Table == table && c.ColumnInfo == colInfo);
+      if (col != null)
+        return col;
+      col = new ColumnExpression(table, colInfo);
+      select.Columns.Add(col);
+      return col;
+    }
 
     private static DbTableInfo GetTable(this DbModel dbModel, EntityInfo entity) {
       return dbModel.Tables.First(t => t.Entity == entity);
+    }
+
+    private static LambdaExpression ToLambda(Expression<Func<IDataRecord, EntitySession, object>> func) {
+      return func; 
+    }
+    private static object ReadViewRow(IDataRecord rec, EntitySession session, EntityView view) {
+      return "Record!";
     }
   }
 

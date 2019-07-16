@@ -44,7 +44,7 @@ namespace Vita.Data.Linq {
         case DynamicLinqCommand dynCmd:
           if(command.Lambda == null)
             LinqCommandRewriter.RewriteToLambda(dynCmd);
-          break; 
+          break;
       } //switch
 
       try {
@@ -73,16 +73,16 @@ namespace Vita.Data.Linq {
         context.ExternalValues.Add(inpParam);
       }
       //Analyze/transform query expression
-      var selectExpr = TranslateSelectExpression(command.Lambda.Body, context);
+      var selectExpr = TranslateSelectExpression(command, context);
       //Build SQL, compile row reader
       var sqlBuilder = _dbModel.Driver.CreateLinqSqlBuilder(_dbModel, command);
       var sqlStmt = sqlBuilder.BuildSelectStatement(selectExpr);
-      var rowReader = CompileRowReader(context);
-      var outType = context.CurrentSelect.ReaderOutputType;//.RowReaderLambda.Body.Type;
+      var rowReader = CompileRowReader(selectExpr);
+      var outType = context.CurrentSelect.ReaderOutputType;
       var rowListCreator = GetListCreator(outType);
-      //check if we need to create implicit result set processor
+      //check if we need to create implicit result set processor. 
       var rowListProcessor = selectExpr.RowListProcessor;
-      if (rowListProcessor == null) {
+      if (outType != typeof(object) && rowListProcessor == null) { //object type is special Md1 case
         var returnsResultSet = typeof(IQueryable).IsAssignableFrom(command.Lambda.Body.Type);
         if(!returnsResultSet)
           rowListProcessor = RowListProcessor.CreateFirstSingleLast("First", outType);
@@ -92,7 +92,12 @@ namespace Vita.Data.Linq {
       return sqlStmt;
     }
 
-    protected virtual SelectExpression TranslateSelectExpression(Expression linqExpr, TranslationContext context) {
+    protected virtual SelectExpression TranslateSelectExpression(LinqCommand cmd, TranslationContext context) {
+      if (cmd.SelectExpression != null) { //special case for Md1, Select is provided in command
+        context.CurrentSelect = cmd.SelectExpression;
+        return cmd.SelectExpression; 
+      }
+      var linqExpr = cmd.Lambda.Body; 
       var exprChain = ExpressionChain.Build(linqExpr);
       var tableExpr = _translator.ExtractFirstTable(exprChain[0], context);
       var selectExpression = _translator.Analyze(exprChain, tableExpr, context);
@@ -106,6 +111,7 @@ namespace Vita.Data.Linq {
       // then prepare Parts for SQL translation
       CheckTablesAlias(context);
       CheckColumnNamesAliases(context);
+      cmd.SelectExpression = context.CurrentSelect;
       return context.CurrentSelect;
     }
 
@@ -220,14 +226,12 @@ namespace Vita.Data.Linq {
     /// <summary>
     /// Builds the delegate to create a row
     /// </summary>
-    /// <param name="context"></param>
-    protected Func<IDataRecord, EntitySession, object> CompileRowReader(TranslationContext context) {
+    protected Func<IDataRecord, EntitySession, object> CompileRowReader(SelectExpression @select) {
       // fast track for reading entities
-      var currSelect = context.CurrentSelect;
-      if(currSelect.EntityReader != null)
-        return currSelect.EntityReader.ReadEntity; 
+      if(@select.EntityReader != null)
+        return @select.EntityReader.ReadEntity; 
       // anything other than entities
-      var readerLambda = currSelect.RowReaderLambda;
+      var readerLambda = @select.RowReaderLambda;
       // RI: reader is lambda returning typed object; to easier manage the execution,
       // so we don't have to convert it to generic version, convert the result to 'object' 
       // Now, we might have already a convert inside body to strongly typed object

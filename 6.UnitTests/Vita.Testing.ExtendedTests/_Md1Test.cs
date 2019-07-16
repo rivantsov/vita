@@ -36,9 +36,11 @@ namespace Vita.Testing.ExtendedTests {
       var partBooks = viewBooks.GetRoot(); 
       var mBkPub = partBooks.GetCreateMember("Publisher");
       var partPub = viewBooks.AddJoin(entPub, mBkPub);
+      var mTitle = partBooks.GetCreateMember("Title");
+
       // Add editor param
       var editorParam = new ViewParam() { Name = "Editor", Type = typeof(IUser) };
-      var mBkEditor = viewBooks.GetRoot().GetCreateMember("Editor");
+      var mBkEditor = partBooks.GetCreateMember("Editor");
       var editorFilter = new ViewFilter() { Param = editorParam, Member = mBkEditor };
       viewBooks.AvailableFilters.Add(editorFilter);
 
@@ -47,7 +49,8 @@ namespace Vita.Testing.ExtendedTests {
       var editor0 = session.EntitySet<IUser>().FirstOrDefault(u => u.Type == UserType.BookEditor);
       
       // create ViewQuery with param
-      var edBksQuery = new ViewQuery() { View = viewBooks };
+      var edBksQuery = new ViewQuery() { View = viewBooks, Skip = 1, Take = 3 };
+      edBksQuery.OrderBy.Add(new OrderBySpec() { Member = mTitle });
       var prmValue = new ViewParamValue() { Param = editorParam, Value = editor0 };
       edBksQuery.ParamValues.Add(prmValue);
       // add output members
@@ -56,7 +59,8 @@ namespace Vita.Testing.ExtendedTests {
       edBksQuery.OutMembers.AddRange(membersBk);
       edBksQuery.OutMembers.AddRange(membersPub);
 
-      var editorBooks = session.ExecuteViewQuery(edBksQuery);
+      var db = app.GetDefaultDatabase();
+      var editorBooks = session.ExecuteViewQuery(edBksQuery, db.DbModel);
     }
 
 

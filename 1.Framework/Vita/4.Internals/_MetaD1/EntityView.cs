@@ -62,7 +62,7 @@ namespace Vita.Entities.MetaD1 {
   public class ViewQuery {
     public EntityView View;
     public List<JoinPartMember> OutMembers = new List<JoinPartMember>();
-    public List<OrderBySpec> OrderBy;
+    public List<OrderBySpec> OrderBy = new List<OrderBySpec>();
     public int Skip;
     public int Take = 10;
     public List<ViewParamValue> ParamValues = new List<ViewParamValue>(); 

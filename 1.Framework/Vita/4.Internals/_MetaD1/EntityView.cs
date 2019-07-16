@@ -77,4 +77,9 @@ namespace Vita.Entities.MetaD1 {
     public ViewParam Param;
     public object Value; 
   }
+
+  public class ViewDataRow {
+    public List<JoinPartMember> Members;
+    public object[] Data; 
+  }
 }

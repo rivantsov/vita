@@ -49,8 +49,8 @@ namespace Vita.Entities.MetaD1 {
       return list; 
     }
 
-    public static object ExecuteViewQuery(this IEntitySession session, ViewQuery query, DbModel dbModel) {
-      var select = BuildSelect(session, query, dbModel);
+    public static object ExecuteViewQuery(this IEntitySession session, ViewQuery query) {
+      var select = BuildSelect(session, query);
       var linqCmd = new Md1LinqCommand(session, query, select);
       linqCmd.Lambda = Expression.Lambda(select, new ParameterExpression[] {});
       linqCmd.Options |= QueryOptions.NoQueryCache;
@@ -60,7 +60,9 @@ namespace Vita.Entities.MetaD1 {
     }
 
     // ------------------ Building SelectExpr -----------------------------------
-    public static SelectExpression BuildSelect(IEntitySession session, ViewQuery query, DbModel dbModel) {
+    public static SelectExpression BuildSelect(IEntitySession session, ViewQuery query) {
+      var ds = session.Context.App.DataAccess.GetDataSource(session.Context);
+      var dbModel = ds.Database.DbModel;
       var select = new SelectExpression(null);
       // var model = session.Context.App.Model;
       var view = query.View;
@@ -118,9 +120,15 @@ namespace Vita.Entities.MetaD1 {
           select.OrderBy.Add(new OrderByExpression(spec.Desc, col));
         }
       }
+      // output columns
+      foreach(var outMember in query.OutMembers) {
+        var tbl = tblLkp[outMember.JoinPart];
+        var outCol = FindCreateColumn(select, tbl, outMember.SourceMember);
+        select.Operands.Add(outCol); 
+      }
 
       // RowReader
-      select.RowReaderLambda = ToLambda((rec, s) => ReadViewRow(rec, s, query.View));
+      select.RowReaderLambda = ToLambda((rec, s) => ReadViewRow(rec, s, query));
 
       return select; 
     }
@@ -165,8 +173,14 @@ namespace Vita.Entities.MetaD1 {
     private static LambdaExpression ToLambda(Expression<Func<IDataRecord, EntitySession, object>> func) {
       return func; 
     }
-    private static object ReadViewRow(IDataRecord rec, EntitySession session, EntityView view) {
-      return "Record!";
+
+    private static object ReadViewRow(IDataRecord rec, EntitySession session, ViewQuery query) {
+      var row = new ViewDataRow() { Members = query.OutMembers };
+      var count = row.Members.Count; 
+      row.Data = new object[count];
+      for (int i = 0; i < count; i++)
+        row.Data[i] = rec[i];
+      return row; 
     }
   }
 

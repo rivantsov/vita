@@ -59,8 +59,7 @@ namespace Vita.Testing.ExtendedTests {
       edBksQuery.OutMembers.AddRange(membersBk);
       edBksQuery.OutMembers.AddRange(membersPub);
 
-      var db = app.GetDefaultDatabase();
-      var editorBooks = session.ExecuteViewQuery(edBksQuery, db.DbModel);
+      var editorBooks = session.ExecuteViewQuery(edBksQuery);
     }
 
 

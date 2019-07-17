@@ -50,17 +50,22 @@ namespace Vita.Entities.MetaD1 {
     }
 
     public static object ExecuteViewQuery(this IEntitySession session, ViewQuery query) {
-      var select = BuildSelect(session, query);
+      var paramList = new List<ParameterExpression>();
+      var select = BuildSelect(session, query, paramList);
       var linqCmd = new Md1LinqCommand(session, query, select);
-      linqCmd.Lambda = Expression.Lambda(select, new ParameterExpression[] {});
+      linqCmd.Lambda = Expression.Lambda(select, paramList.ToArray());
       linqCmd.Options |= QueryOptions.NoQueryCache;
+      // assign param values
+      foreach(var prm in paramList) {
+
+      }
       var entSession = (EntitySession)session;
       var result = entSession.ExecuteLinqCommand(linqCmd);
       return result;
     }
 
     // ------------------ Building SelectExpr -----------------------------------
-    public static SelectExpression BuildSelect(IEntitySession session, ViewQuery query) {
+    public static SelectExpression BuildSelect(IEntitySession session, ViewQuery query, List<ParameterExpression> paramList) {
       var ds = session.Context.App.DataAccess.GetDataSource(session.Context);
       var dbModel = ds.Database.DbModel;
       var select = new SelectExpression(null);
@@ -125,6 +130,17 @@ namespace Vita.Entities.MetaD1 {
         var tbl = tblLkp[outMember.JoinPart];
         var outCol = FindCreateColumn(select, tbl, outMember.SourceMember);
         select.Operands.Add(outCol); 
+      }
+
+      // Filters
+      foreach(var filter in query.Filters) {
+        var tbl = tblLkp[filter.Member.JoinPart];
+        var col = FindCreateColumn(select, tbl, filter.Member.SourceMember);
+        var prm = Expression.Parameter(filter.Member.SourceMember.DataType, "@" + filter.Member.Name);
+        paramList.Add(prm);
+        var eqExpr = Expression.Equal(col, prm);
+        select.Where.Add(eqExpr); 
+        
       }
 
       // RowReader

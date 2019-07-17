@@ -65,7 +65,8 @@ namespace Vita.Entities.MetaD1 {
     public List<OrderBySpec> OrderBy = new List<OrderBySpec>();
     public int Skip;
     public int Take = 10;
-    public List<ViewParamValue> ParamValues = new List<ViewParamValue>(); 
+    public List<ViewParamValue> ParamValues = new List<ViewParamValue>();
+    public List<ViewFilter> Filters = new List<ViewFilter>();
   }
 
   public class ViewParam {

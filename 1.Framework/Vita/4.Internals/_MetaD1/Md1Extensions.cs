@@ -50,22 +50,14 @@ namespace Vita.Entities.MetaD1 {
     }
 
     public static object ExecuteViewQuery(this IEntitySession session, ViewQuery query) {
-      var paramList = new List<ParameterExpression>();
-      var select = BuildSelect(session, query, paramList);
-      var linqCmd = new Md1LinqCommand(session, query, select);
-      linqCmd.Lambda = Expression.Lambda(select, paramList.ToArray());
-      linqCmd.Options |= QueryOptions.NoQueryCache;
-      // assign param values
-      foreach(var prm in paramList) {
-
-      }
+      var linqCmd = BuildLinqCommand(session, query);
       var entSession = (EntitySession)session;
       var result = entSession.ExecuteLinqCommand(linqCmd);
       return result;
     }
 
     // ------------------ Building SelectExpr -----------------------------------
-    public static SelectExpression BuildSelect(IEntitySession session, ViewQuery query, List<ParameterExpression> paramList) {
+    public static Md1LinqCommand BuildLinqCommand(IEntitySession session, ViewQuery query) {
       var ds = session.Context.App.DataAccess.GetDataSource(session.Context);
       var dbModel = ds.Database.DbModel;
       var select = new SelectExpression(null);
@@ -109,22 +101,39 @@ namespace Vita.Entities.MetaD1 {
         joinedTbl.Join(joinType, baseTbl, joinExpr);
       } //foreach de
 
-      // Limit/offset
-      if (query.Skip > 0 || query.Take > 0) {
-        select.Offset = Expression.Constant(query.Skip);
-        select.Limit = Expression.Constant(query.Take);
+      // Filters/parameters
+      var paramExprList = new List<ParameterExpression>();
+      var prmValues = new List<object>();
+      foreach (var filter in query.Filters) {
+        var tbl = tblLkp[filter.Member.JoinPart];
+        var col = FindCreateColumn(select, tbl, filter.Member.SourceMember);
+        var prm = Expression.Parameter(filter.Member.SourceMember.DataType, "@" + filter.Member.Name);
+        paramExprList.Add(prm);
+        var extValue = new ExternalValueExpression(prm); // SqlBuilder expects ExtValueExprs
+        var eqExpr = Expression.Equal(col, extValue);
+        select.Where.Add(eqExpr);
+        var paramValue = query.ParamValues.First(pv => pv.Param == filter.Param);
+        var dbValue = col.ColumnInfo.Converter.PropertyToColumn(paramValue.Value);
+        prmValues.Add(dbValue);
       }
 
       // order by
       var orderBy = query.OrderBy.Count > 0 ? query.OrderBy : query.View.DefaultOrderBy;
       if (orderBy.Count > 0) {
-        foreach(var spec in orderBy) {
+        foreach (var spec in orderBy) {
           var part = spec.Member.JoinPart;
           var tbl = tblLkp[part];
           var col = FindCreateColumn(select, tbl, spec.Member.SourceMember);
           select.OrderBy.Add(new OrderByExpression(spec.Desc, col));
         }
       }
+
+      // Limit/offset
+      if (query.Skip > 0 || query.Take > 0) {
+        select.Offset = Expression.Constant(query.Skip);
+        select.Limit = Expression.Constant(query.Take);
+      }
+
       // output columns
       foreach(var outMember in query.OutMembers) {
         var tbl = tblLkp[outMember.JoinPart];
@@ -132,21 +141,16 @@ namespace Vita.Entities.MetaD1 {
         select.Operands.Add(outCol); 
       }
 
-      // Filters
-      foreach(var filter in query.Filters) {
-        var tbl = tblLkp[filter.Member.JoinPart];
-        var col = FindCreateColumn(select, tbl, filter.Member.SourceMember);
-        var prm = Expression.Parameter(filter.Member.SourceMember.DataType, "@" + filter.Member.Name);
-        paramList.Add(prm);
-        var eqExpr = Expression.Equal(col, prm);
-        select.Where.Add(eqExpr); 
-        
-      }
-
       // RowReader
       select.RowReaderLambda = ToLambda((rec, s) => ReadViewRow(rec, s, query));
 
-      return select; 
+      // Linq command
+      var linqCmd = new Md1LinqCommand(session, query, select);
+      linqCmd.Lambda = Expression.Lambda(select, paramExprList.ToArray());
+      linqCmd.Options |= QueryOptions.NoQueryCache;
+      linqCmd.ParamValues = prmValues.ToArray(); 
+
+      return linqCmd; 
     }
 
     private static void CheckTableAliases(IList<TableExpression> tables) {

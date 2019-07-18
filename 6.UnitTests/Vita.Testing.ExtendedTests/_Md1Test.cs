@@ -45,18 +45,20 @@ namespace Vita.Testing.ExtendedTests {
       viewBooks.AvailableFilters.Add(categoryFilter);
 
       // create ViewQuery with param
-      var edBksQuery = new ViewQuery() { View = viewBooks, Skip = 1, Take = 3 };
-      edBksQuery.OrderBy.Add(new OrderBySpec() { Member = mTitle });
+      var bksViewQuery = new ViewQuery() { View = viewBooks, Skip = 1, Take = 3 };
+      bksViewQuery.Filters.Add(categoryFilter); 
       var prmValue = new ViewParamValue() { Param = categoryParam, Value = BookCategory.Programming };
-      edBksQuery.ParamValues.Add(prmValue);
+      bksViewQuery.ParamValues.Add(prmValue);
+
+      bksViewQuery.OrderBy.Add(new OrderBySpec() { Member = mTitle });
       // add output members
       var membersBk = partBooks.GetMembers("Id", "Title", "PublishedOn", "Category");
       var membersPub = partPub.GetMembers("Name");
-      edBksQuery.OutMembers.AddRange(membersBk);
-      edBksQuery.OutMembers.AddRange(membersPub);
+      bksViewQuery.OutMembers.AddRange(membersBk);
+      bksViewQuery.OutMembers.AddRange(membersPub);
 
       var session = app.OpenSession(); 
-      var editorBooks = session.ExecuteViewQuery(edBksQuery);
+      var editorBooks = session.ExecuteViewQuery(bksViewQuery);
     }
 
 

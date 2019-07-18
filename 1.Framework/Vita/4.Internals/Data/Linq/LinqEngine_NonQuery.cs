@@ -24,7 +24,7 @@ namespace Vita.Data.Linq {
         translCtx.ExternalValues.Add(inpParam);
       }
       //Analyze/transform base select query
-      var selectExpr = TranslateSelectExpression(command.Lambda.Body, translCtx);
+      var selectExpr = TranslateSelectExpression(command, translCtx);
       var targetEnt = command.UpdateEntity;
       var targetTable = _dbModel.GetTable(targetEnt.EntityType);
       var nonQueryCmd = new NonQueryLinqCommand(command, targetTable, selectExpr);

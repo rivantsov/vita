@@ -21,6 +21,7 @@ using Vita.Tools;
 using Vita.Entities.DbInfo;
 using Vita.Tools.Testing;
 using Vita.Data.Sql;
+using Vita.Modules.Login.Mocks;
 //using Microsoft.Data.Sqlite;
 
 namespace Vita.Testing.ExtendedTests {
@@ -47,8 +48,7 @@ namespace Vita.Testing.ExtendedTests {
       if(AppSettings != null)
         return;
       var builder = new ConfigurationBuilder();
-      builder.SetBasePath(Directory.GetCurrentDirectory()).AddJsonFile("appSettings.json");
-      
+      builder.SetBasePath(Directory.GetCurrentDirectory()).AddJsonFile("appSettings.json");      
       AppSettings = builder.Build();
     }
 
@@ -83,7 +83,6 @@ namespace Vita.Testing.ExtendedTests {
         var loginConfig = BooksApp.GetConfig<Modules.Login.LoginModuleSettings>();
         loginConfig.MessagingService = LoginMessagingService;
 
-        // for SQLite- drop and copy database
         //Reset Db and drop schema objects; first set schema list 
         var resetDb = AppSettings["ResetDatabase"] == "true";
         if(resetDb) {
@@ -155,6 +154,7 @@ namespace Vita.Testing.ExtendedTests {
                 namingPolicy: customNamingPolicy);
 
       //Test: remap login schema into login2
+      // Remapping schemas might used in MySql, where schemas are actually databases
       // if (ServerType == DbServerType.MsSql)
       //    DbSettings.ModelConfig.MapSchema("login", "login2");
     }
@@ -206,8 +206,6 @@ namespace Vita.Testing.ExtendedTests {
     }
 
     private static void CreateSampleData() {
-      // We create sample data multiple times, so later test wipes out data from previous test. 
-      // We do not wipe out certain tables
       DataUtility.DeleteAllData(BooksApp, exceptEntities: new Type[] {typeof(IDbInfo), typeof(IDbModuleInfo)}); 
       SampleDataGenerator.CreateUnitTestData(BooksApp);
     }

@@ -1,0 +1,32 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>netcoreapp2.1</TargetFramework>
+    <ApplicationIcon />
+    <OutputType>Exe</OutputType>
+    <StartupObject />
+    <AssemblyName>Vita.Samples.BookStore.Api</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Folder Include="wwwroot\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.App" Version="2.1.1" />
+   <!--
+    <PackageReference Include="Microsoft.AspNetCore.App" Version="2.1.1" />
+    <PackageReference Include="Microsoft.AspNetCore.App" />
+   -->
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\1.Framework\Vita.Entities.Emit\020.Vita.Entities.Emit.csproj" />
+    <ProjectReference Include="..\..\1.Framework\Vita.Web\030.Vita.Web.csproj" />
+    <ProjectReference Include="..\..\1.Framework\Vita\010.Vita.csproj" />
+    <ProjectReference Include="..\..\2.Drivers\Vita.Data.MsSql\210.Vita.Data.MsSql.csproj" />
+    <ProjectReference Include="..\..\3.Modules\Vita.Modules.Login\320.Vita.Modules.Login.csproj" />
+    <ProjectReference Include="..\Vita.Samples.BookStore\410.Vita.Samples.BookStore.csproj" />
+  </ItemGroup>
+
+</Project>

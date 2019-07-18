@@ -77,6 +77,7 @@ namespace Vita.Data.Linq.Translation.Expressions {
   }
 
   public enum AggregateType {
+    None,
     Count,
     Min,
     Max,

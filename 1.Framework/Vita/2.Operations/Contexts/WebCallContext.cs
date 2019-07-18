@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Net;
+using System.Net.Http;
 using System.Text;
 
 using Vita.Entities;
@@ -28,6 +30,29 @@ namespace Vita.Entities.Api {
     HideResponseBody = Confidential | NoLogResponseBody,
   }
 
+  public interface IHttpContextWrapper {
+    object HttpContext { get; }
+  }
+
+  public struct RequestInfo {
+    public string HttpMethod;
+    public string Url;
+    public string UrlHost;
+    public string UrlPath; 
+    public IDictionary<string, string> Headers;
+
+    public long? ContentSize;
+    public string ContentType; 
+    public string IPAddress;
+  }
+
+  public class ResponseInfo {
+    public HttpStatusCode? HttpStatus;
+    public IDictionary<string, string> Headers = new Dictionary<string, string>();
+    public string ContentType;
+    public object Body;
+  }
+
   /// <summary>Provides an access to web-related parameters to the middle-tier code.</summary>
   /// <remarks>
   /// Instantiated by WebCallContextHandler; the current instance is available through OperationContext.WebContext property. 
@@ -41,68 +66,42 @@ namespace Vita.Entities.Api {
   public class WebCallContext {
     // Used as key to save in Request properties. 
     public const string WebCallContextKey = "_vita_web_call_context_";
+    public OperationContext OperationContext;
+
+    public readonly WeakReference HttpContextRef;
 
     public readonly Guid Id;
     public readonly DateTime CreatedOn; 
     public long TickCountStart;
     public long TickCountEnd;
-    public string Referrer;
-    public string IPAddress;
+    public int Duration;
+    public Exception Exception;
+    public Guid? ErrorLogId;
+
+    public RequestInfo Request;
+    public ResponseInfo Response; 
+
+    public string RequestUrlTemplate;
     public string ControllerName;
     public string MethodName;
-    //Request/response objects
-    public object RequestMessage { get; set; } //In running code should be HttpRequestMessage instance
-    public object ResponseMessage { get; set; } //In running code should be HttpResponseMessage instance 
 
-    //Request parameters
-    public string HttpMethod;
-    public string RequestUrl;
-    public string RequestUrlTemplate;
-    public string RequestHeaders;
-    public string RequestBody;
-    public long? RequestSize;
-    public Func<string, IList<Cookie>> GetIncomingCookies { get; private set; }
-    public Func<string, IList<string>> GetIncomingHeader { get; private set; }
-    //User session
-    public string UserSessionToken; //from authentication header/cookie
-    public long MinUserSessionVersion; // from X-Versions header
-    public long MinCacheVersion; //from X-Versions header, min entity cache version required for request
-    
-    // Use it to specify response status other than OK(200) in controller. 
-    // For example, a typical status for POST would be 201 (Created) - meaning we created new record(s)
-    public HttpStatusCode? OutgoingResponseStatus;
 
-    /// <summary>Explicit content value. API controller can set this value to return non-Json content. 
-    /// The value must be either string or HttpContent instance. </summary>
-    public object OutgoingResponseContent; 
-    public IList<Cookie> OutgoingCookies = new List<Cookie>();
-    public IDictionary<string, string> OutgoingHeaders = new Dictionary<string, string>();
-
-    //two app-specific numbers, use it for your own purpose, to specify the 'app-relevant' info load
-    public int RequestObjectCount; //arbitrary, app-specific count of 'important' objects
-    public int ResponseObjectCount; //arbitrary, app-specific count of 'important' objects
-
-    public Exception Exception;
-    //Response log information
-    public Guid? ErrorLogId;
-    public HttpStatusCode HttpStatus;
-    public string ResponseHeaders;
-    public string ResponseBody;
-    public long? ResponseSize;
-
-    public OperationContext OperationContext;
     public WebCallFlags Flags;
     // list of custom indicators for use by app that will be saved in web call log
     public IList<string> CustomTags = new List<string>(); 
 
-    public WebCallContext(object request, DateTime receivedOn, long tickCountStart, 
-                          Func<string, IList<Cookie>> cookieGetter, Func<string, IList<string>> headerGetter) {
-      RequestMessage = request; 
+    public WebCallContext(OperationContext opContext) {
+      this.OperationContext = opContext;
+      opContext.WebContext = this; 
+    }
+
+    public WebCallContext(OperationContext opContext, object httpContext, RequestInfo request) {
+      this.OperationContext = opContext;
+      HttpContextRef = new WeakReference(httpContext); 
       Id = Guid.NewGuid();
-      CreatedOn = receivedOn;
-      TickCountStart = tickCountStart;
-      GetIncomingCookies = cookieGetter ?? (x => null); 
-      GetIncomingHeader = headerGetter ?? (x => null); 
+      CreatedOn = this.OperationContext.App.TimeService.UtcNow;
+      TickCountStart = Stopwatch.GetTimestamp();
+      Request = request; 
     }
 
   

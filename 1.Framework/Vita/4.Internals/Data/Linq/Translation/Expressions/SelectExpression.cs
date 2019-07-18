@@ -44,8 +44,8 @@ namespace Vita.Data.Linq.Translation.Expressions {
 
     public LinqCommand Command;
 
-    public SelectExpression(LinqCommand info) : base(SqlExpressionType.Select, null, null) {
-      Command = info; 
+    public SelectExpression(LinqCommand command) : base(SqlExpressionType.Select, typeof(object), null) {
+      Command = command; 
     }
 
     public SelectExpression(SelectExpression parentSelectExpression, LinqCommand queryInfo) 
@@ -54,8 +54,8 @@ namespace Vita.Data.Linq.Translation.Expressions {
       Command = queryInfo; 
     }
 
-    private SelectExpression(LinqCommand info, Type type, IList<Expression> operands) : base(SqlExpressionType.Select, type, operands) {
-      Command = info; 
+    private SelectExpression(LinqCommand command, Type type, IList<Expression> operands) : base(SqlExpressionType.Select, type, operands) {
+      Command = command; 
     }
 
     protected override Expression Mutate2(IList<Expression> newOperands) {

@@ -9,7 +9,6 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 using Vita.Entities;
 using Vita.Modules.Login;
-using Vita.Modules.Login.Api;
 
 namespace Vita.Testing.ExtendedTests {
 
@@ -72,7 +71,7 @@ namespace Vita.Testing.ExtendedTests {
       AsyncHelper.RunSync(()=> loginProcessService.SendPinAsync(process, doraEmailFactor));
 
       //Dora receives email, copies pin; we get the pin thru our fake message service
-      var pin = Startup.LoginMessagingService.PinMessages.Last().Pin;
+      var pin = Startup.LoginMessagingService.SentMessages.Last().Pin;
       //Find the login process
       session = app.OpenSystemSession(); 
       process = loginProcessService.GetActiveProcess(session, LoginProcessType.PasswordReset, processToken);

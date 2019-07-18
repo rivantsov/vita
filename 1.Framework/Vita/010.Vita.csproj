@@ -10,8 +10,11 @@
 
   <ItemGroup>
     <Compile Remove="4.Internals\Data\Sql\Disabled\**" />
+    <Compile Remove="4.Internals\_MetaD1\**" />
     <EmbeddedResource Remove="4.Internals\Data\Sql\Disabled\**" />
+    <EmbeddedResource Remove="4.Internals\_MetaD1\**" />
     <None Remove="4.Internals\Data\Sql\Disabled\**" />
+    <None Remove="4.Internals\_MetaD1\**" />
   </ItemGroup>
 
   <ItemGroup>

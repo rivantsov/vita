@@ -3,7 +3,7 @@ using System.Linq;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 using Vita.Entities;
-using Vita.RestClient; 
+using Vita.NRestClient; 
 using Vita.Samples.BookStore.Api;
 
 namespace Vita.UnitTests.Web {

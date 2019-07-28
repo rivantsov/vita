@@ -35,8 +35,12 @@ namespace Vita.Samples.BookStore.Api {
       var jwtTokenHandler = new VitaJwtTokenHandler(EntityApp, services, jwtSecret);
       services.Add(new ServiceDescriptor(typeof(IAuthenticationTokenHandler), jwtTokenHandler));
       services.AddRouting();
-      // add action filter
-      services.AddMvc() .SetCompatibilityVersion(CompatibilityVersion.Version_2_1);
+      // add action filter; Json is there by default, we also add xml for testing xml serialization
+      services.AddMvc()
+        .SetCompatibilityVersion(CompatibilityVersion.Version_2_1)
+        .AddXmlDataContractSerializerFormatters()
+        ;
+      ;
 
     }
 

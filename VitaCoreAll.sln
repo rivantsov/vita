@@ -55,7 +55,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "430.Vita.Samples.BookStore.
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "630.Vita.Testing.WebTests", "6.UnitTests\Vita.Testing.WebTests\630.Vita.Testing.WebTests.csproj", "{21E84486-D0D2-4779-BD31-EB5660619D75}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Vita.RestClient", "..\VitaRestClient\Vita.RestClient\Vita.RestClient.csproj", "{1BDFA560-6AA5-4046-8C38-0951207440CA}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Vita.NRestClient", "..\VitaRestClient\Vita.RestClient\Vita.NRestClient.csproj", "{1BDFA560-6AA5-4046-8C38-0951207440CA}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

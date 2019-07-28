@@ -18,15 +18,16 @@ using Vita.Tools;
 using Vita.Entities.DbInfo;
 using Vita.Modules.Login.Mocks;
 
-using Vita.RestClient;
+using Vita.NRestClient;
 using Vita.Samples.BookStore;
 using Vita.Samples.BookStore.SampleData;
+using Vita.NRestClient.Xml;
 
 namespace Vita.UnitTests.Web {
 
   public static class TestStartup {
     public static BooksEntityApp BooksApp; 
-    public static ApiClient Client;
+    public static RestClient Client;
     public static string LogFilePath;
     internal static IConfigurationRoot AppSettings;
     public static MockLoginMessagingService LoginMessagingService;
@@ -84,16 +85,19 @@ namespace Vita.UnitTests.Web {
       var serviceUrl = AppSettings["ServiceUrl"];
       StartService(serviceUrl);
       // create client
-      var clientContext = new OperationContext(BooksApp);
-      // change options to None to disable logging of test client calls        
-      Client = new ApiClient(serviceUrl, clientContext, clientName : "TestClient", nameMapping: ApiNameMapping.Default, 
-           badRequestContentType: typeof(List<ClientFault>));
-      Client.Settings.ReceivedError += ApiClient_ReceivedError;
-      ApiClient.SharedHttpClientHandler.AllowAutoRedirect = false; //we need it for Redirect test
+      var useXml = true;
+      if (useXml) {
+        var clientSettings = new RestClientSettings(serviceUrl, serializer: new XmlContentSerializer(), badRequestContentType: typeof(List<ClientFault>));
+        Client = new RestClient(clientSettings, clientName: "TestXmlClient");
+      } else
+        Client = new RestClient(serviceUrl, "TestJsonClient"); //json, very simple setup
+
+      RestClient.SharedHttpClientHandler.AllowAutoRedirect = false; //we need it for Redirect test
+      Client.Settings.ReceivedError += RestClient_ReceivedError;
     }
 
-    private static void ApiClient_ReceivedError(object sender, ApiCallEventArgs e) {
-      var callInfo = e.CallInfo; 
+    private static void RestClient_ReceivedError(object sender, RestCallEventArgs e) {
+      var callInfo = e.CallContext; 
       if (callInfo.Exception != null) {
         switch (callInfo.Exception) {
           case null: return;

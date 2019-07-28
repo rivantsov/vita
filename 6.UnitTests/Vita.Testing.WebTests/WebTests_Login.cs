@@ -14,7 +14,7 @@ using Vita.Entities;
 using Vita.Modules.Login;
 using Vita.Samples.BookStore.Api;
 using Vita.Tools.Testing;
-using Vita.RestClient;
+using Vita.NRestClient;
 
 namespace Vita.UnitTests.Web {
 
@@ -68,7 +68,7 @@ namespace Vita.UnitTests.Web {
       // Test authorization - access to login admin API controller is allowed only to administrators
       // Dora is not admin
       LoginAs("dora");
-      var exc = TestUtil.ExpectFailWith<ApiException>(() => client.ExecuteGet<SearchResults<LoginInfo>>("api/logins?take=1"));
+      var exc = TestUtil.ExpectFailWith<RestException>(() => client.ExecuteGet<SearchResults<LoginInfo>>("api/logins?take=1"));
       Assert.AreEqual(HttpStatusCode.Forbidden, exc.Status, "Expected Forbidden");
       Logout();
 

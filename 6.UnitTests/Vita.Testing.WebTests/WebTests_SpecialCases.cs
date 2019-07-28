@@ -8,7 +8,7 @@ using Vita.Samples.BookStore;
 using Vita.Samples.BookStore.Api;
 using System.Threading.Tasks;
 using Vita.Tools.Testing;
-using Vita.RestClient;
+using Vita.NRestClient;
 
 namespace Vita.UnitTests.Web {
 
@@ -25,7 +25,7 @@ namespace Vita.UnitTests.Web {
       var foo = client.ExecuteGet<string>("api/special/foo/{0}/{1}", 1, gd); //foo/(int)/(guid)
       Assert.AreEqual("Foo:1," + gd, foo);
       // 'bars' method requires login
-      var exc = TestUtil.ExpectFailWith<ApiException>(() => client.ExecuteGet<string>("api/special/bars?q=Q"));
+      var exc = TestUtil.ExpectFailWith<RestException>(() => client.ExecuteGet<string>("api/special/bars?q=Q"));
       Assert.AreEqual(HttpStatusCode.Unauthorized, exc.Status, "Expected Unauthorized"); 
       LoginAs("Dora");
       var bars = client.ExecuteGet<string>("api/special/bars?q=Q");
@@ -34,11 +34,11 @@ namespace Vita.UnitTests.Web {
 
       // Call getBook with bad book id - will return NotFound custom code - 
       //    it is done on purpose by controller, instead of simply returning null
-      var apiExc = TestUtil.ExpectFailWith<ApiException>(() => client.ExecuteGet<Book>("api/special/books/{0}", Guid.NewGuid()));
+      var apiExc = TestUtil.ExpectFailWith<RestException>(() => client.ExecuteGet<Book>("api/special/books/{0}", Guid.NewGuid()));
       Assert.AreEqual(HttpStatusCode.NotFound, apiExc.Status, "Expected NotFound status");
 
       //Test redirect; when we create WebApiClient in SetupHelper, we set: Client.InnerHandler.AllowRedirect = false; so it will bring error on redirect 
-      apiExc = TestUtil.ExpectFailWith<ApiException>(() => client.ExecuteGet<HttpStatusCode>("api/special/redirect"));
+      apiExc = TestUtil.ExpectFailWith<RestException>(() => client.ExecuteGet<HttpStatusCode>("api/special/redirect"));
       Assert.AreEqual(HttpStatusCode.Redirect, apiExc.Status, "Expected redirect status");
 
     }

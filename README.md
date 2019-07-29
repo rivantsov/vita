@@ -17,18 +17,18 @@ Works with MS SQL Server, MySql, PostgreSQL, SQLite.
 * **Batched operations** - multiple database update/delete/insert commands are combined in a single multi-line command executed in one round-trip to the database.  
 * **Component Packaging Technology** - with VITA we have a way to pack a set of entities/tables with the surrounding code into a self-contained component - entity module. Entity modules can cover specific areas of functionality, can be independently developed, tested and distributed, just like Windows Control libraries. The application is then assembled from independent modules, each covering specific part of functionality. 
 * **Full support for identity columns and auto-generated GUIDs**
+* **Compiled LINQ Query Cache** - dynamic LINQ queries are compiled into SQL on the first use, and later served from the query cache, avoiding the overhead of SQL translation. 
 * **Computed properties**.
 * **Entities support INotifyPropertyChanged interface** - readily usable in data binding and MVVM solutions.
 
 ## Features available in Version 1.* and yet to be ported to Version 2 (.NET core version)
-* **Compiled LINQ Query Cache** - dynamic LINQ queries are compiled into SQL on the first use, and later served from the query cache, avoiding the overhead of SQL translation. 
 * **Built-in Role-based Authorization framework** - access permissions are configured at table/row/field level at application startup. During application execution all read/write operations by the current user are checked automatically (and transparently, behind the scene) by VITA.  
 * **Full-featured data cache** - you can specify a set of entity types (database tables) that must be cached - VITA loads the data in memory, and all subsequent data queries (including dynamic LINQ queries) are served from this cache. Additional 'sparse' cache holds most recently used records/entities from tables that are too big to be cached entirely.
-* **Standard modules** - VITA comes with a number of pre-built modules: ErrorLog, UserLogin, TransactionLog, etc. 
+* **Standard modules** - VITA comes with a number of pre-built modules: ErrorLog, UserLogin, TransactionLog, etc. Note: Login module is ported and available. 
 * **Web API stack integration**. Fully integrated with Web API technology stack, provides numerous benefits for easy creation of fast and reliable RESTful data services. 
 
 ### System Requirements
 * .NET Standard 2.0, Visual Studio 2017. 
-* MS SQL Server 2017; MySql 5.5, PostgreSQL, Oracle, SQLite
+* MS SQL Server 2012+; MySql, PostgreSQL, Oracle, SQLite
 
 

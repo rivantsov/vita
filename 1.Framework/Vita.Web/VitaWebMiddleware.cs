@@ -96,8 +96,8 @@ namespace Vita.Web {
             await httpContext.WriteResponse(cfex.Faults); // writes resp respecting content negotiation
             break;
           default:
-            resp.StatusCode = (int)HttpStatusCode.InternalServerError;
             bodyWriter.Write(ex.Message);
+            resp.StatusCode = (int)HttpStatusCode.InternalServerError;
             break; 
         }
         bodyWriter.Flush(); 

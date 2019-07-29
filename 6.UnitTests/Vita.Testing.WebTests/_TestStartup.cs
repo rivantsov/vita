@@ -85,12 +85,12 @@ namespace Vita.UnitTests.Web {
       var serviceUrl = AppSettings["ServiceUrl"];
       StartService(serviceUrl);
       // create client
-      var useXml = true;
+      var useXml = false;
       if (useXml) {
-        var clientSettings = new RestClientSettings(serviceUrl, serializer: new XmlContentSerializer(), badRequestContentType: typeof(List<ClientFault>));
-        Client = new RestClient(clientSettings, clientName: "TestXmlClient");
+        var clientSettings = new RestClientSettings(serviceUrl, serializer: new XmlContentSerializer(), badRequestContentType: typeof(string)); // typeof(List<ClientFault>));
+        Client = new RestClient(clientSettings);
       } else
-        Client = new RestClient(serviceUrl, "TestJsonClient"); //json, very simple setup
+        Client = new RestClient(serviceUrl, badRequestContentType: typeof(List<ClientFault>)); //json, very simple setup
 
       RestClient.SharedHttpClientHandler.AllowAutoRedirect = false; //we need it for Redirect test
       Client.Settings.ReceivedError += RestClient_ReceivedError;

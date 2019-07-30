@@ -16,6 +16,6 @@ namespace Vita.Samples.BookStore.Api {
 
     public static IWebHostBuilder CreateWebHostBuilder(string[] args) =>
         WebHost.CreateDefaultBuilder(args)
-            .UseStartup<ApiStartup>();
+            .UseStartup<BooksApiStartup>();
   }
 }

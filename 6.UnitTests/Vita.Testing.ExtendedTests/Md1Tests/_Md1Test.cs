@@ -24,7 +24,7 @@ namespace Vita.Testing.ExtendedTests {
       Startup.TearDown();
     }
 
-    [TestMethod]
+    //[TestMethod]
     public void _TestMd1EntityViews() {
       var app = Startup.BooksApp;
       var entBol = GetEntity<IBookOrderLine>();

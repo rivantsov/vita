@@ -51,6 +51,14 @@ namespace Vita.Testing.BasicTests.IdentityTests2 {
 
     [TestMethod]
     public void TestIdentityWithCompositePK() {
+      // Only MsSql and Postgres allow this (composite PK with identity column inside); the other servers reject it.
+      switch(Startup.ServerType) {
+        case Data.Driver.DbServerType.MsSql:
+        case Data.Driver.DbServerType.Postgres:
+          break;
+        default:
+          return; 
+      }
       // test with and without batch mode
       RunTest(false);
       RunTest(true); 

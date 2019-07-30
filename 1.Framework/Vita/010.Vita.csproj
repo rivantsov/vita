@@ -38,6 +38,10 @@
     <PackageReference Include="System.Data.Common" Version="4.3.0" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="4.Internals\Entities.Model\Emit\" />
+  </ItemGroup>
+
   <PropertyGroup>
     <NuspecFile>Vita.Entities.nuspec</NuspecFile>
   </PropertyGroup>

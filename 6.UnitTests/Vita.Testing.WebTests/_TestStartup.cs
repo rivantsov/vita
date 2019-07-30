@@ -112,7 +112,7 @@ namespace Vita.UnitTests.Web {
     public static void StartService(string baseAddress) {
       var hostBuilder = WebHost.CreateDefaultBuilder()
           .ConfigureAppConfiguration((context, config) => { })
-          .UseStartup<Samples.BookStore.Api.ApiStartup>()
+          .UseStartup<Samples.BookStore.Api.BooksApiStartup>()
           .UseUrls(baseAddress);
       _webHost = hostBuilder.Build();
       

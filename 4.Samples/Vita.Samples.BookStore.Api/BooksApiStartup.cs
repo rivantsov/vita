@@ -17,8 +17,8 @@ using Vita.Web;
 
 namespace Vita.Samples.BookStore.Api {
 
-  public class ApiStartup {
-    public ApiStartup(IConfiguration configuration) {
+  public class BooksApiStartup {
+    public BooksApiStartup(IConfiguration configuration) {
       Configuration = configuration;
     }
 

@@ -1,12 +1,12 @@
 ﻿using System;
 using System.Reflection;
 
-using Vita.Entities.Model;
 using Vita.Entities.Runtime;
 using Vita.Entities.Model.Construction;
 using Proxemity;
 
-namespace Vita.Entities.Emit {
+namespace Vita.Entities.Model.Emit {
+
   public class EntityClassEmitter : IEntityClassProvider {
     DynamicAssemblyInfo _assemblyInfo; 
 

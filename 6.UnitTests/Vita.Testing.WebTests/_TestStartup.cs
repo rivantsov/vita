@@ -59,7 +59,6 @@ namespace Vita.UnitTests.Web {
         File.Delete(LogFilePath);
 
       BooksApp = new BooksEntityApp();
-      BooksApp.EntityClassProvider = Vita.Entities.Emit.EntityClassEmitter.CreateEntityClassProvider();
       BooksApp.LogPath = LogFilePath; 
       //Add mock email/sms service
       // NotificationListener = new NotificationListener(BooksApp, blockAll: true);

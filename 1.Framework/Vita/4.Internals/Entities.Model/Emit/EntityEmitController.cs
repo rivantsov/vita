@@ -7,7 +7,7 @@ using Proxemity;
 using Vita.Entities.Runtime;
 using Vita.Entities.Model;
 
-namespace Vita.Entities.Emit {
+namespace Vita.Entities.Model.Emit {
 
   public class EntityEmitController : ProxyEmitControllerBase {
     static FieldInfo _targetRef;

@@ -35,11 +35,8 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="Proxemity" Version="2.0.1" />
     <PackageReference Include="System.Data.Common" Version="4.3.0" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="4.Internals\Entities.Model\Emit\" />
   </ItemGroup>
 
   <PropertyGroup>

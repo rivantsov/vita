@@ -318,7 +318,6 @@ namespace Vita.Testing.BasicTests.SchemaUpdates {
       app.ActivationLogPath = Startup.ActivationLogPath;
       try {
         //Setup emitter
-        app.EntityClassProvider = Vita.Entities.Emit.EntityClassEmitter.CreateEntityClassProvider();
         app.Init();
         if(dropOldSchema) {
           Startup.DropSchemaObjects(app, dbSettings);

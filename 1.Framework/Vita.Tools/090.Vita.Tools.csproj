@@ -21,7 +21,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Vita.Entities.Emit\020.Vita.Entities.Emit.csproj" />
     <ProjectReference Include="..\Vita\010.Vita.csproj" />
   </ItemGroup>
 

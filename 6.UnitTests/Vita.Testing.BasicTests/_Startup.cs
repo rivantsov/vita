@@ -119,8 +119,6 @@ namespace Vita.Testing.BasicTests {
       app.LogPath = LogFilePath;
       app.ActivationLogPath = ActivationLogPath; 
       try {
-        //Setup emitter
-        app.EntityClassProvider = Vita.Entities.Emit.EntityClassEmitter.CreateEntityClassProvider(); 
         app.Init();
 
         var upgradeMode = DbUpgradeMode.Always;

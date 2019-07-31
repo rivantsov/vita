@@ -1,0 +1,26 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <AssemblyName>Vita.Modules</AssemblyName>
+    <RootNamespace>Vita.Modules</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Remove="AddressPhone\AddressPhoneEntities.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="AddressPhone\AddressPhoneEntities.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Newtonsoft.Json" Version="12.0.2" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\1.Framework\Vita\010.Vita.csproj" />
+    <ProjectReference Include="..\Vita.NCron\Vita.NCron.csproj" />
+  </ItemGroup>
+
+</Project>

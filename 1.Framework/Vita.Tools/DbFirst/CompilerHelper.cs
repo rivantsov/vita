@@ -61,7 +61,6 @@ namespace Vita.Tools.DbFirst {
       var driverLoc = driverType.Assembly.Location;
       //var driverAsmPath = System.IO.Path.GetFileName(driverLoc);
       var vitaPath = typeof(Entities.EntityApp).Assembly.Location;
-      var entEmit = typeof(Vita.Entities.Emit.EntityClassEmitter).Assembly.Location;
 
       var refs = new[] {
         MetadataReference.CreateFromFile(netstandard),
@@ -74,7 +73,6 @@ namespace Vita.Tools.DbFirst {
         MetadataReference.CreateFromFile(dataCommon),
         MetadataReference.CreateFromFile(driverLoc),
         MetadataReference.CreateFromFile(vitaPath),
-        MetadataReference.CreateFromFile(entEmit)
       };
       return refs; 
     } //method

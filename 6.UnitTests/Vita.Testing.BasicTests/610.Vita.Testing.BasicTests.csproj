@@ -33,7 +33,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\1.Framework\Vita.Entities.Emit\020.Vita.Entities.Emit.csproj" />
     <ProjectReference Include="..\..\1.Framework\Vita.Tools\090.Vita.Tools.csproj" />
     <ProjectReference Include="..\..\1.Framework\Vita\010.Vita.csproj" />
     <ProjectReference Include="..\..\2.Drivers\Vita.Data.MsSql\210.Vita.Data.MsSql.csproj" />

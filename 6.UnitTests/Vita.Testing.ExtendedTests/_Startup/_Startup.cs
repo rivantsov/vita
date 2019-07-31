@@ -66,7 +66,6 @@ namespace Vita.Testing.ExtendedTests {
           DeleteSqliteDbFile("VitaBooksSQLite");
         //Setup model, initialize Books module, create database model, update schema -------------------------------------------------
         BooksApp = new BooksEntityApp();
-        BooksApp.EntityClassProvider = Vita.Entities.Emit.EntityClassEmitter.CreateEntityClassProvider(); 
         BooksApp.LogPath = LogFilePath;
         BooksApp.ActivationLogPath = ActivationLogFilePath;
         BooksApp.Init();

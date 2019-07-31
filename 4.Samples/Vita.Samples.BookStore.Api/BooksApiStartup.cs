@@ -70,7 +70,6 @@ namespace Vita.Samples.BookStore.Api {
         return BooksEntityApp.Instance;
 
       var booksApp = new BooksEntityApp();
-      booksApp.EntityClassProvider = Vita.Entities.Emit.EntityClassEmitter.CreateEntityClassProvider();
       booksApp.Init();
       
       //connect to db

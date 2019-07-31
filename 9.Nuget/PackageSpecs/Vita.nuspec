@@ -27,10 +27,5 @@
 	 <file src="..\..\1.Framework\Vita\bin\Release\netstandard2.0\Vita.pdb" target="lib\netstandard2.0" />
 	 <file src="..\..\1.Framework\Vita\bin\Release\netstandard2.0\Vita.xml" target="lib\netstandard2.0" />
 	 <file src="..\..\1.Framework\Vita\**\*.cs" target="src\1.Framework\Vita" />
-   <!-- We include Emit project/dll in the main package -->
-	 <file src="..\..\1.Framework\Vita.Entities.Emit\bin\Release\netstandard2.0\Vita.Entities.Emit.dll" target="lib\netstandard2.0" />
-	 <file src="..\..\1.Framework\Vita.Entities.Emit\bin\Release\netstandard2.0\Vita.Entities.Emit.pdb" target="lib\netstandard2.0" />
-	 <file src="..\..\1.Framework\Vita.Entities.Emit\bin\Release\netstandard2.0\Vita.Entities.Emit.xml" target="lib\netstandard2.0" />
-	 <file src="..\..\1.Framework\Vita.Entities.Emit\**\*.cs" target="src\1.Framework\Vita.Entities.Emit" />
   </files>
 </package>

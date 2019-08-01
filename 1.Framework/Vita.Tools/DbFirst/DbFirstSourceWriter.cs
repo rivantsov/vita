@@ -342,7 +342,6 @@ using Vita.Data;  // used only in console app
     private static void Init() {
       
       App = new {{AppClassName}}();
-      App.EntityClassProvider = Vita.Entities.Emit.EntityClassEmitter.CreateEntityClassProvider(); 
 
       //connect to database
       var connString = @""{{ConnectionString}}"";

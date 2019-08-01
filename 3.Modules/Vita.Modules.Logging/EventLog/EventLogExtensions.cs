@@ -9,8 +9,8 @@ using Vita.Entities;
 namespace Vita.Modules.Logging {
   public static class EventLogExtensions {
 
-    public static IEvent NewEvent(this IEntitySession session, EventData data) {
-      var ev = session.NewEntity<IEvent>();
+    public static IAppEvent NewEvent(this IEntitySession session, EventData data) {
+      var ev = session.NewEntity<IAppEvent>();
       ev.Id = data.Id;
       ev.EventType = data.EventType;
       ev.StartedOn = data.StartedOn ?? session.Context.App.TimeService.UtcNow;
@@ -23,7 +23,7 @@ namespace Vita.Modules.Logging {
       ev.StringValue = data.StringValue ?? data.Value + string.Empty; 
       if (data.Parameters != null && data.Parameters.Count > 0)
         foreach (var de in data.Parameters) {
-          var prm = session.NewEntity<IEventParameter>();
+          var prm = session.NewEntity<IAppEventParameter>();
           prm.Event = ev;
           prm.Name = de.Key;
           prm.Value = de.Value;

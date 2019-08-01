@@ -28,9 +28,9 @@ namespace Vita.Entities.Logging {
       return entry; 
     }
 
-    public static EventLogEntry LogEvent(this ILog log, string category, string eventType, EventSeverity severity, string message, string details = null,
+    public static AppEventEntry LogEvent(this ILog log, string category, string eventType, EventSeverity severity, string message, string details = null,
                          Guid? objectId = null, string objectName = null, int? intParam = null, OperationContext context = null) {
-      var entry = new EventLogEntry(category, eventType, severity, message, details, objectId, objectName, intParam, context);
+      var entry = new AppEventEntry(category, eventType, severity, message, details, objectId, objectName, intParam, context);
       log.AddEntry(entry);
       return entry; 
     }

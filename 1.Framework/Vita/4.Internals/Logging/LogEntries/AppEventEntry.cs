@@ -10,7 +10,7 @@ namespace Vita.Entities.Logging {
     NeedsAction, //ex: Web request handling took more than 1 second; web request caused 200 SQL queries
   }
 
-  public class EventLogEntry : LogEntry {
+  public class AppEventEntry : LogEntry {
     public string Category;
     public string EventType;
     public EventSeverity Severity;
@@ -20,7 +20,7 @@ namespace Vita.Entities.Logging {
     public string ObjectName = null;
     public int? IntParam = null;
 
-    public EventLogEntry(string category, string eventType, EventSeverity severity, string message, string details = null, 
+    public AppEventEntry(string category, string eventType, EventSeverity severity, string message, string details = null, 
                          Guid? objectId = null, string objectName = null, int? intParam = null, 
                          OperationContext context = null) : base(context, LogEntryType.Event) {
       Category = category;

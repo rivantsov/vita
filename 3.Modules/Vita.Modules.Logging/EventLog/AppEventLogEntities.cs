@@ -9,7 +9,7 @@ using Vita.Entities;
 namespace Vita.Modules.Logging {
 
   [Entity]
-  public interface IEvent {
+  public interface IAppEvent {
     [PrimaryKey, Auto]
     Guid Id { get; set; }
 
@@ -35,15 +35,15 @@ namespace Vita.Modules.Logging {
     Guid? TenantId { get; set; }
     Guid? SessionId { get; set; }
 
-    IList<IEventParameter> Parameters { get; }
+    IList<IAppEventParameter> Parameters { get; }
   }
 
   [Entity, Unique("Event,Name")]
-  public interface IEventParameter {
+  public interface IAppEventParameter {
     [PrimaryKey, Auto]
     Guid Id { get; }
     [CascadeDelete]
-    IEvent Event { get; set; }
+    IAppEvent Event { get; set; }
     [Size(Sizes.Name)]
     string Name { get; set; }
     [Nullable, Unlimited]
@@ -59,8 +59,6 @@ namespace Vita.Modules.Logging {
 
     [Size(30), Index]
     string IncidentType { get; set; }
-
-    IList<IIncidentLog> Incidents { get; }
 
   }
 

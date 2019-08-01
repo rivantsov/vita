@@ -14,7 +14,7 @@ namespace Vita.Modules.Logging {
     IBackgroundSaveService _saveService; 
 
     public EventLogModule(EntityArea area) : base(area, "EventLog", version: CurrentVersion) {
-      this.RegisterEntities(typeof(IEvent), typeof(IEventParameter));
+      this.RegisterEntities(typeof(IAppEvent), typeof(IAppEventParameter));
       App.RegisterService<IEventLogService>(this); 
     }
 

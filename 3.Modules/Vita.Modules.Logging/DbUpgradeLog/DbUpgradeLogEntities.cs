@@ -6,10 +6,9 @@ using System.Threading.Tasks;
 
 using Vita.Data.Model;
 using Vita.Data.Upgrades;
-using Vita.Entities;
 
 namespace Vita.Modules.Logging {
-
+  using Vita.Entities;
 
   public enum DbModelChangeStatus {
     Incomplete = 0,

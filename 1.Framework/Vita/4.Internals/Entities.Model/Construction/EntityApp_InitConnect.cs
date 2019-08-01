@@ -20,10 +20,6 @@ namespace Vita.Entities {
     public static string LastFatalError; // error log sets this if it fails to persist error
 
     protected virtual void InitApp() {
-      Util.Check(this.EntityClassProvider != null, 
-        "EntityApp.{0} may not be null. Use {1} method from Vita.Entities.Emit assembly to create provider instance.",
-                                          nameof(EntityClassProvider), "Vita.Entities.Emit.EntityClassEmitter.CreateProvider()");
-      RegisterService<IEntityClassProvider>(EntityClassProvider);
 
       Status = EntityAppStatus.Initializing;
       CreateLogFileWriters();

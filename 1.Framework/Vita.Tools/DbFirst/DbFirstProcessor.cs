@@ -102,7 +102,6 @@ Note: Non-empty update action list represents the delta between the original dat
 
     public static List<DbUpgradeScript> CompareDatabaseSchemas(DbFirstConfig config, Type modelType) {
       var entApp = Activator.CreateInstance(modelType) as EntityApp;
-      entApp.EntityClassProvider = new DummyEntityClassProvider(); 
       entApp.Init(); 
       // important - do not use DbOptions.AutoIndexForeignKeys - which is recommended for MS SQL, but is not helpful here.
       // This will create a bunch of extra indexes on FKs in entities schema and result in extra differences with original schema.

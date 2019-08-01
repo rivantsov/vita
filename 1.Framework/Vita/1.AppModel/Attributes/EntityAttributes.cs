@@ -9,8 +9,6 @@ using Vita.Entities.Model.Construction;
 
 namespace Vita.Entities {
 
-
-
   /// <summary>Marks an interface as an Entity. </summary>
   [AttributeUsage(AttributeTargets.Interface)]
   public partial class EntityAttribute: EntityModelAttributeBase {

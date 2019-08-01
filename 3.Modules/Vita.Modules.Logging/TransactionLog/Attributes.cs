@@ -10,6 +10,7 @@ using Vita.Entities.Runtime;
 using Vita.Entities.Services;
 
 namespace Vita.Modules.Logging {
+  using Vita.Entities.Model.Construction;
 
   public enum TrackingActionType {
     Created,
@@ -36,41 +37,26 @@ namespace Vita.Modules.Logging {
       ActionType = actionType;
     }
 
-    private EntityMemberInfo _member;
     private Guid? _defaultValue;
-
-    public override void Apply(Entities.Model.Construction.AttributeContext context, Attribute attribute, EntityMemberInfo member) {
-      base.Apply(context, attribute, member);
-      _member = member;
-      if(member.DataType != typeof(Guid) && member.DataType != typeof(Guid?)) {
-        context.Log.Error("ActivityTrack attribute may be used only on Guid properties.");
+    public override void ApplyOnMember(EntityModelBuilder builder) {
+      base.ApplyOnMember(builder);
+      if (HostMember.DataType != typeof(Guid) && HostMember.DataType != typeof(Guid?)) {
+        builder.Log.Error("ActivityTrack attribute may be used only on Guid properties.");
         return;
       }
-      _member.Flags |= EntityMemberFlags.IsSystem;
-      _defaultValue = (_member.DataType == typeof(Guid)) ? Guid.Empty : (Guid?)null;
-      member.Entity.SaveEvents.SavingChanges += SaveEvents_SavingChanges;
+      HostMember.Flags |= EntityMemberFlags.IsSystem;
+      _defaultValue = (HostMember.DataType == typeof(Guid)) ? Guid.Empty : (Guid?)null;
+      HostMember.Entity.SaveEvents.SavingChanges += SaveEvents_SavingChanges;
     }
 
     void SaveEvents_SavingChanges(EntityRecord record, EventArgs args) {
       if(ActionType == TrackingActionType.Created && record.Status == EntityStatus.New ||
           ActionType == TrackingActionType.Updated && (record.Status == EntityStatus.New || record.Status == EntityStatus.Modified)) {
         //Do it directly, to bypass authorization checks (it should still work with record.SetValue)
-        record.ValuesModified[_member.ValueIndex] = record.Session.NextTransactionId;
+        record.ValuesModified[HostMember.ValueIndex] = record.Session.NextTransactionId;
       }
     }//method
 
   }//class
-
-  /// <summary>Marks an entity as not tracked in Transaction log. Explicitly instructs the system to not track 
-  /// an entity, even if it belongs to one of the entity areas being tracked.</summary>
-  [AttributeUsage(AttributeTargets.Interface)]
-  public class DoNotTrack : EntityModelAttributeBase {
-    public override void Apply(Entities.Model.Construction.AttributeContext context, Attribute attribute, EntityInfo entity) {
-      base.Apply(context, attribute, entity);
-      entity.Flags |= EntityFlags.DoNotTrack;
-    }
-
-  }
-
 
 }

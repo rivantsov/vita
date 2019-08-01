@@ -51,7 +51,7 @@ namespace Vita.Modules.Logging {
   }
 
   //Represents an alert fired based on incident log (ex: 3 or more failed logins within 1 minute)
-  [Entity, DoNotTrack]
+  [Entity, Vita.Entities.DoNotTrack]
   public interface IEventAlert : ILogEntityBase {
 
     [Size(30), Index]

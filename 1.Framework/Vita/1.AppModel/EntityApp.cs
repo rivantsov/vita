@@ -64,10 +64,10 @@ namespace Vita.Entities {
     /// <summary>Default length for string properties without Size attribute. </summary>
     public int DefaultStringLength = 50;
 
-    [Obsolete("Do not assign this property, it is set automatically in the base class.")]
     /// <summary>Entity class provider. The service responsible for generating (emitting) entity classes. </summary>
     /// <remarks>The default implementation based on IL-emit. 
     /// </remarks>
+    [Obsolete("Do not assign this property, it is no longer used.")]
     public IEntityClassProvider EntityClassProvider;
 
     // SlimApi not ported
@@ -129,7 +129,6 @@ namespace Vita.Entities {
       RegisterService<IBackgroundTaskService>(new DefaultBackgroundTaskService());
       RegisterService<IHashingService>(new HashingService());
       ActivationLog = new ActivationLog(activationLogPath, app: this);
-      this.EntityClassProvider = EntityClassEmitter.CreateEntityClassProvider();
     }
 
     private void CurrentDomain_DomainUnload(object sender, EventArgs e) {

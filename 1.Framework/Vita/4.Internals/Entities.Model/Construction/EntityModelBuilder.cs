@@ -13,6 +13,7 @@ using Vita.Entities.Services.Implementations;
 using Vita.Entities.Utilities;
 using Vita.Data;
 using Vita.Data.Linq;
+using Vita.Entities.Model.Emit;
 
 namespace Vita.Entities.Model.Construction {
 
@@ -374,7 +375,8 @@ namespace Vita.Entities.Model.Construction {
     }
 
     private void BuildEntityClasses() {
-      _app.EntityClassProvider.SetupEntityClasses(this.Model);
+      var emitProvider = EntityClassEmitter.CreateEntityClassProvider();
+      emitProvider.SetupEntityClasses(this.Model);
     }
 
     private void CollectEnumTypes() {

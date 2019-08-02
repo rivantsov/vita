@@ -10,7 +10,7 @@ using Vita.Entities;
 
 namespace Vita.Modules.Logging {
 
-  [Entity, Paged, DoNotTrack]
+  [Entity, DoNotTrack]
   public interface IOperationLog : ILogEntityBase {
     [Unlimited]
     string Message { get; set; }

@@ -294,7 +294,7 @@ namespace Vita.Entities {
     #endregion
 
     public string GetLogContents() {
-      var bufLog = this.Log as BufferedOperationLog;
+      var bufLog = this.Log as BufferedOperationLog; 
       if(bufLog == null)
         return null;
       var entries = bufLog.GetAllEntries(clear: false);

@@ -9,7 +9,7 @@ using Vita.Entities.Logging;
 
 namespace Vita.Modules.Logging {
   //Base class for most log entities
-  [Entities.DoNotTrack]
+  [DoNotTrack]
   public interface ILogEntityBase {
     [PrimaryKey, Auto]
     Guid Id { get; set; }

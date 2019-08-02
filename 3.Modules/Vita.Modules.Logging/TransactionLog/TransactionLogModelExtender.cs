@@ -27,6 +27,7 @@ namespace Vita.Modules.Logging {
     }
 
     public void Extend(EntityModel model) {
+      model.App.AppEvents.ModelConstructing
       if(model.ModelState != EntityModelState.EntitiesConstructed)
         return;
       //Add tracking properties (IDs of UserTransaction records) to all registered entities

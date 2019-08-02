@@ -14,7 +14,7 @@ namespace Vita.Entities.Logging {
   public interface ILogListener : ILog { }
 
   public interface ILogService : ILog {
-    void AddListener(ILogListener listener);
+    void AddListener(ILogListener listener, Func<LogEntry, bool> filter = null);
     void RemoveListener(ILogListener listener);
   }
 

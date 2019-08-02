@@ -74,8 +74,8 @@ namespace Vita.Entities {
         logWriter.Start(this.ShutdownToken);
       }
       if(this.ErrorLogFileWriter == null && !string.IsNullOrEmpty(this.ErrorLogPath)) {
-        ErrorLogFileWriter = new LogFileWriter(ErrorLogPath, entryTypesFilter: new[] { LogEntryType.Error });
-        logService.AddListener(ErrorLogFileWriter);
+        ErrorLogFileWriter = new LogFileWriter(ErrorLogPath);
+        logService.AddListener(ErrorLogFileWriter, entry => entry.EntryType == LogEntryType.Error);
       }
     }
 

@@ -18,19 +18,11 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Compile Remove="1.AppModel\SlimApi_Disabled\ApiConfiguration.cs" />
-    <Compile Remove="1.AppModel\SlimApi_Disabled\ISlimApiControllerInit.cs" />
-    <Compile Remove="1.AppModel\SlimApi_Disabled\SlimApiAttributes.cs" />
-    <Compile Remove="1.AppModel\SlimApi_Disabled\SlimApiController.cs" />
     <Compile Remove="1.AppModel\Services\Logging\IErrorLogService_Disabled.cs" />
     <Compile Remove="4.Internals\Utilities\BufferingQueue.cs" />
   </ItemGroup>
 
   <ItemGroup>
-    <None Include="1.AppModel\SlimApi_Disabled\ApiConfiguration.cs" />
-    <None Include="1.AppModel\SlimApi_Disabled\ISlimApiControllerInit.cs" />
-    <None Include="1.AppModel\SlimApi_Disabled\SlimApiAttributes.cs" />
-    <None Include="1.AppModel\SlimApi_Disabled\SlimApiController.cs" />
     <None Include="1.AppModel\Services\Logging\IErrorLogService_Disabled.cs" />
   </ItemGroup>
 

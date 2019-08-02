@@ -11,17 +11,14 @@ namespace Vita.Entities.Logging {
   public class LogFileWriter : IAsyncLogWriter, ILogListener, IDisposable {
     string _fileName;
     int _pauseMs;
-    LogEntryType[] _entryTypesFilter; //filter by entry type; if null - all entry types
 
     ConcurrentQueue<LogEntry> _entries = new ConcurrentQueue<LogEntry>();
     object _flushLock = new object(); 
     static object _fileWriteLock = new object(); 
 
-    public LogFileWriter(string fileName, int pauseMs = 100, LogEntryType[] entryTypesFilter = null) {
+    public LogFileWriter(string fileName, int pauseMs = 100) {
       _fileName = fileName;
       _pauseMs = pauseMs;
-      if(entryTypesFilter != null && entryTypesFilter.Length > 0)
-        _entryTypesFilter = entryTypesFilter;
     }
 
     public void Start(CancellationToken token) {
@@ -29,7 +26,7 @@ namespace Vita.Entities.Logging {
     }
 
     public void AddEntry(LogEntry entry) {
-      if(CanWriteEntry(entry)) {
+      if(entry != null) {
         _entries.Enqueue(entry);
         if(entry.EntryType == LogEntryType.Error)
           SaveAll();           
@@ -37,19 +34,6 @@ namespace Vita.Entities.Logging {
     }
     public void Flush() {
       SaveAll(); 
-    }
-
-    // fast lookup
-    private bool CanWriteEntry(LogEntry entry) {
-      if(entry == null)
-        return false; 
-      if(_entryTypesFilter == null)
-        return true;
-      var type = entry.EntryType; 
-      for(int i = 0; i < _entryTypesFilter.Length; i++)
-        if(_entryTypesFilter[i] == type)
-          return true;
-      return false; 
     }
 
     public async Task StartAsync(CancellationToken token) {
@@ -83,7 +67,7 @@ namespace Vita.Entities.Logging {
         lock(_fileWriteLock)
           File.AppendAllText(_fileName, text);
       } catch(Exception ex) {
-        System.Diagnostics.Trace.WriteLine($"LOG failure, failed to write to file [{_fileName}], error: {ex.Message}");
+        LastResortErrorLog.Instance.LogFatalError(ex.ToLogString(), text);
       }
 
     }

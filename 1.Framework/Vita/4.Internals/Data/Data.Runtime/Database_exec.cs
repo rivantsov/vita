@@ -174,14 +174,15 @@ namespace Vita.Data.Runtime {
 
     private void LogCommand(EntitySession session, IDbCommand command, long executionTime, int rowCount = -1) {
       if (!session.LogEnabled)
-        return; 
-      session.Log.LogDbCommand(command, executionTime, rowCount);
+        return;
+      var entry = new DbCommandLogEntry(session.Context.LogContext, command, executionTime, rowCount);
+      session.Context.Log.AddEntry(entry);
     }
 
     protected void LogComment(EntitySession session, string comment, params object[] args) {
       if (!session.LogEnabled)
         return;
-      var entry = new InfoLogEntry(session.Context, comment, args);
+      var entry = new InfoLogEntry(session.Context.LogContext, comment, args);
       session.AddLogEntry(entry);
     }
 

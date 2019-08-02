@@ -22,7 +22,7 @@ namespace Vita.Entities.Logging {
 
     public AppEventEntry(string category, string eventType, EventSeverity severity, string message, string details = null, 
                          Guid? objectId = null, string objectName = null, int? intParam = null, 
-                         OperationContext context = null) : base(context, LogEntryType.Event) {
+                         LogContext context = null) : base(LogEntryType.AppEvent, context) {
       Category = category;
       EventType = eventType;
       Severity = severity;

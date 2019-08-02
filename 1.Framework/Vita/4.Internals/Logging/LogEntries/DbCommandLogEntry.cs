@@ -15,17 +15,19 @@ namespace Vita.Entities.Logging {
 
   // The goal here is to delay formatting of the output to the background thread (logging thread) at later time
   // so that the main thread executing commands is not delayed by log formatting.
-  public class DbCommandInfoLogEntry : LogEntry {
+  public class DbCommandLogEntry : LogEntry {
 
     IDbCommand _command; 
     public long ExecutionTime;
     public int RowCount;
     private string _asText;
 
-    public DbCommandInfoLogEntry(IDbCommand command, long executionTime, int rowCount) {
+    public DbCommandLogEntry(LogContext logContext, IDbCommand command, long executionTime, int rowCount) 
+         : base (LogEntryType.DbCommand, logContext) {
       _command = command;
       ExecutionTime = executionTime;
-      RowCount = rowCount; 
+      RowCount = rowCount;
+      base.EntryType = LogEntryType.DbCommand;
     }
 
     public override string ToString() {

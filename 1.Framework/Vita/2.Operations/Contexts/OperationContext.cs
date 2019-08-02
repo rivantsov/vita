@@ -51,6 +51,12 @@ namespace Vita.Entities {
 
     internal DataSource LastDataSource; //last data source reference
 
+    public LogContext LogContext {
+      get {
+        return _logContext = _logContext ?? new LogContext(this);
+      }
+    } LogContext _logContext; 
+
     // Disposables - to register objects that must be disposed once an operation is finished. 
     // One use is for keeping track of open connections when sessions are opened with KeepOpen value for DbConnectionMode.
     // The connection is registered in _disposables list, and will be force-closed at the end of the global operaiton.

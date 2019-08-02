@@ -21,7 +21,8 @@ namespace Vita.Entities.Logging {
     public DateTime? RemoteTime;
     public string RemoteUserName;
 
-    public ErrorLogEntry(OperationContext context, Exception exception, string header = null) : base(context, LogEntryType.Error) {
+    public ErrorLogEntry(OperationContext context, Exception exception, string header = null) 
+           : base(LogEntryType.Error, context.LogContext) {
       Message = header + exception.Message; 
       Details = exception.ToLogString();
       LogContents = context?.GetLogContents();
@@ -30,7 +31,7 @@ namespace Vita.Entities.Logging {
     }
     public ErrorLogEntry(OperationContext context, string message, string details, ErrorKind kind = ErrorKind.Internal, 
                          string appName = null, string userName = null, DateTime? remoteTime = null) 
-           : base(context, LogEntryType.Error) {
+           : base(LogEntryType.Error, context.LogContext) {
       Message = message;
       Details = details;
       Kind = kind; 

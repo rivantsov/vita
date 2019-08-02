@@ -7,7 +7,8 @@ using System.Threading.Tasks;
 using Vita.Entities;
 
 namespace Vita.Modules.Logging {
-  public static class EventLogExtensions {
+
+  public static class AppEventLogExtensions {
 
     public static IAppEvent NewEvent(this IEntitySession session, EventData data) {
       var ev = session.NewEntity<IAppEvent>();

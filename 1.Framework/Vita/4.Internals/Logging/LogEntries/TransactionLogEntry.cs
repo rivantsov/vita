@@ -6,22 +6,18 @@ namespace Vita.Entities.Logging {
 
   //Temp object used to store trans information in the background update queue
   public class TransactionLogEntry : LogEntry {
-    public Guid? WebCallId;
-    public Guid? ProcessId;
 
     public DateTime StartedOn; 
     public int Duration;
     public int RecordCount;
     public string Changes;
+    public long TransactionId;
 
-    public TransactionLogEntry(OperationContext context, Guid id, DateTime startedOn, int duration, int recordCount, string changes)
-      : base(context, LogEntryType.Transaction){
-      Id = id;
+    public TransactionLogEntry(LogContext context, long transactionId, DateTime startedOn, int duration, int recordCount, string changes)
+                     : base(LogEntryType.Transaction, context){
+      TransactionId = transactionId;
       StartedOn = startedOn;
-      CreatedOn = context.App.TimeService.UtcNow;
-      if(context.WebContext != null)
-        WebCallId = context.WebContext.Id;
-      ProcessId = context.ProcessId;
+      CreatedOn = AppTime.UtcNow;
       Duration = duration;
       RecordCount = recordCount;
       Changes = changes;
@@ -29,7 +25,7 @@ namespace Vita.Entities.Logging {
 
     private string _asText;
     public override string AsText() {
-      return _asText = _asText ?? $"Transaction: {RecordCount} records, {Duration} ms. User: {ContextInfo?.UserName} ";
+      return _asText = _asText ?? $"Transaction: {RecordCount} records, {Duration} ms. User: {Context?.UserName} ";
     }
 
     public override string ToString() {

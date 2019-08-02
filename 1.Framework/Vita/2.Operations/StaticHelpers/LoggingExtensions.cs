@@ -15,7 +15,7 @@ namespace Vita.Entities {
   public static class LoggingExtensions {
 
     public static void WriteLogMessage(this OperationContext context, string message) {
-      context.Log.AddEntry(new InfoLogEntry(context, message));
+      context.Log.AddEntry(new InfoLogEntry(context.LogContext, message));
     }
     public static string ToLogString(this object value) {
       string strValue = string.Empty;

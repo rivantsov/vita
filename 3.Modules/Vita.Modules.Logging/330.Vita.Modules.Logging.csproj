@@ -7,26 +7,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Remove="_disabled\Api\LoggingModelExtensions.cs" />
-    <Compile Remove="_disabled\Api\LogsDataController.cs" />
-    <Compile Remove="_disabled\Api\LogsDataSearchParams.cs" />
-    <Compile Remove="_disabled\Api\LogsPostController.cs" />
-    <Compile Remove="_disabled\Api\Models.cs" />
-    <Compile Remove="_disabled\Api\UserSessionInfoController.cs" />
-    <Compile Remove="_disabled\Authorization\LoggingAuthorizationRoles.cs" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <None Include="_disabled\Api\LoggingModelExtensions.cs" />
-    <None Include="_disabled\Api\LogsDataController.cs" />
-    <None Include="_disabled\Api\LogsDataSearchParams.cs" />
-    <None Include="_disabled\Api\LogsPostController.cs" />
-    <None Include="_disabled\Api\Models.cs" />
-    <None Include="_disabled\Api\UserSessionInfoController.cs" />
-    <None Include="_disabled\Authorization\LoggingAuthorizationRoles.cs" />
-  </ItemGroup>
-
-  <ItemGroup>
     <ProjectReference Include="..\..\1.Framework\Vita\010.Vita.csproj" />
   </ItemGroup>
 

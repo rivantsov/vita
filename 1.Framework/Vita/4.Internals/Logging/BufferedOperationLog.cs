@@ -12,7 +12,7 @@ namespace Vita.Entities.Logging {
 
   /// <summary>BufferedOperationLog accumulates entries internally.  </summary>
   public class BufferedOperationLog : ILog {
-    LogEntryContextInfo _contextInfo;
+    LogContext _contextInfo;
     public static int MaxEntries = 1000;
     ILogService _logService;
     ConcurrentQueue<LogEntry> _entries = new ConcurrentQueue<LogEntry>();
@@ -21,7 +21,7 @@ namespace Vita.Entities.Logging {
     int _approxCount;
 
     public BufferedOperationLog(OperationContext context) : this(context.App) {
-      _contextInfo = new LogEntryContextInfo(context);
+      _contextInfo = new LogContext(context);
       _logService = context.App.GetService<ILogService>();
     }
 
@@ -30,9 +30,9 @@ namespace Vita.Entities.Logging {
     }
 
     public void AddEntry(LogEntry entry) {
-      entry.ContextInfo = _contextInfo; 
+      entry.Context = _contextInfo; 
       //_logService.AddEntry(entry); 
-      entry.ContextInfo = entry.ContextInfo ?? _contextInfo; 
+      entry.Context = entry.Context ?? _contextInfo; 
       _entries.Enqueue(entry);
       var count = Interlocked.Increment(ref _approxCount);
       if(count > MaxEntries) {

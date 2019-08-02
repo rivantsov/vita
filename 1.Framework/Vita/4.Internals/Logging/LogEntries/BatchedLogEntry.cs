@@ -8,8 +8,8 @@ namespace Vita.Entities.Logging {
   public class BatchedLogEntry : LogEntry {
     public IList<LogEntry> Entries; 
 
-    public BatchedLogEntry(LogEntryContextInfo contextInfo, IList<LogEntry> entries)
-        : base(contextInfo, LogEntryType.Information) {
+    public BatchedLogEntry(LogContext context, IList<LogEntry> entries)
+        : base(LogEntryType.Information, context) {
       Entries = entries; 
     }
 

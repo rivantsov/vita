@@ -41,7 +41,7 @@ namespace Vita.Entities {
 
     public static void LogMessage(this IEntitySession session, string message, params object[] args) {
       var entitySession = (EntitySession)session;
-      entitySession.AddLogEntry(new InfoLogEntry(session.Context, message, args));
+      entitySession.AddLogEntry(new InfoLogEntry(session.Context.LogContext, message, args));
     }
 
     public static System.Data.IDbCommand GetLastCommand(this IEntitySession session) {

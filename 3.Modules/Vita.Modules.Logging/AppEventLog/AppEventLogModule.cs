@@ -9,11 +9,11 @@ using Vita.Entities.Services;
 
 namespace Vita.Modules.Logging {
 
-  public class EventLogModule : EntityModule, IEventLogService {
+  public class AppEventLogModule : EntityModule {
     public static readonly Version CurrentVersion = new Version("1.0.0.0");
     IBackgroundSaveService _saveService; 
 
-    public EventLogModule(EntityArea area) : base(area, "EventLog", version: CurrentVersion) {
+    public AppEventLogModule(EntityArea area) : base(area, "EventLog", version: CurrentVersion) {
       this.RegisterEntities(typeof(IAppEvent), typeof(IAppEventParameter));
       App.RegisterService<IEventLogService>(this); 
     }

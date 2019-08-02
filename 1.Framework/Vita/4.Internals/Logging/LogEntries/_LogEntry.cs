@@ -9,21 +9,41 @@ namespace Vita.Entities.Logging {
     public Guid? Id;
     public LogEntryType EntryType;
     public DateTime CreatedOn;
-    public LogEntryContextInfo ContextInfo;
+    public LogContext Context;
 
-    public LogEntry(LogEntryType entryType = LogEntryType.Information) {
+    public LogEntry(LogEntryType entryType) {
       EntryType = entryType;
       CreatedOn = TimeService.Instance.UtcNow; 
     }
 
-    public LogEntry(LogEntryContextInfo contextInfo, LogEntryType entryType) : this(entryType) {
-      ContextInfo = contextInfo;
-    }
-    public LogEntry(OperationContext context, LogEntryType entryType) : this(entryType) {
-      ContextInfo = new LogEntryContextInfo(context);
+    public LogEntry(LogEntryType entryType, LogContext context) : this(entryType) {
+      Context = context;
     }
 
     public abstract string AsText();
+  }
+
+  // some information shared between multiple log entries; copied from OperationContext
+  public class LogContext {
+    public string UserName;
+    public Guid? UserId;
+    public long AltUserId; 
+    public Guid? UserSessionId;
+    public Guid? WebCallId;
+    public ProcessType ProcessType;
+    public Guid? ProcessId;
+
+    public LogContext() { }
+
+    public LogContext(OperationContext context) {
+      UserName = context.User.UserName;
+      UserId = context.User.UserId;
+      UserSessionId = context.SessionId;
+      WebCallId = context.WebContext?.Id;
+      ProcessType = context.ProcessType;
+      ProcessId = context.ProcessId;
+    }
+
   }
 
 }

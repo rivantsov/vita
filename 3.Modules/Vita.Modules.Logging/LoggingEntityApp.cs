@@ -53,7 +53,7 @@ namespace Vita.Modules.Logging {
       if(ActiveModules.IsSet(LogModules.UserSession))
         SessionService = new UserSessionModule(area, sessionSettings);
       if(ActiveModules.IsSet(LogModules.EventLog))
-        EventLogService = new EventLogModule(area);
+        EventLogService = new AppEventLogModule(area);
       if(ActiveModules.IsSet(LogModules.WebCallLog))
         WebCallLog = new WebCallLogModule(area);
       if(ActiveModules.IsSet(LogModules.WebClientLog))

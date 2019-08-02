@@ -6,11 +6,11 @@ namespace Vita.Entities.Logging {
 
   public enum LogEntryType {
     Information,
-    //Command,
-    //Composite,
+    DbCommand,
+    Batch,
 
     Error,
-    Event,
+    AppEvent,
     WebCall,
     WebClientCall,
     Transaction,

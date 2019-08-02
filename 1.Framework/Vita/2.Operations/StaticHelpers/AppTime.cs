@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Text;
 
 namespace Vita.Entities {
@@ -57,6 +58,17 @@ namespace Vita.Entities {
     /// </summary>
     public static void ClearOffset() {
       _offset = TimeSpan.Zero;
+    }
+
+    public static long Timestamp {
+      get { return Stopwatch.GetTimestamp(); } 
+    }
+
+    public static TimeSpan GetTimeSince(long fromTimestamp) {
+      var tsNow = Stopwatch.GetTimestamp(); 
+      var ticks = (tsNow - fromTimestamp);
+      var time = TimeSpan.FromTicks(ticks);
+      return time; 
     }
 
   } //class

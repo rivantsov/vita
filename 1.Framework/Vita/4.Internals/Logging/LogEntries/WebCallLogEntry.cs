@@ -12,7 +12,7 @@ namespace Vita.Entities.Logging
     public WebCallContext WebContext; 
     //log and exceptions
 
-    public WebCallLogEntry(WebCallContext webCtx) : base(webCtx.OperationContext, LogEntryType.WebCall) {
+    public WebCallLogEntry(WebCallContext webCtx) : base(LogEntryType.WebCall, webCtx.OperationContext.LogContext) {
       WebContext = webCtx;
     }
 

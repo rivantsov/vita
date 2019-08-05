@@ -8,6 +8,7 @@ using Vita.Entities;
 using Vita.Entities.Services;
 using Vita.Entities.DbInfo;
 using Vita.Data.Upgrades;
+using Vita.Entities.Logging;
 
 namespace Vita.Modules.Logging {
 
@@ -17,16 +18,10 @@ namespace Vita.Modules.Logging {
 
     public readonly LogModules ActiveModules;
     //ErrorLog is available as property in base EntityApp class
-    public readonly IOperationLogService OperationLog;
-    public readonly IIncidentLogService IncidentLog;
+    public readonly ILogService OperationLog;
     public readonly ITransactionLogService TransactionLog;
-    public readonly IWebCallLogService WebCallLog;
     public readonly INotificationLogService NotificationLog;
-    public readonly ILoginLogService LoginLog;
     public readonly IDbUpgradeLogService DbUpgradeLog;
-    public readonly IUserSessionService SessionService;
-    public readonly IEventLogService EventLogService;
-    public readonly IWebClientLogService WebClientLogService;
 
     public LoggingEntityApp(string schema = "log", LogModules includeModules = LogModules.All, 
                             UserSessionSettings sessionSettings = null) : base("LoggingApp", CurrentVersion) {

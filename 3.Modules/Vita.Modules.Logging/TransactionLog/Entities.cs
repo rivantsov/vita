@@ -7,14 +7,4 @@ using Vita.Entities;
 
 namespace Vita.Modules.Logging {
 
-  [Entity, DiscardOnAbort, DoNotTrack, ClusteredIndex("CreatedOn,Id")]
-  public interface ITransactionLog : ILogEntityBase {
-
-    int Duration { get; set; }
-    int RecordCount { get; set; }
-
-    [Nullable, Unlimited]
-    //Contains list of refs in the form : EntityType/Operation/PK
-    string Changes { get; set; }
-  }
 }

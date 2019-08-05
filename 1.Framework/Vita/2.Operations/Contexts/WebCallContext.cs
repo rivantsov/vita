@@ -30,29 +30,6 @@ namespace Vita.Entities.Api {
     HideResponseBody = Confidential | NoLogResponseBody,
   }
 
-  public interface IHttpContextWrapper {
-    object HttpContext { get; }
-  }
-
-  public struct RequestInfo {
-    public string HttpMethod;
-    public string Url;
-    public string UrlHost;
-    public string UrlPath; 
-    public IDictionary<string, string> Headers;
-
-    public long? ContentSize;
-    public string ContentType; 
-    public string IPAddress;
-  }
-
-  public class ResponseInfo {
-    public HttpStatusCode? HttpStatus;
-    public IDictionary<string, string> Headers = new Dictionary<string, string>();
-    public string ContentType;
-    public object Body;
-  }
-
   /// <summary>Provides an access to web-related parameters to the middle-tier code.</summary>
   /// <remarks>
   /// Instantiated by WebCallContextHandler; the current instance is available through OperationContext.WebContext property. 
@@ -70,18 +47,11 @@ namespace Vita.Entities.Api {
 
     public readonly WeakReference HttpContextRef;
 
-    public readonly Guid Id;
-    public readonly DateTime CreatedOn; 
+    public WebCallLogEntry LogEntry; 
+
     public long TickCountStart;
-    public long TickCountEnd;
-    public int Duration;
-    public Exception Exception;
-    public Guid? ErrorLogId;
 
-    public RequestInfo Request;
-    public ResponseInfo Response; 
-
-    public string RequestUrlTemplate;
+    public string UrlTemplate;
     public string ControllerName;
     public string MethodName;
 
@@ -90,18 +60,12 @@ namespace Vita.Entities.Api {
     // list of custom indicators for use by app that will be saved in web call log
     public IList<string> CustomTags = new List<string>(); 
 
-    public WebCallContext(OperationContext opContext) {
-      this.OperationContext = opContext;
-      opContext.WebContext = this; 
-    }
-
     public WebCallContext(OperationContext opContext, object httpContext, RequestInfo request) {
       this.OperationContext = opContext;
-      HttpContextRef = new WeakReference(httpContext); 
-      Id = Guid.NewGuid();
-      CreatedOn = this.OperationContext.App.TimeService.UtcNow;
-      TickCountStart = Stopwatch.GetTimestamp();
-      Request = request; 
+      opContext.WebContext = this;
+      HttpContextRef = new WeakReference(httpContext);
+      LogEntry = new WebCallLogEntry(this, request);
+      TickCountStart = AppTime.GetTimestamp();
     }
 
   

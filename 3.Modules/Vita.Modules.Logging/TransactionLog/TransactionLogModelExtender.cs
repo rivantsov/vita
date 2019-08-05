@@ -27,7 +27,7 @@ namespace Vita.Modules.Logging {
     }
 
     public void Extend(EntityModel model) {
-      model.App.AppEvents.ModelConstructing
+      model.App.AppEvents.ModelConstructing += AppEvents_ModelConstructing; // New code aug 2019
       if(model.ModelState != EntityModelState.EntitiesConstructed)
         return;
       //Add tracking properties (IDs of UserTransaction records) to all registered entities
@@ -53,5 +53,8 @@ namespace Vita.Modules.Logging {
 
     }//method
 
+    private void AppEvents_ModelConstructing(object sender, EntityModelConstructEventArgs e) {
+      throw new NotImplementedException();
+    }
   }//class
 }

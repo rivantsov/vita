@@ -25,7 +25,7 @@ namespace Vita.Entities.Logging {
 
     private string _asText;
     public override string AsText() {
-      return _asText = _asText ?? $"Transaction: {RecordCount} records, {Duration} ms. User: {Context?.UserName} ";
+      return _asText = _asText ?? $"Transaction: {RecordCount} records, {Duration} ms. User: {Context?.User.UserName} ";
     }
 
     public override string ToString() {

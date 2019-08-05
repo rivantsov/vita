@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Net;
+using System.Security.Claims;
 using System.Text;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Builder;
@@ -27,6 +28,34 @@ namespace Vita.Web {
     public static void SetWebCallContext(this HttpContext httpContext, WebCallContext webContext) {
       httpContext.Items[WebCallContext.WebCallContextKey] = webContext; 
     }
+
+    public static void SetupJwtTokenAuthentication(IServiceCollection services, string jwtSecret) {
+      var jwtTokenHandler = new VitaJwtTokenHandler(EntityApp, services, jwtSecret);
+      services.Add(new ServiceDescriptor(typeof(IAuthenticationTokenHandler), jwtTokenHandler));
+    }
+
+    public static void SetUserFromClaims(this OperationContext context, IEnumerable<Claim> claims) {
+      Guid userId = Guid.Empty;
+      string userName = string.Empty;
+      long altUserId = 0;
+      foreach (var claim in claims) {
+        var v = claim.Value;
+        switch (claim.Type) {
+          case nameof(UserInfo.UserId):
+            Guid.TryParse(claim.Value, out userId);
+            break;
+          case nameof(UserInfo.UserName):
+            userName = claim.Value;
+            break;
+          case nameof(UserInfo.AltUserId):
+            long.TryParse(claim.Value, out altUserId);
+            break;
+        } //switch
+      } //foreach
+      // Set UserInfo on current operation context
+      context.User = new UserInfo(userId, userName, UserKind.AuthenticatedUser, altUserId);
+    }
+
 
 
     // based on code from here: 

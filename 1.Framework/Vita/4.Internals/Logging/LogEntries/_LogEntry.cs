@@ -25,21 +25,17 @@ namespace Vita.Entities.Logging {
 
   // some information shared between multiple log entries; copied from OperationContext
   public class LogContext {
-    public string UserName;
-    public Guid? UserId;
-    public long AltUserId; 
-    public Guid? UserSessionId;
-    public Guid? WebCallId;
+    public UserInfo User; 
+    public Guid? SessionId;
     public ProcessType ProcessType;
     public Guid? ProcessId;
 
     public LogContext() { }
 
     public LogContext(OperationContext context) {
-      UserName = context.User.UserName;
-      UserId = context.User.UserId;
-      UserSessionId = context.SessionId;
-      WebCallId = context.WebContext?.Id;
+      User = context.User;
+
+      SessionId = context.SessionId;
       ProcessType = context.ProcessType;
       ProcessId = context.ProcessId;
     }

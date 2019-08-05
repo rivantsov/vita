@@ -29,11 +29,12 @@ namespace Vita.Samples.BookStore.Api {
     public void ConfigureServices(IServiceCollection services) {
       // entity app
       var connStr = Configuration["MsSqlConnectionString"];
-      EntityApp = SetupBooksApp(connStr);
-      //jwt token handler
+      EntityApp = CreateBooksEntityApp(connStr);
+
+      // Setup Authentication with jwt token
       var jwtSecret = Configuration["JwtSecret"];
-      var jwtTokenHandler = new VitaJwtTokenHandler(EntityApp, services, jwtSecret);
-      services.Add(new ServiceDescriptor(typeof(IAuthenticationTokenHandler), jwtTokenHandler));
+      WebHelper.SetupJwtTokenAuthentication(services, jwtSecret); 
+
       services.AddRouting();
       // add action filter; Json is there by default, we also add xml for testing xml serialization
       services.AddMvc()
@@ -64,7 +65,7 @@ namespace Vita.Samples.BookStore.Api {
       app.UseMvc();
     }
 
-    private BooksEntityApp SetupBooksApp(string connString) {
+    private BooksEntityApp CreateBooksEntityApp(string connString) {
       // If we are running WebTests, the BooksApp is already setup
       if (BooksEntityApp.Instance != null)
         return BooksEntityApp.Instance;

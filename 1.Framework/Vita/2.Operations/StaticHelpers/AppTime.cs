@@ -60,8 +60,8 @@ namespace Vita.Entities {
       _offset = TimeSpan.Zero;
     }
 
-    public static long Timestamp {
-      get { return Stopwatch.GetTimestamp(); } 
+    public static long GetTimestamp() {
+      return Stopwatch.GetTimestamp();  
     }
 
     public static TimeSpan GetTimeSince(long fromTimestamp) {

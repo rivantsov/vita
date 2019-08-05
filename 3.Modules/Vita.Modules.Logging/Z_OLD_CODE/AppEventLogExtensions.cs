@@ -5,12 +5,13 @@ using System.Text;
 using System.Threading.Tasks;
 
 using Vita.Entities;
+using Vita.Entities.Logging;
 
 namespace Vita.Modules.Logging {
 
   public static class AppEventLogExtensions {
 
-    public static IAppEvent NewEvent(this IEntitySession session, EventData data) {
+    public static IAppEvent NewEvent(this IEntitySession session, AppEventEntry data) {
       var ev = session.NewEntity<IAppEvent>();
       ev.Id = data.Id;
       ev.EventType = data.EventType;

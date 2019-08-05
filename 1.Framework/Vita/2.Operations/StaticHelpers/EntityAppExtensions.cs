@@ -49,7 +49,7 @@ namespace Vita.Entities {
     public static string GetIpAddress(this OperationContext context) {
       if(context == null || context.WebContext == null)
         return null;
-      return context.WebContext.Request.IPAddress;
+      return context.WebContext?.LogEntry.Request.IPAddress;
     }
 
     /// <summary>Checks if an entity is registered with entity model. 

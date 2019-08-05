@@ -9,9 +9,11 @@ using System.Net.Http.Headers;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Extensions;
 using Microsoft.AspNetCore.Routing;
+
 using Vita.Entities;
 using Vita.Entities.Api;
 using Vita.Entities.Logging;
@@ -67,8 +69,6 @@ namespace Vita.Web {
       var reqInfo = new RequestInfo() {
         HttpMethod = req.Method,
         Url = req.GetDisplayUrl(),
-        UrlHost = req.Host.Value,
-        UrlPath = req.Path,
         ContentType = req.ContentType,
         ContentSize = req.ContentLength,
         Headers = req.Headers.ToDictionary(h => h.Key, h => string.Join(" ", h.Value)),

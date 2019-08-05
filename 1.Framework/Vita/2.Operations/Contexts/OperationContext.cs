@@ -10,13 +10,7 @@ using System.Threading;
 
 using Vita.Entities.Model;
 using Vita.Entities.Logging;
-using Vita.Data;
-using System.Security.Principal;
-using System.Security.Claims;
-using Vita.Entities.Utilities;
-using Vita.Entities.Services;
 using Vita.Data.Runtime;
-using System.Globalization;
 
 namespace Vita.Entities {
 
@@ -299,28 +293,6 @@ namespace Vita.Entities {
         return null;
       var entries = bufLog.GetAllEntries(clear: false);
       return string.Join(Environment.NewLine, entries);
-    }
-
-    public void SetUserFromClaims(IEnumerable<Claim> claims) {
-      Guid userId = Guid.Empty;
-      string userName = string.Empty;
-      long altUserId = 0;
-      foreach (var claim in claims) {
-        var v = claim.Value;
-        switch (claim.Type) {
-          case nameof(UserInfo.UserId):
-            Guid.TryParse(claim.Value, out userId);
-            break;
-          case nameof(UserInfo.UserName):
-            userName = claim.Value;
-            break;
-          case nameof(UserInfo.AltUserId):
-            long.TryParse(claim.Value, out altUserId);
-            break;
-        } //switch
-      } //foreach
-      // Set UserInfo on current operation context
-      this.User = new UserInfo(userId, userName, UserKind.AuthenticatedUser, altUserId);
     }
 
   }//class

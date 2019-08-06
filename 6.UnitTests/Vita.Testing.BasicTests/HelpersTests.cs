@@ -12,6 +12,14 @@ namespace Vita.Testing.BasicTests.Helpers {
   [TestClass]
   public class HelpersTests {
 
+    [TestMethod]
+    public void _TestHelpers_TransId() {
+      var totalMs = DateTime.UtcNow.Subtract(new DateTime(2010, 1, 1)).TotalMilliseconds;
+      var ratio = long.MaxValue / totalMs;
+      var ts = Stopwatch.GetTimestamp();
+      var msg = $"Ms since 2010: {totalMs}, ratio: {ratio}, timestamp: {ts}, max long: {long.MaxValue}";
+      Trace.WriteLine(msg);
+    }
 
     [TestMethod]
     public void TestHelpers_Compression() {

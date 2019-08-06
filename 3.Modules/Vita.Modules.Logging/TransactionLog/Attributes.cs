@@ -41,7 +41,7 @@ namespace Vita.Modules.Logging {
     public override void ApplyOnMember(EntityModelBuilder builder) {
       base.ApplyOnMember(builder);
       if (HostMember.DataType != typeof(Guid) && HostMember.DataType != typeof(Guid?)) {
-        builder.Log.Error("ActivityTrack attribute may be used only on Guid properties.");
+        builder.Log.Error("Track attribute may be used only on Guid properties.");
         return;
       }
       HostMember.Flags |= EntityMemberFlags.IsSystem;

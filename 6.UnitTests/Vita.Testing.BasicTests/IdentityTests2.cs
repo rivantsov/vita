@@ -23,7 +23,6 @@ namespace Vita.Testing.BasicTests.IdentityTests2 {
   [Entity, PrimaryKey("User,OrderId")]
   public interface IUserPost {
     IUser User { get; set; }
-    [Identity]
     int OrderId { get; set; }
     [Size(100)]
     string Text { get; set; }
@@ -61,7 +60,7 @@ namespace Vita.Testing.BasicTests.IdentityTests2 {
       }
       // test with and without batch mode
       RunTest(false);
-      RunTest(true); 
+      RunTest(true);
     }
 
     public void RunTest(bool batchMode) {
@@ -75,13 +74,13 @@ namespace Vita.Testing.BasicTests.IdentityTests2 {
         options: batchMode ? EntitySessionOptions.None : EntitySessionOptions.DisableBatchMode);
 
       var john = session.NewUser("john");
-      var post1 = john.NewPost("john post 1");
-      var post2 = john.NewPost("john post 2");
-      var post3 = john.NewPost("john post 3");
+      var post1 = john.NewPost("john post 1", 1);
+      var post2 = john.NewPost("john post 2", 2);
+      var post3 = john.NewPost("john post 3", 3);
       var ben = session.NewUser("ben");
-      var post1b = john.NewPost("ben post 1");
-      var post2b = john.NewPost("ben post 2");
-      var post3b = john.NewPost("ben post 3");
+      var post1b = ben.NewPost("ben post 1", 1);
+      var post2b = ben.NewPost("ben post 2", 2);
+      var post3b = ben.NewPost("ben post 3", 3);
       session.SaveChanges();
       //Check that Identity values immediately changed to actual positive values loaded from database
       Assert.IsTrue(post1.OrderId > 0, "Invalid OrderID - expected positive value.");
@@ -113,11 +112,12 @@ namespace Vita.Testing.BasicTests.IdentityTests2 {
       user.Name = name;
       return user;
     }
-    public static IUserPost NewPost(this IUser user, string text) {
+    public static IUserPost NewPost(this IUser user, string text, int orderId) {
       var session = EntityHelper.GetSession(user);
       var post = session.NewEntity<IUserPost>();
       post.User = user;
       post.Text = text;
+      post.OrderId = orderId;
       return post; 
     }
   }//IdExtensions class

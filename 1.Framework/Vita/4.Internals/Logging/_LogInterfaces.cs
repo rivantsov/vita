@@ -18,11 +18,5 @@ namespace Vita.Entities.Logging {
     void RemoveListener(ILogListener listener);
   }
 
-  public interface IAsyncLogWriter {
-    Task StartAsync(CancellationToken token);
-    void AddEntry(LogEntry entry);
-  }
-
-
 
 }

@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace Vita.Entities.Logging {
 
-  public class LogFileWriter : IAsyncLogWriter, ILogListener, IDisposable {
+  public class LogFileWriter : ILogListener, IDisposable {
     string _fileName;
     int _pauseMs;
 
@@ -72,8 +72,13 @@ namespace Vita.Entities.Logging {
 
     }
 
+     ~LogFileWriter() {
+      Dispose(); 
+    }
+
     public void Dispose() {
-      SaveAll();
+      if (_entries.Count > 0)
+        SaveAll();
     }
   }
 }

@@ -8,7 +8,6 @@ using System.Threading.Tasks;
 using Vita.Entities; 
 using Vita.Entities.Logging;
 using Vita.Entities.Services;
-using Vita.Modules.Notifications;
 
 namespace Vita.Modules.Logging {
   // Temp object used for sending log informaton to background save service

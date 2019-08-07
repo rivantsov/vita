@@ -16,6 +16,7 @@ using System.Threading.Tasks;
 using System.Threading;
 
 namespace Vita.Entities {
+
   public partial class EntityApp {
     public static string LastFatalError; // error log sets this if it fails to persist error
 
@@ -131,6 +132,17 @@ namespace Vita.Entities {
       var updateMgr = new DbUpgradeManager(db, ActivationLog);
       var upgradeInfo = updateMgr.UpgradeDatabase(); //it might throw exception
       // _events.OnDataSourceStatusChanging(new DataSourceEventArgs(dataSource, DataSourceEventType.Connected));
+    }
+
+
+    long _lastTransactionId;
+    public long GenerateNextTransactionId() {
+      if (_lastTransactionId == 0) {
+        var timeSince2k = DateTime.UtcNow.Subtract(new DateTime(2010, 1, 1));
+        _lastTransactionId = (long) timeSince2k.TotalMilliseconds * 10;
+      }
+      var nextTransId = Interlocked.Increment(ref _lastTransactionId);
+      return nextTransId; 
     }
 
   }//class

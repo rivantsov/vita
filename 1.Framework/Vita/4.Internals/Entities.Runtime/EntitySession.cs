@@ -55,8 +55,6 @@ namespace Vita.Entities.Runtime {
     public int LastTransactionDuration;
     public int LastTransactionRecordCount { get; private set; }
 
-    public Guid NextTransactionId; // copied into ITransactionLog.Id
-
     private ITimeService _timeService;
     private EntityAppEvents _appEvents;
     DataSource _dataSource;
@@ -83,7 +81,6 @@ namespace Vita.Entities.Runtime {
       }
       _timeService = Context.App.TimeService;
       //This might be reset in SaveChanges
-      NextTransactionId = Guid.NewGuid();
       if (Kind != EntitySessionKind.Dummy) {
         _dataSource = context.App.DataAccess.GetDataSource(this.Context);
         _appEvents.OnNewSession(this);
@@ -94,6 +91,14 @@ namespace Vita.Entities.Runtime {
     public override string ToString() {
       return "EntitySession(" + Context + ")";
     }
+
+    // copied into ITransactionLog.TransactionId
+    public long GetNextTransactionId() {
+      if (_nextTransactionId == 0) {
+        _nextTransactionId = Context.App.GenerateNextTransactionId(); 
+      }
+      return _nextTransactionId; 
+    } long _nextTransactionId; 
 
     // Reusable connection object
     public DataConnection CurrentConnection {
@@ -202,7 +207,7 @@ namespace Vita.Entities.Runtime {
         _appEvents.OnError(this.Context, ex);
         throw;
       }
-      NextTransactionId = Guid.NewGuid();
+      _nextTransactionId = 0;
       _transationTags = null;
     }//method
 

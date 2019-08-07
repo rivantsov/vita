@@ -49,7 +49,6 @@ namespace Vita.Entities.Runtime {
             break;
           default:
             Context.App.AppEvents.OnExecutedNonQuery(this, command);
-            NextTransactionId = Guid.NewGuid();
             break;
         }
         return result;

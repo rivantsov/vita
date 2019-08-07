@@ -11,9 +11,10 @@ namespace Vita.Entities.Logging {
 
     Error,
     AppEvent,
+    Transaction,
+    Message,
     WebCall,
     WebClientCall,
-    Transaction,
     Custom
   }
 

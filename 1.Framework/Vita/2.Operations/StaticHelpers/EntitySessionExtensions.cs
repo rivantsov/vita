@@ -49,9 +49,9 @@ namespace Vita.Entities {
       return entSession.LastCommand;
     }
 
-    public static Guid GetNextTransactionId(this IEntitySession session) {
+    public static long GetNextTransactionId(this IEntitySession session) {
       var entSession = (EntitySession)session;
-      return entSession.NextTransactionId;
+      return entSession.GetNextTransactionId();
     }
 
     public static IDisposable WithElevatedRead(this IEntitySession session) {

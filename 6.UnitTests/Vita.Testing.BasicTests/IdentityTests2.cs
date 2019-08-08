@@ -7,7 +7,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Vita.Entities;
 using Vita.Entities.Runtime;
 
-namespace Vita.Testing.BasicTests.IdentityTests2 {
+namespace Vita.Testing.BasicTests.IdentityRef {
 
   // Special identity tests
   // Special case - composite PK, with FK to parent (which is identity) and another identity
@@ -29,8 +29,8 @@ namespace Vita.Testing.BasicTests.IdentityTests2 {
   }
 
   // We skip defining custom entity module and use base EntityModule class
-  public class IdentityTests2EntityApp : EntityApp {
-    public IdentityTests2EntityApp() {
+  public class IdentityRefTestsEntityApp : EntityApp {
+    public IdentityRefTestsEntityApp() {
       var area = AddArea("ident2");
       var mainModule = new EntityModule(area, "MainModule");
       mainModule.RegisterEntities(typeof(IUser), typeof(IUserPost));
@@ -39,7 +39,7 @@ namespace Vita.Testing.BasicTests.IdentityTests2 {
 
 
   [TestClass]
-  public class IdentityColumnsTest {
+  public class IdentityRefTests {
     EntityApp _app;
 
     [TestCleanup]
@@ -64,7 +64,7 @@ namespace Vita.Testing.BasicTests.IdentityTests2 {
     }
 
     public void RunTest(bool batchMode) {
-      _app = new IdentityTests2EntityApp();
+      _app = new IdentityRefTestsEntityApp();
       Startup.ActivateApp(_app);
       //if(Startup.ServerType == Data.Driver.DbServerType.SQLite)
       DeleteAllData();

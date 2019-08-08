@@ -10,7 +10,6 @@ namespace Vita.Entities.Services.Implementations {
 
   internal class EntityModelCustomizationService : IEntityModelCustomizationService {
     EntityApp _app;
-    Sizes.SizeTable SizeTable = Sizes.GetDefaultSizes();
     internal bool Closed; 
 
     public EntityModelCustomizationService(EntityApp app) {
@@ -109,9 +108,9 @@ namespace Vita.Entities.Services.Implementations {
     #region Sizes
     public void RegisterSize(string code, int size, EntityModule module = null) {
       CheckNotClosed();
-      SizeTable[code] = size;
+      _app.SizeTable[code] = size;
       var fullCode = module.Name + "#" + code;
-      SizeTable[fullCode] = size;
+      _app.SizeTable[fullCode] = size;
     }
     #endregion 
 

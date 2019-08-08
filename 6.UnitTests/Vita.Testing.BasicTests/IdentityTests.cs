@@ -7,7 +7,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Vita.Entities;
 using Vita.Entities.Runtime;
 
-namespace Vita.Testing.BasicTests.IdentityTests {
+namespace Vita.Testing.BasicTests.Identity {
   // Using both int and long as identity columns, just to test proper type conversions
   [Entity]
   public interface ICar {
@@ -40,7 +40,7 @@ namespace Vita.Testing.BasicTests.IdentityTests {
 
 
   [TestClass]
-  public class IdentityColumnsTest {
+  public class IdentityTests {
     EntityApp _app;
 
     [TestCleanup]

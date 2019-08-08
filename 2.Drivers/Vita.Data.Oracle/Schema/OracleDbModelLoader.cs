@@ -236,24 +236,13 @@ SELECT
       c.delete_rule,
       c.deferrable is_deferrable  
     FROM all_constraints c INNER JOIN all_constraints t 
-       on c.r_constraint_name = t.constraint_name
+       on c.r_constraint_name = t.constraint_name AND c.owner = t.owner
     WHERE (c.constraint_type IN ('R')) AND {0}
     ORDER BY c.table_name, c.constraint_name";
 
     public override InfoTable GetReferentialConstraints() {
       var filter = GetSchemaFilter("c.OWNER");
       var result = ExecuteSelect(_sqlGetTableRefConstraintsSql, filter);
-      /*
-      // Query does not provide target table name. The calling method (LoadRefConstraints)
-      // uses it to lookup table. So let's supplement it by looking up by target key name - which are target primary keys
-      var allKeys = Model.Tables.Select(t => t.PrimaryKey).ToList();
-      var keyLkp = allKeys.ToDictionary(k => k.Name, k => k);
-      foreach(var row in result.Rows) {
-        var cn = row.GetAsString("unique_constraint_name");
-        if(keyLkp.TryGetValue(cn, out DbKeyInfo key))
-          row["u_table"] = key.Table.TableName; 
-      }
-      */
       return result;
     }
 

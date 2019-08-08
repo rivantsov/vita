@@ -107,7 +107,8 @@ namespace Vita.Data.Runtime {
         //Apply record updates  
         foreach (var grp in updateSet.UpdateGroups)
           foreach (var tableGrp in grp.TableGroups) {
-            if (updateSet.InsertsIdentity)
+            var ent = tableGrp.Table.Entity;
+            if (updateSet.InsertsIdentity && ent.Flags.IsSet(EntityFlags.ReferencesIdentity))
               UpdateNewIdentityReferences(updateSet, tableGrp.Records);
             switch (tableGrp.Operation) {
               case LinqOperation.Insert:

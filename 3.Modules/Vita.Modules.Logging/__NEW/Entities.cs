@@ -20,15 +20,17 @@ namespace Vita.Modules.Logging {
   public interface ILogContext {
     [PrimaryKey, Auto]
     Guid Id { get; set; }
-    //Note - we do not use Auto(AutoType.CreatedOn) attribute here - if we did, it would result in datetime
-    // of record creation, which happens later (on background thread) than actual event. 
-    // So it should be set explicitly in each case, when the log call is made
+
+    Guid? UserId { get; set; }
+
+    long? AltUserId { get; set; }
+
     [Nullable, Size(Sizes.UserName)]
-    //useful when there's no user session; also helps to have username directly in the table when looking 
-    // at raw tables in SQL window
     string UserName { get; set; }
+
     [Index]
     Guid? SessionId { get; set; }
+
     Guid? TenantId { get; set; }
 
   }
@@ -36,11 +38,12 @@ namespace Vita.Modules.Logging {
   public interface ILogEntityBase {
     [PrimaryKey, Auto]
     Guid Id { get; set; }
+
     ILogContext LogContext { get; set; }
     [Utc, Index]
     DateTime CreatedOn { get; set; }
 
-    [Index, Nullable]
+    [Index]
     Guid? WebCallId { get; set; }
   }
 
@@ -52,6 +55,7 @@ namespace Vita.Modules.Logging {
 
     [Size(Sizes.Name)]
     string EventType { get; set; }
+
     [HashFor("EventType"), Index]
     int EventTypeHash { get; }
 
@@ -185,7 +189,7 @@ namespace Vita.Modules.Logging {
     int RecordCount { get; set; }
 
     [Index]
-    long TransactonId { get; set; }
+    long TransactionId { get; set; }
 
     [Nullable, Unlimited]
     string Comment { get; set; }

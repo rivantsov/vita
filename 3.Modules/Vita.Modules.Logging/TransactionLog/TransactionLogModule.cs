@@ -108,7 +108,7 @@ namespace Vita.Modules.Logging {
       var ent = record.EntityInfo;
       if(ent.Flags.IsSet(EntityFlags.DoNotTrack))
         return false;
-      if(Settings.IgnoreAreas.Contains(ent.Area.Name))
+      if(Settings.IgnoreSchemas.Contains(ent.Area.Name))
         return false;
       return true; 
     }

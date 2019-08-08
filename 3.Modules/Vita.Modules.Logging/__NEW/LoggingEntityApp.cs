@@ -20,7 +20,6 @@ namespace Vita.Modules.Logging {
     //ErrorLog is available as property in base EntityApp class
     public readonly ILogService OperationLog;
     public readonly ITransactionLogService TransactionLog;
-    public readonly INotificationLogService NotificationLog;
     public readonly IDbUpgradeLogService DbUpgradeLog;
 
     public LoggingEntityApp(string schema = "log", LogModules includeModules = LogModules.All, 

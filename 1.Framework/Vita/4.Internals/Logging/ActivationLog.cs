@@ -9,16 +9,6 @@ using Vita.Entities.Services;
 
 namespace Vita.Entities.Logging {
 
-  public interface IActivationLog {
-    void Clear();
-    bool HasErrors { get; }
-    void Info(string message, params object[] args);
-    void Error(string message, params object[] args);
-    string GetAllAsText();
-    string FileName { get; set; }
-    void Flush(); 
-  }
-
   public class ActivationLog : IActivationLog {
     string _fileName;
     public int MaxEntries;
@@ -68,7 +58,7 @@ namespace Vita.Entities.Logging {
         try {
           var text = GetAllAsText() + Environment.NewLine;
           File.AppendAllText(_fileName, text);
-          Clear();
+          _messages.Clear(); 
         } catch(Exception ex) {
           var text = "Error saving activation log: " + ex.ToLogString();
           Trace.WriteLine(text);

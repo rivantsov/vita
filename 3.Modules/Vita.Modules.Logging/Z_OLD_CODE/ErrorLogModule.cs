@@ -26,7 +26,6 @@ namespace Vita.Modules.Logging {
       }
       try {
         var session = this.App.OpenSystemSession();
-        session.DisableStoredProcs(); //as a precaution, taking simpler path, in case something wrong with stored procs 
         var errInfo = session.NewEntity<IErrorLog>();
         errInfo.CreatedOn = App.TimeService.UtcNow;
         errInfo.LocalTime = App.TimeService.Now;

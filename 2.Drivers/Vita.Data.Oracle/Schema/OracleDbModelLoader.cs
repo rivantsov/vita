@@ -236,7 +236,7 @@ SELECT
       c.delete_rule,
       c.deferrable is_deferrable  
     FROM all_constraints c INNER JOIN all_constraints t 
-       on c.r_constraint_name = t.constraint_name
+       on c.r_constraint_name = t.constraint_name AND c.owner = t.owner
     WHERE (c.constraint_type IN ('R')) AND {0}
     ORDER BY c.table_name, c.constraint_name";
 

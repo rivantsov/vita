@@ -16,7 +16,6 @@ namespace Vita.Entities.Services {
     void AddMember(Type entityType, string name, Type memberType, int size = 0, bool nullable = false, Attribute[] attributes = null);
     void AddIndex(Type entityType, IndexAttribute index);
     void ReplaceEntity(Type entityType, Type withEntityType);
-    void RegisterSize(string code, int size, EntityModule module = null);
     void MoveTo(EntityArea toArea, params Type[] entityTypes);
   }
 

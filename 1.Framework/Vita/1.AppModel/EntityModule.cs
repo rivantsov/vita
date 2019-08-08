@@ -128,10 +128,8 @@ namespace Vita.Entities {
     /// then by size code alone. The implicit assumption is that entity interfaces are declared in the same namespace 
     /// as the containing module.</remarks>
     public virtual void RegisterSize(string sizeCode, int size) {
-      var serv = App.GetService<IEntityModelCustomizationService>();
-      Util.Check(serv != null, "{0} not available. Initializer entity app with proper host services.", nameof(IEntityModelCustomizationService));
       var fullCode = this.GetType().Namespace + "#" + sizeCode;
-      serv.RegisterSize(sizeCode, size, this); 
+      App.SizeTable[fullCode] = size;
     }
 
     public virtual void RegisterMigrations(DbMigrationSet migrations) {

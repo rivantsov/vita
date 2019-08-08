@@ -107,7 +107,9 @@ namespace Vita.Data.Runtime {
         //Apply record updates  
         foreach (var grp in updateSet.UpdateGroups)
           foreach (var tableGrp in grp.TableGroups) {
-            switch(tableGrp.Operation) {
+            if (updateSet.InsertsIdentity && tableGrp.Table.Entity.Flags.IsSet(EntityFlags.ReferencesIdentity))
+              UpdateNewIdentityReferences(updateSet, tableGrp.Records);
+            switch (tableGrp.Operation) {
               case LinqOperation.Insert:
                 if (CanProcessMany(tableGrp)) {
                   var cmdBuilder = new DataCommandBuilder(this._driver, mode: SqlGenMode.PreferLiteral);
@@ -149,8 +151,6 @@ namespace Vita.Data.Runtime {
 
     private void SaveTableGroupRecordsOneByOne(DbUpdateTableGroup tableGrp, DataConnection conn, DbUpdateSet updateSet) {
       foreach (var rec in tableGrp.Records) {
-        if(updateSet.InsertsIdentity && rec.EntityInfo.Flags.IsSet(EntityFlags.ReferencesIdentity))
-          rec.RefreshIdentityReferences(); 
         var cmdBuilder = new DataCommandBuilder(this._driver);
         var sql = SqlFactory.GetCrudSqlForSingleRecord(tableGrp.Table, rec);
         cmdBuilder.AddRecordUpdate(sql, rec);
@@ -158,6 +158,14 @@ namespace Vita.Data.Runtime {
         ExecuteDataCommand(cmd);
       }
     }
+
+    private void UpdateNewIdentityReferences(DbUpdateSet updateSet, IList<EntityRecord> records) {
+      foreach (var rec in records)
+        if (rec.EntityInfo.Flags.IsSet(EntityFlags.ReferencesIdentity))
+          rec.RefreshIdentityReferences();
+    }
+
+
 
     private void ExecuteScheduledCommands(DataConnection conn, EntitySession session, IList<LinqCommand> commands) {
       if(commands == null || commands.Count == 0)

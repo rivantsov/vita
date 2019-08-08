@@ -106,14 +106,6 @@ namespace Vita.Entities.Services.Implementations {
     }
     #endregion
 
-    #region Sizes
-    public void RegisterSize(string code, int size, EntityModule module = null) {
-      CheckNotClosed();
-      SizeTable[code] = size;
-      var fullCode = module.Name + "#" + code;
-      SizeTable[fullCode] = size;
-    }
-    #endregion 
 
   }//class
 }

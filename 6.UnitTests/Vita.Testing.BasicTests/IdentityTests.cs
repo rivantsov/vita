@@ -40,7 +40,7 @@ namespace Vita.Testing.BasicTests.IdentityTests {
 
 
   [TestClass]
-  public class IdentityColumnsTest {
+  public class IdentityTests {
     EntityApp _app;
 
     [TestCleanup]

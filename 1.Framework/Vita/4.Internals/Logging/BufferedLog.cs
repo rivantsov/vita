@@ -11,28 +11,29 @@ namespace Vita.Entities.Logging {
   // not used yet, will be used in Web apps
 
   /// <summary>BufferedOperationLog accumulates entries internally.  </summary>
-  public class BufferedOperationLog : ILog {
-    public static int MaxEntries = 1000;
+  public class BufferedLog : IBufferingLog {
+    public int MaxEntries = 1000;
     ILogService _logService;
     LogContext _logContext; 
     ConcurrentQueue<LogEntry> _entries = new ConcurrentQueue<LogEntry>();
+    private int _errorCount;
     // ConcurrentQueue.Count is expensive property (see sources), so we track total count in our own field 'approximate count'.
     //  https://referencesource.microsoft.com/#mscorlib/system/Collections/Concurrent/ConcurrentQueue.cs
     int _approxCount;
 
-    public BufferedOperationLog(OperationContext context) : this(context.App) {
-      _logService = context.App.GetService<ILogService>();
-      _logContext = context.LogContext; 
-    }
-
-    public BufferedOperationLog(EntityApp app = null) {
-      _logService = app?.GetService<ILogService>(); 
+    public BufferedLog(LogContext context, int maxEntries = 1000, ILogService logService = null) {
+      _logContext = context;
+      MaxEntries = maxEntries;
+      _logService = logService; 
     }
 
     public void AddEntry(LogEntry entry) {
       _entries.Enqueue(entry);
       var count = Interlocked.Increment(ref _approxCount);
-      if(count > MaxEntries) {
+      if (entry.EntryType == LogEntryType.Error)
+        Interlocked.Increment(ref _errorCount);
+
+      if (count > MaxEntries) {
         if(_logService != null)
           Flush();
         else {
@@ -53,6 +54,10 @@ namespace Vita.Entities.Logging {
       var compEntry = new BatchedLogEntry(_logContext, entries);              
       _logService.AddEntry(compEntry);
     }
+
+    public int ErrorCount => _errorCount;
+
+    public IList<LogEntry> GetAll() => _entries.ToList(); 
 
     private IList<LogEntry> DequeueAll() {
       var entries = new List<LogEntry>();

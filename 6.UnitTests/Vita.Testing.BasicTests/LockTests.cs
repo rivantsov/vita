@@ -177,7 +177,7 @@ ALTER DATABASE {0} SET MULTI_USER;
       IEntitySession session = null;
       // Use context with its own buffered op log - all entries related to single load/update operation are buffered, 
       // and then flushed together at the end of loop body; so they will appear together in the output file
-      var ctx = new OperationContext(_app, log: new BufferedOperationLog(_app));
+      var ctx = new OperationContext(_app, log: new BufferedLog(_app));
 
       for(int i = 0; i < readWriteCount; i++) {
         session = ctx.OpenSession();

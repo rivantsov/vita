@@ -21,7 +21,7 @@ namespace Vita.Entities.Model.Construction {
 
   public partial class EntityModelBuilder {
     public readonly EntityModel Model;
-    public readonly ILog Log;
+    public readonly IBufferingLog Log;
 
 
     EntityModelCustomizationService _customization; 
@@ -34,7 +34,7 @@ namespace Vita.Entities.Model.Construction {
 
     public EntityModelBuilder(EntityApp app) {
       _app = app;
-      Log = _app.Log;
+      Log = _app.ActivationLog;
       _customization = (EntityModelCustomizationService) _app.GetService<IEntityModelCustomizationService>();
       Model = _app.Model = new EntityModel(_app);
 #if DEBUG
@@ -52,7 +52,7 @@ namespace Vita.Entities.Model.Construction {
       BuildEntityMembers();
       ProcessAddedMembers();
       ProcessAddedIndexes(); 
-      if(Failed())
+      if(Log.ErrorCount > 0) 
         return; 
 
       VerifyPrimaryKeys();
@@ -76,7 +76,7 @@ namespace Vita.Entities.Model.Construction {
       ComputeTopologicalIndexes();
       CollectEnumTypes();
 
-      if(Failed())
+      if (Log.ErrorCount > 0)
         return;
       Model.ModelState = EntityModelState.Completed;
       _app.AppEvents.OnModelConstructing(this);
@@ -94,10 +94,6 @@ namespace Vita.Entities.Model.Construction {
 
     internal void LogError(string message, params object[] args) {
       Log.LogError(message, args);
-    }
-
-    private bool Failed() {
-      return Log.HasErrors();
     }
 
     //Collects registered entities - creates EntityInfo objects for each entity and adds them to Model's Entities set. 

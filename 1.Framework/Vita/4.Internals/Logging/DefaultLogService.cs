@@ -38,7 +38,8 @@ namespace Vita.Entities.Logging {
     }
 
     public void RemoveListener(ILogListener listener) {
-      _listeners = _listeners.Where(li => li.Listener != listener).ToArray();
+      var lst = _listeners.ToList();
+      _listeners = lst.Where(li => li.Listener != listener).ToArray();
     }
 
   } //class 

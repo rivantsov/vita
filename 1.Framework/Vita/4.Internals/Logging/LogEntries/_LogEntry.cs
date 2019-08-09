@@ -25,6 +25,8 @@ namespace Vita.Entities.Logging {
 
   // some information shared between multiple log entries; copied from OperationContext
   public class LogContext {
+    public static LogContext SystemLogContext = new LogContext() { User = UserInfo.System };
+
     public UserInfo User; 
     public Guid? SessionId;
     public ProcessType ProcessType;

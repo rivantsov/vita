@@ -19,7 +19,8 @@ namespace Vita.Entities.Logging {
   }
 
   public interface IBufferingLog : ILog {
-    IList<LogEntry> GetAll(); 
+    IList<LogEntry> GetAll();
+    int ErrorCount { get; }
   }
 
 

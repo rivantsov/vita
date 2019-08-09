@@ -75,7 +75,7 @@ namespace Vita.Web {
         IPAddress = httpContext.Connection.RemoteIpAddress.ToString()
       };
       var opCtx = new OperationContext(this.App, 
-        log: new BufferedOperationLog(this.App),
+        log: new BufferedLog(this.App),
         connectionMode: this.Settings.ConnectionReuseMode);
       var webCtx = opCtx.WebContext = new WebCallContext(opCtx, httpContext, reqInfo);
       httpContext.SetWebCallContext(webCtx);

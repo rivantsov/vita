@@ -75,7 +75,7 @@ namespace Vita.Entities {
 
     public Sizes.SizeTable SizeTable = Sizes.GetDefaultSizes();
 
-    public ILog Log; 
+    public IBufferingLog ActivationLog; 
     /// <summary>Gets or sets a path for the activation log file. </summary>
     /// <remarks>System log contains messages/errors regarding app startup/connect/shutdown events. </remarks>
     public string ActivationLogPath { get; set; }
@@ -102,8 +102,8 @@ namespace Vita.Entities {
     /// <summary>Entity model. Initially null, available after the app is initialized. </summary>
     public EntityModel Model { get; internal set; }
 
-    private IDictionary<Type, object> _services;
-    private object _lock = new object();
+    private readonly IDictionary<Type, object> _services;
+    private readonly object _lock = new object();
 
     /// <summary> Constructs a new EntityApp instance. </summary>
     public EntityApp(string appName = null, string version = "1.0.0.0", string activationLogPath = null) {
@@ -115,6 +115,12 @@ namespace Vita.Entities {
       AppEvents = new EntityAppEvents(this);
       DataSourceEvents = new DataSourceEvents(this); 
       AppDomain.CurrentDomain.DomainUnload += CurrentDomain_DomainUnload;
+
+      //Setup log
+      var logService = new DefaultLogService();
+      _services[typeof(ILogService)] = logService;
+      ActivationLog = new BufferedLog(LogContext.SystemLogContext, 10000, logService);
+
       // Time service and Timers service  are global singletons, we register these here, as early as possible
       this.TimeService = this.RegisterService<ITimeService>(Vita.Entities.Services.Implementations.TimeService.Instance);
       var timers = this.RegisterService<ITimerService>(new TimerService());
@@ -276,7 +282,7 @@ namespace Vita.Entities {
 
     /// <summary>Fires an event requesting all logging facilities to flush buffers. </summary>
     public void Flush() {
-      Log.Flush(); 
+      ActivationLog.Flush(); 
       foreach(var linkedApp in LinkedApps)
         linkedApp.Flush();
       AppEvents.OnFlushRequested();
@@ -335,7 +341,7 @@ namespace Vita.Entities {
     /// <summary>Performs the shutdown of the application. Notifies all components and modules about pending application shutdown. 
     /// </summary>
     public virtual void Shutdown() {
-      Log.WriteMessage("Shutting down app {0}. =======================\r\n\r\n", AppName);
+      ActivationLog.WriteMessage("Shutting down app {0}. =======================\r\n\r\n", AppName);
       Flush();
 
       if (_shutdownTokenSource != null) {

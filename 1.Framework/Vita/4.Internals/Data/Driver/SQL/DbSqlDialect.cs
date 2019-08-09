@@ -339,7 +339,7 @@ namespace Vita.Data.Driver {
       }
     }
 
-    public virtual DbTableFilter BuildDbTableFilter(DbTableInfo tbl, EntityFilter entityFilter, IActivationLog log = null) {
+    public virtual DbTableFilter BuildDbTableFilter(DbTableInfo tbl, EntityFilter entityFilter, ILog log = null) {
       var dbFilter = new DbTableFilter() { EntityFilter = entityFilter };
       var colList = new List<DbColumnInfo>();
       // setup columns
@@ -354,7 +354,7 @@ namespace Vita.Data.Driver {
           if(log == null)
             Util.Throw("Index/key filter on entity {0}: member/column {1} not found. Filter: {2}", tbl.Entity.Name, mName, templ);
           else
-            log.Error("Index/key filter on entity {0}: member/column {1} not found. Filter: {2}", tbl.Entity.Name, mName, templ);
+            log.LogError("Index/key filter on entity {0}: member/column {1} not found. Filter: {2}", tbl.Entity.Name, mName, templ);
 
         } //else
       }//foreach

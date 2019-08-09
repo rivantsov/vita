@@ -76,7 +76,7 @@ namespace Vita.Entities.Model.Construction {
     }
 
 
-    public static bool TryParseKeySpec(this EntityInfo entity, string keySpec, IActivationLog log, out List<EntityKeyMemberInfo> parsedKeyMembers, 
+    public static bool TryParseKeySpec(this EntityInfo entity, string keySpec, ILog log, out List<EntityKeyMemberInfo> parsedKeyMembers, 
           bool ordered, EntityInfo specHolder = null) {
       specHolder = specHolder ?? entity; 
       var specs = StringHelper.SplitNames(keySpec);
@@ -87,7 +87,7 @@ namespace Vita.Entities.Model.Construction {
         if(ordered) {
           parts = StringHelper.SplitNames(spec, ':');
           if(parts.Length > 2) {
-            log.Error("Invalid key/order spec '{0}', entity {1}; only single : char is allowed.", keySpec, specHolder.EntityType);
+            log.LogError("Invalid key/order spec '{0}', entity {1}; only single : char is allowed.", keySpec, specHolder.EntityType);
             return false; 
           }
           string strDesc = parts.Length == 1 ? "asc" : parts[1];
@@ -95,7 +95,7 @@ namespace Vita.Entities.Model.Construction {
             case "":  case "asc": desc = false; break;
             case "desc": desc = true; break; 
             default:
-              log.Error("Invalid key/order spec '{0}', entity {1}. Expected ':asc' or ':desc' as direction specification.", keySpec, specHolder.EntityType);
+              log.LogError("Invalid key/order spec '{0}', entity {1}. Expected ':asc' or ':desc' as direction specification.", keySpec, specHolder.EntityType);
               return false; 
           }//switch
         }//if ordered
@@ -103,7 +103,7 @@ namespace Vita.Entities.Model.Construction {
           parts = new string[] { spec, null };
         var member = entity.GetMember(parts[0]);
         if(member == null) {
-          log.Error("Invalid key/order spec '{0}', entity {1}. member {2} not found.", keySpec, specHolder.EntityType, parts[0]);
+          log.LogError("Invalid key/order spec '{0}', entity {1}. member {2} not found.", keySpec, specHolder.EntityType, parts[0]);
           return false; 
         }
         parsedKeyMembers.Add(new EntityKeyMemberInfo(member, desc));
@@ -112,7 +112,7 @@ namespace Vita.Entities.Model.Construction {
     }
 
 
-    public static EntityMemberInfo FindEntityRefMember(this EntityInfo inEntity, string memberNameToFind, Type typeToFind, EntityMemberInfo listMember, IActivationLog log) {
+    public static EntityMemberInfo FindEntityRefMember(this EntityInfo inEntity, string memberNameToFind, Type typeToFind, EntityMemberInfo listMember, ILog log) {
       IList<EntityMemberInfo> refMembers;
       if (!string.IsNullOrEmpty(memberNameToFind)) {
         refMembers = inEntity.Members.FindAll(m => m.MemberName == memberNameToFind);
@@ -124,10 +124,10 @@ namespace Vita.Entities.Model.Construction {
       //Report error
       var listMemberDesc = listMember.Entity.FullName + "." + listMember.MemberName;
       if (refMembers.Count == 0)
-        log.Error("EntityList member {0}: could not find matching foreign key member in target entity {1}. ",
+        log.LogError("EntityList member {0}: could not find matching foreign key member in target entity {1}. ",
           listMemberDesc, inEntity.EntityType);
       if (refMembers.Count > 1)
-        log.Error("EntityList member {0}: more than one matching foreign key member in target entity {1}. ",
+        log.LogError("EntityList member {0}: more than one matching foreign key member in target entity {1}. ",
           listMemberDesc, inEntity.EntityType);
       return null;
     }

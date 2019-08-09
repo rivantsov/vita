@@ -33,10 +33,10 @@ namespace Vita.Entities {
   public partial class ComputedAttribute {
     private MethodInfo _method;
 
-    public override void Validate(IActivationLog log) {
+    public override void Validate(ILog log) {
       base.Validate(log);
       if(HostMember.ClrMemberInfo.HasSetter())
-        log.Error("Computed property {0}.{1} may not have a setter, it is readonly.",
+        log.LogError("Computed property {0}.{1} may not have a setter, it is readonly.",
           HostEntity.EntityType, HostMember.MemberName);
     }
 
@@ -47,7 +47,7 @@ namespace Vita.Entities {
       var bFlags = BindingFlags.Instance | BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic;
       _method = this.MethodClass.GetMethod(this.MethodName, bFlags);
       if(_method == null) {
-        builder.Log.Error("Method {0} for computed column {1} not found in type {2}",
+        builder.Log.LogError("Method {0} for computed column {1} not found in type {2}",
           this.MethodName, HostMember.MemberName, this.MethodClass);
         return;
       }
@@ -67,10 +67,10 @@ namespace Vita.Entities {
   }// class
 
   public partial class PersistOrderInAttribute {
-    public override void Validate(IActivationLog log) {
+    public override void Validate(ILog log) {
       base.Validate(log);
       if(HostMember.Kind != EntityMemberKind.EntityList)
-        log.Error("PersistOrderIn attribute may be specified only on list members. Member: {0}.{1}.",
+        log.LogError("PersistOrderIn attribute may be specified only on list members. Member: {0}.{1}.",
           HostEntity.EntityType, HostMember.MemberName);
     }
 
@@ -88,13 +88,13 @@ namespace Vita.Entities {
       //check that there is a member 
       var orderMember = orderedEntity.GetMember(this.Property);
       if(orderMember == null) {
-        builder.Log.Error("Property '{0}' referenced in PersistOrderIn attribute on entity {1} not found in entity {2}.",
+        builder.Log.LogError("Property '{0}' referenced in PersistOrderIn attribute on entity {1} not found in entity {2}.",
           this.Property, HostEntity.Name, orderedEntity.Name);
         return;
       }
       //current limitation - index property must be int32 only
       if(orderMember.DataType != typeof(Int32)) {
-        builder.Log.Error("Invalid data type ({0}) for property '{1}' referenced in PersistOrderIn attribute on entity {2}: must be Int32.",
+        builder.Log.LogError("Invalid data type ({0}) for property '{1}' referenced in PersistOrderIn attribute on entity {2}: must be Int32.",
           orderMember.DataType.Name, this.Property, HostEntity.EntityType);
         return;
       }
@@ -109,16 +109,16 @@ namespace Vita.Entities {
 
   public partial class OrderByAttribute {
 
-    public override void Validate(IActivationLog log) {
+    public override void Validate(ILog log) {
       base.Validate(log);
       if(HostMember != null && HostMember.Kind != EntityMemberKind.EntityList) {
-        log.Error("OrderBy attribute may be used only on entities or list properties. Property: {0}", this.GetHostRef());
+        log.LogError("OrderBy attribute may be used only on entities or list properties. Property: {0}", this.GetHostRef());
       }
     }
 
     public override void ApplyOnEntity(EntityModelBuilder builder) {
       if(HostEntity.DefaultOrderBy != null) {
-        builder.Log.Error("More than one OrderBy attribute in entity {0}.", HostEntity.Name);
+        builder.Log.LogError("More than one OrderBy attribute in entity {0}.", HostEntity.Name);
       }
       if(!EntityModelBuilderHelper.TryParseKeySpec(HostEntity, this.OrderByList, builder.Log, out HostEntity.DefaultOrderBy,
         ordered: true, specHolder: HostEntity))
@@ -126,7 +126,7 @@ namespace Vita.Entities {
       //Check that they are real cols
       foreach(var ordM in HostEntity.DefaultOrderBy) {
         if(ordM.Member.Kind != EntityMemberKind.Column)
-          builder.Log.Error("Invalid property {0} in OrderBy attribute in entity {1} - must be a simple value column.",
+          builder.Log.LogError("Invalid property {0} in OrderBy attribute in entity {1} - must be a simple value column.",
             ordM.Member.MemberName, HostEntity.Name);
       }
     }//method
@@ -144,10 +144,10 @@ namespace Vita.Entities {
 
   public partial class PropertyGroupAttribute {
 
-    public override void Validate(IActivationLog log) {
+    public override void Validate(ILog log) {
       base.Validate(log);
       if(string.IsNullOrWhiteSpace(this.GroupName))
-        log.Error("Group name may not be empty. Entity: {0}.", HostEntity.Name);
+        log.LogError("Group name may not be empty. Entity: {0}.", HostEntity.Name);
     }
 
     public override void ApplyOnEntity(EntityModelBuilder builder) {
@@ -155,7 +155,7 @@ namespace Vita.Entities {
       foreach(var name in names) {
         var member = HostEntity.GetMember(name);
         if(member == null) {
-          builder.Log.Error("PropertyGroup '{0}', entity {1}: member {2} not found.", this.GroupName, HostEntity.Name, name);
+          builder.Log.LogError("PropertyGroup '{0}', entity {1}: member {2} not found.", this.GroupName, HostEntity.Name, name);
           return;
         }
         var grp = HostEntity.GetPropertyGroup(this.GroupName, create: true);
@@ -166,10 +166,10 @@ namespace Vita.Entities {
   } //class
 
   public partial class GroupsAttribute {
-    public override void Validate(IActivationLog log) {
+    public override void Validate(ILog log) {
       base.Validate(log);
       if(string.IsNullOrWhiteSpace(this.GroupNames))
-        log.Error("Groups value may not be empty, entity {0}.", HostEntity.EntityType);
+        log.LogError("Groups value may not be empty, entity {0}.", HostEntity.EntityType);
     }
 
     public override void ApplyOnMember(EntityModelBuilder builder) {
@@ -199,11 +199,11 @@ namespace Vita.Entities {
   public partial class DateOnlyAttribute {
     private Action<EntityRecord, EntityMemberInfo, object> _defaultSetter;
 
-    public override void Validate(IActivationLog log) {
+    public override void Validate(ILog log) {
       base.Validate(log);
       var dataType = HostMember.DataType;
       if(HostMember.DataType != typeof(DateTime) && HostMember.DataType != typeof(DateTime?))
-        log.Error("Property {0}.{1}: DateOnly attribute may be specified only on DataTime properties. ",
+        log.LogError("Property {0}.{1}: DateOnly attribute may be specified only on DataTime properties. ",
           HostEntity.Name, HostMember.MemberName);
     }
 
@@ -230,11 +230,11 @@ namespace Vita.Entities {
     Func<EntityRecord, EntityMemberInfo, object> _defaultGetter;
     Action<EntityRecord, EntityMemberInfo, object> _defaultSetter;
 
-    public override void Validate(IActivationLog log) {
+    public override void Validate(ILog log) {
       base.Validate(log);
       var dataType = HostMember.DataType;
       if(HostMember.DataType != typeof(DateTime) && HostMember.DataType != typeof(DateTime?))
-        log.Error("Property {0}.{1}: Utc attribute may be specified only on DataTime properties. ",
+        log.LogError("Property {0}.{1}: Utc attribute may be specified only on DataTime properties. ",
           HostEntity.Name, HostMember.MemberName);
     }
 
@@ -297,7 +297,7 @@ namespace Vita.Entities {
       foreach(var name in namesArr) {
         var targetMember = HostEntity.GetMember(name);
         if(targetMember == null) {
-          builder.Log.Error("Member {0} referenced in DependsOn attribute on member {1}.{2} not found.", name,
+          builder.Log.LogError("Member {0} referenced in DependsOn attribute on member {1}.{2} not found.", name,
             HostEntity.Name, HostMember.MemberName);
           return;
         }
@@ -319,7 +319,7 @@ namespace Vita.Entities {
     public override void ApplyOnEntity(EntityModelBuilder builder) {
       _method = this.MethodClass.GetMethod(this.MethodName);
       if(_method == null) {
-        builder.Log.Error("Method {0} specified as Validation method for entity {1} not found in type {2}",
+        builder.Log.LogError("Method {0} specified as Validation method for entity {1} not found in type {2}",
             this.MethodName, HostEntity.EntityType, this.MethodClass);
         return;
       }
@@ -334,10 +334,10 @@ namespace Vita.Entities {
   public partial class PropagateUpdatedOnAttribute {
     Action<EntityRecord, EntityMemberInfo, object> _defaultValueSetter;
 
-    public override void Validate(IActivationLog log) {
+    public override void Validate(ILog log) {
       base.Validate(log);
       if(HostMember.Kind != EntityMemberKind.EntityRef)
-        log.Error(
+        log.LogError(
           "PropagateUpdatedOn attribute may be used only on properties that are references to other entities. Property: {0}",
             GetHostRef());
     }
@@ -375,27 +375,27 @@ namespace Vita.Entities {
     Action<EntityRecord, EntityMemberInfo, object> _oldSetter;
     IHashingService _hashingService;
 
-    public override void Validate(IActivationLog log) {
+    public override void Validate(ILog log) {
       base.Validate(log);
       if(string.IsNullOrEmpty(this.PropertyName))
-        log.Error("HashFor attribute - PropertyName must be specified. Entity/property: {0}.{1}.",
+        log.LogError("HashFor attribute - PropertyName must be specified. Entity/property: {0}.{1}.",
           HostEntity.Name, HostMember.MemberName);
     }
 
     public override void ApplyOnMember(EntityModelBuilder builder) {
       if(HostMember.DataType != typeof(int)) {
-        builder.Log.Error("HashFor attribute can be used only on int properties. Entity/property: {0}.{1}.",
+        builder.Log.LogError("HashFor attribute can be used only on int properties. Entity/property: {0}.{1}.",
           HostEntity.Name, HostMember.MemberName);
         return;
       }
       _hashedMember = HostEntity.GetMember(this.PropertyName);
       if(_hashedMember == null) {
-        builder.Log.Error("Property {0} referenced in HashFor attribute on property {1} not found on entity {2}.",
+        builder.Log.LogError("Property {0} referenced in HashFor attribute on property {1} not found on entity {2}.",
           this.PropertyName, HostMember.MemberName, HostEntity.Name);
         return;
       }
       if(_hashedMember.DataType != typeof(string)) {
-        builder.Log.Error("HashFor attribute on property {0}.{1}: target property must be of string type.",
+        builder.Log.LogError("HashFor attribute on property {0}.{1}: target property must be of string type.",
           HostEntity.Name, HostMember.MemberName);
         return;
       }
@@ -448,7 +448,7 @@ namespace Vita.Entities {
       if(this.MethodClass != null && this.MethodName != null) {
         _customMethodInfo = this.MethodClass.GetMethod(MethodName);
         if(_customMethodInfo == null) {
-          builder.Log.Error("Method {0} specified as Display method for entity {1} not found in type {2}",
+          builder.Log.LogError("Method {0} specified as Display method for entity {1} not found in type {2}",
               MethodName, HostEntity.EntityType, this.MethodClass);
           return;
         }
@@ -457,7 +457,7 @@ namespace Vita.Entities {
       }
       //Check if Format provided
       if(string.IsNullOrEmpty(this.Format)) {
-        builder.Log.Error("Invalid Display attribute on entity {0}. You must provide method reference or non-empty Format value.",
+        builder.Log.LogError("Invalid Display attribute on entity {0}. You must provide method reference or non-empty Format value.",
             HostEntity.EntityType);
         return;
       }
@@ -469,7 +469,7 @@ namespace Vita.Entities {
         var propSeq = prop.SplitNames('.');
         var member = HostEntity.GetMember(propSeq[0]);
         if(member == null) {
-          builder.Log.Error("Invalid Format expression in Display attribute on entity {0}. Property {1} not found.",
+          builder.Log.LogError("Invalid Format expression in Display attribute on entity {0}. Property {1} not found.",
             HostEntity.EntityType, propSeq[0]);
           return;
         }
@@ -521,10 +521,10 @@ namespace Vita.Entities {
 
   public partial class CascadeDeleteAttribute {
 
-    public override void Validate(IActivationLog log) {
+    public override void Validate(ILog log) {
       base.Validate(log);
       if(HostMember.Kind != EntityMemberKind.EntityRef)
-        log.Error("CascadeDelete attribute may be used only on properties that are references to other entities. Property: {0}.",
+        log.LogError("CascadeDelete attribute may be used only on properties that are references to other entities. Property: {0}.",
           GetHostRef());
     }
     public override void ApplyOnMember(EntityModelBuilder builder) {
@@ -545,10 +545,10 @@ namespace Vita.Entities {
   }
 
   public partial class GrantAccessAttribute {
-    public override void Validate(IActivationLog log) {
+    public override void Validate(ILog log) {
       base.Validate(log);
       if(HostMember.Kind != EntityMemberKind.EntityRef)
-        log.Error(
+        log.LogError(
           "GrantAccess attribute may be used only on properties that are references to other entities. Property: {0}",
             GetHostRef());
     }
@@ -589,7 +589,7 @@ namespace Vita.Entities {
         //check full code with module's namespace prefix or short size code
         var fullCode = Sizes.GetFullSizeCode(HostMember.Entity.EntityType.Namespace, this.SizeCode); 
         if (!sizeTable.TryGetValue(fullCode, out size) && !sizeTable.TryGetValue(this.SizeCode, out size)) {
-          builder.Log.Error("Unknown size code '{0}', entity/member: {1}.{2}", this.SizeCode, HostEntity.Name, HostMember.MemberName);
+          builder.Log.LogError("Unknown size code '{0}', entity/member: {1}.{2}", this.SizeCode, HostEntity.Name, HostMember.MemberName);
           return; 
         } 
         HostMember.Size = size;
@@ -637,7 +637,7 @@ namespace Vita.Entities {
   public partial class OneToOneAttribute {
     EntityInfo _targetEntity;
 
-    public override void Validate(IActivationLog log) {
+    public override void Validate(ILog log) {
       // We set Kind to Transient to prevent treating the member as regular entity reference by model builder
       HostMember.Kind = EntityMemberKind.Transient;
       base.Validate(log);
@@ -646,7 +646,7 @@ namespace Vita.Entities {
     public override void ApplyOnMember(EntityModelBuilder builder) {
       // It is initially assigned EntityRef
       if(!builder.Model.IsEntity(HostMember.DataType)) {
-        builder.Log.Error("{0} attribute may be used only on properties that are references to other entities. Property: {1}",
+        builder.Log.LogError("{0} attribute may be used only on properties that are references to other entities. Property: {1}",
            this.GetType().Name,  GetHostRef());
         return;
       }
@@ -658,7 +658,7 @@ namespace Vita.Entities {
       var targetPkMembers = _targetEntity.PrimaryKey.KeyMembers;
       var isOk = targetPkMembers.Count == 1 && targetPkMembers[0].Member.DataType == HostEntity.EntityType;
       if(!isOk) {
-        builder.Log.Error("OneToOne property {0}: target entity must have Primary key pointing back to entity {0}.", GetHostRef(), HostEntity.EntityType.Name);
+        builder.Log.LogError("OneToOne property {0}: target entity must have Primary key pointing back to entity {0}.", GetHostRef(), HostEntity.EntityType.Name);
         return;
       }
       HostMember.GetValueRef = GetValue;
@@ -699,7 +699,7 @@ namespace Vita.Entities {
       var member = base.HostMember;
       var type = Nullable.GetUnderlyingType(member.DataType) ?? member.DataType;
       if(type != typeof(long) && type != typeof(ulong)) {
-        builder.Log.Error("TransactionId attribute may be used only on properties of type long or ulong.");
+        builder.Log.LogError("TransactionId attribute may be used only on properties of type long or ulong.");
         return;
       }
       member.Flags |= EntityMemberFlags.IsSystem;

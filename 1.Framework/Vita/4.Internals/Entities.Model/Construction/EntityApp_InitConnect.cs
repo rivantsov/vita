@@ -24,7 +24,7 @@ namespace Vita.Entities {
 
       Status = EntityAppStatus.Initializing;
       CreateLogFileWriters();
-      ActivationLog.Info("Initializing EntityApp {0}.====================================", this.AppName);
+      Log.WriteMessage("Initializing EntityApp {0}.====================================", this.AppName);
       this.AppEvents.OnInitializing(EntityAppInitStep.Initializing);
       //Check dependencies
       foreach(var mod in this.Modules) {
@@ -32,10 +32,10 @@ namespace Vita.Entities {
         foreach(var dep in depList) {
           var ok = Modules.Any(m => dep.IsTypeOrSubType(m));
           if(!ok)
-            ActivationLog.Error("Module {0} requires dependent module {1} which is not included in the app.", mod.GetType(), dep);
+            Log.LogError("Module {0} requires dependent module {1} which is not included in the app.", mod.GetType(), dep);
         }
       }
-      ActivationLog.CheckErrors(); 
+      Log.CheckErrors(); 
       // Init linked apps 
       foreach(var linkedApp in LinkedApps)
         if (linkedApp.Status == EntityAppStatus.Created)
@@ -44,7 +44,7 @@ namespace Vita.Entities {
       //Build model
       var builder = new EntityModelBuilder(this);
       builder.BuildModel();
-      ActivationLog.CheckErrors(); 
+      Log.CheckErrors(); 
       //Notify modules that entity app is constructed
       foreach(var module in this.Modules)
         module.Init();
@@ -63,7 +63,7 @@ namespace Vita.Entities {
 
       builder.CheckErrors();
       Status = EntityAppStatus.Initialized;
-      ActivationLog.Info("App {0} initialized.", this.AppName);
+      Log.WriteMessage("App {0} initialized.", this.AppName);
     }
 
     protected void CreateLogFileWriters() {
@@ -88,22 +88,22 @@ namespace Vita.Entities {
         case EntityAppStatus.Shutdown:
           return;
       } 
-      ActivationLog.Info("  Connecting to data source {0}.", dbSettings.DataSourceName);
+      Log.WriteMessage("  Connecting to data source {0}.", dbSettings.DataSourceName);
       dbSettings.CheckConnectivity(rethrow: true);
-      var dbModel = GetCreateDbModel(dbSettings, ActivationLog);
+      var dbModel = GetCreateDbModel(dbSettings, Log);
       var db = new Database(dbModel, dbSettings);      
       var ds = new DataSource(dbSettings.DataSourceName, db);
       this.DataAccess.RegisterDataSource(ds);
       this.DataSourceEvents.OnDataSourceChange(new DataSourceEventArgs(db, dbSettings.DataSourceName, DataSourceEventType.Connecting));
       CheckUpgradeDatabase(db);
-      ActivationLog.Flush(); 
+      Log.Flush(); 
       this.Status = EntityAppStatus.Connected;
       this.DataSourceEvents.OnDataSourceChange(new DataSourceEventArgs(db, dbSettings.DataSourceName, DataSourceEventType.Connected));
-      ActivationLog.Info("Connected to {0}.", dbSettings.DataSourceName);
-      ActivationLog.Flush();
+      Log.WriteMessage("Connected to {0}.", dbSettings.DataSourceName);
+      Log.Flush();
     }
 
-    protected virtual DbModel GetCreateDbModel(DbSettings settings, IActivationLog log) {
+    protected virtual DbModel GetCreateDbModel(DbSettings settings, ILog log) {
       DbModel dbModel = null; 
       //Check if model is shared
       var dbModelConfig = settings.ModelConfig;
@@ -125,11 +125,11 @@ namespace Vita.Entities {
       //Invoke upgrade
       // Update db model
       if(db.Settings.UpgradeMode == DbUpgradeMode.Never) {
-        ActivationLog.Info("Data source upgrade mode set to Never, skipping db upgrade.");
+        Log.WriteMessage("Data source upgrade mode set to Never, skipping db upgrade.");
         return; 
       }
       // upgrade
-      var updateMgr = new DbUpgradeManager(db, ActivationLog);
+      var updateMgr = new DbUpgradeManager(db, Log);
       var upgradeInfo = updateMgr.UpgradeDatabase(); //it might throw exception
       // _events.OnDataSourceStatusChanging(new DataSourceEventArgs(dataSource, DataSourceEventType.Connected));
     }

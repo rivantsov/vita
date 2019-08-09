@@ -20,11 +20,11 @@ namespace Vita.Data.Upgrades {
   public class DbUpgradeManager {
     EntityApp _app; 
     Database _database;
-    IActivationLog _log;
+    ILog _log;
     IDbInfoService _dbInfoService; 
     DbUpgradeInfo _upgradeInfo;
 
-    public DbUpgradeManager(Database database, IActivationLog log) {
+    public DbUpgradeManager(Database database, ILog log) {
       _database = database;
       _log = log;
       _app = _database.DbModel.EntityApp; 
@@ -128,7 +128,7 @@ namespace Vita.Data.Upgrades {
         OnHigherVersionDetected();
         var error = Util.SafeFormat(
           "Downgrade detected: database version ({0}) is higher than EntityApp version ({1}). Activation canceled.", oldDbVersion.Version, appVersion);
-        _log.Error(error);
+        _log.LogError(error);
         return false; 
       }
       switch (_database.Settings.UpgradeMode) {
@@ -150,8 +150,8 @@ namespace Vita.Data.Upgrades {
     public void ApplyUpgrades() {
       OnUpgrading();
       var scriptsStr = string.Join(Environment.NewLine, _upgradeInfo.AllScripts);
-      _log.Info("Applying DB Upgrades, {0} scripts. -----------------------------", _upgradeInfo.AllScripts.Count);
-      _log.Info(scriptsStr);
+      _log.WriteMessage("Applying DB Upgrades, {0} scripts. -----------------------------", _upgradeInfo.AllScripts.Count);
+      _log.WriteMessage(scriptsStr);
       _upgradeInfo.StartedOn = _app.TimeService.UtcNow;
       var driver = _database.DbModel.Driver;
       var conn = driver.CreateConnection(_database.Settings.SchemaManagementConnectionString);
@@ -175,12 +175,12 @@ namespace Vita.Data.Upgrades {
         }
         _upgradeInfo.EndedOn = _app.TimeService.UtcNow; 
         OnUpgraded(_upgradeInfo.AllScripts);
-        _log.Info("Database upgraded successfully. ---------------------------");
+        _log.WriteMessage("Database upgraded successfully. ---------------------------");
       } catch (Exception ex) {
         OnUpgraded(appliedScripts, ex, currScript);
         var logStr = ex.ToLogString();
         System.Diagnostics.Debug.WriteLine(logStr);
-        _log.Error(logStr);
+        _log.LogError(logStr);
         throw;
       } finally {
         if(cmd != null) {

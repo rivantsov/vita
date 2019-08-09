@@ -25,7 +25,7 @@ namespace Vita.Entities.Model.Construction {
       var targetType = member.DataType;
       var targetEntity = this.Model.GetEntityInfo(targetType);
       if(targetEntity == null) {
-        Log.Error("Reference property {0}: target entity not found: {1}", propName, targetType);
+        Log.LogError("Reference property {0}: target entity not found: {1}", propName, targetType);
         return;
       }
 
@@ -36,12 +36,12 @@ namespace Vita.Entities.Model.Construction {
       if(!string.IsNullOrEmpty(targetUniqueIndexAlias)) {
         targetKey = FindCreateKeyByAlias(targetEntity, targetUniqueIndexAlias);
         if(targetKey == null) {
-          Log.Error("Property {0}: Invalid target index alias '{1}' in EntityRef attrribute, index not found on target entity {2}.",
+          Log.LogError("Property {0}: Invalid target index alias '{1}' in EntityRef attrribute, index not found on target entity {2}.",
             propName, targetUniqueIndexAlias, targetEntity.EntityType);
           return;
         }
         if(!targetKey.KeyType.IsSet(KeyType.Unique)) {
-          Log.Error("Property {0}: Invalid target Index in EntityRef attrribute; Index {1} is not Unique.", propName, targetUniqueIndexAlias);
+          Log.LogError("Property {0}: Invalid target Index in EntityRef attrribute; Index {1} is not Unique.", propName, targetUniqueIndexAlias);
           return;
         }
       }
@@ -81,7 +81,7 @@ namespace Vita.Entities.Model.Construction {
       listInfo.LinkEntity = this.Model.GetEntityInfo(linkEntityType, true);
       listInfo.ParentRefMember = listInfo.LinkEntity.FindEntityRefMember(attr.ThisEntityRef, member.Entity.EntityType, member, this.Log);
       if(listInfo.ParentRefMember == null) {
-        this.Log.Error("Many-to-many setup error: back reference to entity {0} not found in link entity {1}.", 
+        this.Log.LogError("Many-to-many setup error: back reference to entity {0} not found in link entity {1}.", 
              member.Entity.EntityType, linkEntityType);
         return;
       }
@@ -102,7 +102,7 @@ namespace Vita.Entities.Model.Construction {
       if(!string.IsNullOrEmpty(thisEntRefName)) {
         var fkMember = listInfo.TargetEntity.GetMember(thisEntRefName);
         if(fkMember == null) {
-          this.Log.Error("Entity list member {0}: could not find property '{1}' in target entity. ", 
+          this.Log.LogError("Entity list member {0}: could not find property '{1}' in target entity. ", 
             member.ToString(), thisEntRefName);
           return;
         }
@@ -114,7 +114,7 @@ namespace Vita.Entities.Model.Construction {
       }
       //Check that reference is found
       if (listInfo.ParentRefMember == null)
-        this.Log.Error("EntityList member {0}: could not find reference property in target entity. ", member.ToString());
+        this.Log.LogError("EntityList member {0}: could not find reference property in target entity. ", member.ToString());
       else
         //Set back reference to list from ref member
         listInfo.ParentRefMember.ReferenceInfo.TargetListMember = member;
@@ -125,13 +125,13 @@ namespace Vita.Entities.Model.Construction {
         */
     } //method
 
-    public static EntityFilter ParseFilter(string listFilter, EntityInfo entity, IActivationLog log) {
+    public static EntityFilter ParseFilter(string listFilter, EntityInfo entity, ILog log) {
       //Safely parse template - parse throws exc
       StringTemplate template;
       try {
         template = StringTemplate.Parse(listFilter);
       } catch(Exception ex) {
-        log.Error(entity.Name + ", error in list filter: " + ex.Message);
+        log.LogError(entity.Name + ", error in list filter: " + ex.Message);
         return null;
       }
       // map names to members
@@ -139,7 +139,7 @@ namespace Vita.Entities.Model.Construction {
       foreach(var name in template.ArgNames) {
         var member = entity.FindMemberOrColumn(name);
         if(member == null)
-          log.Error("Entity {0}, error in filter expression, member/column {1} not found. ", entity.Name, name);
+          log.LogError("Entity {0}, error in filter expression, member/column {1} not found. ", entity.Name, name);
         else
           members.Add(member); 
       }

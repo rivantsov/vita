@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using Vita.Entities.Logging;
 using Vita.Entities.Model;
 using Vita.Entities.Model.Construction;
 using Vita.Entities.Runtime;
@@ -24,7 +25,7 @@ namespace Vita.Entities {
           // apparently MS SQL allows this
           var intOrDec = base.HostMember.DataType.IsInt() || base.HostMember.DataType == typeof(Decimal);
           if (!intOrDec) {
-            builder.Log.Error("Entity member {0}.{1}, type {2}: Identity attribute may be set only on member of integer or decimal types. ",
+            builder.Log.LogError("Entity member {0}.{1}, type {2}: Identity attribute may be set only on member of integer or decimal types. ",
               HostEntity, base.HostMember.MemberName, this.Type);
             return;
           }
@@ -34,22 +35,22 @@ namespace Vita.Entities {
 
         case AutoType.Sequence:
           if (!base.HostMember.DataType.IsInt()) {
-            builder.Log.Error("Entity member {0}.{1}, type {2}: Sequence attribute may be set only on member of integer types. ",
+            builder.Log.LogError("Entity member {0}.{1}, type {2}: Sequence attribute may be set only on member of integer types. ",
               HostEntity, HostMember.MemberName, this.Type);
             return;
           }
           if (string.IsNullOrWhiteSpace(this.SequenceName)) {
-            builder.Log.Error("Entity member {0}.{1}: Sequence name must be specified.", HostEntity, HostMember.MemberName);
+            builder.Log.LogError("Entity member {0}.{1}: Sequence name must be specified.", HostEntity, HostMember.MemberName);
             return;
           }
           _sequence = builder.Model.FindSequence(this.SequenceName, HostEntity.Module);
           if (_sequence == null) {
-            builder.Log.Error("Entity member {0}.{1}: Sequence {0} not defined.",
+            builder.Log.LogError("Entity member {0}.{1}: Sequence {0} not defined.",
                                 HostEntity, HostMember.MemberName, this.SequenceName);
             return;
           }
           if (_sequence.DataType != base.HostMember.DataType) {
-            builder.Log.Error("Entity member {0}.{1}: data type {2} does not match sequence '{3}' data type {4}.",
+            builder.Log.LogError("Entity member {0}.{1}: data type {2} does not match sequence '{3}' data type {4}.",
               HostEntity, HostMember.MemberName, HostMember.DataType, this.SequenceName, _sequence.DataType);
             return;
           }
@@ -58,7 +59,7 @@ namespace Vita.Entities {
 
         case AutoType.NewGuid:
           if (!CheckDataType(builder, typeof(Guid))) {
-            builder.Log.Error("Entity member {0}.{1}: Auto attribute with AutoType=NewGuid must be on Guid-type member.",
+            builder.Log.LogError("Entity member {0}.{1}: Auto attribute with AutoType=NewGuid must be on Guid-type member.",
               HostEntity, HostMember.MemberName);
             return;
           }
@@ -132,7 +133,7 @@ namespace Vita.Entities {
         dt = dt.GetGenericArguments()[0]; // check for DateTime?
       if (types.Contains(dt))
         return true;
-      builder.Log.Error("Entity member {0}.{1}: Auto({2})  attribute may be set only on member of type(s): {3}. ",
+      builder.Log.LogError("Entity member {0}.{1}: Auto({2})  attribute may be set only on member of type(s): {3}. ",
         HostEntity, HostMember.MemberName, this.Type, string.Join(", ", types.Select(t => t.Name)));
       return false;
     }

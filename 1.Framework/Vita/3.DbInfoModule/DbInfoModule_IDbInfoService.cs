@@ -15,7 +15,7 @@ using Vita.Entities.Services;
 namespace Vita.Entities.DbInfo {
 
   public partial class DbInfoModule : IDbInfoService {
-    public DbVersionInfo LoadDbVersionInfo(DbModel dbModel, DbSettings settings, IActivationLog log) {
+    public DbVersionInfo LoadDbVersionInfo(DbModel dbModel, DbSettings settings, ILog log) {
       var tblDbInfo = dbModel.GetTable(typeof(IDbInfo), throwIfNotFound: false);
       Util.Check(tblDbInfo != null, "DbInfo table not defined in DB Model.");
 
@@ -50,7 +50,7 @@ namespace Vita.Entities.DbInfo {
         }
         return versionInfo;
       } catch(Exception ex) {
-        log.Error("Failed to load DbInfo record:  " + ex.ToLogString());
+        log.LogError("Failed to load DbInfo record:  " + ex.ToLogString());
         //Debugger.Break(); 
         throw;
       }
@@ -70,7 +70,7 @@ namespace Vita.Entities.DbInfo {
       return result;
     }
 
-    public bool UpdateDbInfo(DbModel dbModel, DbSettings settings, IActivationLog log, Exception exception = null) {
+    public bool UpdateDbInfo(DbModel dbModel, DbSettings settings, ILog log, Exception exception = null) {
       try {
         var app = dbModel.EntityApp;
         var session = App.OpenSystemSession();
@@ -93,7 +93,7 @@ namespace Vita.Entities.DbInfo {
         session.SaveChanges();
         return true;
       } catch(Exception ex) {
-        log.Error(ex.ToLogString());
+        log.LogError(ex.ToLogString());
         return false;
       }
     }

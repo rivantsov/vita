@@ -9,7 +9,7 @@ using Vita.Entities.Services;
 
 namespace Vita.Entities.Logging {
 
-  public class ActivationLog : IActivationLog {
+  public class Log : ILog {
     string _fileName;
     public int MaxEntries;
     bool _hasErrors = false;
@@ -18,7 +18,7 @@ namespace Vita.Entities.Logging {
     ILogService _globalLog;
     OperationContext _systemContext; 
 
-    public ActivationLog(string fileName, int maxEntries = 1000, EntityApp app = null) {
+    public Log(string fileName, int maxEntries = 1000, EntityApp app = null) {
       _fileName = fileName;
       MaxEntries = maxEntries;
       if(app != null) {
@@ -88,7 +88,7 @@ namespace Vita.Entities.Logging {
   } //class
 
   public static class ActivationLogUtil {
-    public static void CheckErrors(this IActivationLog log, string header = "Startup failed.") {
+    public static void CheckErrors(this ILog log, string header = "Startup failed.") {
       if(log.HasErrors) {
         var errors = log.GetAllAsText();
         System.Diagnostics.Trace.WriteLine(header + Environment.NewLine + errors);

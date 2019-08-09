@@ -41,7 +41,7 @@ namespace Vita.Data.Driver {
 
 
     #region virtual and abstract methods - to be overridden to customize behavior for particular server
-    public abstract DbModelLoader CreateDbModelLoader(DbSettings settings, IActivationLog log);
+    public abstract DbModelLoader CreateDbModelLoader(DbSettings settings, ILog log);
     public abstract DbModelUpdater CreateDbModelUpdater(DbSettings settings);
 
     public virtual DbCrudSqlBuilder CreateCrudSqlBuilder(DbModel dbModel) {

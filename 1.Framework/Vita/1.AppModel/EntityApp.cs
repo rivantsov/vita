@@ -75,14 +75,11 @@ namespace Vita.Entities {
 
     public Sizes.SizeTable SizeTable = Sizes.GetDefaultSizes();
 
+    public ILog Log; 
     /// <summary>Gets or sets a path for the activation log file. </summary>
     /// <remarks>System log contains messages/errors regarding app startup/connect/shutdown events. </remarks>
-    public string ActivationLogPath {
-      get { return ActivationLog.FileName; }
-      set { ActivationLog.FileName = value; }
-    } 
+    public string ActivationLogPath { get; set; }
 
-    public IActivationLog ActivationLog;
 
     /// <summary>Gets or sets operation log file name/path.</summary>
     /// <remarks>Operation log contains SQLs of regular operations, and messages logged by
@@ -128,7 +125,6 @@ namespace Vita.Entities {
       this.DataAccess = RegisterService<IDataAccessService>(new DataAccessService(this));
       RegisterService<IBackgroundTaskService>(new DefaultBackgroundTaskService());
       RegisterService<IHashingService>(new HashingService());
-      ActivationLog = new ActivationLog(activationLogPath, app: this);
     }
 
     private void CurrentDomain_DomainUnload(object sender, EventArgs e) {
@@ -280,7 +276,7 @@ namespace Vita.Entities {
 
     /// <summary>Fires an event requesting all logging facilities to flush buffers. </summary>
     public void Flush() {
-      ActivationLog.Flush(); 
+      Log.Flush(); 
       foreach(var linkedApp in LinkedApps)
         linkedApp.Flush();
       AppEvents.OnFlushRequested();
@@ -339,7 +335,7 @@ namespace Vita.Entities {
     /// <summary>Performs the shutdown of the application. Notifies all components and modules about pending application shutdown. 
     /// </summary>
     public virtual void Shutdown() {
-      ActivationLog.Info("Shutting down app {0}. =======================\r\n\r\n", AppName);
+      Log.WriteMessage("Shutting down app {0}. =======================\r\n\r\n", AppName);
       Flush();
 
       if (_shutdownTokenSource != null) {

@@ -26,9 +26,9 @@ namespace Vita.Data.Model {
     DbDriver _driver;
     DbModelConfig _dbModelConfig;
     IDbNamingPolicy _namingPolicy; 
-    IActivationLog _log;
+    ILog _log;
 
-    public DbModelBuilder(EntityModel entityModel, DbModelConfig config, IActivationLog log) {
+    public DbModelBuilder(EntityModel entityModel, DbModelConfig config, ILog log) {
       _entityModel = entityModel;
       _dbModelConfig = config;
       _namingPolicy = _dbModelConfig.NamingPolicy; 
@@ -58,7 +58,7 @@ namespace Vita.Data.Model {
     }
 
     private void LogError(string message, params object[] args) {
-      _log.Error(message, args);
+      _log.LogError(message, args);
     }
 
     private bool IsActive(EntityArea area) {
@@ -187,10 +187,10 @@ namespace Vita.Data.Model {
         else
           typeInfo = _driver.TypeRegistry.GetDbTypeInfo(member.ExplicitDbTypeSpec, member);
         if (typeInfo == null)
-          _log.Error($"Failed to map member type {member.DataType} to DB type; member {member.FullName}");
+          _log.LogError($"Failed to map member type {member.DataType} to DB type; member {member.FullName}");
         return typeInfo; 
       } catch (Exception ex) {
-        _log.Error($"Failed to map member type {member.DataType} to DB type; member {member.FullName} -  error: {ex.Message}");
+        _log.LogError($"Failed to map member type {member.DataType} to DB type; member {member.FullName} -  error: {ex.Message}");
         return null; 
       }
     }

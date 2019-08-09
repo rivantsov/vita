@@ -24,7 +24,7 @@ namespace Vita.Entities.Model.Construction {
 
 
     public virtual AttributeApplyOrder ApplyOrder => AttributeApplyOrder.Default;
-    public virtual void Validate(IActivationLog log) { }
+    public virtual void Validate(ILog log) { }
     public virtual void ApplyOnEntity(EntityModelBuilder builder) {  }
     public virtual void ApplyOnMember(EntityModelBuilder builder) {  }
 

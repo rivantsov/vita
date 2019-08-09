@@ -22,11 +22,5 @@ namespace Vita.Entities.Logging {
     IList<LogEntry> GetAll(); 
   }
 
-  public interface IActivationLog: IBufferingLog {
-    void Info(string message, params object[] args);
-    void Error(string message, params object[] args);
-    string FileName { get; set; }
-  }
-
 
 }

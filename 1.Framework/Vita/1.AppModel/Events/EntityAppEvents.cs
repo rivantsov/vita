@@ -69,7 +69,7 @@ namespace Vita.Entities {
   public class EntityModelConstructEventArgs : EventArgs {
     public EntityModelState ModelState { get; internal set; }
     public EntityModel Model { get; internal set; }
-    public IActivationLog Log { get; internal set; }
+    public ILog Log { get; internal set; }
   }
 
 

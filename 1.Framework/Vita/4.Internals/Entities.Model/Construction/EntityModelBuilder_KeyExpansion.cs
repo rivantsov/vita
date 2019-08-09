@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-
+using Vita.Entities.Logging;
 using Vita.Entities.Utilities;
 
 namespace Vita.Entities.Model.Construction {
@@ -35,7 +35,7 @@ namespace Vita.Entities.Model.Construction {
       if(key.IsExpanded())
         return true;
       if(_keysInExpansion.Contains(key)) {
-        Log.Error("Cannot expand key/index {0}, ran into key circular reference.", key.GetFullRef());
+        Log.LogError("Cannot expand key/index {0}, ran into key circular reference.", key.GetFullRef());
         return false;
       }
       try {

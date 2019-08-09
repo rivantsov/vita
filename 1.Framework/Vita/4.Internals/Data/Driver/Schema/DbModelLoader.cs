@@ -25,7 +25,7 @@ namespace Vita.Data.Driver {
 
     protected DbSettings Settings;
     protected DbDriver Driver;
-    protected IActivationLog Log;
+    protected ILog Log;
     protected DbModel Model;
 
     //Static empty table, to use as return object for methods that return 'nothing' (not supported aspects)
@@ -35,7 +35,7 @@ namespace Vita.Data.Driver {
     //note: if _schemas is empty, it means - load all.
     private StringSet _schemasSubSet = new StringSet();
 
-    public DbModelLoader(DbSettings settings, IActivationLog log) {
+    public DbModelLoader(DbSettings settings, ILog log) {
       Settings = settings;
       Log = log;
       Driver = Settings.ModelConfig.Driver;
@@ -62,7 +62,7 @@ namespace Vita.Data.Driver {
     protected void LogError(string message, params object[] args) {
       if(Log == null) //if no log then throw
         Util.Throw(message, args);
-      Log.Error(message, args);
+      Log.LogError(message, args);
     }
 
     protected virtual bool IncludeSchema(string schema) {

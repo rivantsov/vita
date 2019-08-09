@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using Vita.Entities.Logging;
 
 namespace Vita.Entities.Model.Construction {
 
@@ -10,7 +11,7 @@ namespace Vita.Entities.Model.Construction {
       foreach(var am in _customization.AddedMembers) {
         var ent = Model.GetEntityInfo(am.EntityType); 
         if (ent == null) {
-          Log.Error("Invalid entity type for added member ({0}), entity {1} not registered.", am.Name, am.EntityType);
+          Log.LogError("Invalid entity type for added member ({0}), entity {1} not registered.", am.Name, am.EntityType);
           continue; 
         }
         if(!TryGetMemberKind(ent, am.Name, am.DataType, out EntityMemberKind kind))
@@ -24,7 +25,7 @@ namespace Vita.Entities.Model.Construction {
       foreach(var indInfo in _customization.AddedIndexes) {
         var ent = Model.GetEntityInfo(indInfo.EntityType);
         if(ent == null) {
-          Log.Error("Invalid entity type for added index ({0}), entity not registered.", indInfo.EntityType);
+          Log.LogError("Invalid entity type for added index ({0}), entity not registered.", indInfo.EntityType);
           continue;
         }
         ent.Attributes.Add(indInfo.IndexAttribute); 

@@ -18,13 +18,13 @@ namespace Vita.Data.Upgrades {
     DbModel _newModel, _oldModel;
     DbUpgradeOptions _options;
     bool _useRefIntegrity, _compareTables, _compareIndexes, _compareViews, _supportsSchemas, _dropUnknown;
-    IActivationLog _log;
+    ILog _log;
 
     // We use global list of changed keys to check the ref constraints for changes - 
     // if FromKey or ToKey changed, then ref constraint must be regenerated
     HashSet<DbKeyInfo> _changedKeys = new HashSet<DbKeyInfo>();
 
-    public void BuildDbModelChanges(DbUpgradeInfo upgradeInfo, IDbObjectComparer comparer, IActivationLog log) {
+    public void BuildDbModelChanges(DbUpgradeInfo upgradeInfo, IDbObjectComparer comparer, ILog log) {
       _upgradeInfo = upgradeInfo;
       _comparer = comparer; 
       _log = log;

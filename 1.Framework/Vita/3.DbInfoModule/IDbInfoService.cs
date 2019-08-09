@@ -12,8 +12,8 @@ using Vita.Entities.Model;
 namespace Vita.Entities.DbInfo {
 
   public interface IDbInfoService {
-    DbVersionInfo LoadDbVersionInfo(DbModel dbModel, DbSettings settings, IActivationLog log);
-    bool UpdateDbInfo(DbModel dbModel, DbSettings settings, IActivationLog log, Exception exception = null);
+    DbVersionInfo LoadDbVersionInfo(DbModel dbModel, DbSettings settings, ILog log);
+    bool UpdateDbInfo(DbModel dbModel, DbSettings settings, ILog log, Exception exception = null);
   }
 
 }

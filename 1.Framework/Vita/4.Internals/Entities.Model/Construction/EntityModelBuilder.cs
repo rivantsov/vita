@@ -21,7 +21,7 @@ namespace Vita.Entities.Model.Construction {
 
   public partial class EntityModelBuilder {
     public readonly EntityModel Model;
-    public readonly IActivationLog Log;
+    public readonly ILog Log;
 
 
     EntityModelCustomizationService _customization; 
@@ -34,7 +34,7 @@ namespace Vita.Entities.Model.Construction {
 
     public EntityModelBuilder(EntityApp app) {
       _app = app;
-      Log = _app.ActivationLog;
+      Log = _app.Log;
       _customization = (EntityModelCustomizationService) _app.GetService<IEntityModelCustomizationService>();
       Model = _app.Model = new EntityModel(_app);
 #if DEBUG
@@ -43,7 +43,7 @@ namespace Vita.Entities.Model.Construction {
     }
 
     public void BuildModel() {
-      Log.Info("  Building entity model...", _app.AppName);
+      Log.WriteMessage("  Building entity model...", _app.AppName);
       _customization.Closed = true; 
 
       CollectEntitiesAndViews();
@@ -82,7 +82,7 @@ namespace Vita.Entities.Model.Construction {
       _app.AppEvents.OnModelConstructing(this);
       //fire event
       _app.AppEvents.OnInitializing(EntityAppInitStep.Initialized);
-      Log.Info("Entity model built successfully.");
+      Log.WriteMessage("Entity model built successfully.");
     }//method
 
     /// <summary>
@@ -93,11 +93,11 @@ namespace Vita.Entities.Model.Construction {
     }
 
     internal void LogError(string message, params object[] args) {
-      Log.Error(message, args);
+      Log.LogError(message, args);
     }
 
     private bool Failed() {
-      return Log.HasErrors;
+      return Log.HasErrors();
     }
 
     //Collects registered entities - creates EntityInfo objects for each entity and adds them to Model's Entities set. 
@@ -182,7 +182,7 @@ namespace Vita.Entities.Model.Construction {
         //check PK on members
         hasPk = entInfo.Members.Any(m => m.Attributes.OfType<PrimaryKeyAttribute>().Any());
         if(!hasPk)
-          Log.Error("Entity {0} has no PrimaryKey attribute.", entInfo.EntityType);
+          Log.LogError("Entity {0} has no PrimaryKey attribute.", entInfo.EntityType);
       }
       CheckErrors(); 
     }//method
@@ -325,7 +325,7 @@ namespace Vita.Entities.Model.Construction {
             switch(km.Member.Kind) {
               case EntityMemberKind.EntityList:
               case EntityMemberKind.Transient:
-                Log.Error("Invalid key member {0}, entity {1}: must be a property matched to a database column.", 
+                Log.LogError("Invalid key member {0}, entity {1}: must be a property matched to a database column.", 
                   km.Member.MemberName, entity.EntityType);
                 break; 
             }

@@ -18,7 +18,7 @@ namespace Vita.Entities.Logging {
       var msg = Util.SafeFormat(message, args); 
       log.AddEntry(new ErrorLogEntry(SystemLogContext, msg, null));
     }
-    public static void LogInfo(this ILog log, string message, params object[] args) {
+    public static void WriteMessage(this ILog log, string message, params object[] args) {
       var msg = Util.SafeFormat(message, args);
       log.AddEntry(new InfoLogEntry(SystemLogContext, msg, null));
     }

@@ -16,7 +16,7 @@ using Vita.Data.Driver.InfoSchema;
 namespace Vita.Data.MsSql {
 
   public class MsSqlDbModelLoader : DbModelLoader {
-    public MsSqlDbModelLoader(DbSettings settings, IActivationLog log) : base(settings, log) {
+    public MsSqlDbModelLoader(DbSettings settings, ILog log) : base(settings, log) {
       base.TableTypeTag = "BASE TABLE";
       base.RoutineTypeTag = "PROCEDURE";
     }

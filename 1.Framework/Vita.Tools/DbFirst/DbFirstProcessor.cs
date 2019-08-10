@@ -112,7 +112,7 @@ Note: Non-empty update action list represents the delta between the original dat
                                       upgradeOptions : DbUpgradeOptions.UpdateTables | DbUpgradeOptions.UpdateIndexes
                                       );
       //dbSettings.SetSchemas(config.Schemas);
-      var log = new ActivationLog(null);
+      var log = new BufferedLog();
       var dbModelBuilder = new DbModelBuilder(entApp.Model, dbSettings.ModelConfig, log);
       var dbModel = dbModelBuilder.Build();
       var db = new Database(dbModel, dbSettings);

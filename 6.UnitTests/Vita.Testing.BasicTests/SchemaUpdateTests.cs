@@ -328,7 +328,7 @@ namespace Vita.Testing.BasicTests.SchemaUpdates {
       } catch(Exception ex) {
         //Unit test framework shows only ex message, not details; let's write specifics into debug output - it will be shown in test failure report
         var descr = ex.ToLogString(); 
-        app.ActivationLog.Error(descr);
+        app.ActivationLog.LogError(descr);
         Debug.WriteLine("EntityApp init exception: ");
         Debug.WriteLine(descr);
         throw;

@@ -16,42 +16,16 @@ namespace Vita.Modules.Logging {
   public class LoggingEntityApp : EntityApp {
     public const string CurrentVersion = "1.1.0.0";
 
-    public readonly LogModules ActiveModules;
     //ErrorLog is available as property in base EntityApp class
     public readonly ILogService OperationLog;
     public readonly ITransactionLogService TransactionLog;
     public readonly IDbUpgradeLogService DbUpgradeLog;
 
-    public LoggingEntityApp(string schema = "log", LogModules includeModules = LogModules.All, 
-                            UserSessionSettings sessionSettings = null) : base("LoggingApp", CurrentVersion) {
+    public LoggingEntityApp(string schema = "log") : base("LoggingApp", CurrentVersion) {
       var area = base.AddArea(schema);
-      ActiveModules = includeModules;
       // DbInfo module is not shared with main app, it is local for the database
       var dbInfo = new DbInfoModule(area);
       // ErrorLog is property in EntityApp, will be set there automatically
-      if(ActiveModules.IsSet(LogModules.ErrorLog)) {
-        var errLog = new ErrorLogModule(area);
-      }
-      if(ActiveModules.IsSet(LogModules.OperationLog))
-        OperationLog = new OperationLogModule(area);
-      if(ActiveModules.IsSet(LogModules.IncidentLog))
-        IncidentLog = new IncidentLogModule(area);
-      if(ActiveModules.IsSet(LogModules.TransactionLog))
-        TransactionLog = new TransactionLogModule(area, trackHostApp: false); //do not track changes for LoggingApp itself
-      if(ActiveModules.IsSet(LogModules.NotificationLog))
-        NotificationLog = new NotificationLogModule(area);
-      if(ActiveModules.IsSet(LogModules.LoginLog))
-        LoginLog = new LoginLogModule(area);
-      if(ActiveModules.IsSet(LogModules.DbUpgradeLog))
-        DbUpgradeLog = new DbUpgradeLogModule(area);
-      if(ActiveModules.IsSet(LogModules.UserSession))
-        SessionService = new UserSessionModule(area, sessionSettings);
-      if(ActiveModules.IsSet(LogModules.EventLog))
-        EventLogService = new AppEventLogModule(area);
-      if(ActiveModules.IsSet(LogModules.WebCallLog))
-        WebCallLog = new WebCallLogModule(area);
-      if(ActiveModules.IsSet(LogModules.WebClientLog))
-        WebClientLogService = new WebClientLogModule(area);
     }
 
     public void LinkTo(EntityApp mainApp) {

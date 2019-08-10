@@ -70,7 +70,7 @@ namespace Vita.Data.MsSql {
       return new SqlConnection(connectionString);
     }
 
-    public override DbModelLoader CreateDbModelLoader(DbSettings settings, IActivationLog log) {
+    public override DbModelLoader CreateDbModelLoader(DbSettings settings, ILog log) {
       return new MsSqlDbModelLoader(settings, log);
     }
 

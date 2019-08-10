@@ -15,7 +15,7 @@ using Vita.Entities.Model;
 
 namespace Vita.Data.Postgres {
   public class PgDbModelLoader : DbModelLoader {
-    public PgDbModelLoader(DbSettings settings, IActivationLog log) : base(settings, log) {
+    public PgDbModelLoader(DbSettings settings, ILog log) : base(settings, log) {
       // Value identifying tables in information_schema.Tables view; for Postgres it is 'BASE TABLE'
       base.TableTypeTag = "BASE TABLE";
       // Value identifying routines in information_schema.Routines view

@@ -36,7 +36,7 @@ namespace Vita.Entities {
     public UserInfo User { get; set; }
     public string UserCulture { get; set; } = "EN-US";
     public WebCallContext WebContext { get; set; }
-    public readonly ILog Log;
+    public ILog Log;
     public DbConnectionReuseMode DbConnectionMode { get; set; }
     public QueryFilter QueryFilter { get; } = new QueryFilter();
     public ProcessType ProcessType;
@@ -291,7 +291,7 @@ namespace Vita.Entities {
       var bufLog = this.Log as BufferedLog; 
       if(bufLog == null)
         return null;
-      var entries = bufLog.GetAllEntries(clear: false);
+      var entries = bufLog.GetAll();
       return string.Join(Environment.NewLine, entries);
     }
 

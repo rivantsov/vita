@@ -15,7 +15,7 @@ using Vita.Data.Driver.TypeSystem;
 
 namespace Vita.Data.MySql {
   class MySqlDbModelLoader : DbModelLoader {
-    public MySqlDbModelLoader(DbSettings settings, IActivationLog log) : base(settings, log) {
+    public MySqlDbModelLoader(DbSettings settings, ILog log) : base(settings, log) {
       base.TableTypeTag = "BASE TABLE";
       base.RoutineTypeTag = "PROCEDURE";
     }

@@ -16,7 +16,7 @@ using Vita.Entities.Model;
 namespace Vita.Data.SQLite {
   public class SQLiteDbModelLoader : DbModelLoader {
 
-    public SQLiteDbModelLoader(DbSettings settings, IActivationLog log) : base(settings, log) {
+    public SQLiteDbModelLoader(DbSettings settings, ILog log) : base(settings, log) {
     }
 
     public override DbModel LoadModel() {

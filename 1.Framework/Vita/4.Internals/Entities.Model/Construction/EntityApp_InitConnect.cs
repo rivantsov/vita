@@ -22,7 +22,7 @@ namespace Vita.Entities {
     protected virtual void InitApp() {
 
       Status = EntityAppStatus.Initializing;
-      CreateLogFileWriters();
+      SetupLogFileWriters();
       ActivationLog.WriteMessage("Initializing EntityApp {0}.====================================", this.AppName);
       this.AppEvents.OnInitializing(EntityAppInitStep.Initializing);
       //Check dependencies
@@ -71,16 +71,15 @@ namespace Vita.Entities {
       ActivationLog.CheckErrors("Application initialization failed.");
     }
 
-    protected void CreateLogFileWriters() {
+    protected void SetupLogFileWriters() {
       var logService = GetService<ILogService>();
-      if(this.LogFileWriter == null && !string.IsNullOrEmpty(this.LogPath)) {
-        var logWriter = new LogFileWriter(LogPath);
-        LogFileWriter = logWriter; 
-        logService.AddListener(logWriter);
-        logWriter.Start(this.ShutdownToken);
+      if (!string.IsNullOrEmpty(this.LogPath)) {
+        LogFileWriter = new LogFileWriter(LogPath, startMessage: $" ======== Log Started {AppTime.UtcNow} ============");
+        logService.AddListener(LogFileWriter);
       }
-      if(this.ErrorLogFileWriter == null && !string.IsNullOrEmpty(this.ErrorLogPath)) {
-        ErrorLogFileWriter = new LogFileWriter(ErrorLogPath);
+      if(!string.IsNullOrEmpty(this.ErrorLogPath)) {
+        ErrorLogFileWriter = new LogFileWriter(ErrorLogPath, batchSize: 1, 
+          startMessage: $"==== Error Log Started {AppTime.UtcNow} ===========");
         logService.AddListener(ErrorLogFileWriter, entry => entry.EntryType == LogEntryType.Error);
       }
     }

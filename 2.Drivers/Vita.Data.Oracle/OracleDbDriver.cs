@@ -100,7 +100,7 @@ namespace Vita.Data.Oracle {
       return new OracleConnection(connectionString); 
     }
 
-    public override DbModelLoader CreateDbModelLoader(DbSettings settings, IActivationLog log) {
+    public override DbModelLoader CreateDbModelLoader(DbSettings settings, ILog log) {
       return new OracleDbModelLoader(settings, log);
     }
 

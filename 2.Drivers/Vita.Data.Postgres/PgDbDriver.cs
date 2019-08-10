@@ -57,7 +57,7 @@ namespace Vita.Data.Postgres {
     public override DbModelUpdater CreateDbModelUpdater(DbSettings settings) {
       return new PgDbModelUpdater(settings);
     }
-    public override DbModelLoader CreateDbModelLoader(DbSettings settings, IActivationLog log) {
+    public override DbModelLoader CreateDbModelLoader(DbSettings settings, ILog log) {
       return new PgDbModelLoader(settings, log);
     }
 

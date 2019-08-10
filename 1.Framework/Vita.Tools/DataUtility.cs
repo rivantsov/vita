@@ -93,7 +93,7 @@ namespace Vita.Tools {
       return LoadDbModel(dbSettings, schemas, app.ActivationLog);
     }
 
-    public static DbModel LoadDbModel(DbSettings settings, List<string> schemas, IActivationLog log) {
+    public static DbModel LoadDbModel(DbSettings settings, List<string> schemas, ILog log) {
       var driver = settings.ModelConfig.Driver;
       var loader = driver.CreateDbModelLoader(settings, log);
       loader.SetSchemasSubset(schemas); 
@@ -107,7 +107,7 @@ namespace Vita.Tools {
       DropSchemaObjects(dbSettings, schemas, app.ActivationLog);
     }
 
-    public static void DropSchemaObjects(DbSettings settings, List<string> schemas, IActivationLog log) {
+    public static void DropSchemaObjects(DbSettings settings, List<string> schemas, ILog log) {
       var driver = settings.Driver; 
       var model = LoadDbModel(settings, schemas, log);
       var upgradeInfo = new DbUpgradeInfo(null, model);

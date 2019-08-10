@@ -15,7 +15,7 @@ namespace Vita.Data.Oracle {
   public class OracleDbModelLoader : DbModelLoader {
     OracleDbTypeRegistry _oracleTypes;
 
-    public OracleDbModelLoader(DbSettings settings, IActivationLog log)
+    public OracleDbModelLoader(DbSettings settings, ILog log)
           : base(settings, log) {
       _oracleTypes = (OracleDbTypeRegistry) this.Driver.TypeRegistry;
     }

@@ -7,6 +7,26 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="Z_OLD_CODE\AppEventLogExtensions.cs" />
+    <Compile Remove="Z_OLD_CODE\AppEventLogModule.cs" />
+    <Compile Remove="Z_OLD_CODE\ErrorLogModule.cs" />
+    <Compile Remove="Z_OLD_CODE\LogModules.cs" />
+    <Compile Remove="Z_OLD_CODE\OperationLogModule.cs" />
+    <Compile Remove="Z_OLD_CODE\WebCallLogModule.cs" />
+    <Compile Remove="Z_OLD_CODE\WebClientLogModule.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="Z_OLD_CODE\AppEventLogExtensions.cs" />
+    <None Include="Z_OLD_CODE\AppEventLogModule.cs" />
+    <None Include="Z_OLD_CODE\ErrorLogModule.cs" />
+    <None Include="Z_OLD_CODE\LogModules.cs" />
+    <None Include="Z_OLD_CODE\OperationLogModule.cs" />
+    <None Include="Z_OLD_CODE\WebCallLogModule.cs" />
+    <None Include="Z_OLD_CODE\WebClientLogModule.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\..\1.Framework\Vita\010.Vita.csproj" />
   </ItemGroup>
 

@@ -137,8 +137,8 @@ namespace Vita.Testing.BasicTests {
         return app;
       } catch (StartupFailureException sx) {
         //Unit test framework shows only ex message, not details; let's write specifics into debug output - it will be shown in test failure report
-        app.ActivationLog.Error(sx.Message);
-        app.ActivationLog.Info(sx.Log);
+        app.ActivationLog.LogError(sx.Message);
+        app.ActivationLog.WriteMessage(sx.Log);
         Debug.WriteLine("EntityApp init exception: ");
         Debug.WriteLine(sx.Log);
         throw;
@@ -153,7 +153,7 @@ namespace Vita.Testing.BasicTests {
         DataUtility.DropSchemaObjects(app, dbSettings);
       } catch(Exception ex) {
         var log = ex.ToLogString();
-        app.ActivationLog.Error(log);
+        app.ActivationLog.LogError(log);
         Debug.WriteLine("EntityApp init exception: ");
         Debug.WriteLine(log);
         throw; 
@@ -175,7 +175,7 @@ namespace Vita.Testing.BasicTests {
       var dbSettings = new DbSettings(Driver, DbOptions, ConnectionString);
       var dbModel = DataUtility.LoadDbModel(app, dbSettings);
       var log = app.ActivationLog;
-      if(log.HasErrors)
+      if(log.ErrorCount > 0)
         Util.Throw("Model loading errors: \r\n" + log.GetAllAsText());
       return dbModel; 
     }

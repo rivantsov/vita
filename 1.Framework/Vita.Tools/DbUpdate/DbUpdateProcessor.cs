@@ -50,7 +50,7 @@ namespace Vita.Tools.DbUpdate {
       dbSettings.SetSchemas(schemas);
       */
 
-      var log = new ActivationLog(null);
+      var log = new BufferedLog(LogContext.SystemLogContext);
       var dbModelBuilder = new DbModelBuilder(entApp.Model, dbSettings.ModelConfig, log);
       var dbModel = dbModelBuilder.Build();
       var db = new Database(dbModel, dbSettings);

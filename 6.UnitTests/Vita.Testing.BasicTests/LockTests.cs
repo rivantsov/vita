@@ -177,7 +177,8 @@ ALTER DATABASE {0} SET MULTI_USER;
       IEntitySession session = null;
       // Use context with its own buffered op log - all entries related to single load/update operation are buffered, 
       // and then flushed together at the end of loop body; so they will appear together in the output file
-      var ctx = new OperationContext(_app, log: new BufferedLog(_app));
+      var ctx = new OperationContext(_app);
+      ctx.Log = new BufferedLog(ctx.LogContext);
 
       for(int i = 0; i < readWriteCount; i++) {
         session = ctx.OpenSession();
@@ -247,7 +248,7 @@ ALTER DATABASE {0} SET MULTI_USER;
         } catch (Exception ex) { //most will be UniqueIndexViolation
           Debug.WriteLine(ex.ToLogString());
           System.Threading.Interlocked.Increment(ref _updateErrorCount);
-          session.Context.Log.AddEntry(new ErrorLogEntry(ctx, ex));
+          session.Context.Log.AddEntry(new ErrorLogEntry(ctx.LogContext, ex));
           var entSession = (Vita.Entities.Runtime.EntitySession)session;
           if (entSession.CurrentConnection != null)
             entSession.CurrentConnection.Close();

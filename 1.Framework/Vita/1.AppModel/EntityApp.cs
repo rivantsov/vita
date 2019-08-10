@@ -80,10 +80,7 @@ namespace Vita.Entities {
     /// <remarks>System log contains messages/errors regarding app startup/connect/shutdown events. </remarks>
     public string ActivationLogPath { get; set; }
 
-
-    /// <summary>Gets or sets operation log file name/path.</summary>
-    /// <remarks>Operation log contains SQLs of regular operations, and messages logged by
-    ///  the application code. </remarks>
+    public ILogService LogService; 
     public string LogPath;
     public string ErrorLogPath;
 
@@ -117,15 +114,14 @@ namespace Vita.Entities {
       AppDomain.CurrentDomain.DomainUnload += CurrentDomain_DomainUnload;
 
       //Setup log
-      var logService = new DefaultLogService();
-      _services[typeof(ILogService)] = logService;
-      ActivationLog = new BufferedLog(LogContext.SystemLogContext, 10000, logService);
+      this.LogService = new LogService();
+      RegisterService<ILogService>(LogService);
+      ActivationLog = new BufferedLog(LogContext.SystemLogContext, 10000, LogService);
 
       // Time service and Timers service  are global singletons, we register these here, as early as possible
       this.TimeService = this.RegisterService<ITimeService>(Vita.Entities.Services.Implementations.TimeService.Instance);
       var timers = this.RegisterService<ITimerService>(new TimerService());
       this.RegisterService<ITimerServiceControl>(timers as ITimerServiceControl);
-      this.RegisterService<ILogService>(new DefaultLogService());
       var custService = new EntityModelCustomizationService(this);
       this.RegisterService<IEntityModelCustomizationService>(custService);
       this.DataAccess = RegisterService<IDataAccessService>(new DataAccessService(this));
@@ -282,7 +278,8 @@ namespace Vita.Entities {
 
     /// <summary>Fires an event requesting all logging facilities to flush buffers. </summary>
     public void Flush() {
-      ActivationLog.Flush(); 
+      ActivationLog.Flush();
+      this.LogService.Flush(); 
       foreach(var linkedApp in LinkedApps)
         linkedApp.Flush();
       AppEvents.OnFlushRequested();

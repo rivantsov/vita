@@ -7,7 +7,7 @@ using Vita.Entities.Logging;
 namespace Vita.Entities.Logging {
 
   /// <summary>Simply redirects all log entries to listeners.</summary>
-  public class DefaultLogService : ILogService {
+  public class LogService : ILogService {
     class ListenerInfo {
       public ILogListener Listener;
       public Func<LogEntry, bool> Filter;

@@ -1,68 +1,47 @@
 ﻿using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
-using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
+using System.Linq; 
+using Vita.Entities.Utilities;
 
 namespace Vita.Entities.Logging {
 
   public class LogFileWriter : ILogListener, IDisposable {
     string _fileName;
-    int _pauseMs;
 
-    ConcurrentQueue<LogEntry> _entries = new ConcurrentQueue<LogEntry>();
-    object _flushLock = new object(); 
+    BatchingQueue<LogEntry> _queue; 
+
     static object _fileWriteLock = new object(); 
 
-    public LogFileWriter(string fileName, int pauseMs = 100) {
+    public LogFileWriter(string fileName, int batchSize = 1000, int maxLingerMs = 200, string startMessage = null) {
       _fileName = fileName;
-      _pauseMs = pauseMs;
+      _queue = new BatchingQueue<LogEntry>(batchSize, maxLingerMs);
+      _queue.Batched += Queue_Batched;
+      if (startMessage != null)
+        WriteToFile(startMessage + Environment.NewLine); 
+      
     }
 
-    public void Start(CancellationToken token) {
-      Task.Run(() => StartAsync(token));
+    private void Queue_Batched(object sender, QueueBatchEventArgs<LogEntry> e) {
+      var strings = e.Items.Select(i => i.AsText()).ToList();
+      strings.Add(Environment.NewLine);
+      var text = string.Join(Environment.NewLine, strings);
+      WriteToFile(text);
     }
 
     public void AddEntry(LogEntry entry) {
       if(entry != null) {
-        _entries.Enqueue(entry);
-        if(entry.EntryType == LogEntryType.Error)
-          SaveAll();           
+        _queue.Enqueue(entry);
+        if (entry.EntryType == LogEntryType.Error)
+          _queue.ProduceBatch();  // Force saving to file          
       }
     }
+
     public void Flush() {
-      SaveAll(); 
+      _queue.ProduceBatch();
     }
 
-    public async Task StartAsync(CancellationToken token) {
-      while(!token.IsCancellationRequested) {
-        // Task.Delay throws exception on cancellation
-        try {
-          await Task.Delay(_pauseMs, token); //let entries accumulate
-        } catch(TaskCanceledException) { }
-        // even if cancellation requested (system shutdown), dump the queue
-        SaveAll(); 
-      }
-    }//method
-
-    private void SaveAll() {
-      var list = new List<string>();
-      lock(_flushLock) {
-        while(_entries.TryDequeue(out LogEntry entry))
-          list.Add(entry?.ToString());
-      }
-      if(list.Count == 0)
-        return;
-      // add separator
-      list.Add(Environment.NewLine);
-      // actually write to file
-      var text = string.Join(Environment.NewLine, list);
-      SafeWriteToFile(text);
-    }
-
-    private void SafeWriteToFile(string text) {
+    private void WriteToFile(string text) {
       try {
         lock(_fileWriteLock)
           File.AppendAllText(_fileName, text);
@@ -77,8 +56,9 @@ namespace Vita.Entities.Logging {
     }
 
     public void Dispose() {
-      if (_entries.Count > 0)
-        SaveAll();
+      if (_queue.Count > 0)
+        _queue.ProduceBatch(); 
     }
+
   }
 }

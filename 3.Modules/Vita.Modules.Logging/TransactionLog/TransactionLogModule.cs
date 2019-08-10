@@ -4,7 +4,6 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-using Vita.Common;
 using Vita.Entities;
 using Vita.Entities.Logging;
 using Vita.Entities.Model;
@@ -21,33 +20,7 @@ namespace Vita.Modules.Logging {
     public static readonly Version CurrentVersion = new Version("1.1.0.0");
     public TransactionLogSettings Settings;
 
-    #region TransactionLogEntry nested class
-    //Temp object used to store trans information in the background update queue
-    public class TransactionLogEntry : LogEntry, IObjectSaveHandler {
-      public int Duration;
 
-      public int RecordCount;
-      public string Changes;
-
-      public TransactionLogEntry(OperationContext context, DateTime startedOn, int duration, int recordCount, string changes)
-              : base(context, startedOn) {
-        Duration = duration;
-        RecordCount = recordCount;
-        Changes = changes; 
-      }
-
-      public void SaveObjects(IEntitySession session, IList<object> items) {
-        foreach(TransactionLogEntry entry in items) {
-          var entTrans = session.NewLogEntity<ITransactionLog>(entry);
-          entTrans.Duration = entry.Duration;
-          entTrans.RecordCount = entry.RecordCount;
-          entTrans.Changes = entry.Changes;
-        }
-      }
-    }//class
-    #endregion
-
-    IBackgroundSaveService _saveService;
 
     public TransactionLogModule(EntityArea area, TransactionLogSettings settings = null, bool trackHostApp = true) : base(area, "TransactionLog", version: CurrentVersion) {
       Settings = settings ?? new TransactionLogSettings();
@@ -60,7 +33,6 @@ namespace Vita.Modules.Logging {
 
     public override void Init() {
       base.Init();
-      _saveService = App.GetService<IBackgroundSaveService>();
     }
 
     #region ITransactionLogService members

@@ -59,11 +59,6 @@ namespace Vita.Data.Driver {
       return Model; 
     }//method
 
-    protected void LogError(string message, params object[] args) {
-      if(Log == null) //if no log then throw
-        Util.Throw(message, args);
-      Log.LogError(message, args);
-    }
 
     protected virtual bool IncludeSchema(string schema) {
       if(!SupportsSchemas())
@@ -151,9 +146,7 @@ namespace Vita.Data.Driver {
         var isNullable = (isNullStr == "YES" || isNullStr == "Y"); //Oracle->Y
         var typeInfo = GetColumnDbTypeInfo(row);
         if (typeInfo == null) {
-          LogError(
-            "DbModelLoader: failed to find type mapping for DB data type '{0}'. Table {1}, column {2}.", 
-                 dataTypeString, tableName, colName);
+          Log.LogError($"DbModelLoader: failed to find type mapping for DB data type '{dataTypeString}'. Table {tableName}, column {colName}.");
           continue;
         }
         var column = new DbColumnInfo(currTblInfo, colName, typeInfo, isNullable);
@@ -204,7 +197,7 @@ namespace Vita.Data.Driver {
         if(key == null) continue;
         var col = key.Table.Columns.FirstOrDefault(c => c.ColumnName == colName);
         if(col == null)
-          LogError($"Failed to locate column {colName} in table {tableName}.");
+          Log.LogError($"Failed to locate column {colName} in table {tableName}.");
         else 
           key.KeyColumns.Add(new DbKeyColumnInfo(col));
       }

@@ -30,15 +30,31 @@ namespace Vita.Entities.Api {
     HideResponseBody = Confidential | NoLogResponseBody,
   }
 
+  public class RequestInfo {
+    public DateTime ReceivedOn; 
+    public string HttpMethod;
+    public string UrlTemplate;
+    public string Url;
+    public IDictionary<string, string> Headers;
+
+    public long? ContentSize;
+    public string ContentType;
+    public string IPAddress;
+  }
+
+  public class ResponseInfo {
+    public string ControllerName;
+    public string MethodName;
+    public TimeSpan Duration;
+    public HttpStatusCode HttpStatus = HttpStatusCode.OK;
+    public IDictionary<string, string> Headers = new Dictionary<string, string>();
+    public HttpContent Content;
+  }
+
+
+
   /// <summary>Provides an access to web-related parameters to the middle-tier code.</summary>
   /// <remarks>
-  /// Instantiated by WebCallContextHandler; the current instance is available through OperationContext.WebContext property. 
-  /// WebCallContext provides access to cookies, headers, URL of the incoming request and allows to set specific HTTP response
-  /// status on the response. It allows setting response HTTP headers and cookies right from the middle-tier code. 
-  /// WebCallContext also serves as a container for log information which can be saved in the database upon completion 
-  /// of the request processing. 
-  /// Classic (non-Slim version) Web Api controllers can retrieve an instance of the WebCallContext from the Request object properties 
-  /// using <c>WebCallContextKey</c> as a key.
   /// </remarks>
   public class WebCallContext {
     // Used as key to save in Request properties. 
@@ -55,6 +71,8 @@ namespace Vita.Entities.Api {
     public string ControllerName;
     public string MethodName;
 
+    public RequestInfo Request;
+    public ResponseInfo Response; 
 
     public WebCallFlags Flags;
     // list of custom indicators for use by app that will be saved in web call log
@@ -64,7 +82,7 @@ namespace Vita.Entities.Api {
       this.OperationContext = opContext;
       opContext.WebContext = this;
       HttpContextRef = new WeakReference(httpContext);
-      LogEntry = new WebCallLogEntry(this, request);
+      LogEntry = new WebCallLogEntry(this);
       TickCountStart = AppTime.GetTimestamp();
     }
 

@@ -92,10 +92,6 @@ namespace Vita.Entities.Model.Construction {
       Log.CheckErrors("Entity Model build failed.");
     }
 
-    internal void LogError(string message, params object[] args) {
-      Log.LogError(message, args);
-    }
-
     //Collects registered entities - creates EntityInfo objects for each entity and adds them to Model's Entities set. 
     private void CollectEntitiesAndViews() {
       // Collect initial entities
@@ -132,17 +128,17 @@ namespace Vita.Entities.Model.Construction {
 
     private bool ValidateViewDefinition(ViewDefinition view) {
       if(!(view.Query is EntityQuery)) {
-        LogError("View definition error ({0}): query must be an entity-based query.", view.Name);
+        Log.LogError($"View definition error ({view.Name}): query must be an entity-based query.");
         return false;
       }
       bool ok = true; 
       if (!view.EntityType.IsInterface) {
-        LogError("View definition error ({0}), invalid view entity {1} - must be an interface.", view.Name, view.EntityType);
+        Log.LogError($"View definition error ({view.Name}), invalid view entity {view.EntityType} - must be an interface.");
         ok = false; 
       }
       var queryOutType = view.Query.Expression.Type; //.Command.ResultType;
       if (!queryOutType.IsGenericType) {
-        LogError("View definition error ({0}): query must return IQueryable<T> generic type.", view.EntityType);
+        Log.LogError($"View definition error ({view.EntityType}): query must return IQueryable<T> generic type.");
         ok = false;
       }
       if (!ok) return false; 
@@ -154,13 +150,13 @@ namespace Vita.Entities.Model.Construction {
       foreach(var entProp in entProps) {
         var outProp = outObjType.GetProperty(entProp.Name);
         if (outProp == null) {
-          LogError("View definition error ({0}): view property '{1}' not returned by the query.", view.EntityType, entProp.Name);
+          Log.LogError($"View definition error ({view.EntityType}): view property '{entProp.Name}' not returned by the query.");
           ok = false;
           continue; //next prop 
         }
         if (!ConvertHelper.UnderlyingTypesMatch(outProp.PropertyType, entProp.PropertyType)) {
-          LogError("View definition error ({0}): data type for view property '{1}' ({2} ) does not match query output property type ({3}) .",
-            view.EntityType, entProp.Name, entProp.PropertyType, outProp.PropertyType);
+          Log.LogError($"View definition error ({view.EntityType}): data type for view property {entProp.Name}, {entProp.PropertyType} " + 
+            $" does not match query output property type ({outProp.PropertyType}) .");
           ok = false;
         }
       }// foeach entProp
@@ -178,7 +174,7 @@ namespace Vita.Entities.Model.Construction {
         //check PK on members
         hasPk = entInfo.Members.Any(m => m.Attributes.OfType<PrimaryKeyAttribute>().Any());
         if(!hasPk)
-          Log.LogError("Entity {0} has no PrimaryKey attribute.", entInfo.EntityType);
+          Log.LogError($"Entity {entInfo.EntityType} has no PrimaryKey attribute.");
       }
       CheckErrors(); 
     }//method
@@ -187,7 +183,7 @@ namespace Vita.Entities.Model.Construction {
     private void CheckReferencedEntity(Type entityType, string propertyName, EntityInfo owner) {
       EntityInfo entInfo = Model.GetEntityInfo(entityType);
       if (entInfo == null) 
-        LogError("Property {0}.{1}: referenced entity type {2} is not registered as an entity.", owner.EntityType.Name, propertyName, entityType.Name);
+        Log.LogError($"Property {owner.EntityType}.{propertyName}: referenced entity type {entityType.Name} is not registered as an entity.");
     }
 
     private void BuildEntityMembers() {
@@ -231,7 +227,7 @@ namespace Vita.Entities.Model.Construction {
         var target = Model.GetEntityInfo(dataType);
         if (target != null)
           return true;
-        LogError("Invalid entity reference, type {2} is not registered as an entity. Entity member: {0}.{1}", entity.Name, memberName, dataType);
+        Log.LogError($"Invalid entity reference, type {dataType} is not registered as an entity. Entity member: {entity.Name}.{memberName}");
         return false;         
       }
       if (genType == typeof(IList<>)) {
@@ -240,7 +236,7 @@ namespace Vita.Entities.Model.Construction {
       }
       // properly report common mistake
       if (genType == typeof(List<>)) {
-        this.LogError("Invalid entity member {0}.{1}. Use IList<T> interface for list members. ", entity.Name, memberName);
+        Log.LogError($"Invalid entity member {entity.Name}.{memberName}. Use IList<T> interface for list members. ");
         return false; 
       }
       //default: Column
@@ -312,7 +308,7 @@ namespace Vita.Entities.Model.Construction {
             entity.Flags |= EntityFlags.HasClusteredIndex;
             break;
           default:
-            LogError("More than one clustered index specified on entity {0}", entity.FullName);
+            Log.LogError($"More than one clustered index specified on entity {entity.FullName}");
             break;
         } //switch
         // verify key members
@@ -321,8 +317,7 @@ namespace Vita.Entities.Model.Construction {
             switch(km.Member.Kind) {
               case EntityMemberKind.EntityList:
               case EntityMemberKind.Transient:
-                Log.LogError("Invalid key member {0}, entity {1}: must be a property matched to a database column.", 
-                  km.Member.MemberName, entity.EntityType);
+                Log.LogError($"Invalid key member {km.Member.MemberName}, entity {entity.EntityType}: must be a property matched to a database column.");
                 break; 
             }
           }

@@ -67,7 +67,7 @@ namespace Vita.Modules.Logging {
         ent.FullObjectName = script.Migration.Name;
       } else if (script.ModelChange != null) {
         ent.ObjectType = script.ModelChange.ObjectType;
-        ent.FullObjectName = script.ModelChange.DbObject.GlobalName;
+        ent.FullObjectName = script.ModelChange.DbObject.LogRefName;
       } else {
         ent.ObjectType = DbObjectType.Other;
         ent.FullObjectName = "(Unknown)";

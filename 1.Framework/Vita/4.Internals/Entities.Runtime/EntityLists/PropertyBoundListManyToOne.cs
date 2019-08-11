@@ -68,9 +68,11 @@ namespace Vita.Entities.Runtime {
       for (int i = 0; i < list.Count; i++) {
         var rec =  EntityHelper.GetRecord(list[i]);
         var oldValue = rec.GetValueDirect(persMember);
-        var newValue = (object)(i + 1); 
-        if (oldValue != newValue)
-          rec.SetValueDirect(persMember, newValue, setModified: true); // Persistent order is 1-based
+
+        object incValue = (i.GetType() == persMember.DataType) ? i + 1 :
+            incValue = Convert.ChangeType(i + 1, persMember.DataType);
+        if (oldValue != incValue)
+          rec.SetValueDirect(persMember, incValue, setModified: true); // Persistent order is 1-based
       }
     }//method
 

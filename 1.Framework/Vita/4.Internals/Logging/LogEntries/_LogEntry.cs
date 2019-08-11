@@ -23,25 +23,4 @@ namespace Vita.Entities.Logging {
     public abstract string AsText();
   }
 
-  // some information shared between multiple log entries; copied from OperationContext
-  public class LogContext {
-    public static LogContext SystemLogContext = new LogContext() { User = UserInfo.System };
-
-    public UserInfo User; 
-    public Guid? SessionId;
-    public ProcessType ProcessType;
-    public Guid? ProcessId;
-
-    public LogContext() { }
-
-    public LogContext(OperationContext context) {
-      User = context.User;
-
-      SessionId = context.SessionId;
-      ProcessType = context.ProcessType;
-      ProcessId = context.ProcessId;
-    }
-
-  }
-
 }

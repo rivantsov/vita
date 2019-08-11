@@ -13,9 +13,8 @@ namespace Vita.Entities.Logging {
       log.AddEntry(ee);
       return ee; 
     }
-    public static void LogError(this ILog log, string message, params object[] args) {
-      var msg = Util.SafeFormat(message, args); 
-      log.AddEntry(new ErrorLogEntry(LogContext.SystemLogContext, msg, null));
+    public static void LogError(this ILog log, string message) {
+      log.AddEntry(new ErrorLogEntry(LogContext.SystemLogContext, message, null));
     }
     public static void WriteMessage(this ILog log, string message, params object[] args) {
       var msg = Util.SafeFormat(message, args);

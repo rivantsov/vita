@@ -16,8 +16,8 @@ namespace Vita.Entities {
     public override void Validate(ILog log) { 
       base.Validate(log);
       if(HostMember.Kind != EntityMemberKind.EntityRef) {
-        log.LogError("{0} may be used only on properties that are references to other entities. Property: {1}",
-          this.GetType().Name, this.GetHostRef());
+        log.LogError(
+          $"{this.GetType().Name} may be used only on properties that are references to other entities. Property: {HostRef}");
       }
     }
   }//class
@@ -27,7 +27,7 @@ namespace Vita.Entities {
     public override void Validate(ILog log) {
       base.Validate(log);
       if(HostMember.Kind != EntityMemberKind.EntityList)
-        log.LogError("Property {0}: OneToMany attribute can be used only on entity list properties.", GetHostRef());
+        log.LogError($"Property {HostRef}: OneToMany attribute can be used only on entity list properties.");
     }
   }// class
 
@@ -53,7 +53,7 @@ namespace Vita.Entities {
     public override void Validate(ILog log) {
       base.Validate(log);
       if(this.HostMember == null && string.IsNullOrWhiteSpace(this.MemberNames)) {
-        log.LogError("Entity {0}: Index/key attribute ({1}) on entity may not have empty member list.", GetHostRef(), this.GetAttributeName());
+        log.LogError($"{HostRef}: Index/key attribute ({this.GetType()}) on entity may not have empty member list.");
       }
     }
 
@@ -84,7 +84,7 @@ namespace Vita.Entities {
           HostEntity.PrimaryKey = Key;
           Key.KeyMembers.Each(km => km.Member.Flags |= EntityMemberFlags.PrimaryKey);
         } else
-          log.LogError("Entity {0} has more than one Primary Key specified.", GetHostRef());
+          log.LogError($"Entity {HostEntity.Name} has more than one Primary Key specified.");
       }
 
     }

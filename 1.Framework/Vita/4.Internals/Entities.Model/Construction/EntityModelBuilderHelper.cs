@@ -87,7 +87,7 @@ namespace Vita.Entities.Model.Construction {
         if(ordered) {
           parts = StringHelper.SplitNames(spec, ':');
           if(parts.Length > 2) {
-            log.LogError("Invalid key/order spec '{0}', entity {1}; only single : char is allowed.", keySpec, specHolder.EntityType);
+            log.LogError($"Invalid key/order spec '{keySpec}', entity {specHolder.EntityType}; only single ':' char is allowed.");
             return false; 
           }
           string strDesc = parts.Length == 1 ? "asc" : parts[1];
@@ -95,7 +95,7 @@ namespace Vita.Entities.Model.Construction {
             case "":  case "asc": desc = false; break;
             case "desc": desc = true; break; 
             default:
-              log.LogError("Invalid key/order spec '{0}', entity {1}. Expected ':asc' or ':desc' as direction specification.", keySpec, specHolder.EntityType);
+              log.LogError($"Invalid key/order spec '{keySpec}', entity {specHolder.EntityType}. Expected ':asc' or ':desc' as direction specification.");
               return false; 
           }//switch
         }//if ordered
@@ -103,7 +103,7 @@ namespace Vita.Entities.Model.Construction {
           parts = new string[] { spec, null };
         var member = entity.GetMember(parts[0]);
         if(member == null) {
-          log.LogError("Invalid key/order spec '{0}', entity {1}. member {2} not found.", keySpec, specHolder.EntityType, parts[0]);
+          log.LogError($"Invalid key/order spec '{keySpec}', entity {specHolder.EntityType}. member {parts[0]} not found.");
           return false; 
         }
         parsedKeyMembers.Add(new EntityKeyMemberInfo(member, desc));
@@ -124,11 +124,9 @@ namespace Vita.Entities.Model.Construction {
       //Report error
       var listMemberDesc = listMember.Entity.FullName + "." + listMember.MemberName;
       if (refMembers.Count == 0)
-        log.LogError("EntityList member {0}: could not find matching foreign key member in target entity {1}. ",
-          listMemberDesc, inEntity.EntityType);
+        log.LogError($"EntityList member {listMemberDesc}: could not find matching foreign key member in target entity {inEntity.EntityType}. ");
       if (refMembers.Count > 1)
-        log.LogError("EntityList member {0}: more than one matching foreign key member in target entity {1}. ",
-          listMemberDesc, inEntity.EntityType);
+        log.LogError($"EntityList member {listMemberDesc}: more than one matching foreign key member in target entity {inEntity.EntityType}. ");
       return null;
     }
 

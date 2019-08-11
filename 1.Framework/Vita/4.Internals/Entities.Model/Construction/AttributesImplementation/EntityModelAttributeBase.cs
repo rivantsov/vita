@@ -28,13 +28,8 @@ namespace Vita.Entities.Model.Construction {
     public virtual void ApplyOnEntity(EntityModelBuilder builder) {  }
     public virtual void ApplyOnMember(EntityModelBuilder builder) {  }
 
-    // Used in error messages
-    public string GetHostRef() {
-      var name = HostEntity.EntityType.Name;
-      if(HostMember != null)
-        name += "." + HostMember.MemberName;
-      return name; 
-    }
+    // used in error messages
+    public string HostRef => (HostMember == null) ? $"{HostEntity.Name}" : $"{HostEntity.Name}.{HostMember.MemberName}";
   }
 
 

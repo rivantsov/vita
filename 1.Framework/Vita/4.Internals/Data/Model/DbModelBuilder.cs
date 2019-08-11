@@ -57,10 +57,6 @@ namespace Vita.Data.Model {
       _log.CheckErrors("DbModel construction failed.");
     }
 
-    private void LogError(string message, params object[] args) {
-      _log.LogError(message, args);
-    }
-
     private bool IsActive(EntityArea area) {
       return true; 
       /*
@@ -161,7 +157,7 @@ namespace Vita.Data.Model {
       var dbColumn = new DbColumnInfo(member, table, colName, dbTypeInfo);
       dbColumn.Converter = _driver.TypeRegistry.GetDbValueConverter(dbTypeInfo, member); 
       if (dbColumn.Converter == null) {
-        LogError($"Member {member}, type {member.DataType}: failed to find DbConverter to db type {dbTypeInfo.DbTypeSpec}");
+        _log.LogError($"Member {member}, type {member.DataType}: failed to find DbConverter to db type {dbTypeInfo.DbTypeSpec}");
         return null; 
       }
       if(!string.IsNullOrEmpty(colDefault))
@@ -329,7 +325,8 @@ namespace Vita.Data.Model {
             col = otherTbl.Columns.FirstOrDefault(c => c.Member == keyMember.Member);
         }
         if (col == null)
-          LogError("Failed to build ORDER BY list for table {0}: cannot find column for member {1}.", table.TableName, keyMember.Member.MemberName);
+          _log.LogError($"Failed to build ORDER BY list for table {table.TableName}: " + 
+                        $"cannot find column for member {keyMember.Member.MemberName}.");
         var dbKeyColumn = new DbKeyColumnInfo(col, keyMember);
         orderByList.Add(dbKeyColumn);
       }

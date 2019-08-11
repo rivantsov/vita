@@ -25,12 +25,6 @@ namespace Vita.Entities {
     KeepOpen,
   }
 
-  public enum ProcessType {
-    User,
-    WebRequest,
-    BackgroundProcess, 
-  }
-
   public class OperationContext : IDisposable {
     public EntityApp App { get; internal set; }
     public UserInfo User { get; set; }
@@ -39,9 +33,6 @@ namespace Vita.Entities {
     public ILog Log;
     public DbConnectionReuseMode DbConnectionMode { get; set; }
     public QueryFilter QueryFilter { get; } = new QueryFilter();
-    public ProcessType ProcessType;
-    public Guid? ProcessId; //for OperationType.BackgroundProcess
-    public Guid? SessionId;
 
     internal DataSource LastDataSource; //last data source reference
 
@@ -82,28 +73,17 @@ namespace Vita.Entities {
     public long EntityCacheVersion;
      
     public OperationContext(EntityApp app, UserInfo user = null, WebCallContext webContext = null, ILog log = null, 
-                       DbConnectionReuseMode connectionMode = DbConnectionReuseMode.NoReuse, 
-                       ProcessType? processType = null, Guid? processId = null) {
+                       DbConnectionReuseMode connectionMode = DbConnectionReuseMode.NoReuse ) {
       App = app; 
       User = user ?? UserInfo.Anonymous;
       WebContext = webContext;
       Log = log ?? new DefaultOperationLog(this);
       DbConnectionMode = connectionMode;
-      ProcessId = processId;
-      if(WebContext != null) {
-        ProcessType = ProcessType.WebRequest;
-      } else {
-        if(processType == null)
-          ProcessType = (processId == null) ? ProcessType.User : ProcessType.BackgroundProcess;
-        else
-          ProcessType = processType.Value;
-      }
     }
 
     public OperationContext CreateChildContext(UserInfo user) {
       var ctx = new OperationContext(this.App, user, this.WebContext, this.Log, this.DbConnectionMode);
       ctx.DataSourceName = this.DataSourceName;
-      ctx.SessionId = this.SessionId;
       RegisterDisposable(ctx); 
       return ctx; 
     }

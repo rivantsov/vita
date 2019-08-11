@@ -343,8 +343,8 @@ namespace Vita.Data.Driver {
       var dbFilter = new DbTableFilter() { EntityFilter = entityFilter };
       var colList = new List<DbColumnInfo>();
       // setup columns
-      var templ = entityFilter.Template;
-      foreach(var mName in templ.ArgNames) {
+      var filterTempl = entityFilter.Template;
+      foreach(var mName in filterTempl.ArgNames) {
         var col = tbl.GetColumnByMemberName(mName);
         if(col == null)
           col = tbl.Columns.FindByName(mName);
@@ -352,9 +352,9 @@ namespace Vita.Data.Driver {
           colList.Add(col);
         else {
           if(log == null)
-            Util.Throw("Index/key filter on entity {0}: member/column {1} not found. Filter: {2}", tbl.Entity.Name, mName, templ);
+            Util.Throw($"Index/key filter on entity {tbl.Entity.Name}: member/column {mName} not found. Filter: {filterTempl}");
           else
-            log.LogError("Index/key filter on entity {0}: member/column {1} not found. Filter: {2}", tbl.Entity.Name, mName, templ);
+            log.LogError($"Index/key filter on entity {tbl.Entity.Name}: member/column {mName} not found. Filter: {filterTempl}");
 
         } //else
       }//foreach

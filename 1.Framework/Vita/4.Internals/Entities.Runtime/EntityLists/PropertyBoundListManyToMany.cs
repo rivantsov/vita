@@ -102,8 +102,11 @@ namespace Vita.Entities.Runtime {
           LinkRecordsLookup[ent.Record] = linkRec;
         }
         //Handle persistent ordering
-        if (IsOrdered)
-          (linkRec).SetValueDirect(persistentOrderMember, i + 1, setModified: true); // Persistent order is 1-based
+        if (IsOrdered) {
+          object incValue = (i.GetType() == persistentOrderMember.DataType) ? i + 1 : 
+              incValue = Convert.ChangeType(i + 1, persistentOrderMember.DataType);
+          linkRec.SetValueDirect(persistentOrderMember, incValue, setModified: true); // Persistent order is 1-based
+        }
       }
       // Now handle deleted links - whatever is left in unusedLinks
       var session = OwnerRecord.Session;

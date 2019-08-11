@@ -10,12 +10,6 @@ using Vita.Entities.Api;
 
 namespace Vita.Modules.Logging {
 
-  [Entity, DoNotTrack]
-  public interface IOperationLog : ILogEntityBase {
-    [Unlimited]
-    string Message { get; set; }
-  }
-
   [DoNotTrack]
   public interface ILogContext {
     [PrimaryKey, Auto]
@@ -27,9 +21,6 @@ namespace Vita.Modules.Logging {
 
     [Nullable, Size(Sizes.UserName)]
     string UserName { get; set; }
-
-    [Index]
-    Guid? SessionId { get; set; }
 
     Guid? TenantId { get; set; }
 
@@ -44,10 +35,19 @@ namespace Vita.Modules.Logging {
     DateTime CreatedOn { get; set; }
 
     [Index]
+    Guid? SessionId { get; set; }
+
+    [Index]
     Guid? WebCallId { get; set; }
   }
 
-  [Entity]
+  [Entity, DoNotTrack]
+  public interface IOperationLog : ILogEntityBase {
+    [Unlimited]
+    string Message { get; set; }
+  }
+
+  [Entity, Index("Category,EventType")]
   public interface IAppEvent : ILogEntityBase {
 
     [Size(Sizes.Name)]
@@ -56,13 +56,7 @@ namespace Vita.Modules.Logging {
     [Size(Sizes.Name)]
     string EventType { get; set; }
 
-    [HashFor("EventType"), Index]
-    int EventTypeHash { get; }
-
-    [Size(Sizes.Name), Nullable]
-    string EventSubType { get; set; }
-
-    int? DurationMs { get; set; }
+    string SubjectUser { get; set; }
 
     //Free-form values, 'main' value for easier search - rather than putting in parameters
     int IntValue { get; set; }
@@ -200,4 +194,14 @@ namespace Vita.Modules.Logging {
   }
 
 
+
+  public class LogEntityModule: EntityModule {
+    public static readonly Version CurrentVersion = new Version("2.0.0.0");
+    public LogEntityModule(EntityArea area) : base(area, "LogEntityModule", version: CurrentVersion) {
+      this.RegisterEntities(
+        typeof(IOperationLog), typeof(ILogContext), typeof(IErrorLog), typeof(IAppEvent), typeof(ITransactionLog), 
+        typeof(IWebCallLog), typeof(IWebClientLog), typeof(IUserSession)
+        );
+    }
+  }
 }

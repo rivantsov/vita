@@ -7,10 +7,19 @@ using System.Threading.Tasks;
 namespace Vita.Entities.Utilities {
 
   public class QueueBatchEventArgs<T>: EventArgs {
-    public readonly IList<T> Items; 
-    public QueueBatchEventArgs(IList<T> items) {
+    public readonly IList<T> Items;
+    public readonly BatchTrigger Trigger; 
+
+    public QueueBatchEventArgs(IList<T> items, BatchTrigger trigger) {
       Items = items;
+      Trigger = trigger; 
     }
+  }
+
+  public enum BatchTrigger {
+    Size,
+    Timer,
+    Code
   }
 
   public class BatchingQueue<T> {
@@ -44,7 +53,7 @@ namespace Vita.Entities.Utilities {
       _queue.Enqueue(item);
       var count = Interlocked.Increment(ref _count);
       if (count >= _batchSize)
-        StartProduceBatch();
+        StartProduceBatch(BatchTrigger.Size);
     }
 
     private void Timer_Elapsed(object sender, System.Timers.ElapsedEventArgs e) {
@@ -52,14 +61,18 @@ namespace Vita.Entities.Utilities {
       _batchedSinceLastTimer = false;
       if (batchedRecently)
         return;
-      StartProduceBatch(); 
+      StartProduceBatch(BatchTrigger.Timer); 
     }
 
-    private void StartProduceBatch() {
-      Task.Run(() => ProduceBatch());
+    private void StartProduceBatch(BatchTrigger trigger) {
+      Task.Run(() => ProduceBatchImpl(trigger));
     }
 
-    public IList<T> ProduceBatch() {
+    public IList<T> ProduceBatch(bool fireEvent = true) {
+      return ProduceBatchImpl(BatchTrigger.Code, fireEvent); 
+    }
+
+    private IList<T> ProduceBatchImpl(BatchTrigger trigger, bool fireEvent = true) {
       lock (_dequeueLock) {
         _batchedSinceLastTimer = true;
         var items = new List<T>();
@@ -67,7 +80,8 @@ namespace Vita.Entities.Utilities {
           items.Add(item);
           Interlocked.Decrement(ref _count);
         }
-        Batched?.Invoke(this, new QueueBatchEventArgs<T>(items));
+        if (fireEvent)
+          Batched?.Invoke(this, new QueueBatchEventArgs<T>(items, trigger));
         return items; 
       }
     }

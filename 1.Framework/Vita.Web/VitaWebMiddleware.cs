@@ -109,8 +109,7 @@ namespace Vita.Web {
     }
 
     private void SetExplicitResponse(ResponseInfo wantedResponse, HttpContext httpContext) {
-      if (wantedResponse.HttpStatus != null)
-        httpContext.Response.StatusCode = (int) wantedResponse.HttpStatus.Value; 
+      httpContext.Response.StatusCode = (int)wantedResponse.HttpStatus; 
       if (wantedResponse.Body != null) {
         switch(wantedResponse.Body) {
           case string s:

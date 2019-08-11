@@ -27,18 +27,6 @@ namespace Vita.Modules.Logging {
       App.RegisterService<IDbUpgradeLogService>(this);
     }
 
-    public override void Init() {
-      base.Init();
-      var dsService = App.DataAccess;
-      dsService.Events.DataSourceStatusChanging += Events_DataSourceStatusChanging;
-    }
-
-    void Events_DataSourceStatusChanging(object sender, DataSourceEventArgs e) {
-      if(e.EventType == DataSourceEventType.Connected) {
-        _connected = true;
-        Flush(); 
-      }
-    }
 
     public void LogDbUpgrade(DbUpgradeReport report) {
       lock(_lock) {

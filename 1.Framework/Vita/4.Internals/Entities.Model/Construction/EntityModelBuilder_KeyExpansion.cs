@@ -35,7 +35,7 @@ namespace Vita.Entities.Model.Construction {
       if(key.IsExpanded())
         return true;
       if(_keysInExpansion.Contains(key)) {
-        Log.LogError("Cannot expand key/index {0}, ran into key circular reference.", key.GetFullRef());
+        Log.LogError($"Cannot expand key/index {key.GetFullRef()}, ran into key circular reference.");
         return false;
       }
       try {
@@ -106,8 +106,8 @@ namespace Vita.Entities.Model.Construction {
       if(!string.IsNullOrEmpty(refInfo.ForeignKeyColumns)) {
         fkNames = refInfo.ForeignKeyColumns.SplitNames(',', ';');
         if(fkNames.Length != toKeyMembers.Count) {
-          LogError("Invalid KeyColumns specification in property {0}: # of columns ({1}) does not match # of columns ({2}) in target primary key.",
-                   propRef, fkNames.Length, toKeyMembers.Count);
+          Log.LogError($"Invalid KeyColumns specification in property {propRef}: # of columns ({fkNames.Length}) " + 
+            $" does not match # of columns ({toKeyMembers.Count}) in target primary key.");
           return false;
         }
       }
@@ -126,9 +126,8 @@ namespace Vita.Entities.Model.Construction {
         if(fkMember != null) {
           // check it matches the type
           if(fkMember.DataType != memberType) {
-            LogError("Property {0}: underlying foreign key column '{3}' already exists - it is declared explicitly (or is a part of another key) and " +
-                "its type {1} does not match foreign key column type {2}.",
-                     propRef, fkMember.DataType.Name, memberType.Name, fkMemberName);
+            Log.LogError($"Property {propRef}: underlying foreign key column '{fkMemberName}' already exists - " + 
+              $"it is declared explicitly (or is a part of another key) and its type {fkMember.DataType} does not match foreign key column type {memberType.Name}.");
             return false;
           }
         } else {

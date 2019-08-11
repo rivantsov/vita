@@ -7,6 +7,9 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="TransactionLog\TransactionLogModule.cs" />
+    <Compile Remove="TransactionLog\_Disabled_Attributes.cs" />
+    <Compile Remove="TransactionLog\_Disabled_TransactionLogModelExtender.cs" />
     <Compile Remove="Z_OLD_CODE\AppEventLogExtensions.cs" />
     <Compile Remove="Z_OLD_CODE\AppEventLogModule.cs" />
     <Compile Remove="Z_OLD_CODE\ErrorLogModule.cs" />
@@ -17,6 +20,9 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Include="TransactionLog\TransactionLogModule.cs" />
+    <None Include="TransactionLog\_Disabled_Attributes.cs" />
+    <None Include="TransactionLog\_Disabled_TransactionLogModelExtender.cs" />
     <None Include="Z_OLD_CODE\AppEventLogExtensions.cs" />
     <None Include="Z_OLD_CODE\AppEventLogModule.cs" />
     <None Include="Z_OLD_CODE\ErrorLogModule.cs" />

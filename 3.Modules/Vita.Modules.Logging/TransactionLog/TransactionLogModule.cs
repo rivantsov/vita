@@ -38,13 +38,9 @@ namespace Vita.Modules.Logging {
     #region ITransactionLogService members
     public void SetupLoggingFor(EntityApp targetApp) {
       targetApp.AppEvents.SavedChanges += Events_SavedChanges;
-      targetApp.AppEvents.ExecutedNonQuery += AppEvents_ExecutedNonQuery;
     }
     #endregion 
 
-    void AppEvents_ExecutedNonQuery(object sender, EntitySessionEventArgs e) {
-      // TODO: finish this, for now not sure what and how to do logging here
-    }
 
     void Events_SavedChanges(object sender, EntitySessionEventArgs e) {
       var entSession = (EntitySession)e.Session;

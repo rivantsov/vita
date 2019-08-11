@@ -11,7 +11,7 @@ namespace Vita.Entities.Model.Construction {
       foreach(var am in _customization.AddedMembers) {
         var ent = Model.GetEntityInfo(am.EntityType); 
         if (ent == null) {
-          Log.LogError("Invalid entity type for added member ({0}), entity {1} not registered.", am.Name, am.EntityType);
+          Log.LogError($"Invalid entity type for added member ({am.Name}), entity {am.EntityType} not registered.");
           continue; 
         }
         if(!TryGetMemberKind(ent, am.Name, am.DataType, out EntityMemberKind kind))
@@ -25,7 +25,7 @@ namespace Vita.Entities.Model.Construction {
       foreach(var indInfo in _customization.AddedIndexes) {
         var ent = Model.GetEntityInfo(indInfo.EntityType);
         if(ent == null) {
-          Log.LogError("Invalid entity type for added index ({0}), entity not registered.", indInfo.EntityType);
+          Log.LogError($"Invalid entity type for added index ({indInfo.EntityType}), entity not registered.");
           continue;
         }
         ent.Attributes.Add(indInfo.IndexAttribute); 
@@ -42,8 +42,7 @@ namespace Vita.Entities.Model.Construction {
       foreach(var replInfo in _customization.Replacements) {
         var oldEntInfo = Model.GetEntityInfo(replInfo.ReplacedType);
         if(oldEntInfo == null) {
-          LogError("Replacing entity {0}->{1}; Error: type {0} is not a registered entity.",
-            replInfo.ReplacedType, replInfo.NewType);
+          Log.LogError($"Replacing entity {replInfo.ReplacedType}->{replInfo.NewType}; Error: type {replInfo.ReplacedType} is not a registered entity.");
           continue;
         }
         var newEntInfo = AddEntity(oldEntInfo.Module, replInfo.NewType);

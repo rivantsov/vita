@@ -31,7 +31,7 @@ namespace Vita.Entities {
         foreach(var dep in depList) {
           var ok = Modules.Any(m => dep.IsTypeOrSubType(m));
           if(!ok)
-            ActivationLog.LogError("Module {0} requires dependent module {1} which is not included in the app.", mod.GetType(), dep);
+            ActivationLog.LogError($"Module {mod.Name} requires dependent module {dep} which is not included in the app.");
         }
       }
       CheckActivationErrors(); 

@@ -6,7 +6,7 @@ using Vita.Entities.Services.Implementations;
 namespace Vita.Entities.Logging {
 
   public abstract class LogEntry {
-    public Guid? Id;
+    public Guid Id;
     public LogEntryType EntryType;
     public DateTime CreatedOn;
     public LogContext Context;

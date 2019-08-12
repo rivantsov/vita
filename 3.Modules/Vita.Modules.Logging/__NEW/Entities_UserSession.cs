@@ -19,23 +19,16 @@ namespace Vita.Modules.Logging {
   }
 
   [Entity, DoNotTrack]
-  public interface IUserSession {
-    [PrimaryKey, Auto]
-    Guid Id { get; set; }
+  public interface IUserSession : ILogEntityBase {
 
-    UserKind UserKind { get; set; } //anonymous/authenticated
-    [Index]
-    Guid? UserId { get; set; }
-    Int64? AltUserId { get; set; }
-
-    [Size(Sizes.UserName)]
-    string UserName { get; set; }
     [Index, Utc]
     DateTime StartedOn { get; set; }
     [Utc]
     DateTime? EndedOn { get; set; }
     [Utc]
     DateTime LastUsedOn { get; set; }
+
+    UserSessionStatus Status { get; set; }
 
     //Expiration data
     UserSessionExpirationType ExpirationType { get; set; }
@@ -46,11 +39,9 @@ namespace Vita.Modules.Logging {
 
     int TimeZoneOffsetMinutes { get; set; }
 
-    UserSessionStatus Status { get; set; }
-
     [Size(100), Nullable]
     string SessionToken { get; set; }
-    DateTime WebSessionTokenCreatedOn { get; set; }
+    DateTime TokenCreatedOn { get; set; }
     [Size(100), Nullable]
     string RefreshToken { get; set; }
 
@@ -59,7 +50,7 @@ namespace Vita.Modules.Logging {
 
     // Used for fast lookup by session token
     [HashFor(nameof(SessionToken)), Index]
-    int WebSessionTokenHash { get; set; }
+    int TokenHash { get; set; }
 
     Guid? CreatedByWebCallId { get; set; }
 

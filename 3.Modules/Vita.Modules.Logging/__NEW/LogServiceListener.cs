@@ -28,18 +28,58 @@ namespace Vita.Modules.Logging {
     }
 
     public void Flush() {
+      // do not fire event - it will result in saving on background thread; we save items directly
       var items = _queue.ProduceBatch(fireEvent: false);
       if (items.Count > 0)
         SaveBatch(items); 
     }
 
-    private void SaveBatch(IList<LogEntry> items) {
-      if (items.Count == 0)
+    private void SaveBatch(IList<LogEntry> entries) {
+      if (entries.Count == 0)
         return;
       var session = _app.OpenSystemSession();
+      foreach(var entry in entries) {
+        switch(entry) {
+
+          case InfoLogEntry infoEntry:
+            var infoEnt = session.NewLogEntity<IOperationLog>(entry);
+            infoEnt.Message = infoEntry.AsText(); 
+            break;
+
+          case BatchedLogEntry batchEntry:
+            var batchEnt = session.NewLogEntity<IOperationLog>(entry);
+            batchEnt.Message = batchEntry.AsText();
+            break;
+
+          case ErrorLogEntry errEntry:
+            var errEnt = session.NewLogEntity<IErrorLog>(entry);
+            errEnt.Message = errEntry.Message;
+            errEnt.Details = errEntry.Details;
+            errEnt.ExceptionType = errEntry.ExceptionType?.Name;
+            break;
+
+          case WebCallLogEntry webEntry:
+            var webEnt = session.NewLogEntity<IWebCallLog>(entry);
+            webEnt.ControllerName = webEntry.Response?.ControllerName;
+
+            break; 
+        }
+      }
 
 
       session.SaveChanges(); 
+    }
+  }
+
+  public static class LogSessionExtensions {
+    public static TEntity NewLogEntity<TEntity>(this IEntitySession session, LogEntry entry) where TEntity: class, ILogEntityBase {
+      var ent = session.NewEntity<TEntity>();
+      ent.CreatedOn = entry.CreatedOn;
+      ent.Id = entry.Id;
+      ent.SessionId = entry.Context.SessionId;
+      ent.WebCallId = entry.Context.WebCallId;
+
+      return ent; 
     }
   }
 }

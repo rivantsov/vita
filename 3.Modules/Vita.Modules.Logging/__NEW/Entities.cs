@@ -31,6 +31,7 @@ namespace Vita.Modules.Logging {
     Guid Id { get; set; }
 
     ILogUserInfo User { get; set; }
+
     [Utc, Index]
     DateTime CreatedOn { get; set; }
 
@@ -68,12 +69,13 @@ namespace Vita.Modules.Logging {
 
   [Entity, OrderBy("CreatedOn:DESC"), ClusteredIndex("CreatedOn,Id"), DoNotTrack]
   public interface IErrorLog : ILogEntityBase {
+
     DateTime LocalTime { get; set; }
 
     [Size(50), Nullable]
     string MachineName { get; set; }
 
-    [Size(50), Nullable, Index]
+    [Size(50), Nullable]
     string AppName { get; set; }
     [Size(250)]
     string Message { get; set; }
@@ -81,8 +83,6 @@ namespace Vita.Modules.Logging {
     string ExceptionType { get; set; }
     [Unlimited, Nullable]
     string Details { get; set; }
-    [Unlimited, Nullable]
-    string OperationLog { get; set; }
     bool IsClientError { get; set; }
 
   }

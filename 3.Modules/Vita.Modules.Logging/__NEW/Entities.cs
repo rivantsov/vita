@@ -22,8 +22,6 @@ namespace Vita.Modules.Logging {
     [Nullable, Size(Sizes.UserName)]
     string UserName { get; set; }
 
-    Guid? TenantId { get; set; }
-
   }
 
   public interface ILogEntityBase {

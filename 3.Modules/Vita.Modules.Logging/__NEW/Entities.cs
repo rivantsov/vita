@@ -11,7 +11,7 @@ using Vita.Entities.Api;
 namespace Vita.Modules.Logging {
 
   [DoNotTrack]
-  public interface ILogContext {
+  public interface ILogUserInfo {
     [PrimaryKey, Auto]
     Guid Id { get; set; }
 
@@ -30,7 +30,7 @@ namespace Vita.Modules.Logging {
     [PrimaryKey, Auto]
     Guid Id { get; set; }
 
-    ILogContext LogContext { get; set; }
+    ILogUserInfo User { get; set; }
     [Utc, Index]
     DateTime CreatedOn { get; set; }
 
@@ -199,7 +199,7 @@ namespace Vita.Modules.Logging {
     public static readonly Version CurrentVersion = new Version("2.0.0.0");
     public LogEntityModule(EntityArea area) : base(area, "LogEntityModule", version: CurrentVersion) {
       this.RegisterEntities(
-        typeof(IOperationLog), typeof(ILogContext), typeof(IErrorLog), typeof(IAppEvent), typeof(ITransactionLog), 
+        typeof(IOperationLog), typeof(ILogUserInfo), typeof(IErrorLog), typeof(IAppEvent), typeof(ITransactionLog), 
         typeof(IWebCallLog), typeof(IWebClientLog), typeof(IUserSession)
         );
     }

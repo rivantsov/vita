@@ -14,7 +14,7 @@ namespace Vita.Modules.Login {
     public PostLoginActions Actions;
     public Guid SessionId;
     public UserInfo User;
-    public DateTime? LastLoggedInOn;
+    public DateTime? PreviousLoginOn;
   }
 
   public class LoginEventArgs : EventArgs {

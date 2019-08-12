@@ -32,12 +32,16 @@ namespace Vita.Modules.DataHistory {
 
     [Size(50)]
     string EntityName { get; set; }
-    [HashFor("EntityName"), Index]
+
+    [HashFor(nameof(EntityName)), Index]
     int EntityNameHash { get; set; }
+
     [Size(100)]
     string EntityPrimaryKey { get; set; }
-    [HashFor("EntityPrimaryKey"), Index]
+    [HashFor(nameof(EntityPrimaryKey)), Index]
+
     int EntityPrimaryKeyHash { get; set; }
+
     [Unlimited]
     string EntityData { get; set; }
   }

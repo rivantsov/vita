@@ -18,18 +18,12 @@ namespace Vita.Modules.Logging {
 
   }
 
-  public enum UserSessionStatus {
-    Active = 1,
-    Expired = 2,
-    LoggedOut = 3,
-  }
-
   [Entity, DoNotTrack]
   public interface IUserSession {
     [PrimaryKey, Auto]
     Guid Id { get; set; }
 
-    UserKind UserKind { get; set; } //anonymous/authenticated/system
+    UserKind UserKind { get; set; } //anonymous/authenticated
     [Index]
     Guid? UserId { get; set; }
     Int64? AltUserId { get; set; }
@@ -55,7 +49,7 @@ namespace Vita.Modules.Logging {
     UserSessionStatus Status { get; set; }
 
     [Size(100), Nullable]
-    string WebSessionToken { get; set; }
+    string SessionToken { get; set; }
     DateTime WebSessionTokenCreatedOn { get; set; }
     [Size(100), Nullable]
     string RefreshToken { get; set; }
@@ -64,12 +58,14 @@ namespace Vita.Modules.Logging {
     string CsrfToken { get; set; }
 
     // Used for fast lookup by session token
-    [HashFor("WebSessionToken"), Index]
+    [HashFor(nameof(SessionToken)), Index]
     int WebSessionTokenHash { get; set; }
 
     Guid? CreatedByWebCallId { get; set; }
-    [Nullable, Size(Sizes.IPv6Address)] //50
+
+    [Nullable, Size(50)] // IPV6
     string IPAddress { get; set; }
+
     [Nullable, Size(100)]
     string UserAgent { get; set; }
     [Nullable, Size(50)]

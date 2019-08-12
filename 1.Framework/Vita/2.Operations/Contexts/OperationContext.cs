@@ -42,6 +42,14 @@ namespace Vita.Entities {
       }
     } LogContext _logContext; 
 
+    public UserSessionBase UserSession {
+      get { return _userSession; }
+      set {
+        _userSession = value;
+        _logContext = null; //force it to refresh
+      }
+    } UserSessionBase _userSession; 
+
     // Disposables - to register objects that must be disposed once an operation is finished. 
     // One use is for keeping track of open connections when sessions are opened with KeepOpen value for DbConnectionMode.
     // The connection is registered in _disposables list, and will be force-closed at the end of the global operaiton.

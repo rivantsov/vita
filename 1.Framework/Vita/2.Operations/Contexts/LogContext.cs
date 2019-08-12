@@ -7,7 +7,6 @@ namespace Vita.Entities {
   // some information shared between multiple log entries; copied from OperationContext
   public class LogContext {
     public static LogContext SystemLogContext = new LogContext() { User = UserInfo.System };
-    public static LogContext AnonymousLogContext = new LogContext() { User = UserInfo.Anonymous };
 
     public UserInfo User;
     public Guid? SessionId;

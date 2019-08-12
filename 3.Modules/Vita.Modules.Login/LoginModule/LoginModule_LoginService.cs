@@ -49,7 +49,7 @@ namespace Vita.Modules.Login {
             OnLoginEvent(context, LoginEventType.Login, login, userName: userName);
             return new LoginResult() {
               Status = status, Login = login, Actions = actions, User = context.User,
-              SessionId = Guid.NewGuid(), LastLoggedInOn = prevLoggedInOn,
+              SessionId = Guid.NewGuid(), PreviousLoginOn = prevLoggedInOn,
             };
           case LoginAttemptStatus.PendingMultifactor:
             OnLoginEvent(context, LoginEventType.LoginPendingMultiFactor, login, userName: userName);
@@ -75,13 +75,15 @@ namespace Vita.Modules.Login {
       if(login == null || login.Flags.IsSet(LoginFlags.Inactive))
         return new LoginResult() { Status = LoginAttemptStatus.Failed };
       context.User = login.CreateUserInfo();
+      var sessionId = Guid.NewGuid();
+      context.UserSession = new UserSessionBase() { SessionId = sessionId };
       OnLoginEvent(context, LoginEventType.Login, login);
-      var lastLogin = login.LastLoggedInOn; //save prev value
-      login.LastLoggedInOn = App.TimeService.UtcNow;
-      OnLoginEvent(context, LoginEventType.Login, login, userName: login.UserName);
+      var prevLoginOn = login.LastLoggedInOn; //save prev value
+      login.LastLoggedInOn = AppTime.UtcNow;
       session.SaveChanges();
-      context.SessionId = Guid.NewGuid();
-      return new LoginResult() { Status = LoginAttemptStatus.Success, Login = login, User = context.User, SessionId = context.SessionId.Value, LastLoggedInOn = lastLogin };
+      OnLoginEvent(context, LoginEventType.Login, login);
+      return new LoginResult() { Status = LoginAttemptStatus.Success, Login = login, User = context.User,
+        SessionId = sessionId, PreviousLoginOn = prevLoginOn };
     }
 
 
@@ -91,14 +93,15 @@ namespace Vita.Modules.Login {
       var lastLogin = login.LastLoggedInOn;
       login.LastLoggedInOn = App.TimeService.UtcNow;
       var session = EntityHelper.GetSession(login);
-      if(context.SessionId == null)
-        context.SessionId = Guid.NewGuid(); 
+      // session must be already established!
+      context.UserSession.Status = UserSessionStatus.Active; 
       OnLoginEvent(context, LoginEventType.MultiFactorLoginCompleted, login);
       OnLoginEvent(context, LoginEventType.Login, login);
       OnLoginSucceeded(login);
       session.SaveChanges();
       return new LoginResult() {
-        Status = LoginAttemptStatus.Success, Login = login, Actions = actions, User = context.User, SessionId = context.SessionId.Value,  LastLoggedInOn = lastLogin };
+        Status = LoginAttemptStatus.Success, Login = login, Actions = actions, User = context.User,
+        SessionId = context.UserSession.SessionId,  PreviousLoginOn = lastLogin };
     }
 
     public void Logout(OperationContext context) {

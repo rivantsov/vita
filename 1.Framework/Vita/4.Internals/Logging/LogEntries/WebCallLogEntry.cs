@@ -15,6 +15,7 @@ namespace Vita.Entities.Logging {
     public WebCallFlags Flags;
 
     public Guid? ErrorLogId;
+    public Exception Exception;
 
     //log and exceptions
 

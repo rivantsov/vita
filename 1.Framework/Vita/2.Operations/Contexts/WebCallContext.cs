@@ -37,6 +37,7 @@ namespace Vita.Entities.Api {
     public string Url;
     public IDictionary<string, string> Headers;
 
+    public object Body;
     public long? ContentSize;
     public string ContentType;
     public string IPAddress;
@@ -48,7 +49,7 @@ namespace Vita.Entities.Api {
     public TimeSpan Duration;
     public HttpStatusCode HttpStatus = HttpStatusCode.OK;
     public IDictionary<string, string> Headers = new Dictionary<string, string>();
-    public HttpContent Content;
+    public object Body;
   }
 
 
@@ -66,10 +67,6 @@ namespace Vita.Entities.Api {
     public WebCallLogEntry LogEntry; 
 
     public long TickCountStart;
-
-    public string UrlTemplate;
-    public string ControllerName;
-    public string MethodName;
 
     public RequestInfo Request;
     public ResponseInfo Response; 

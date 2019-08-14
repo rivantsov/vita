@@ -35,7 +35,7 @@ namespace Vita.Entities.Logging {
 
     private string _asText;
     public override string AsText() {
-      _asText = _asText ?? $"Event: ${Category}/{EventType} ({Severity}), {Message}";
+      _asText = _asText ?? $"--- AppEvent: {Category}/{EventType} ({ObjectName}) {Message}";
       return _asText; 
     }
 

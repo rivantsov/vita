@@ -5,7 +5,7 @@ using System.Net;
 using System.Security.Claims;
 using System.Text;
 using System.Threading.Tasks;
-using Microsoft.AspNetCore.Builder;
+
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc.Formatters;
 using Microsoft.AspNetCore.Mvc.Infrastructure;
@@ -29,8 +29,8 @@ namespace Vita.Web {
       httpContext.Items[WebCallContext.WebCallContextKey] = webContext; 
     }
 
-    public static void SetupJwtTokenAuthentication(IServiceCollection services, string jwtSecret) {
-      var jwtTokenHandler = new VitaJwtTokenHandler(EntityApp, services, jwtSecret);
+    public static void SetupJwtTokenAuthentication(EntityApp app, IServiceCollection services, string jwtSecret) {
+      var jwtTokenHandler = new VitaJwtTokenHandler(app, services, jwtSecret);
       services.Add(new ServiceDescriptor(typeof(IAuthenticationTokenHandler), jwtTokenHandler));
     }
 
@@ -65,7 +65,8 @@ namespace Vita.Web {
       var writerFactory = context.RequestServices.GetRequiredService<IHttpResponseStreamWriterFactory>();
       var formatterContext = new OutputFormatterWriteContext(context, writerFactory.CreateWriter, 
           typeof(TModel), model);
-      var selectedFormatter = selector.SelectFormatter(formatterContext, Array.Empty<IOutputFormatter>(), new MediaTypeCollection());
+      var selectedFormatter = selector.SelectFormatter(formatterContext, 
+               Array.Empty<IOutputFormatter>(), new MediaTypeCollection());
       return selectedFormatter.WriteAsync(formatterContext);
     }
 
@@ -78,7 +79,7 @@ namespace Vita.Web {
       context.EnsureResponseInfo(); 
       if (body != null) {
         context.Response.Body = body;
-        context.Response.ContentType = contentType;
+        context.Response.BodyContentType = contentType;
       }
       if (status != null)
         context.Response.HttpStatus = status.Value;

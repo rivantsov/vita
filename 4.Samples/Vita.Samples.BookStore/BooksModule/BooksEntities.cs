@@ -60,8 +60,8 @@ namespace Vita.Samples.BookStore {
 
      // Just to play with model - uncomment this to see column and index appear in the database
     // ISBN should be Unique, but we make it nullable so for existing records (if any) it can be set to null
-    //[Nullable, Size(40), Unique(Filter = "{Isbn} IS NOT NULL")]
-    //string Isbn { get; set; }
+    [Nullable, Size(40), Unique(Filter = "{Isbn} IS NOT NULL")]
+    string Isbn { get; set; }
 
   }
 

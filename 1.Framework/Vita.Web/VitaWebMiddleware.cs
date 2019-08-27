@@ -12,6 +12,8 @@ using System.Threading.Tasks;
 
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Extensions;
+using Microsoft.AspNetCore.Http.Features;
+using Microsoft.AspNetCore.Http.Internal;
 using Microsoft.AspNetCore.Routing;
 
 using Vita.Entities;
@@ -58,42 +60,59 @@ namespace Vita.Web {
       var webCtx = BeginRequest(context);
       try {
         await _next(context);
-        await EndRequest(context);
+        EndRequest(context);
       } catch (Exception ex) {
-        await EndRequest(context, ex);
+        //EndRequest(context, ex);
       }
     }
 
     public WebCallContext BeginRequest(HttpContext httpContext) {
       var req = httpContext.Request;
+      var body = ReadRequestBodyForLog(req);
       var reqInfo = new RequestInfo() {
         HttpMethod = req.Method,
         Url = req.GetDisplayUrl(),
         ContentType = req.ContentType,
         ContentSize = req.ContentLength,
+        Body = body,
         Headers = req.Headers.ToDictionary(h => h.Key, h => string.Join(" ", h.Value)),
-        IPAddress = httpContext.Connection.RemoteIpAddress.ToString()
+        IPAddress = httpContext.Connection.RemoteIpAddress.ToString(),
+        HttpContextRef = new WeakReference(httpContext)
       };
+
+      var log = new BufferedLog();      
       var opCtx = new OperationContext(this.App, 
-        log: new BufferedLog(this.App),
         connectionMode: this.Settings.ConnectionReuseMode);
-      var webCtx = opCtx.WebContext = new WebCallContext(opCtx, httpContext, reqInfo);
+      opCtx.Log = new BufferedLog(opCtx.LogContext);
+      var webCtx = opCtx.WebContext = new WebCallContext(opCtx, reqInfo);
+      // Replace body stream with MemStream
+      webCtx.OriginalResponseStream = httpContext.Response.Body; 
+      httpContext.Response.Body = new MemoryStream();
+
+
       httpContext.SetWebCallContext(webCtx);
       OnWebCallStarting(webCtx);
       return webCtx; 
     }
 
-    public async Task EndRequest(HttpContext httpContext, Exception ex = null) {
+    public void EndRequest(HttpContext httpContext, Exception ex = null) {
+      var resp = httpContext.Response;
       var webCtx = httpContext.GetWebCallContext();
       webCtx.OperationContext.DisposeAll(); // dispose/close conn
+      webCtx.Response = new ResponseInfo();
       RetrieveRoutingData(httpContext, webCtx); 
-      var resp = httpContext.Response; 
+      webCtx.Response.Body = ReadResponseBodyForLog(resp);
+      // Response stream is our MemoryStream - copy contents to original stream
+      httpContext.Response.Body.Position = 0; 
+      httpContext.Response.Body.CopyTo(webCtx.OriginalResponseStream);
+      webCtx.OriginalResponseStream = null; 
+
       if (ex != null) {
         var bodyWriter = new StreamWriter(resp.Body);
         switch (ex) {
           case ClientFaultException cfex:
             resp.StatusCode = (int) HttpStatusCode.BadRequest;
-            await httpContext.WriteResponse(cfex.Faults); // writes resp respecting content negotiation
+            httpContext.WriteResponse(cfex.Faults).GetAwaiter().GetResult(); // writes resp respecting content negotiation
             break;
           default:
             bodyWriter.Write(ex.Message);
@@ -102,10 +121,44 @@ namespace Vita.Web {
         }
         bodyWriter.Flush(); 
       }
-      if (webCtx.Response != null) {
+      if (webCtx.Response?.Body != null) {
         SetExplicitResponse(webCtx.Response, httpContext);
       }
       OnWebCallCompleting(webCtx); 
+    }
+
+    private string ReadRequestBodyForLog(HttpRequest request) {
+      if (!IsTextContent(request.ContentType))
+        return "(non-text content)";
+      if (request.ContentLength == null || request.ContentLength == 0)
+        return null;
+      var body = request.Body;
+      request.EnableRewind();
+      string textBody = null;
+      using (var streamReader = new StreamReader(body))
+        textBody = streamReader.ReadToEnd();
+      request.Body = body; // because of EnableRewind
+      return textBody;
+    }
+
+    private string ReadResponseBodyForLog(HttpResponse response) {
+      if (!IsTextContent(response.ContentType))
+        return "(non-text content)";
+
+      response.Body.Seek(0, SeekOrigin.Begin);
+      string textBody = null;
+      var reader = new StreamReader(response.Body); 
+      textBody = reader.ReadToEnd();
+      //set explicit length, to avoid chunking
+      if (response.ContentLength == null)
+        response.ContentLength = textBody.Length; 
+      return textBody; 
+    }
+
+    private static bool IsTextContent(string contentType) {
+      if (string.IsNullOrWhiteSpace(contentType))
+        return false;
+      return contentType.Contains("text") || contentType.Contains("json");
     }
 
     private void SetExplicitResponse(ResponseInfo wantedResponse, HttpContext httpContext) {
@@ -114,7 +167,7 @@ namespace Vita.Web {
         switch(wantedResponse.Body) {
           case string s:
             //httpContext.WriteResponse(s); 
-            httpContext.Response.ContentType = wantedResponse.ContentType ?? "text/plain";
+            httpContext.Response.ContentType = wantedResponse.BodyContentType ?? "text/plain";
             httpContext.Response.Body = new MemoryStream(Encoding.UTF8.GetBytes(s));
             return;
           case byte[] bytes:
@@ -130,9 +183,9 @@ namespace Vita.Web {
       if (routeData == null)
         return; 
       routeData.Values.TryGetValue("action", out var action);
-      webCtx.MethodName = action?.ToString();
+      webCtx.Response.MethodName = action?.ToString();
       routeData.Values.TryGetValue("controller", out var contr);
-      webCtx.ControllerName = contr?.ToString();
+      webCtx.Response.ControllerName = contr?.ToString();
     }
 
     #region IWebCallNotificationService implementation

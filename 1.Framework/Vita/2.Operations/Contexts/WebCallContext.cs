@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
@@ -41,6 +42,8 @@ namespace Vita.Entities.Api {
     public long? ContentSize;
     public string ContentType;
     public string IPAddress;
+
+    public WeakReference HttpContextRef;
   }
 
   public class ResponseInfo {
@@ -50,6 +53,7 @@ namespace Vita.Entities.Api {
     public HttpStatusCode HttpStatus = HttpStatusCode.OK;
     public IDictionary<string, string> Headers = new Dictionary<string, string>();
     public object Body;
+    public string BodyContentType;
   }
 
 
@@ -62,7 +66,7 @@ namespace Vita.Entities.Api {
     public const string WebCallContextKey = "_vita_web_call_context_";
     public OperationContext OperationContext;
 
-    public readonly WeakReference HttpContextRef;
+    public Stream OriginalResponseStream;
 
     public WebCallLogEntry LogEntry; 
 
@@ -75,10 +79,10 @@ namespace Vita.Entities.Api {
     // list of custom indicators for use by app that will be saved in web call log
     public IList<string> CustomTags = new List<string>(); 
 
-    public WebCallContext(OperationContext opContext, object httpContext, RequestInfo request) {
+    public WebCallContext(OperationContext opContext, RequestInfo request) {
       this.OperationContext = opContext;
       opContext.WebContext = this;
-      HttpContextRef = new WeakReference(httpContext);
+      Request = request; 
       LogEntry = new WebCallLogEntry(this);
       TickCountStart = AppTime.GetTimestamp();
     }

@@ -23,17 +23,17 @@ namespace Vita.Samples.BookStore.Api {
     }
 
     public IConfiguration Configuration { get; }
-    public BooksEntityApp EntityApp;
+    public BooksEntityApp BooksEntityApp;
 
     // This method gets called by the runtime. Use this method to add services to the container.
     public void ConfigureServices(IServiceCollection services) {
       // entity app
       var connStr = Configuration["MsSqlConnectionString"];
-      EntityApp = CreateBooksEntityApp(connStr);
+      BooksEntityApp = CreateBooksEntityApp(connStr);
 
       // Setup Authentication with jwt token
       var jwtSecret = Configuration["JwtSecret"];
-      WebHelper.SetupJwtTokenAuthentication(services, jwtSecret); 
+      WebHelper.SetupJwtTokenAuthentication(BooksEntityApp, services, jwtSecret); 
 
       services.AddRouting();
       // add action filter; Json is there by default, we also add xml for testing xml serialization
@@ -58,7 +58,7 @@ namespace Vita.Samples.BookStore.Api {
 
       // Vita middleware
       var stt = new VitaWebMiddlewareSettings(); 
-      app.UseMiddleware<VitaWebMiddleware>(EntityApp, stt);
+      app.UseMiddleware<VitaWebMiddleware>(BooksEntityApp, stt);
       
       app.UseAuthentication();
 

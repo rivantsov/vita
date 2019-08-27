@@ -74,8 +74,8 @@ namespace Vita.Samples.BookStore {
                               Count = bolSet.Where(bol => bol.Book == b).Sum(bol => bol.Quantity),
                               Total = bolSet.Where(bol => bol.Book == b).Sum(bol => bol.Price * bol.Quantity)
                             };
-      RegisterView<IBookSales>(bookSalesQuery2);  
-
+      RegisterView<IBookSales>(bookSalesQuery2); 
+      
       //Fiction books query
       var fictionCat = BookCategory.Fiction; // use local var to check that it is translated to literal, not parameter
       var fictionBookQuery = bookSet.Where(b => b.Category == fictionCat);

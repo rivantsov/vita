@@ -28,6 +28,19 @@ namespace Vita.Testing.ExtendedTests {
       session.EnableCache(false);
       var utcNow = app.TimeService.UtcNow;
 
+      // Bug - incorrect linq grouping of expressions with chained Where conditions
+      // https://github.com/rivantsov/vita/issues/93
+      var bks = session.EntitySet<IBook>()
+                 .Where(b => b.Price > 0 || b.Price < 0)
+                 .Where(b => b.Price < -1 || b.Price < -2)
+                 .ToList();
+      var sql = session.GetLastCommand().CommandText;
+      // correct WHERE: (b.Price > 0 OR b.Price < 0) AND (b.Price < -1 OR b.Price < -2)    -- returns 0 records
+      // old verion, bug-affected WHERE: 
+      //                 b.Price > 0 OR b.Price < 0 AND b.Price < -1 OR b.Price < -2   -- returns all records
+      Assert.AreEqual(0, bks.Count, "Bug 93 fix failed: query returned non-zero records.");
+
+
       // Bug - Any was not working properly
       var csBook = session.EntitySet<IBook>().Where(b => b.Title.StartsWith("c#")).First();
       // Any with parameter (filter)

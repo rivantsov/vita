@@ -270,7 +270,8 @@ namespace Vita.Data.Linq.Translation {
     /// <param name="context"></param>
     public virtual void RegisterWhere(Expression whereExpression, TranslationContext context) {
       var where = CheckBoolBitExpression(whereExpression);
-      context.CurrentSelect.Where.Add(where);
+      var currSelect = context.CurrentSelect;
+      currSelect.Where = currSelect.Where == null ? where : Expression.And(currSelect.Where, where);
     }
 
     /// <summary>

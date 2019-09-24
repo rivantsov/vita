@@ -107,8 +107,7 @@ namespace Vita.Data.Runtime {
         //Apply record updates  
         foreach (var grp in updateSet.UpdateGroups)
           foreach (var tableGrp in grp.TableGroups) {
-            var ent = tableGrp.Table.Entity;
-            if (updateSet.InsertsIdentity && ent.Flags.IsSet(EntityFlags.ReferencesIdentity))
+            if (updateSet.InsertsIdentity && tableGrp.Table.Entity.Flags.IsSet(EntityFlags.ReferencesIdentity))
               UpdateNewIdentityReferences(updateSet, tableGrp.Records);
             switch (tableGrp.Operation) {
               case LinqOperation.Insert:
@@ -161,10 +160,12 @@ namespace Vita.Data.Runtime {
     }
 
     private void UpdateNewIdentityReferences(DbUpdateSet updateSet, IList<EntityRecord> records) {
-      foreach(var rec in records)
+      foreach (var rec in records)
         if (rec.EntityInfo.Flags.IsSet(EntityFlags.ReferencesIdentity))
-          rec.RefreshIdentityReferences(); 
+          rec.RefreshIdentityReferences();
     }
+
+
 
     private void ExecuteScheduledCommands(DataConnection conn, EntitySession session, IList<LinqCommand> commands) {
       if(commands == null || commands.Count == 0)

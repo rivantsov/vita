@@ -8,14 +8,11 @@ using System.Threading;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 using Vita.Entities;
-using Vita.Entities.Runtime; 
 using Vita.Samples.BookStore;
 using Vita.Modules.Login;
-using Vita.Modules.Login.Api;
 
 using Vita.Data.Driver;
 using Vita.Data;
-using Vita.Tools.Testing;
 using Vita.Tools;
 
 namespace Vita.Testing.ExtendedTests {

@@ -93,6 +93,28 @@ namespace Vita.Entities {
       rec.SetValue(member, value);
     }
 
+    /// <summary>Returns custom tag (free-form object) associated with the entity. </summary>
+    /// <param name="entity">The entity.</param>
+    /// <returns>Tag object.</returns>
+    /// <remarks>Custom tags are free-form objects that can be attached to entities. Application 
+    /// is free to use the tags any way it needs. They are not used by the framework, and are 
+    /// reserved to use by client application code.</remarks>
+    public static object GetCustomTag(object entity) {
+      var rec = EntityHelper.GetRecord(entity);
+      return rec.CustomTag; 
+    }
+
+    /// <summary>Associates a custom tag (free-form object) with an entity. </summary>
+    /// <param name="entity">The entity.</param>
+    /// <param name="tag">A tag to attach.</param>
+    /// <remarks>Custom tags are free-form objects that can be attached to entities. Application 
+    /// is free to use the tags any way it needs. They are not used by the framework, and are 
+    /// reserved to use by client application code.</remarks>
+    public static void SetCustomTag(object entity, object tag) {
+      var rec = EntityHelper.GetRecord(entity);
+      rec.CustomTag = tag; 
+    }
+
     /// <summary>Checks if specified properties of the entity are loaded from the database. Reloads the entity if necessary.</summary>
     /// <typeparam name="TEntity">The entity type.</typeparam>
     /// <param name="entity">The entity instance.</param>

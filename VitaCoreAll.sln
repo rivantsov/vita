@@ -31,7 +31,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "420.Vita.Samples.BookStore.
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "410.Vita.Samples.BookStore", "4.Samples\Vita.Samples.BookStore\410.Vita.Samples.BookStore.csproj", "{A1E8B9B4-5EFF-468B-81A6-56AA0CAD2F4B}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "060.Vita.Entities.Emit", "1.Framework\Vita.Entities.Emit\060.Vita.Entities.Emit.csproj", "{38DC3F6F-45F1-4AC1-9444-B3F83B8FDFA0}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "020.Vita.Entities.Emit", "1.Framework\Vita.Entities.Emit\020.Vita.Entities.Emit.csproj", "{38DC3F6F-45F1-4AC1-9444-B3F83B8FDFA0}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "610.Vita.Testing.BasicTests", "6.UnitTests\Vita.Testing.BasicTests\610.Vita.Testing.BasicTests.csproj", "{DC6A998D-FBE8-4F06-A9B5-B9DA3AD1211C}"
 EndProject

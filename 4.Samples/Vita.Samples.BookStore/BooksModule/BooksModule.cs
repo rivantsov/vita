@@ -38,8 +38,8 @@ namespace Vita.Samples.BookStore {
       // App.CacheSettings.AddCachedTypes(CacheType.FullSet, typeof(IBook), typeof(IPublisher), typeof(IAuthor), typeof(IBookAuthor));
       // App.CacheSettings.AddCachedTypes(CacheType.Sparse, typeof(IBookOrder), typeof(IBookOrderLine), typeof(IUser), typeof(IImage));
 
-      //Register api controllers
-      App.ApiConfiguration.RegisterControllerTypes(typeof(CatalogController), typeof(UserAccountController), typeof(SignupController), typeof(DiagnosticsController));
+      // Register api controllers - disabled, SlimApi not migrated
+      // App.ApiConfiguration.RegisterControllerTypes(typeof(CatalogController), typeof(UserAccountController), typeof(SignupController), typeof(DiagnosticsController));
 
       RegisterViews();
     }//method

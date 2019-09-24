@@ -58,7 +58,9 @@ namespace Vita.Modules.Login {
     public Func<OperationContext, ILogin, LoginAttemptStatus, LoginAttemptStatus> CheckCanLoginFunc;
 
     // Provided by external code, enables sending messages to users (pwd reset, pins, etc)
-    public ILoginMessagingService MessagingService; 
+    public ILoginMessagingService MessagingService;
+
+    public TimeSpan LoginTokenExpiration = TimeSpan.FromDays(1);
 
     public LoginModuleSettings(
                  LoginModuleOptions options = LoginModuleOptions.Default,

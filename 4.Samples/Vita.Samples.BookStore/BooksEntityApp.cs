@@ -2,18 +2,21 @@
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Linq;
+using System.Security.Claims;
 using System.Text;
 using System.Threading.Tasks;
 
 using Vita.Entities;
 using Vita.Entities.DbInfo;
 using Vita.Entities.Services;
+using Vita.Entities.Utilities;
 using Vita.Modules.Login;
-using Vita.Modules.Login.Api;
 
 namespace Vita.Samples.BookStore {
 
   public class BooksEntityApp : EntityApp {
+    public static BooksEntityApp Instance; 
+
     public const string CurrentVersion = "1.2.1.0";
 
     public BooksModule MainModule;
@@ -39,10 +42,25 @@ namespace Vita.Samples.BookStore {
 
       var loginModule = new LoginModule(loginArea, loginStt);
 
+      /* SlimApi not migrated yet
       //api config - register controllers defined in Vita.Modules.Login assembly; books controllers are registered by BooksModule
       base.ApiConfiguration.RegisterControllerTypes(
         typeof(LoginController), typeof(PasswordResetController), typeof(LoginSelfServiceController), typeof(LoginAdministrationController)
         );
+        */
+      Instance = this; 
+    }
+
+    public override IList<Claim> GetUserClaims(OperationContext userContext) {
+      var claims = base.GetUserClaims(userContext);
+      var session = userContext.OpenSession();
+      using (session.WithElevatedRead()) {
+        var userId = userContext.User.UserId; 
+        var user = session.GetEntity<IUser>(userId);
+        Util.Check(user != null, "User not found, user id: {0}", userId);
+        claims.AddRole(user.Type.ToString());
+      }
+      return claims; 
     }
 
   }//class

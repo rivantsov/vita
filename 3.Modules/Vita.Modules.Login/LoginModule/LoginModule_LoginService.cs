@@ -35,8 +35,7 @@ namespace Vita.Modules.Login {
           return new LoginResult() { Status = LoginAttemptStatus.Failed };
         }
         VerifyExpirationSuspensionDates(login);
-        //check device
-        var status = CheckCanLoginImpl(login);
+        var status = CheckCanLogin(login, deviceToken); 
         // if we are ready to login, check external function to allow login
         if(status == LoginAttemptStatus.Success && _settings.CheckCanLoginFunc != null)
           status = _settings.CheckCanLoginFunc(context, login, status);

@@ -45,16 +45,11 @@ namespace Vita.Entities {
       return ctx;
     }
 
-    public static void SetOutgoingCookie(this OperationContext context, string name, string value) {
-      var webCtx = context.WebContext;
-      if(webCtx != null)
-        webCtx.OutgoingCookies.Add(new System.Net.Cookie(name, value));
-    }
 
     public static string GetIpAddress(this OperationContext context) {
       if(context == null || context.WebContext == null)
         return null;
-      return context.WebContext.IPAddress;
+      return context.WebContext.Request.IPAddress;
     }
 
     /// <summary>Checks if an entity is registered with entity model. 

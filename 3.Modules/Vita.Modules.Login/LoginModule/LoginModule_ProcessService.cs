@@ -8,7 +8,6 @@ using System.Text;
 using System.Threading.Tasks;
 using Vita.Entities;
 using Vita.Entities.Services;
-using Vita.Modules.Login.Api;
 
 // Implementation of IPasswordResetService - for processes like email confirmation, password reset, multifactor login
 // See here for detailed discussion of password reset feature: 

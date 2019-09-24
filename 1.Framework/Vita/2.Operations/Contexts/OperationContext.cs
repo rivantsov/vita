@@ -16,6 +16,7 @@ using System.Security.Claims;
 using Vita.Entities.Utilities;
 using Vita.Entities.Services;
 using Vita.Data.Runtime;
+using System.Globalization;
 
 namespace Vita.Entities {
 
@@ -47,7 +48,6 @@ namespace Vita.Entities {
     public ProcessType ProcessType;
     public Guid? ProcessId; //for OperationType.BackgroundProcess
     public Guid? SessionId;
-    public ClaimsPrincipal Principal;
 
     internal DataSource LastDataSource; //last data source reference
 
@@ -148,6 +148,8 @@ namespace Vita.Entities {
     }
 
     public void DisposeAll() {
+      if (_disposables == null || _disposables.Count == 0)
+        return; 
       var allAlive = _disposables.ToArray().Where(wr => wr.IsAlive);
       foreach(var wr in allAlive)
         (wr.Target as IDisposable)?.Dispose();
@@ -293,6 +295,27 @@ namespace Vita.Entities {
       return string.Join(Environment.NewLine, entries);
     }
 
+    public void SetUserFromClaims(IEnumerable<Claim> claims) {
+      Guid userId = Guid.Empty;
+      string userName = string.Empty;
+      long altUserId = 0;
+      foreach (var claim in claims) {
+        var v = claim.Value;
+        switch (claim.Type) {
+          case nameof(UserInfo.UserId):
+            Guid.TryParse(claim.Value, out userId);
+            break;
+          case nameof(UserInfo.UserName):
+            userName = claim.Value;
+            break;
+          case nameof(UserInfo.AltUserId):
+            long.TryParse(claim.Value, out altUserId);
+            break;
+        } //switch
+      } //foreach
+      // Set UserInfo on current operation context
+      this.User = new UserInfo(userId, userName, UserKind.AuthenticatedUser, altUserId);
+    }
 
   }//class
 

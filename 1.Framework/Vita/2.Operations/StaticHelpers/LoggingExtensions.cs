@@ -9,10 +9,14 @@ using System.Collections;
 using System.Reflection;
 
 using Vita.Entities.Utilities;
+using Vita.Entities.Logging;
 
 namespace Vita.Entities {
   public static class LoggingExtensions {
 
+    public static void WriteLogMessage(this OperationContext context, string message) {
+      context.Log.AddEntry(new InfoLogEntry(context, message));
+    }
     public static string ToLogString(this object value) {
       string strValue = string.Empty;
       try {

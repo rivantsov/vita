@@ -246,68 +246,6 @@ namespace Vita.Data.Linq {
       return rowReader;
     }
 
-    /// <summary>
-    /// Processes all expressions in query, with the option to process only SQL targetting expressions
-    /// This method is generic, it receives a delegate which does the real processing
-    /// </summary>
-    /// <param name="processor"></param>
-    /// <param name="processOnlySqlParts"></param>
-    /// <param name="context"></param>
-    protected virtual void ProcessExpressions(Func<Expression, TranslationContext, Expression> processor,
-                                              bool processOnlySqlParts, TranslationContext context) {
-      for(int scopeExpressionIndex = 0; scopeExpressionIndex < context.SelectExpressions.Count; scopeExpressionIndex++) {
-        // no need to process the select itself here, all ScopeExpressions that are operands are processed as operands
-        // and the main ScopeExpression (the SELECT) is processed below
-        var scopeExpression = context.SelectExpressions[scopeExpressionIndex];
-
-        // where clauses
-        List<int> whereToRemove = new List<int>(); // List of where clausole evaluating TRUE (could be ignored and so removed)
-        bool falseWhere = false; // true when the full where evaluate to FALSE
-        for(int whereIndex = 0; whereIndex < scopeExpression.Where.Count; whereIndex++) {
-          Expression whereClause = processor(scopeExpression.Where[whereIndex], context);
-          ConstantExpression constWhere = whereClause as ConstantExpression;
-          if(constWhere != null) {
-            if(constWhere.Value.Equals(false)) {
-              falseWhere = true;
-              break;
-            } else if(constWhere.Value.Equals(true)) {
-              whereToRemove.Add(whereIndex);
-              continue;
-            }
-          }
-          scopeExpression.Where[whereIndex] = whereClause;
-        }
-        if(scopeExpression.Where.Count > 0) {
-          if(falseWhere) {
-            scopeExpression.Where.Clear();
-            scopeExpression.Where.Add(Expression.Equal(Expression.Constant(true), Expression.Constant(false)));
-          } else
-            foreach(int whereIndex in whereToRemove)
-              scopeExpression.Where.RemoveAt(whereIndex);
-        }
-
-        // limit clauses
-        if(scopeExpression.Offset != null)
-          scopeExpression.Offset = processor(scopeExpression.Offset, context);
-        if(scopeExpression.Limit != null)
-          scopeExpression.Limit = processor(scopeExpression.Limit, context);
-
-        context.SelectExpressions[scopeExpressionIndex] = scopeExpression;
-      }
-      // now process the main SELECT
-      if(processOnlySqlParts) {
-        // if we process only the SQL Parts, these are the operands
-        var newOperands = new List<Expression>();
-        var oldOperands = context.CurrentSelect.Operands;
-        foreach(var operand in oldOperands)
-          newOperands.Add(processor(operand, context));
-        context.CurrentSelect = context.CurrentSelect.ChangeOperands(newOperands, oldOperands);
-      } else {
-        // the output parameters and result builder
-        context.CurrentSelect = (SelectExpression)processor(context.CurrentSelect, context);
-      }
-    }
-
     static ConcurrentDictionary<Type, Func<IList>> _listCreators = new ConcurrentDictionary<Type, Func<IList>>();
     private static Func<IList> GetListCreator(Type rowType) {
       if(_listCreators.TryGetValue(rowType, out Func<IList> creator))

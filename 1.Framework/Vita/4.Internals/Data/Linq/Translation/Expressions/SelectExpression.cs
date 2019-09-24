@@ -22,7 +22,7 @@ namespace Vita.Data.Linq.Translation.Expressions {
     public IList<ColumnExpression> Columns = new List<ColumnExpression>(); 
 
 
-    public IList<Expression> Where = new List<Expression>();
+    public Expression Where;
     public IList<Expression> Having = new List<Expression>();
     public IList<OrderByExpression> OrderBy = new List<OrderByExpression>();
     public IList<GroupExpression> Group = new List<GroupExpression>();

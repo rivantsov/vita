@@ -86,10 +86,8 @@ namespace Vita.Data.Driver {
         setValueClauses.Add(clause);
       }
       var setClause = SqlFragment.CreateList(SqlTerms.Comma, setValueClauses);
-      var whereList = Command.BaseSelect.Where;
-      SqlFragment sqlWhere = (whereList.Count > 0) ?
-           LinqSqlBuilder.BuildWhereClause(Command.BaseSelect, whereList) :
-           SqlTerms.Empty;
+      var where = Command.BaseSelect.Where;
+      var sqlWhere = LinqSqlBuilder.BuildWhereClause(Command.BaseSelect, where);
       var tablePart = Command.TargetTable.SqlFullName;
       var sqlUpdate = SqlDialect.SqlCrudTemplateUpdate.Format(tablePart, setClause, sqlWhere);
       return CreateNonQueryStatement(sqlUpdate, SqlKind.LinqUpdate);
@@ -130,10 +128,8 @@ namespace Vita.Data.Driver {
     }
 
     public virtual SqlStatement BuildLinqDelete() {
-      var whereList = Command.BaseSelect.Where;
-      SqlFragment sqlWhere = SqlTerms.Empty;
-      if(whereList.Count > 0)
-        sqlWhere = LinqSqlBuilder.BuildWhereClause(Command.BaseSelect, whereList);
+      var where = Command.BaseSelect.Where;
+      var sqlWhere = LinqSqlBuilder.BuildWhereClause(Command.BaseSelect, where);
       var tblSql = Command.TargetTable.SqlFullName;
       var deleteSql = SqlDialect.SqlCrudTemplateDelete.Format(tblSql, sqlWhere);
       return CreateNonQueryStatement(deleteSql, SqlKind.LinqDelete);

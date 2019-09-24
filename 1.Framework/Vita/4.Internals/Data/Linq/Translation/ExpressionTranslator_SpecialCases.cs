@@ -216,13 +216,13 @@ namespace Vita.Data.Linq.Translation {
               var filterExpr = new TableFilterExpression(childTable, listInfo.Filter);
               whereExpr = Expression.And(whereExpr, filterExpr); 
             }
-            context.CurrentSelect.Where.Add(whereExpr); 
+            RegisterWhere(whereExpr,  context); 
             return childTable;
 
           case EntityRelationType.ManyToMany:
             var linkTable = CreateTable(listInfo.LinkEntity.EntityType, context);
             whereExpr = BuildListPropertyJoinExpression(linkTable, table, listInfo.ParentRefMember, context);
-            context.CurrentSelect.Where.Add(whereExpr); 
+            RegisterWhere(whereExpr, context); 
             var targetTable = RegisterAssociation(linkTable, listInfo.OtherEntityRefMember, context);
             return targetTable;
         }

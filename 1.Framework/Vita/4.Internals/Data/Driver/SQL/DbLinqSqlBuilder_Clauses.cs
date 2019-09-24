@@ -108,14 +108,11 @@ namespace Vita.Data.Driver {
       return result;
     }
 
-    public virtual SqlFragment BuildWhereClause(SelectExpression selectExpression, IList<Expression> wheres) {
-      if(wheres.Count == 0)
-        return null;
-      var whereParts = new List<SqlFragment>();
-      foreach(var whereExpression in wheres) 
-          whereParts.Add(BuildLinqExpressionSql(whereExpression));
-      var whereAll = whereParts.Count == 1 ? whereParts[0] : SqlFragment.CreateList(SqlTerms.And, whereParts);
-      return new CompositeSqlFragment(SqlTerms.Where, whereAll);
+    public virtual SqlFragment BuildWhereClause(SelectExpression selectExpression, Expression where) {
+      if(where == null)
+        return SqlTerms.Empty;
+      var sqlWhere = BuildLinqExpressionSql(where);
+      return new CompositeSqlFragment(SqlTerms.Where, sqlWhere);
     }
 
     public virtual SqlFragment BuildHavingClause(SelectExpression selectExpression) {

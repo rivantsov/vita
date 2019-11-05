@@ -18,7 +18,18 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="Md1Tests\EntityView.cs" />
+    <Compile Remove="Md1Tests\Md1Extensions.cs" />
+    <Compile Remove="Md1Tests\Md1LinqCommand.cs" />
+    <Compile Remove="Md1Tests\_Md1Test.cs" />
     <Compile Remove="_Generated_BookEntities_MsSql.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="Md1Tests\EntityView.cs" />
+    <None Include="Md1Tests\Md1Extensions.cs" />
+    <None Include="Md1Tests\Md1LinqCommand.cs" />
+    <None Include="Md1Tests\_Md1Test.cs" />
   </ItemGroup>
 
   <ItemGroup>

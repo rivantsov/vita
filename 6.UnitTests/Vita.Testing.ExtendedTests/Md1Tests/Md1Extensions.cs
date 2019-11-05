@@ -111,7 +111,7 @@ namespace Vita.Entities.MetaD1 {
         paramExprList.Add(prm);
         var extValue = new ExternalValueExpression(prm); // SqlBuilder expects ExtValueExprs
         var eqExpr = Expression.Equal(col, extValue);
-        select.Where.Add(eqExpr);
+        select.AddWhere(eqExpr);
         var paramValue = query.ParamValues.First(pv => pv.Param == filter.Param);
         var dbValue = col.ColumnInfo.Converter.PropertyToColumn(paramValue.Value);
         prmValues.Add(dbValue);

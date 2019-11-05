@@ -696,11 +696,21 @@ namespace Vita.Testing.ExtendedTests {
       Assert.AreEqual(2, lstBooksBySharp.Count, "Query for books by author 'Sharp' failed."); // 'c# progr' and 'win prog' books
 
       //Aggregate functions against Lists in properties (child entities)
-      var qBookCountByPub = session.EntitySet<IPublisher>().Select(p => new { PubName = p.Name, Id = p.Id, BookCount = p.Books.Count() });
+      var qBookCountByPub = session.EntitySet<IPublisher>()
+        .Select(p => new { PubName = p.Name, Id = p.Id, BookCount = p.Books.Count() })
+        .OrderBy(pb => pb.BookCount);
       var listBookCountByPub = qBookCountByPub.ToList();
+      // Note: SQL is quite suboptimal
       LogLastQuery(session);
       Assert.IsTrue(listBookCountByPub.Count > 0, "Book count by pub query failed.");
 
+      // let's try prev SQL in different way
+      var qBooksCountByPub2 = session.EntitySet<IBook>()
+            .GroupBy(b => b.Publisher)
+            .Select(g => new { PubName = g.Key.Name, Id = g.Key.Id, BookCount = g.Count() })
+            .OrderBy(pb => pb.BookCount);
+      var listBookCountByPub2 = qBooksCountByPub2.ToList();
+      Assert.IsTrue(listBookCountByPub2.Count > 0, "Book count query 2 failed.");
     }
 
 

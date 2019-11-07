@@ -39,6 +39,15 @@ namespace Vita.Data.Driver {
     }
 
     public virtual SqlFragment BuildSelectSql(SelectExpression translatedSelect) {
+      // Union/intersect
+      SqlFragment unionOp = null; 
+      SqlFragment unionedSql = null;
+      var chainedSet = translatedSelect.ChainedSet; 
+      if (chainedSet != null) {
+        unionedSql = BuildSelectSql(chainedSet.ChainedSelect);
+        unionOp = new TextSqlFragment("UNION");
+      }
+
       var lockType = translatedSelect.Command.LockType;
       translatedSelect = PreviewSelect(translatedSelect, lockType);
       var selectOut = BuildSelectOutputClause(translatedSelect);
@@ -50,9 +59,11 @@ namespace Vita.Data.Driver {
       var orderBy = BuildOrderByClause(translatedSelect);
       var lockClause = BuildLockClause(translatedSelect, lockType);
       var limit = BuildLimitClause(translatedSelect);
-      var all = (new SqlFragment[] { selectOut, from, where, groupBy, having, orderBy, lockClause, limit})
+      var all = (new SqlFragment[] { selectOut, from, where, groupBy, having, orderBy, lockClause, limit,
+                                      unionOp, unionedSql})
         .Where(f => f != null).ToList();
       var sql = SqlFragment.CreateList(SqlTerms.NewLine, all);
+
       return sql; 
     }
 

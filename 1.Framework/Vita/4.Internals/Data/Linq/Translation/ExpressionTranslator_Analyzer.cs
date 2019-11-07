@@ -209,7 +209,16 @@ namespace Vita.Data.Linq.Translation {
           return AnalyzeAggregate(AggregateType.Max, parameters, context);
         case "Min":
           return AnalyzeAggregate(AggregateType.Min, parameters, context);
-
+       
+        // multi-set ops
+        case nameof(Queryable.Concat):
+          return AnalyzeUnionIntersect(MultiSetType.UnionAll, parameters, context);
+        case nameof(Queryable.Except):
+          return AnalyzeUnionIntersect(MultiSetType.Except, parameters, context);
+        case nameof(Queryable.Intersect):
+          return AnalyzeUnionIntersect(MultiSetType.Intersect, parameters, context);
+        case nameof(Queryable.Union):
+          return AnalyzeUnionIntersect(MultiSetType.Union, parameters, context);
 
         default:
           //if(IsQueryable(method.DeclaringType))
@@ -1561,5 +1570,34 @@ namespace Vita.Data.Linq.Translation {
       var localBuilderContext = context.NewQuote();
       return Analyze(lambda, expr.Arguments, localBuilderContext);
     }
+
+    protected virtual Expression AnalyzeUnionIntersect(MultiSetType multiSetType, IList<Expression> parameters, TranslationContext context) {
+      Expression firstSet = Analyze(parameters[0], context);
+      // BuildSelectResultReaderAndCutOutSql(firstSet, context, firstSet.Type);
+
+      var otherQuery = parameters[1];
+      // Handle second select first
+      var newContext = context.NewSisterSelect();
+      var tableExpression = AnalyzeSubQuery(otherQuery, newContext);
+      BuildSelectResultReaderAndCutOutSql(tableExpression, newContext, tableExpression.Type);
+      // add the second select select to the chain
+      if (newContext.CurrentSelect.ChainedSet != null) {
+        var typedTable = tableExpression as TableExpression;
+        var dbTable = typedTable == null ? null : typedTable.TableInfo;
+        var operand0 = new SubSelectExpression(newContext.CurrentSelect, tableExpression.Type, "source", dbTable);
+        newContext.NewParentSelect();
+        newContext.CurrentSelect.Tables.Add(operand0);
+      }
+      // attach it to main select
+      var selectToModify = context.CurrentSelect;
+      while (selectToModify.ChainedSet != null)
+        selectToModify = selectToModify.ChainedSet.ChainedSelect;
+
+      selectToModify.ChainedSet = new MultiSetChainLink() { ChainedSelect = newContext.CurrentSelect, MultiSetType = multiSetType };
+
+      return firstSet;
+    }
+
+
   }
 }

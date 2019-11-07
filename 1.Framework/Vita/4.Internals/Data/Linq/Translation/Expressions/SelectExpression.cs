@@ -31,7 +31,8 @@ namespace Vita.Data.Linq.Translation.Expressions {
     public Expression Limit { get; set; }
     public SelectExpressionFlags Flags; //MS SQL Only
 
-    // Clauses
+    public MultiSetChainLink ChainedSet; // Unioned set
+
     public RowListProcessor RowListProcessor { get; set; }
     public LambdaExpression RowReaderLambda { get; set; } // Func<IDataRecord,EntitySession,T> --> creates an object from data record
     public EntityRecordReader EntityReader; //for tables/entities we avoid going thru lambda/compile
@@ -64,19 +65,20 @@ namespace Vita.Data.Linq.Translation.Expressions {
         type = newOperands[0].Type;
       else
         type = Type;
-      var scopeExpression = new SelectExpression(Command, type, newOperands);
-      scopeExpression.Tables = Tables;
-      scopeExpression.Columns = Columns;
-      scopeExpression.Where = Where;
-      scopeExpression.OrderBy = OrderBy;
-      scopeExpression.Group = Group;
-      scopeExpression.Parent = Parent;
-      scopeExpression.RowListProcessor = RowListProcessor;
-      scopeExpression.RowReaderLambda = RowReaderLambda;
-      scopeExpression.EntityReader = EntityReader;
-      scopeExpression.Limit = Limit;
-      scopeExpression.Offset = Offset;
-      return scopeExpression;
+      var newSelect = new SelectExpression(Command, type, newOperands);
+      newSelect.Tables = Tables;
+      newSelect.Columns = Columns;
+      newSelect.Where = Where;
+      newSelect.OrderBy = OrderBy;
+      newSelect.Group = Group;
+      newSelect.Parent = Parent;
+      newSelect.RowListProcessor = RowListProcessor;
+      newSelect.RowReaderLambda = RowReaderLambda;
+      newSelect.EntityReader = EntityReader;
+      newSelect.Limit = Limit;
+      newSelect.Offset = Offset;
+      newSelect.ChainedSet = ChainedSet; 
+      return newSelect;
     }
 
     //helper methods

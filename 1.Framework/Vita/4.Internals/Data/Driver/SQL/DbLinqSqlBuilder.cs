@@ -38,32 +38,38 @@ namespace Vita.Data.Driver {
       return sqlStmt;
     }
 
-    public virtual SqlFragment BuildSelectSql(SelectExpression translatedSelect) {
-      // Union/intersect
-      SqlFragment unionOp = null; 
-      SqlFragment unionedSql = null;
-      var chainedSet = translatedSelect.ChainedSet; 
-      if (chainedSet != null) {
-        unionedSql = BuildSelectSql(chainedSet.ChainedSelect);
-        unionOp = new TextSqlFragment("UNION");
+    public virtual SqlFragment BuildSelectSql(SelectExpression select) {
+      var sql = BuildSelectSqlSimple(select);
+      if (select.ChainedSet == null)
+        return sql; 
+      // build multi-set SQL (UNION of multiple)
+      var sqls = new List<SqlFragment>();
+      sqls.Add(sql);
+      var nextSet = select.ChainedSet; 
+      while(nextSet != null) {
+        sqls.Add(SqlDialect.GetMultiSetOperator(nextSet.MultiSetType));
+        sqls.Add(BuildSelectSqlSimple(nextSet.ChainedSelect));
+        nextSet = nextSet.ChainedSelect.ChainedSet; 
       }
+      var resultSql = SqlFragment.CreateList(SqlTerms.NewLine, sqls);
+      return resultSql;
+    }
 
-      var lockType = translatedSelect.Command.LockType;
-      translatedSelect = PreviewSelect(translatedSelect, lockType);
-      var selectOut = BuildSelectOutputClause(translatedSelect);
-      var tables = GetSortedTables(translatedSelect);
-      var from = BuildFromClause(translatedSelect, tables);
-      var where = BuildWhereClause(translatedSelect, translatedSelect.Where);
-      var groupBy = BuildGroupByClause(translatedSelect);
-      var having = BuildHavingClause(translatedSelect);
-      var orderBy = BuildOrderByClause(translatedSelect);
-      var lockClause = BuildLockClause(translatedSelect, lockType);
-      var limit = BuildLimitClause(translatedSelect);
-      var all = (new SqlFragment[] { selectOut, from, where, groupBy, having, orderBy, lockClause, limit,
-                                      unionOp, unionedSql})
+    protected virtual SqlFragment BuildSelectSqlSimple(SelectExpression select) {
+      var lockType = select.Command.LockType;
+      select = PreviewSelect(select, lockType);
+      var selectOut = BuildSelectOutputClause(select);
+      var tables = GetSortedTables(select);
+      var from = BuildFromClause(select, tables);
+      var where = BuildWhereClause(select, select.Where);
+      var groupBy = BuildGroupByClause(select);
+      var having = BuildHavingClause(select);
+      var orderBy = BuildOrderByClause(select);
+      var lockClause = BuildLockClause(select, lockType);
+      var limit = BuildLimitClause(select);
+      var all = (new SqlFragment[] { selectOut, from, where, groupBy, having, orderBy, lockClause, limit})
         .Where(f => f != null).ToList();
       var sql = SqlFragment.CreateList(SqlTerms.NewLine, all);
-
       return sql; 
     }
 

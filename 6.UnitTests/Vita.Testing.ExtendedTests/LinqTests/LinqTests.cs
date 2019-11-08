@@ -29,14 +29,11 @@ namespace Vita.Testing.ExtendedTests {
     }
 
     private static void LogLastQuery(IEntitySession session) {
-      /*
-      Debug.WriteLine("---------------------------------------------------------------------------------------");
-      var lastCmd = session.GetLastLinqCommand();
-      if(lastCmd != null)
-        Debug.WriteLine("Query: " + lastCmd.ToString());
+      //Debug.WriteLine("---------------------------------------------------------------------------------------");
       var command = session.GetLastCommand();
       if(command != null)
         Debug.WriteLine("SQL:" + command.CommandText);
+      /*
        */
     }
 

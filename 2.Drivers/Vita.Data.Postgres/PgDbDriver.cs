@@ -26,8 +26,8 @@ namespace Vita.Data.Postgres {
         | DbFeatures.Views | DbFeatures.MaterializedViews | DbFeatures.Sequences | DbFeatures.ArrayParameters
         | DbFeatures.SkipTakeRequireOrderBy | DbFeatures.AllowsFakeOrderBy
         | DbFeatures.Paging | DbFeatures.BatchedUpdates
-        | DbFeatures.OrderedColumnsInIndexes | DbFeatures.UpdateFromSubQuery;
-
+        | DbFeatures.OrderedColumnsInIndexes | DbFeatures.UpdateFromSubQuery
+        | DbFeatures.ExceptOperator | DbFeatures.IntersectOperator;
 
     public PgDbDriver()  : base(DbServerType.Postgres, PgFeatures) {
       base.TypeRegistry = new PgTypeRegistry(this);

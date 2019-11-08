@@ -17,6 +17,7 @@ namespace Vita.Data.SQLite {
     public const DbFeatures SQLiteFeatures = DbFeatures.TreatBitAsInt | DbFeatures.Views |
                                              DbFeatures.ReferentialConstraints | DbFeatures.Paging | DbFeatures.InsertMany |
                                              DbFeatures.ServerPreservesComments /*views*/
+                                           | DbFeatures.ExceptOperator | DbFeatures.IntersectOperator
                                              ;
     public const DbOptions DefaultSQLiteDbOptions = DbOptions.UseRefIntegrity | DbOptions.ShareDbModel
                                                   | DbOptions.AutoIndexForeignKeys | DbOptions.AddSchemaToTableNames;

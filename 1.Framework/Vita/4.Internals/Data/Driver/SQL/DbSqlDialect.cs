@@ -48,6 +48,12 @@ namespace Vita.Data.Driver {
     public TextSqlFragment BatchBeginTransaction = new TextSqlFragment("BEGIN TRANSACTION;\r\n");
     public TextSqlFragment BatchCommitTransaction = new TextSqlFragment("COMMIT TRANSACTION;\r\n");
 
+    // Union, intersect, except
+    public TextSqlFragment SqlTermUnion = new TextSqlFragment("UNION");
+    public TextSqlFragment SqlTermUnionAll = new TextSqlFragment("UNION ALL");
+    public TextSqlFragment SqlTermExcept = new TextSqlFragment("EXCEPT");
+    public TextSqlFragment SqlTermIntersect = new TextSqlFragment("INTERSECT");
+
     public int MaxParamCount = 2000;
     protected Dictionary<ExpressionType, SqlTemplate> StandardExpressionTemplates = new Dictionary<ExpressionType, SqlTemplate>();
     protected Dictionary<SqlFunctionType, SqlTemplate> SqlFunctionTemplates = new Dictionary<SqlFunctionType, SqlTemplate>();
@@ -408,6 +414,7 @@ SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME='{0}' AND TABLE_SCHEMA 
       var sql = string.Format(template, table.TableName, table.Schema);
       return sql;
     }
+
     public virtual string GetTableSelectAllSql(DbTableInfo table) {
       var template = @"SELECT * FROM {0};";
       var sql = string.Format(template, table.FullName);
@@ -439,6 +446,18 @@ SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME='{0}' AND TABLE_SCHEMA 
     // Used in 't.Col IN (<list>)' expressions when list is empty; does not work for all providers
     public virtual string GetEmptyListLiteral(DbTypeDef elemTypeDef) {
       return "SELECT NULL WHERE 1=0"; //works OK for MS SQL, SQLite
+    }
+
+    public virtual SqlFragment GetMultiSetOperator(MultiSetType type) {
+      switch(type) {
+        case MultiSetType.Union: return SqlTermUnion;
+        case MultiSetType.UnionAll: return SqlTermUnionAll;
+        case MultiSetType.Except: return SqlTermExcept;
+        case MultiSetType.Intersect: return SqlTermIntersect;
+        default:
+          Util.Throw($"Invalid MultiSetType value: {type}");
+          return null; 
+      }
     }
 
     // metaObject depends on statement type - LinqCommand, or DbTable, etc

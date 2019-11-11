@@ -18,7 +18,7 @@ namespace Vita.Data.Driver {
   }
 
   [Flags]
-  public enum DbFeatures {
+  public enum DbFeatures: Int64 {
     None = 0,
 
     Schemas = 1,
@@ -60,6 +60,9 @@ namespace Vita.Data.Driver {
     // Server preserves comment lines in stored procs and views (MS SQL); 
     // VITA uses special comment lines in sources to save source hash (to detect need to update view/proc definition), and to save descriptive tag
     ServerPreservesComments = 1 << 27,  
+
+    ExceptOperator = 1L << 32,
+    IntersectOperator = 1L << 33,
   }
 
 

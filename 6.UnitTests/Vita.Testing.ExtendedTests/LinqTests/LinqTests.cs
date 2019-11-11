@@ -29,14 +29,11 @@ namespace Vita.Testing.ExtendedTests {
     }
 
     private static void LogLastQuery(IEntitySession session) {
-      /*
-      Debug.WriteLine("---------------------------------------------------------------------------------------");
-      var lastCmd = session.GetLastLinqCommand();
-      if(lastCmd != null)
-        Debug.WriteLine("Query: " + lastCmd.ToString());
+      //Debug.WriteLine("---------------------------------------------------------------------------------------");
       var command = session.GetLastCommand();
       if(command != null)
         Debug.WriteLine("SQL:" + command.CommandText);
+      /*
        */
     }
 
@@ -697,10 +694,9 @@ namespace Vita.Testing.ExtendedTests {
 
       //Aggregate functions against Lists in properties (child entities)
       var qBookCountByPub = session.EntitySet<IPublisher>()
-        .Select(p => new { PubName = p.Name, Id = p.Id, BookCount = p.Books.Count() })
-        .OrderBy(pb => pb.BookCount);
+            .Select(p => new { PubName = p.Name, Id = p.Id, BookCount = p.Books.Count() })
+            .OrderBy(pb => pb.BookCount);
       var listBookCountByPub = qBookCountByPub.ToList();
-      // Note: SQL is quite suboptimal
       LogLastQuery(session);
       Assert.IsTrue(listBookCountByPub.Count > 0, "Book count by pub query failed.");
 

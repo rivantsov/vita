@@ -34,7 +34,9 @@ namespace Vita.Data.Oracle {
         | DbFeatures.TreatBitAsInt
         | DbFeatures.BatchedUpdates | DbFeatures.OutParamsInBatchedUpdates
         | DbFeatures.Paging | DbFeatures.UpdateFromSubQuery
-        | DbFeatures.Sequences;
+        | DbFeatures.Sequences
+        | DbFeatures.ExceptOperator | DbFeatures.IntersectOperator;
+
     public DbOptions DefaultOracleDbOptions = DbOptions.UseRefIntegrity | DbOptions.ShareDbModel | DbOptions.AutoIndexForeignKeys;
 
     /// <summary>Settings key for default tablespace value in DbSettings.CustomSettings dictionary.</summary>

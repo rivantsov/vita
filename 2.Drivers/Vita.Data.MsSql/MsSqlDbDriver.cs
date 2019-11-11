@@ -38,7 +38,8 @@ namespace Vita.Data.MsSql {
         | DbFeatures.SkipTakeRequireOrderBy | DbFeatures.AllowsFakeOrderBy
         | DbFeatures.BatchedUpdates | DbFeatures.OutParamsInBatchedUpdates
         | DbFeatures.Paging | DbFeatures.TreatBitAsInt | DbFeatures.UpdateFromSubQuery
-        | DbFeatures.HeapTables | DbFeatures.Sequences | DbFeatures.ServerPreservesComments;
+        | DbFeatures.HeapTables | DbFeatures.Sequences | DbFeatures.ServerPreservesComments
+        | DbFeatures.ExceptOperator | DbFeatures.IntersectOperator;
 
     public string SystemSchema = "dbo"; //schema used for creating Vita_ArrayAsTable table type
     // User-defined table type, created by VITA to be used to send array-type parameters to SQLs and stored procedures

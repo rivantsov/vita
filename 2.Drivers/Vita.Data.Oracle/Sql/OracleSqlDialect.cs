@@ -25,6 +25,7 @@ namespace Vita.Data.Oracle {
       base.BatchBeginTransaction = SqlTerms.Empty;
       base.BatchCommitTransaction = new TextSqlFragment("COMMIT;\r\n");
       base.LikeWildCardChars = new char[] { '_', '%', '\\' }; // [ and ] are not wildcards in Oracle
+      base.SqlTermExcept = new TextSqlFragment("MINUS");
     }
 
   public override string GetTableExistsSql(DbTableInfo table) {

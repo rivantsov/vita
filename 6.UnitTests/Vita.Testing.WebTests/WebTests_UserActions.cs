@@ -57,8 +57,6 @@ namespace Vita.UnitTests.Web {
       Assert.AreEqual(ClientFaultCodes.ObjectNotFound, cfExc.Faults[0].Code, "Expected object not found fault");
 
       Logout();
-      
-
     } // method
 
     [TestMethod]

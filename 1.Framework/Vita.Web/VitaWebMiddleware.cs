@@ -70,6 +70,7 @@ namespace Vita.Web {
       var req = httpContext.Request;
       var body = ReadRequestBodyForLog(req);
       var reqInfo = new RequestInfo() {
+        ReceivedOn = AppTime.UtcNow,
         HttpMethod = req.Method,
         Url = req.GetDisplayUrl(),
         ContentType = req.ContentType,
@@ -128,24 +129,24 @@ namespace Vita.Web {
     }
 
     private string ReadRequestBodyForLog(HttpRequest request) {
+      request.EnableRewind();
       if (!IsTextContent(request.ContentType))
         return "(non-text content)";
       if (request.ContentLength == null || request.ContentLength == 0)
         return null;
       var body = request.Body;
-      request.EnableRewind();
       string textBody = null;
-      using (var streamReader = new StreamReader(body))
-        textBody = streamReader.ReadToEnd();
-      request.Body = body; // because of EnableRewind
+      // !!! Do not use 'using' or dispose reader - it will dispose the underlying stream
+      var bodyReader = new StreamReader(body);
+      textBody = bodyReader.ReadToEnd();
+      body.Position = 0; //rewind it back
       return textBody;
     }
 
     private string ReadResponseBodyForLog(HttpResponse response) {
       if (!IsTextContent(response.ContentType))
         return "(non-text content)";
-
-      response.Body.Seek(0, SeekOrigin.Begin);
+      response.Body.Position = 0;
       string textBody = null;
       var reader = new StreamReader(response.Body); 
       textBody = reader.ReadToEnd();

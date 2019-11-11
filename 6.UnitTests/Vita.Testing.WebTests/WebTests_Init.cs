@@ -8,6 +8,7 @@ using System.Net;
 using System.Net.Http;
 using System.Diagnostics;
 using Vita.Modules.Login;
+using Arrest.Sync;
 
 namespace Vita.UnitTests.Web {
 
@@ -28,7 +29,7 @@ namespace Vita.UnitTests.Web {
     private LoginResponse LoginAs(string userName, string password = null, bool assertSuccess = true, string deviceToken = null) {
       password = password ?? Samples.BookStore.SampleData.SampleDataGenerator.DefaultPassword;
       var loginRq = new LoginRequest() { UserName = userName, Password = password , DeviceToken = deviceToken};
-      var resp = TestStartup.Client.ExecutePost<LoginRequest, LoginResponse>(loginRq, "api/login");
+      var resp = TestStartup.Client.Post<LoginRequest, LoginResponse>(loginRq, "api/login");
       Assert.IsTrue(resp != null, "Authentication failed.");
       if(resp.Status == LoginAttemptStatus.Success) {
         //We can use AddAuthorizationHeader here as well
@@ -41,7 +42,7 @@ namespace Vita.UnitTests.Web {
     }
 
     private void Logout() {
-      TestStartup.Client.ExecuteDelete("api/login");
+      TestStartup.Client.Delete("api/login");
       TestStartup.Client.RemoveRequestHeader("Authorization");
     }
 

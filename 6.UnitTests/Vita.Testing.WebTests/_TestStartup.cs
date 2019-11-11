@@ -18,10 +18,11 @@ using Vita.Tools;
 using Vita.Entities.DbInfo;
 using Vita.Modules.Login.Mocks;
 
-using Vita.NRestClient;
+using Arrest;
 using Vita.Samples.BookStore;
 using Vita.Samples.BookStore.SampleData;
-using Vita.NRestClient.Xml;
+using Arrest.Xml;
+using Arrest.Internals;
 
 namespace Vita.UnitTests.Web {
 
@@ -92,11 +93,11 @@ namespace Vita.UnitTests.Web {
         Client = new RestClient(serviceUrl, badRequestContentType: typeof(List<ClientFault>)); //json, very simple setup
 
       RestClient.SharedHttpClientHandler.AllowAutoRedirect = false; //we need it for Redirect test
-      Client.Settings.ReceivedError += RestClient_ReceivedError;
+      Client.Settings.Events.ReceivedError += RestClient_ReceivedError;
     }
 
-    private static void RestClient_ReceivedError(object sender, RestCallEventArgs e) {
-      var callInfo = e.CallContext; 
+    private static void RestClient_ReceivedError(object sender, RestClientEventArgs e) {
+      var callInfo = e.CallData; 
       if (callInfo.Exception != null) {
         switch (callInfo.Exception) {
           case null: return;

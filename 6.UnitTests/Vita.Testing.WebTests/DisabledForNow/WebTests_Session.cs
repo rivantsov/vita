@@ -43,7 +43,7 @@ namespace Vita.UnitTests.Web {
       var sessionRec = serverSession.EntitySet<IUserSession>().Where(s => s.WebSessionToken == authToken).FirstOrDefault();
       Assert.IsNotNull(sessionRec, "Session record not found.");
       var oldVersion = sessionRec.Version;
-      client.ExecutePost<object, HttpStatusCode>(null, "/api/special/sessionvalue?name=varName&value=varValue1");
+      client.Post<object, HttpStatusCode>(null, "/api/special/sessionvalue?name=varName&value=varValue1");
       //Read session rec
       EntityHelper.RefreshEntity(sessionRec);
       var serValues = sessionRec.Values;
@@ -54,8 +54,8 @@ namespace Vita.UnitTests.Web {
       Assert.IsTrue(newVersion > oldVersion, "Expected version increment.");
       //Force updating lastUsedOn value: fast forward time one minute, make a call
       timeService.SetCurrentOffset(TimeSpan.FromMinutes(1));
-      //var varValue = client.ExecuteGet<string>("/api/special/sessionvalue?name=varName");
-      var varValue = client.ExecuteGet<string>("/api/special/sessionvalue?name=varName");
+      //var varValue = client.Get<string>("/api/special/sessionvalue?name=varName");
+      var varValue = client.Get<string>("/api/special/sessionvalue?name=varName");
       Assert.AreEqual("varValue1", varValue, "Expected 'varValue1' as a value."); 
       // The last API call came a minute later after the first one (according to time service); 
       // The userSesson.LastUsedOn value is updated with 10 seconds increments, so it should be updated in memory 
@@ -84,7 +84,7 @@ namespace Vita.UnitTests.Web {
       string incomingVersionToken = null; 
       var xVersions = "X-Versions";
       client.Settings.ResponseSpy = r => { incomingVersionToken = r.GetHeaderValue(xVersions); }; //setup spy
-      varValue = client.ExecuteGet<string>("/api/special/sessionvalue?name=varname");
+      varValue = client.Get<string>("/api/special/sessionvalue?name=varname");
       client.Settings.ResponseSpy = null; 
       Assert.AreEqual("varValue1", varValue, "Expected 'varValue1' as a value.");
       var versionArr = incomingVersionToken.Split(',').Select(s => int.Parse(s)).ToArray();
@@ -96,7 +96,7 @@ namespace Vita.UnitTests.Web {
       versionArr[0] = versionArr[0] + 1;
       var newVersionToken = string.Join(",", versionArr);
       client.AddRequestHeader(xVersions, newVersionToken);
-      varValue = client.ExecuteGet<string>("/api/special/sessionvalue?name=varname");
+      varValue = client.Get<string>("/api/special/sessionvalue?name=varname");
       Assert.AreEqual("varValue2", varValue, "Expected 'varValue2' as a value.");
       client.RemoveRequestHeader(xVersions); 
 
@@ -113,9 +113,9 @@ namespace Vita.UnitTests.Web {
       var resp = LoginAs("dora");
       //set timezone
       var currTimeZoneOffset = TimeZoneInfo.Local.BaseUtcOffset.TotalMinutes;
-      client.ExecutePut<object, HttpStatusCode>(null, "/api/usersession/client-timezone-offset?minutes={0}", currTimeZoneOffset);
+      client.Put<object, HttpStatusCode>(null, "/api/usersession/client-timezone-offset?minutes={0}", currTimeZoneOffset);
       //get current user info
-      var sessionInfo = client.ExecuteGet<UserSessionInfo>("/api/usersession");
+      var sessionInfo = client.Get<UserSessionInfo>("/api/usersession");
       Assert.AreEqual("dora", sessionInfo.UserName, "Expected dora as user name.");
       Assert.AreEqual(currTimeZoneOffset, sessionInfo.TimeOffsetMinutes, "Timezone offset mismatch");
       Logout();
@@ -142,11 +142,11 @@ namespace Vita.UnitTests.Web {
       var client = Startup.Client;
       var timeService = Startup.BooksApp.TimeService; //it is shared with LoggingApp
       var dora = LoginAs("dora");
-      var doraUser = client.ExecuteGet<User>("api/user"); //get current user
+      var doraUser = client.Get<User>("api/user"); //get current user
       //session expires in 20 minutes; move clock forward by 1 hour; the session should expire and any call requiring authentication would fail
       timeService.SetCurrentOffset(TimeSpan.FromHours(1));
       System.Threading.Thread.Sleep(100);
-      var faultExc = TestUtil.ExpectClientFault(() => client.ExecuteGet<User>("api/user")); // now it should fail
+      var faultExc = TestUtil.ExpectClientFault(() => client.Get<User>("api/user")); // now it should fail
       var faultCode = faultExc.Faults[0].Code;
       Assert.AreEqual(ClientFaultCodes.AuthenticationRequired, faultCode, "Expected AuthenticationRequired fault.");
       timeService.SetCurrentOffset(TimeSpan.Zero);
@@ -160,26 +160,26 @@ namespace Vita.UnitTests.Web {
       // 1. Test no-expiration option
       var dora = LoginAs("dora", expirationType: UserSessionExpirationType.KeepLoggedIn);
       //try getting current user session, should go ok
-      var doraSession = client.ExecuteGet<UserSessionInfo>("api/usersession"); //get current user session
+      var doraSession = client.Get<UserSessionInfo>("api/usersession"); //get current user session
       //session does not expire; move clock forward by 5 years; the session should still be ok
       timeService.SetCurrentOffset(TimeSpan.FromDays(365 * 5));
-      doraSession = client.ExecuteGet<UserSessionInfo>("api/usersession"); //get current user session
+      doraSession = client.Get<UserSessionInfo>("api/usersession"); //get current user session
       timeService.SetCurrentOffset(TimeSpan.Zero);
       Logout();
 
       // 2. Test long expiration, with token refresh
       dora = LoginAs("dora", expirationType: UserSessionExpirationType.LongFixedTerm); //fixed expiration in a month
       //try getting current user, should go ok
-      doraSession = client.ExecuteGet<UserSessionInfo>("api/usersession"); //get current user session
+      doraSession = client.Get<UserSessionInfo>("api/usersession"); //get current user session
       Assert.IsTrue(doraSession.Expires > utcNowReal.AddDays(29), "Expected expires in a month");
       //now move clock forward by 25 days and refersh token; the session should still be ok
       timeService.SetCurrentOffset(TimeSpan.FromDays(25));
       //Refresh session token - get new one with new expiration date - a month from 'shifted current'
       var refreshRequest = new RefreshRequest() { RefreshToken = dora.RefreshToken };
-      var refreshResponse = client.ExecutePut<RefreshRequest, RefreshResponse>(refreshRequest, "api/usersession/token");
+      var refreshResponse = client.Put<RefreshRequest, RefreshResponse>(refreshRequest, "api/usersession/token");
       client.AddAuthorizationHeader(refreshResponse.NewSessionToken); //put it into auth header
       // now get session again and check expiration
-      doraSession = client.ExecuteGet<UserSessionInfo>("api/usersession"); //get current user session
+      doraSession = client.Get<UserSessionInfo>("api/usersession"); //get current user session
       Assert.IsTrue(doraSession.Expires > utcNowReal.AddDays(29 + 25), "Expected expires in 25 days + month");
     }
 

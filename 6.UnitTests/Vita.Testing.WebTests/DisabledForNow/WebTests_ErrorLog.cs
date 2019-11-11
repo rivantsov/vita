@@ -28,7 +28,7 @@ namespace Vita.UnitTests.Web {
         AppName = "TestApp", Message = "Client Error Message", Details = "Client Error Details",
         LocalTime = TestStartup.BooksApp.TimeService.Now.AddMinutes(-5) //pretend it happened 5 minutes ago
       };
-      var serverErrorId = client.ExecutePost<ClientError, Guid>(clientError, "api/logs-post/clienterrors");
+      var serverErrorId = client.Post<ClientError, Guid>(clientError, "api/logs-post/clienterrors");
       Assert.AreEqual(clientError.Id, serverErrorId, "Failed to submit client error, IDs do not match");
 
       //Verify record exists in database
@@ -49,7 +49,7 @@ namespace Vita.UnitTests.Web {
       const string reviewUpdateUrl = "api/user/reviews";
  
       //Get c# books
-      var csBooks = client.ExecuteGet<SearchResults<Book>>(booksUrl + "?titlestart={0}", "c#");
+      var csBooks = client.Get<SearchResults<Book>>(booksUrl + "?titlestart={0}", "c#");
       Assert.IsTrue(csBooks.Results.Count > 0, "Failed to find cs book");
       var csBk = csBooks.Results[0]; 
 
@@ -57,31 +57,31 @@ namespace Vita.UnitTests.Web {
       // Test - anonymous user posts review - server returns BadRequest with AuthenticationRequired fault in the body
       var goodReview = new BookReview() { BookId = csBk.Id, Rating = 5, 
         Caption = "Wow! really awesome!", Review = "Best I ever read about c#!!!" };
-      var cfEx = TestUtil.ExpectClientFault(() => client.ExecutePost<BookReview, BookReview>(goodReview, reviewUpdateUrl));
+      var cfEx = TestUtil.ExpectClientFault(() => client.Post<BookReview, BookReview>(goodReview, reviewUpdateUrl));
       Assert.AreEqual("AuthenticationRequired", cfEx.Faults[0].Code, "Expected AuthenticationRequired fault.");
 
       //Login as diego, post again - now should succeed      
       this.LoginAs("Diego");
-      var postedReview = client.ExecutePost<BookReview, BookReview>(goodReview, reviewUpdateUrl);
+      var postedReview = client.Post<BookReview, BookReview>(goodReview, reviewUpdateUrl);
       Assert.IsNotNull(postedReview, "Failed to post review");
       Assert.IsTrue(postedReview.Id != Guid.Empty, "Expected non-empty review ID.");
       
       // Now bad posts - review objects with invalid properties; See CatalogController.PostReview method
       // first try sending null object
-      cfEx = TestUtil.ExpectClientFault(() => client.ExecutePost<BookReview, BookReview>(null, reviewUpdateUrl));
+      cfEx = TestUtil.ExpectClientFault(() => client.Post<BookReview, BookReview>(null, reviewUpdateUrl));
       Assert.AreEqual("ContentMissing", cfEx.Faults[0].Code, "Expected content missing fault");
 
       // Test review with bad properties; first try bad book id; if book id is invalid, controller rejects immediately
       var dummyReview = new BookReview() { BookId = Guid.NewGuid(), Rating = 10 };
       //Should return ObjectNotFound (book not found); 
-      cfEx = TestUtil.ExpectClientFault(() => client.ExecutePost<BookReview, BookReview>(dummyReview, reviewUpdateUrl));
+      cfEx = TestUtil.ExpectClientFault(() => client.Post<BookReview, BookReview>(dummyReview, reviewUpdateUrl));
       Assert.AreEqual(1, cfEx.Faults.Count, "Should be a single fault.");
       var fault0 = cfEx.Faults[0];
       Assert.IsTrue(fault0.Code == "ObjectNotFound" && fault0.Tag == "BookId");
 
       // Make new review with bad properties and try to post
       var testReview = new BookReview() { BookId = csBk.Id, Rating = 10, Caption = null, Review = new string('?', 1500)};
-      cfEx = TestUtil.ExpectClientFault(() => client.ExecutePost<BookReview, BookReview>(testReview, reviewUpdateUrl));
+      cfEx = TestUtil.ExpectClientFault(() => client.Post<BookReview, BookReview>(testReview, reviewUpdateUrl));
       // Now we should get multiple faults: Rating out of range, caption may not be null, Review text too long
       /*  Here's BadRequest response body: 
        [{"Code":"ValueMissing","Message":"Caption may not be empty.","Tag":"Caption","Path":null,"Parameters":{}},
@@ -96,17 +96,17 @@ namespace Vita.UnitTests.Web {
 
       // Test invalid URL path, no match to controller method --------------------------------------------------------------------------
       //Test non-existing URL
-      var badUrlExc = TestUtil.ExpectFailWith<ApiException>( () => client.ExecuteGet<SearchResults<Book>>("api/non-existing"));
+      var badUrlExc = TestUtil.ExpectFailWith<ApiException>( () => client.Get<SearchResults<Book>>("api/non-existing"));
       Assert.AreEqual(HttpStatusCode.NotFound, badUrlExc.Status, "Expected Not found code.");
       // There is a URL, but HTTP method is wrong: nullref method accepts GET only
-      var badMethodExc = TestUtil.ExpectFailWith<ApiException>(() => client.ExecutePost<object, string>(null, "api/special/nullref"));
+      var badMethodExc = TestUtil.ExpectFailWith<ApiException>(() => client.Post<object, string>(null, "api/special/nullref"));
       Assert.AreEqual(HttpStatusCode.NotFound, badMethodExc.Status, "Expected Not found code.");
 
 
       // test malformed parameters ------------------------------------------------------------------------------------------------------
       // Check bad parameter type handling
       // p1 should be int, p2 is Guid; we expect BadRequest with 2 faults
-      var cfExc = TestUtil.ExpectFailWith<ClientFaultException>(() => client.ExecuteGet<string>("api/special/foo/{0}/{1}", "not-int", "not-Guid"));
+      var cfExc = TestUtil.ExpectFailWith<ClientFaultException>(() => client.Get<string>("api/special/foo/{0}/{1}", "not-int", "not-Guid"));
       Assert.AreEqual(2, cfExc.Faults.Count, "Expected 2 faults");
     }
 
@@ -131,7 +131,7 @@ namespace Vita.UnitTests.Web {
       // (because we setup service in debug mode, to return error details to client)
 
       // First let's make a good call that succeeds - check that call details are not logged on server (LogLevel is Basic)
-      var allBooks = client.ExecuteGet<SearchResults<Book>>("api/books");
+      var allBooks = client.Get<SearchResults<Book>>("api/books");
       //Check that details are not logged
       logEntry = GetLastWebLogEntry();
       Assert.IsNotNull(logEntry, "Failed to get last web call log entry");
@@ -140,7 +140,7 @@ namespace Vita.UnitTests.Web {
       Assert.IsTrue(logEntry.LocalLog == null, "Local log should be empty."); //
       //cause null-ref exc on the server
       System.Threading.Thread.Sleep(100); //make pause let time tick, to make sure this call is stamped with latest time
-      var exc = TestUtil.ExpectFailWith<ApiException>(() => client.ExecuteGet<string>("api/special/nullref"));
+      var exc = TestUtil.ExpectFailWith<ApiException>(() => client.Get<string>("api/special/nullref"));
       Assert.AreEqual(HttpStatusCode.InternalServerError, exc.Status, "Expected server error.");
       Assert.IsTrue(exc.Message.Contains("NullReferenceException"), "Expected null reference exception on the server.");
       //Check server-side web log - it should now contain all details, LogLevel is elevated to details
@@ -185,7 +185,7 @@ namespace Vita.UnitTests.Web {
       // Let's send garbage to server method that expects a nice object in the body.
       LoginAs("Dora");
       var badJson = new StringContent("definitely not Json {/,'{", UTF8Encoding.Default, "application/json");
-      var badReqExc = TestUtil.ExpectClientFault(() => client.ExecutePost<HttpContent, HttpResponseMessage>(badJson, "/api/user/reviews"));
+      var badReqExc = TestUtil.ExpectClientFault(() => client.Post<HttpContent, HttpResponseMessage>(badJson, "/api/user/reviews"));
       //The HTTP status returned is BadRequest, but in this case the error is logged in details on the server, as a critical error
       logEntry = GetLastWebLogEntry();
       Assert.IsTrue(logEntry.Url.Contains("api/user/reviews"), "Expected review post entry");

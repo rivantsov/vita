@@ -8,7 +8,8 @@ using Vita.Samples.BookStore;
 using Vita.Samples.BookStore.Api;
 using System.Threading.Tasks;
 using Vita.Tools.Testing;
-using Vita.NRestClient;
+using Arrest;
+using Arrest.Sync;
 
 namespace Vita.UnitTests.Web {
 
@@ -22,23 +23,23 @@ namespace Vita.UnitTests.Web {
 
       //Test values handling in URL
       var gd = new Guid("729C7EA4-F3C5-11E4-88C8-F0DEF1783701");
-      var foo = client.ExecuteGet<string>("api/special/foo/{0}/{1}", 1, gd); //foo/(int)/(guid)
+      var foo = client.Get<string>("api/special/foo/{0}/{1}", 1, gd); //foo/(int)/(guid)
       Assert.AreEqual("Foo:1," + gd, foo);
       // 'bars' method requires login
-      var exc = TestUtil.ExpectFailWith<RestException>(() => client.ExecuteGet<string>("api/special/bars?q=Q"));
+      var exc = TestUtil.ExpectFailWith<RestException>(() => client.Get<string>("api/special/bars?q=Q"));
       Assert.AreEqual(HttpStatusCode.Unauthorized, exc.Status, "Expected Unauthorized"); 
       LoginAs("Dora");
-      var bars = client.ExecuteGet<string>("api/special/bars?q=Q");
+      var bars = client.Get<string>("api/special/bars?q=Q");
       Assert.AreEqual("bars:Q", bars);
       Logout(); 
 
       // Call getBook with bad book id - will return NotFound custom code - 
       //    it is done on purpose by controller, instead of simply returning null
-      var apiExc = TestUtil.ExpectFailWith<RestException>(() => client.ExecuteGet<Book>("api/special/books/{0}", Guid.NewGuid()));
+      var apiExc = TestUtil.ExpectFailWith<RestException>(() => client.Get<Book>("api/special/books/{0}", Guid.NewGuid()));
       Assert.AreEqual(HttpStatusCode.NotFound, apiExc.Status, "Expected NotFound status");
 
       //Test redirect; when we create WebApiClient in SetupHelper, we set: Client.InnerHandler.AllowRedirect = false; so it will bring error on redirect 
-      apiExc = TestUtil.ExpectFailWith<RestException>(() => client.ExecuteGet<HttpStatusCode>("api/special/redirect"));
+      apiExc = TestUtil.ExpectFailWith<RestException>(() => client.Get<HttpStatusCode>("api/special/redirect"));
       Assert.AreEqual(HttpStatusCode.Redirect, apiExc.Status, "Expected redirect status");
 
     }
@@ -50,21 +51,21 @@ namespace Vita.UnitTests.Web {
       var acceptText = "application/text,text/plain";
       //Heartbeat
       DiagnosticsController.Reset();
-      var serverStatus = client.ExecuteGetString(acceptText, "api/diagnostics/heartbeat");
+      var serverStatus = client.GetString("api/diagnostics/heartbeat", null, acceptText);
       Assert.AreEqual("StatusOK", serverStatus, "Expected StatusOK in heartbeat"); 
       // throw error
       DiagnosticsController.Reset();
-      var exc = TestUtil.ExpectFailWith<Exception>(() => client.ExecuteGetString(acceptText, "api/diagnostics/throwerror"));
+      var exc = TestUtil.ExpectFailWith<Exception>(() => client.GetString("api/diagnostics/throwerror", null, acceptText));
       Assert.IsTrue(exc.Message.Contains("TestException"), "Expected TestException thrown");
       //get/set time offset
       // current should be zero
-      var currOffset = client.ExecuteGetString(acceptText, "api/diagnostics/timeoffset");
+      var currOffset = client.GetString("api/diagnostics/timeoffset", null, acceptText);
       Assert.IsTrue(currOffset.StartsWith("Current offset: 0 minutes"), "Expected no offset");
       // set 60 minutes forward
-      currOffset = client.ExecuteGetString(acceptText, "api/diagnostics/timeoffset/60");
+      currOffset = client.GetString("api/diagnostics/timeoffset/60", null, acceptText);
       Assert.IsTrue(currOffset.StartsWith("Current offset: 60 minutes"), "Expected 60 minutes offset");
       // set back to 0
-      currOffset = client.ExecuteGetString(acceptText, "api/diagnostics/timeoffset/0");
+      currOffset = client.GetString("api/diagnostics/timeoffset/0", null, acceptText);
       Assert.IsTrue(currOffset.StartsWith("Current offset: 0 minutes"), "Expected no offset");
 
       /*
@@ -89,10 +90,10 @@ namespace Vita.UnitTests.Web {
     [TestMethod]
     public void TestDbConnectionHandling() {
       var client = TestStartup.Client;
-      var ok = client.ExecuteGet<string>("api/special/connectiontest");
+      var ok = client.Get<string>("api/special/connectiontest");
       Assert.AreEqual("OK", ok, "Connection test did not return OK");
       //get report
-      var report = client.ExecuteGet<string>("api/special/connectiontestreport");
+      var report = client.Get<string>("api/special/connectiontestreport");
       // values: State is closed, DataConnection.Close was called, WebCallContextHandler.PostProcessResponse was called
       Assert.AreEqual("True,True,True", report, "Connection report does not match expected value");
     }

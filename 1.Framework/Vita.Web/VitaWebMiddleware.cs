@@ -62,7 +62,7 @@ namespace Vita.Web {
         await _next(context);
         EndRequest(context);
       } catch (Exception ex) {
-        //EndRequest(context, ex);
+        EndRequest(context, ex);
       }
     }
 

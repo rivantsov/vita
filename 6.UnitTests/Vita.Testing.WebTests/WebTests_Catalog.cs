@@ -3,8 +3,8 @@ using System.Linq;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 using Vita.Entities;
-using Arrest; 
 using Vita.Samples.BookStore.Api;
+using Arrest;
 using Arrest.Sync;
 
 namespace Vita.UnitTests.Web {

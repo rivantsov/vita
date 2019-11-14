@@ -47,8 +47,6 @@ namespace Vita.Entities.Api {
   }
 
   public class ResponseInfo {
-    public string ControllerName;
-    public string MethodName;
     public TimeSpan Duration;
     public HttpStatusCode HttpStatus = HttpStatusCode.OK;
     public IDictionary<string, string> Headers = new Dictionary<string, string>();
@@ -77,7 +75,11 @@ namespace Vita.Entities.Api {
 
     public WebCallFlags Flags;
     // list of custom indicators for use by app that will be saved in web call log
-    public IList<string> CustomTags = new List<string>(); 
+    public IList<string> CustomTags = new List<string>();
+
+    public Exception Exception;
+    public string HandlerControllerName;
+    public string HandlerMethodName;
 
     public WebCallContext(OperationContext opContext, RequestInfo request) {
       this.OperationContext = opContext;

@@ -53,11 +53,11 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "430.Vita.Samples.BookStore.
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "630.Vita.Testing.WebTests", "6.UnitTests\Vita.Testing.WebTests\630.Vita.Testing.WebTests.csproj", "{21E84486-D0D2-4779-BD31-EB5660619D75}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "310.Vita.Modules", "3.Modules\Vita.Modules\310.Vita.Modules.csproj", "{6D4EF4B2-2000-47E9-9E51-AD9DE789813D}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "310.Vita.Modules", "3.Modules\Vita.Modules\310.Vita.Modules.csproj", "{6D4EF4B2-2000-47E9-9E51-AD9DE789813D}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "330.Vita.Modules.Logging", "3.Modules\Vita.Modules.Logging\330.Vita.Modules.Logging.csproj", "{DDFC3EC2-5669-4101-9AF8-4A1E9E84437F}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "330.Vita.Modules.Logging", "3.Modules\Vita.Modules.Logging\330.Vita.Modules.Logging.csproj", "{DDFC3EC2-5669-4101-9AF8-4A1E9E84437F}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Vita.NCron", "3.Modules\Vita.NCron\Vita.NCron.csproj", "{D418F8AC-F3B1-4771-9610-A7665E214168}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Vita.NCron", "3.Modules\Vita.NCron\Vita.NCron.csproj", "{D418F8AC-F3B1-4771-9610-A7665E214168}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

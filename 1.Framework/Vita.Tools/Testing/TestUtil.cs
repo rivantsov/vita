@@ -1,21 +1,8 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Data;
-using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
-using System.Text;
-using System.Threading.Tasks;
-
-using Vita.Data;
-using Vita.Data.Driver;
-using Vita.Data.Model;
-using Vita.Data.Runtime;
-using Vita.Data.Upgrades;
 using Vita.Entities;
-using Vita.Entities.Model;
 using Vita.Entities.Services;
-using Vita.Entities.Utilities;
 
 namespace Vita.Tools.Testing {
 

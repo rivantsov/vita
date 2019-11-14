@@ -93,19 +93,11 @@ namespace Vita.UnitTests.Web {
         Client = new RestClient(serviceUrl, badRequestContentType: typeof(List<ClientFault>)); //json, very simple setup
 
       RestClient.SharedHttpClientHandler.AllowAutoRedirect = false; //we need it for Redirect test
-      Client.Settings.Events.ReceivedError += RestClient_ReceivedError;
-    }
-
-    private static void RestClient_ReceivedError(object sender, RestClientEventArgs e) {
-      var callInfo = e.CallData; 
-      if (callInfo.Exception != null) {
-        switch (callInfo.Exception) {
-          case null: return;
-          case BadRequestException bre:
-            callInfo.Exception = new ClientFaultException((IList<ClientFault>)bre.Details);
-            break; 
-        }
-      }
+      // Setup handler converting BadRequestException into ClientFaultException, with list of faults already converted
+      Client.Settings.Events.ReceivedError += (s, e) => {
+        if (e.CallData.Exception is BadRequestException bre)
+          e.CallData.Exception = new ClientFaultException((IList<ClientFault>)bre.Details);
+      };
     }
 
     static IWebHost _webHost; 

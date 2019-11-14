@@ -60,7 +60,7 @@ namespace Vita.Web {
 
     // based on code from here: 
     // https://www.strathweb.com/2018/09/running-asp-net-core-content-negotiation-by-hand/
-    public static Task WriteResponse <TModel>(this HttpContext context, TModel model) {
+    public static Task WriteResponseAsync <TModel>(this HttpContext context, TModel model) {
       var selector = context.RequestServices.GetRequiredService<OutputFormatterSelector>();
       var writerFactory = context.RequestServices.GetRequiredService<IHttpResponseStreamWriterFactory>();
       var formatterContext = new OutputFormatterWriteContext(context, writerFactory.CreateWriter, 

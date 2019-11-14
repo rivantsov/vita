@@ -25,7 +25,7 @@ using Vita.Entities.Services;
 
 namespace Vita.Web {
 
- 
+
   /// <summary>AspNetCore middleware 
   /// Creates and injects into HTTP context the WebCallContext (with OperationContext) holding all information about the web call. 
   /// Provides automatic web call logging and exception/error logging.  
@@ -60,9 +60,9 @@ namespace Vita.Web {
       var webCtx = BeginRequest(context);
       try {
         await _next(context);
-        EndRequest(context);
+        await EndRequestAsync(context);
       } catch (Exception ex) {
-        EndRequest(context, ex);
+        await EndRequestAsync(context, ex);
       }
     }
 
@@ -81,51 +81,71 @@ namespace Vita.Web {
         HttpContextRef = new WeakReference(httpContext)
       };
 
-      var log = new BufferedLog();      
-      var opCtx = new OperationContext(this.App, 
+      var log = new BufferedLog();
+      var opCtx = new OperationContext(this.App,
         connectionMode: this.Settings.ConnectionReuseMode);
       opCtx.Log = new BufferedLog(opCtx.LogContext);
-      var webCtx = opCtx.WebContext = new WebCallContext(opCtx, reqInfo);
-      // Replace body stream with MemStream
-      webCtx.OriginalResponseStream = httpContext.Response.Body; 
-      httpContext.Response.Body = new MemoryStream();
+      var webContext = opCtx.WebContext = new WebCallContext(opCtx, reqInfo);
 
-
-      httpContext.SetWebCallContext(webCtx);
-      OnWebCallStarting(webCtx);
-      return webCtx; 
+      httpContext.SetWebCallContext(webContext);
+      ReplaceResponseStream(httpContext, webContext);
+      OnWebCallStarting(webContext);
+      return webContext;
     }
 
-    public void EndRequest(HttpContext httpContext, Exception ex = null) {
-      var resp = httpContext.Response;
-      var webCtx = httpContext.GetWebCallContext();
-      webCtx.OperationContext.DisposeAll(); // dispose/close conn
-      webCtx.Response = new ResponseInfo();
-      RetrieveRoutingData(httpContext, webCtx); 
-      webCtx.Response.Body = ReadResponseBodyForLog(resp);
-      // Response stream is our MemoryStream - copy contents to original stream
-      httpContext.Response.Body.Position = 0; 
-      httpContext.Response.Body.CopyTo(webCtx.OriginalResponseStream);
-      webCtx.OriginalResponseStream = null; 
-
-      if (ex != null) {
-        var bodyWriter = new StreamWriter(resp.Body);
-        switch (ex) {
-          case ClientFaultException cfex:
-            resp.StatusCode = (int) HttpStatusCode.BadRequest;
-            httpContext.WriteResponse(cfex.Faults).GetAwaiter().GetResult(); // writes resp respecting content negotiation
-            break;
-          default:
-            bodyWriter.Write(ex.Message);
-            resp.StatusCode = (int)HttpStatusCode.InternalServerError;
-            break; 
+    private async Task EndRequestAsync(HttpContext httpContext, Exception ex = null) {
+      var webContext = httpContext.GetWebCallContext();
+      if (webContext == null)
+        return;
+      try {
+        RetrieveRoutingData(httpContext, webContext);
+        if (ex != null) {
+          webContext.Exception = ex;
+          await EndFailedRequestAsync(httpContext, ex);
+          return;
         }
-        bodyWriter.Flush(); 
+        if (webContext.Response != null) {
+          SetExplicitResponse(webContext.Response, httpContext);
+          return;
+        }
+        var resp = httpContext.Response;
+        webContext.Response = new ResponseInfo();
+        webContext.Response.Body = ReadResponseBodyForLog(resp);
+      } finally {
+        OnWebCallCompleting(webContext);
+        webContext.OperationContext.DisposeAll(); // dispose/close conn
+        RestoreOriginalResponseStream(httpContext, webContext);
       }
-      if (webCtx.Response?.Body != null) {
-        SetExplicitResponse(webCtx.Response, httpContext);
+    }
+
+    private async Task EndFailedRequestAsync(HttpContext httpContext, Exception ex) {
+      var resp = httpContext.Response;
+      var bodyWriter = new StreamWriter(resp.Body);
+      switch (ex) {
+        case ClientFaultException cfex:
+          resp.StatusCode = (int)HttpStatusCode.BadRequest;
+          await httpContext.WriteResponseAsync(cfex.Faults); // writes resp respecting content negotiation
+          break;
+        default:
+          bodyWriter.Write(ex.Message);
+          resp.StatusCode = (int)HttpStatusCode.InternalServerError;
+          break;
       }
-      OnWebCallCompleting(webCtx); 
+      bodyWriter.Flush();
+    }
+
+
+    private void ReplaceResponseStream(HttpContext httpContext, WebCallContext webContext) {
+      // Replace body stream with MemStream, so we can read response body for log
+      // we will replace it back in EndRequest
+      webContext.OriginalResponseStream = httpContext.Response.Body;
+      httpContext.Response.Body = new MemoryStream();
+    }
+
+    private void RestoreOriginalResponseStream(HttpContext httpContext, WebCallContext webContext) {
+      httpContext.Response.Body.Position = 0;
+      httpContext.Response.Body.CopyTo(webContext.OriginalResponseStream);
+      webContext.OriginalResponseStream = null;
     }
 
     private string ReadRequestBodyForLog(HttpRequest request) {
@@ -162,7 +182,7 @@ namespace Vita.Web {
       return contentType.Contains("text") || contentType.Contains("json");
     }
 
-    private void SetExplicitResponse(ResponseInfo wantedResponse, HttpContext httpContext) {
+    private async void SetExplicitResponse(ResponseInfo wantedResponse, HttpContext httpContext) {
       httpContext.Response.StatusCode = (int)wantedResponse.HttpStatus; 
       if (wantedResponse.Body != null) {
         switch(wantedResponse.Body) {
@@ -172,7 +192,7 @@ namespace Vita.Web {
             httpContext.Response.Body = new MemoryStream(Encoding.UTF8.GetBytes(s));
             return;
           case byte[] bytes:
-            httpContext.WriteResponse(bytes);
+            await httpContext.WriteResponseAsync(bytes);
             //httpResponse.ContentType = wantedResponse.ContentType ?? "application/octet-stream";
             return; 
         }
@@ -184,9 +204,9 @@ namespace Vita.Web {
       if (routeData == null)
         return; 
       routeData.Values.TryGetValue("action", out var action);
-      webCtx.Response.MethodName = action?.ToString();
+      webCtx.HandlerMethodName = action?.ToString();
       routeData.Values.TryGetValue("controller", out var contr);
-      webCtx.Response.ControllerName = contr?.ToString();
+      webCtx.HandlerControllerName = contr?.ToString();
     }
 
     #region IWebCallNotificationService implementation

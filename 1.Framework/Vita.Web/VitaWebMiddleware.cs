@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net;
@@ -58,11 +59,13 @@ namespace Vita.Web {
 
     public async Task InvokeAsync(HttpContext context) {
       var webCtx = BeginRequest(context);
+      Exception exc = null; 
       try {
         await _next(context);
-        await EndRequestAsync(context);
       } catch (Exception ex) {
-        await EndRequestAsync(context, ex);
+        exc = ex; 
+      } finally {
+        await EndRequestAsync(context, exc);
       }
     }
 
@@ -111,6 +114,8 @@ namespace Vita.Web {
         var resp = httpContext.Response;
         webContext.Response = new ResponseInfo();
         webContext.Response.Body = ReadResponseBodyForLog(resp);
+      }catch(Exception fatal) { 
+
       } finally {
         OnWebCallCompleting(webContext);
         webContext.OperationContext.DisposeAll(); // dispose/close conn
@@ -143,9 +148,24 @@ namespace Vita.Web {
     }
 
     private void RestoreOriginalResponseStream(HttpContext httpContext, WebCallContext webContext) {
-      httpContext.Response.Body.Position = 0;
-      httpContext.Response.Body.CopyTo(webContext.OriginalResponseStream);
-      webContext.OriginalResponseStream = null;
+      try {
+        // Swap stream back to original, then copy data from temp stream into original
+        var tempResponseStream = httpContext.Response.Body;
+        var origResponseStream = webContext.OriginalResponseStream;
+        httpContext.Response.Body = origResponseStream;
+        webContext.OriginalResponseStream = null;
+        // Now copy data
+        // setting ContentLength is necessary to avoid 'too many bytes' stupid error thrown by Kestrel in some cases on CopyTo
+        httpContext.Response.ContentLength = null;
+        tempResponseStream.Position = 0;
+        // actually copy all from our temp stream into real original stream
+        tempResponseStream.CopyTo(origResponseStream);
+        tempResponseStream.Flush();
+      } catch (Exception ex) {
+        // Keeping it to have a stop point in debugger, just in case
+        Debug.WriteLine(ex.ToLogString());
+        throw;
+      }
     }
 
     private string ReadRequestBodyForLog(HttpRequest request) {

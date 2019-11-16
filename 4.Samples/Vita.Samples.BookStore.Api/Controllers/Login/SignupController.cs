@@ -17,7 +17,7 @@ namespace Vita.Samples.BookStore.Api {
   public class SignupController : BaseApiController {
 
     [HttpPost]
-    public User SignupUser(UserSignup signup) {
+    public User SignupUser([FromBody] UserSignup signup) {
       //Validate 
       OpContext.ThrowIfNull(signup, ClientFaultCodes.InvalidValue, "UserSignup", "UserSignup object may not be null.");
       OpContext.ValidateNotEmpty(signup.UserName, "UserName", "UserName may not be empty.");

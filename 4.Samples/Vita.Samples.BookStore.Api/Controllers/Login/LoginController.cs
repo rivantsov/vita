@@ -25,7 +25,7 @@ namespace Vita.Samples.BookStore.Api {
     /// <param name="request">The request object.</param>
     /// <returns>An object containing login attempt result.</returns>
     [HttpPost, Route("")]
-    public LoginResponse Login(LoginRequest request) {
+    public LoginResponse Login([FromBody] LoginRequest request) {
       OpContext.ThrowIfNull(request, ClientFaultCodes.ContentMissing, "LoginRequest", "Content object missing in API request.");
       OpContext.WebContext.Flags |= WebCallFlags.Confidential;
       //Login using LoginService
@@ -94,7 +94,7 @@ namespace Vita.Samples.BookStore.Api {
     /// <param name="pinRequest">Pin request information. 
     /// Should contain process token and factor type (email, phone).</param>
     [HttpPost, Route("multifactor/pin/send")]
-    public async Task SendPinForMultiFactor(SendPinRequest pinRequest) {
+    public async Task SendPinForMultiFactor([FromBody] SendPinRequest pinRequest) {
       var session = OpContext.OpenSession();
       var process = GetMutiFactorProcess(session, pinRequest.ProcessToken);
       OpContext.ThrowIf(process.CurrentFactor != null, ClientFaultCodes.InvalidAction, "token", "Factor verification pending, the previous process step is not completed.");
@@ -111,7 +111,7 @@ namespace Vita.Samples.BookStore.Api {
     /// <param name="request">The request object containing process token and pin value.</param>
     /// <returns>True if the pin is verified and is correct; otherwise, false.</returns>
     [HttpPut, Route("multifactor/pin/verify")]
-    public bool VerifyPinForMultiFactor(VerifyPinRequest request) {
+    public bool VerifyPinForMultiFactor([FromBody] VerifyPinRequest request) {
       var session = OpContext.OpenSession();
       var process = GetMutiFactorProcess(session, request.ProcessToken);
       OpContext.ThrowIfNull(process, ClientFaultCodes.ObjectNotFound, "Process", "Process not found or expired.");
@@ -128,7 +128,7 @@ namespace Vita.Samples.BookStore.Api {
     /// <remarks>The process must be completed, all factors specified should be verified by this time, 
     /// so PendingFactors property is empty.</remarks>
     [HttpPost, Route("multifactor/complete")]
-    public LoginResponse CompleteMultiFactorLogin(MultifactorLoginRequest request) {
+    public LoginResponse CompleteMultiFactorLogin([FromBody] MultifactorLoginRequest request) {
       var session = OpContext.OpenSession();
       var process = GetMutiFactorProcess(session, request.ProcessToken);
       OpContext.ThrowIfNull(process, ClientFaultCodes.ObjectNotFound, "processToken", "Login process not found or expired.");
@@ -189,7 +189,7 @@ namespace Vita.Samples.BookStore.Api {
     /// <param name="answers">The answers.</param>
     /// <returns>True if the answers are correct; otherwise, false.</returns>
     [HttpPut, Route("multifactor/questionanswers")]
-    public bool SubmitQuestionAnswers(string token, List<SecretQuestionAnswer> answers) {
+    public bool SubmitQuestionAnswers(string token, [FromBody] SecretQuestionAnswer[] answers) {
       OpContext.WebContext.MarkConfidential();
       var session = OpContext.OpenSession();
       var process = GetMutiFactorProcess(session, token);
@@ -203,7 +203,7 @@ namespace Vita.Samples.BookStore.Api {
     /// <param name="answer">The answer.</param>
     /// <returns>True if the answer is correct; otherwise, false.</returns>
     [HttpPut, Route("multifactor/questionanswer")]
-    public bool SubmitQuestionAnswer(string token, SecretQuestionAnswer answer) {
+    public bool SubmitQuestionAnswer(string token, [FromBody] SecretQuestionAnswer answer) {
       OpContext.WebContext.MarkConfidential();
       var session = OpContext.OpenSession();
       var process = GetMutiFactorProcess(session, token);
@@ -227,7 +227,7 @@ namespace Vita.Samples.BookStore.Api {
     /// <param name="changeInfo">The password change information containing the password.</param>
     /// <returns>The strength of the password.</returns>
     [HttpPut, Route("passwordcheck")]
-    public PasswordStrength EvaluatePasswordStrength(PasswordChangeInfo changeInfo) {
+    public PasswordStrength EvaluatePasswordStrength([FromBody] PasswordChangeInfo changeInfo) {
       OpContext.WebContext.MarkConfidential(); //prevent from logging password
       OpContext.ThrowIfNull(changeInfo, ClientFaultCodes.ContentMissing, "Password", "Password infomation missing.");
       var loginMgr =  OpContext.App.GetService<ILoginManagementService>();

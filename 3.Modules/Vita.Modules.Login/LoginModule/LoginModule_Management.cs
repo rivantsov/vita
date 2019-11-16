@@ -119,8 +119,8 @@ namespace Vita.Modules.Login {
         var iAns = login.AddSecretQuestionAnswer(number, question, ansHash);
         number++;
       }
-      CheckLoginFactorsSetupCompleted(login);
       session.SaveChanges();
+      CheckLoginFactorsSetupCompleted(login);
     }
 
     public void ReorderUserQuestionAnswers(ILogin login, IList<Guid> ids) {
@@ -193,16 +193,15 @@ namespace Vita.Modules.Login {
 
     public bool CheckLoginFactorsSetupCompleted(ILogin login) {
       var session = EntityHelper.GetSession(login);
-      var hadPendingChanges = session.GetChangeCount() > 0; //true if there are pending changes
       //Password reset
       if (login.PasswordResetFactors == ExtraFactorTypes.None)
         login.PasswordResetFactors = _settings.DefaultPasswordResetFactors;
       var incompleteFactors = GetIncompleteFactors(login);
       if(login.IncompleteFactors != incompleteFactors)
         login.IncompleteFactors = incompleteFactors; 
-      if (!hadPendingChanges) //save changes unless there were already changes so caller will save all
-        session.SaveChanges();
-      return login.IncompleteFactors == ExtraFactorTypes.None;
+      session.SaveChanges();
+      var completedAll = login.IncompleteFactors == ExtraFactorTypes.None;
+      return completedAll;
     }
 
     private ExtraFactorTypes GetIncompleteFactors(ILogin login) {

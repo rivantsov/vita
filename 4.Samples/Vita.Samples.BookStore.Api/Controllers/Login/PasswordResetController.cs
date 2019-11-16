@@ -30,7 +30,7 @@ namespace Vita.Samples.BookStore.Api {
     /// <param name="request">The data object with Captcha value (if used) and authentication factor (email).</param>
     /// <returns>Process token identifying the started process. </returns>
     [HttpPost, Route("start")]
-    public BoxedValue<string> Start(PasswordResetStartRequest request) {
+    public BoxedValue<string> Start([FromBody] PasswordResetStartRequest request) {
       var loginStt = OpContext.App.GetConfig<LoginModuleSettings>();
       var obscured = loginStt.Options.IsSet(LoginModuleOptions.ConcealMembership);
       var processToken = ProcessService.GenerateProcessToken(); 
@@ -92,7 +92,7 @@ namespace Vita.Samples.BookStore.Api {
     /// <param name="request">Parameters object.</param>
     /// <remarks>Factor parameter (email itself) should be provided in input object. FactorType is ignored.</remarks>
     [HttpPost, Route("pin/send")]
-    public async Task SendPin(SendPinRequest request) {
+    public async Task SendPin([FromBody] SendPinRequest request) {
       OpContext.WebContext.MarkConfidential();
       OpContext.ThrowIfNull(request, ClientFaultCodes.ContentMissing, "SendPinRequest", "Pin request object must be provided.");
       OpContext.ValidateNotEmpty(request.ProcessToken, "ProcessToken", "Process token should be provided.");
@@ -115,7 +115,7 @@ namespace Vita.Samples.BookStore.Api {
     /// <summary>Verifies pin received by user in email or SMS. </summary>
     /// <param name="request">Pin data.</param>
     [HttpPut, Route("pin/verify")]
-    public void VerifyPin(VerifyPinRequest request) {
+    public void VerifyPin([FromBody] VerifyPinRequest request) {
       var session = OpContext.OpenSession();
       var process = GetActiveProcess(session, request.ProcessToken, confirmedOnly: false);
       OpContext.ThrowIfEmpty(request.Pin, ClientFaultCodes.ValueMissing, "pin", "Pin value missing");
@@ -154,7 +154,7 @@ namespace Vita.Samples.BookStore.Api {
     /// <param name="answer">An object containing question ID and the answer. </param>
     /// <returns>True if the answer is correct; otherwise, false.</returns>
     [HttpPut, Route("userquestions/answer")]
-    public bool SubmitSecretQuestionAnswer([FromQuery] string token, SecretQuestionAnswer answer) {
+    public bool SubmitSecretQuestionAnswer([FromQuery] string token, [FromBody] SecretQuestionAnswer answer) {
       OpContext.WebContext.MarkConfidential();
       var session = OpContext.OpenSession();
       var process = GetActiveProcess(session, token);
@@ -171,7 +171,7 @@ namespace Vita.Samples.BookStore.Api {
     /// <param name="answers">A list of answer objects with question IDs and answers.</param>
     /// <returns>True if answers are correct; otherwise, false.</returns>
     [HttpPut, Route("userquestions/answers")]
-    public bool SubmitAllQuestionAnswers(string token, List<SecretQuestionAnswer> answers) {
+    public bool SubmitAllQuestionAnswers(string token, [FromBody] SecretQuestionAnswer[] answers) {
       OpContext.WebContext.MarkConfidential();
       var session = OpContext.OpenSession();
       var process = GetActiveProcess(session, token);
@@ -186,7 +186,7 @@ namespace Vita.Samples.BookStore.Api {
     /// <param name="changeInfo">An object containing new password.</param>
     /// <returns>True if password was successfully changed; otherwise, false.</returns>
     [HttpPut, Route("new")]
-    public async Task<bool> SetNewPassword(string token, PasswordChangeInfo changeInfo) {
+    public async Task<bool> SetNewPassword(string token, [FromBody] PasswordChangeInfo changeInfo) {
       OpContext.WebContext.MarkConfidential();
       var session = OpContext.OpenSession();
       var process = GetActiveProcess(session, token);

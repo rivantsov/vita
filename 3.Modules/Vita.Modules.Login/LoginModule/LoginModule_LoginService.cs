@@ -94,14 +94,16 @@ namespace Vita.Modules.Login {
       login.LastLoggedInOn = App.TimeService.UtcNow;
       var session = EntityHelper.GetSession(login);
       // session must be already established!
-      context.UserSession.Status = UserSessionStatus.Active; 
+      var userSession = context.UserSession;
+      if (userSession != null)
+        userSession.Status = UserSessionStatus.Active; 
       OnLoginEvent(context, LoginEventType.MultiFactorLoginCompleted, login);
       OnLoginEvent(context, LoginEventType.Login, login);
       OnLoginSucceeded(login);
       session.SaveChanges();
       return new LoginResult() {
         Status = LoginAttemptStatus.Success, Login = login, Actions = actions, User = context.User,
-        SessionId = context.UserSession.SessionId,  PreviousLoginOn = lastLogin };
+        SessionId = userSession?.SessionId,  PreviousLoginOn = lastLogin };
     }
 
     public void Logout(OperationContext context) {

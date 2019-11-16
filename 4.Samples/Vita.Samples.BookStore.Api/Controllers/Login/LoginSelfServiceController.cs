@@ -36,7 +36,7 @@ namespace Vita.Samples.BookStore.Api {
     /// <returns>Login info object with updated information.</returns>
     /// <remarks>Not all information may be updated with this call.</remarks>
     [HttpPut, Route("")]
-    public LoginInfo UpdateLoginInfo(LoginInfo loginInfo) {
+    public LoginInfo UpdateLoginInfo([FromBody] LoginInfo loginInfo) {
       var session = OpenSession();
       var login = GetCurrentLogin(session);
       OpContext.ThrowIfNull(login, ClientFaultCodes.ContentMissing, "LoginInfo", "LoginInfo is missing.");
@@ -68,18 +68,16 @@ namespace Vita.Samples.BookStore.Api {
     /// <summary>Sets the answers for the secret questions for the user. </summary>
     /// <param name="answers">A list of answers paired with question ID.</param>
     [HttpPut, Route("answers")]
-    public void SetUserSecretQuestionAnswers(List<SecretQuestionAnswer> answers) {
+    public void SetUserSecretQuestionAnswers([FromBody]SecretQuestionAnswer[] answers) {
       var session = OpenSession();
       var login = GetCurrentLogin(session);
       LoginManager.UpdateUserQuestionAnswers(login, answers);
-      LoginManager.CheckLoginFactorsSetupCompleted(login);
-      session.SaveChanges(); 
     }
 
     /// <summary>Changes the order of secret questions for the users.</summary>
     /// <param name="ids">A list of question IDs in desired order.</param>
     [HttpPut, Route("answers/order")]
-    public void ReorderUserQuestionAnswers(IList<Guid> ids) {
+    public void ReorderUserQuestionAnswers([FromBody] Guid[] ids) {
       var session = OpenSession();
       var login = GetCurrentLogin(session);
       LoginManager.ReorderUserQuestionAnswers(login, ids);
@@ -111,12 +109,12 @@ namespace Vita.Samples.BookStore.Api {
     /// <param name="factor">Factor information.</param>
     /// <returns>The created factor info object.</returns>
     [HttpPost, Route("factors")]
-    public LoginExtraFactor AddUserFactor(LoginExtraFactor factor) {
+    public LoginExtraFactor AddUserFactor([FromBody] LoginExtraFactor factor) {
       var session = OpenSession();
       var login = GetCurrentLogin(session);
       var newFactor = LoginManager.AddFactor(login, factor.Type, factor.Value);
-      LoginManager.CheckLoginFactorsSetupCompleted(login);
       session.SaveChanges();
+      LoginManager.CheckLoginFactorsSetupCompleted(login);
       return newFactor; 
     }
 
@@ -124,7 +122,7 @@ namespace Vita.Samples.BookStore.Api {
     /// <param name="factor">Factor information.</param>
     /// <returns>The updated factor info object.</returns>
     [HttpPut, Route("factors")]
-    public LoginExtraFactor UpdateFactor(LoginExtraFactor factor) {
+    public LoginExtraFactor UpdateFactor([FromBody] LoginExtraFactor factor) {
       var session = OpenSession();
       var login = GetCurrentLogin(session);
       var iFactor = login.ExtraFactors.FirstOrDefault(f => f.Id == factor.Id);
@@ -134,7 +132,6 @@ namespace Vita.Samples.BookStore.Api {
       var updFactor = LoginManager.UpdateFactor(iFactor, factor.Value);
       session.SaveChanges();
       LoginManager.CheckLoginFactorsSetupCompleted(login);
-      session.SaveChanges();
       return updFactor;
     }
 
@@ -220,7 +217,7 @@ namespace Vita.Samples.BookStore.Api {
     /// <summary>Changes user password. </summary>
     /// <param name="changeInfo">Change information containing old and new passwords.</param>
     [HttpPut, Route("password")]
-    public void ChangePassword(PasswordChangeInfo changeInfo) {
+    public void ChangePassword([FromBody] PasswordChangeInfo changeInfo) {
       OpContext.WebContext.MarkConfidential();
       OpContext.ThrowIfNull(changeInfo, ClientFaultCodes.ContentMissing, "Password", "Password change info is missing.");
       var session = OpenSession();
@@ -240,7 +237,7 @@ namespace Vita.Samples.BookStore.Api {
     /// the device token should be saved in the browser, and then sent along with username and password
     /// when user logs in. </remarks>
     [HttpPost, Route("device")]
-    public DeviceInfo RegisterDevice(DeviceInfo device) {
+    public DeviceInfo RegisterDevice([FromBody] DeviceInfo device) {
       return RegisterOrUpdateDevice(device); 
     }
 
@@ -248,11 +245,11 @@ namespace Vita.Samples.BookStore.Api {
     /// <param name="device">The device information.</param>
     /// <returns>The updated device information.</returns>
     [HttpPut, Route("device")]
-    public DeviceInfo UpdateDevice(DeviceInfo device) {
+    public DeviceInfo UpdateDevice([FromBody] DeviceInfo device) {
       return RegisterOrUpdateDevice(device);
     }
 
-    private DeviceInfo RegisterOrUpdateDevice(DeviceInfo device) {
+    private DeviceInfo RegisterOrUpdateDevice([FromBody] DeviceInfo device) {
       var session = OpenSession();
       var login = GetCurrentLogin(session);
       ITrustedDevice deviceEnt = null;

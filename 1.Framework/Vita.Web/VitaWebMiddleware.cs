@@ -105,9 +105,7 @@ namespace Vita.Web {
         if (ex != null) {
           webContext.Exception = ex;
           await EndFailedRequestAsync(httpContext, ex);
-          return;
-        }
-        if (webContext.Response != null) {
+        } else if (webContext.Response != null) {
           SetExplicitResponse(webContext.Response, httpContext);
           return;
         }

@@ -12,7 +12,7 @@ namespace Vita.Modules.Login {
     public LoginAttemptStatus Status;
     public ILogin Login;
     public PostLoginActions Actions;
-    public Guid SessionId;
+    public Guid? SessionId;
     public UserInfo User;
     public DateTime? PreviousLoginOn;
   }

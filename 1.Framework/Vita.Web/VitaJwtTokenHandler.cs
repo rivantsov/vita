@@ -17,17 +17,14 @@ namespace Vita.Web {
 
   public class VitaJwtTokenHandler : IAuthenticationTokenHandler {
     EntityApp _entityApp;
-    SymmetricSecurityKey JwtKey; 
+    SymmetricSecurityKey _jwtKey; 
 
     public VitaJwtTokenHandler(EntityApp entityApp, IServiceCollection services, string jwtSecret) {
       _entityApp = entityApp;
-      var secretBytes = Encoding.ASCII.GetBytes(jwtSecret);
-      JwtKey = new SymmetricSecurityKey(secretBytes);
-      SetupJwtAuthentication(services);
       _entityApp.RegisterService<IAuthenticationTokenHandler>(this);
-    }
-
-    private void SetupJwtAuthentication(IServiceCollection services) {
+      var secretBytes = Encoding.ASCII.GetBytes(jwtSecret);
+      _jwtKey = new SymmetricSecurityKey(secretBytes);
+      // some cryptic code copied from samples somewhere
       services.AddAuthentication(x => {
         x.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
         x.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
@@ -41,7 +38,7 @@ namespace Vita.Web {
         x.SaveToken = true;
         x.TokenValidationParameters = new TokenValidationParameters {
           ValidateIssuerSigningKey = true,
-          IssuerSigningKey = JwtKey, 
+          IssuerSigningKey = _jwtKey, 
           ValidateIssuer = false,
           ValidateAudience = false
         };
@@ -59,7 +56,7 @@ namespace Vita.Web {
       var tokenDescriptor = new SecurityTokenDescriptor {
         Subject = new ClaimsIdentity(claims),
         Expires = expires,
-        SigningCredentials = new SigningCredentials(JwtKey, SecurityAlgorithms.HmacSha256Signature)
+        SigningCredentials = new SigningCredentials(_jwtKey, SecurityAlgorithms.HmacSha256Signature)
       };
       var tokenHandler = new JwtSecurityTokenHandler();
       var token = tokenHandler.CreateToken(tokenDescriptor);

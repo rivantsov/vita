@@ -13,13 +13,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Remove="Api_Disabled\LoginAdministrationController.cs" />
-    <Compile Remove="Api_Disabled\LoginController.cs" />
-    <Compile Remove="Api_Disabled\LoginSelfServiceController.cs" />
-    <Compile Remove="Api_Disabled\PasswordResetController.cs" />
-  </ItemGroup>
-
-  <ItemGroup>
     <None Remove="MigrationReadMe.txt" />
   </ItemGroup>
 
@@ -29,13 +22,6 @@
 
   <ItemGroup>
     <EmbeddedResource Include="DefaultSecretQuestions.txt" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <None Include="Api_Disabled\LoginAdministrationController.cs" />
-    <None Include="Api_Disabled\LoginController.cs" />
-    <None Include="Api_Disabled\LoginSelfServiceController.cs" />
-    <None Include="Api_Disabled\PasswordResetController.cs" />
   </ItemGroup>
 
   <ItemGroup>

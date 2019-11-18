@@ -20,12 +20,14 @@
   <ItemGroup>
     <Compile Remove="1.AppModel\Services\Logging\IErrorLogService_Disabled.cs" />
     <Compile Remove="4.Internals\Logging\_ActivationLog_DISABLED.cs" />
+    <Compile Remove="4.Internals\Utilities\BatchingQueue_New.cs" />
     <Compile Remove="4.Internals\Utilities\BufferingQueue.cs" />
   </ItemGroup>
 
   <ItemGroup>
     <None Include="1.AppModel\Services\Logging\IErrorLogService_Disabled.cs" />
     <None Include="4.Internals\Logging\_ActivationLog_DISABLED.cs" />
+    <None Include="4.Internals\Utilities\BatchingQueue_New.cs" />
   </ItemGroup>
 
   <ItemGroup>

@@ -1,0 +1,30 @@
+﻿Log types
+  OperationLog 
+  AppEventLog
+  ErrorLog
+  WebCallLog
+  RestClientLog
+  DbUpgradeLog
+  UserSession - separate module/lib
+  TransLog
+
+Base Log entities
+
+LogContext
+  Id
+  ActorId
+  ApiCallId?
+  UserSessionId?
+ LogActor
+   UserId
+   AltUserId
+   UserName
+
+ TransactionLog props
+  long TransId autoinc,
+  DateTime
+  Duration
+  RecordCount
+  LogContextId
+  Changes
+  

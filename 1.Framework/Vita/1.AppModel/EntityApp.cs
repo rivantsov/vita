@@ -369,13 +369,16 @@ namespace Vita.Entities {
       return user.UserName;
     }
 
-    public virtual IList<Claim> GetUserClaims(OperationContext userContext) {
-      var user = userContext.User;
-      return new List<Claim> {
+    public virtual IList<Claim> GetUserClaims(OperationContext opContext) {
+      var user = opContext.User;
+      var claims = new List<Claim> {
         new Claim(nameof(user.UserId), user.UserId.ToString()),
         new Claim(nameof(user.UserName), user.UserName),
         new Claim(nameof(user.AltUserId), user.AltUserId.ToString(CultureInfo.InvariantCulture)),
       };
+      if (opContext.UserSession != null)
+        claims.Add(new Claim("SessionId", opContext.UserSession.SessionId.ToString()));
+      return claims; 
     }    
 
     #endregion

@@ -1,11 +1,16 @@
-﻿Log types
-  OperationLog 
+﻿Standard modules: 
   AppEventLog
   ErrorLog
+  UserSession
+  EncryptedData
+  Party
+
+
+Log modules
+  OperationLog 
   WebCallLog
   RestClientLog
-  DbUpgradeLog
-  UserSession - separate module/lib
+  DbUpgradeLog - remove it?
   TransLog
 
 Base Log entities
@@ -15,6 +20,7 @@ LogContext
   ActorId
   ApiCallId?
   UserSessionId?
+
  LogActor
    UserId
    AltUserId

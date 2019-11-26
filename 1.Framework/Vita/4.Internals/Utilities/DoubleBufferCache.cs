@@ -20,16 +20,16 @@ namespace Vita.Entities.Utilities {
       _expirationTicks = expireSec * Stopwatch.Frequency; // frequency is ticks per sec
     }
 
-    public TValue Lookup(TKey key, Func<TKey, TValue> cacheMiss = null) {
+    public TValue Lookup(TKey key, Func<TKey, TValue> cacheMissFunc = null) {
       if (_frontSet.TryGetValue(key, out var value))
         return value; 
       if (_backSet.TryGetValue(key, out value)) {
         Add(key, value); 
         return value; 
       }
-      if (cacheMiss == null)
+      if (cacheMissFunc == null)
         return default(TValue);
-      value = cacheMiss(key);
+      value = cacheMissFunc(key);
       if (EqualityComparer<TValue>.Default.Equals(value))
         return value;
       Add(key, value);

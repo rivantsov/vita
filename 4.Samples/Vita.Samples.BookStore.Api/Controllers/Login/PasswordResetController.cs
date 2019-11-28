@@ -30,7 +30,7 @@ namespace Vita.Samples.BookStore.Api {
     /// <param name="request">The data object with Captcha value (if used) and authentication factor (email).</param>
     /// <returns>Process token identifying the started process. </returns>
     [HttpPost, Route("start")]
-    public BoxedValue<string> Start([FromBody] PasswordResetStartRequest request) {
+    public string Start([FromBody] PasswordResetStartRequest request) {
       var loginStt = OpContext.App.GetConfig<LoginModuleSettings>();
       var obscured = loginStt.Options.IsSet(LoginModuleOptions.ConcealMembership);
       var processToken = ProcessService.GenerateProcessToken(); 
@@ -40,7 +40,7 @@ namespace Vita.Samples.BookStore.Api {
         // If we need to conceal membership (we are a public porn site), we have to pretend it went ok, and return processToken
         // so that we do not disclose if user's email is/is not in our database
         if(obscured)
-          return new BoxedValue<string>(processToken);
+          return processToken;
         else
           //if we are a specialized site and do not need to conceal membership (this might be annoying in a business system) -
           // we return error
@@ -55,14 +55,14 @@ namespace Vita.Samples.BookStore.Api {
             !loginStt.Options.IsSet(LoginModuleOptions.AllowPasswordResetOnSuspended)); 
       if(accountBlocked) {
         if(obscured)
-          return new BoxedValue<string>(processToken);
+          return processToken;
         else
           OpContext.ThrowIf(true, LoginFaultCodes.LoginDisabled, "Login", "Login is disabled.");
       }
       //A flag in login entity may override default conceal settings - to allow more convenient disclosure for 
       // special members (stuff members or partners)
       var process = ProcessService.StartProcess(login, LoginProcessType.PasswordReset, processToken);
-      return new BoxedValue<string>(processToken); 
+      return processToken; 
     }
 
     // Returns process ONLY if at least one factor was confirmed; otherwise hacker can figure out if user/email is in our database.

@@ -184,9 +184,9 @@ namespace Vita.UnitTests.Web {
       Assert.IsFalse(emailFactor.Confirmed, "Email should not be confirmed.");
       //Let's confirm it - send pin, read it from email and confirm it
       // The call returns processToken identifying email verificaiton process
-      var processTokenBox = client.Post<object, BoxedValue<string>>(null, "api/mylogin/factors/{0}/pin", emailFactor.Id);
+      var processToken = client.Post<object, string>(null, "api/mylogin/factors/{0}/pin", emailFactor.Id);
       //let's do it twice - to make sure it works even if we have multiple pins sent
-      processTokenBox = client.Post<object, BoxedValue<string>>(null, "api/mylogin/factors/{0}/pin", emailFactor.Id);
+      processToken = client.Post<object, string>(null, "api/mylogin/factors/{0}/pin", emailFactor.Id);
       var pinEmail = TestStartup.GetLastMessageTo(ferbEmail);
       Assert.IsNotNull(pinEmail, "Pin email not received.");
       var pin = pinEmail.Pin; //get pin from email
@@ -196,7 +196,7 @@ namespace Vita.UnitTests.Web {
       // var pinOk = client.Put<object, bool>(null, "api/mylogin/factors/{0}/pin/{1}", emailFactor.Id, pin);
       // method 2 - endpoint not requiring logged-in user; use it in a page activated from URL embedded in email: 
       var pinOk = client.Put<object, bool>(null, "api/login/factors/verify-pin?processtoken={0}&&pin={1}",
-            processTokenBox.Value, pin);
+            processToken, pin);
       Assert.IsTrue(pinOk, "Pin submit failed.");
       //Now email should not be listed as incomplete factor
       loginInfo = client.Get<LoginInfo>("api/mylogin");
@@ -261,8 +261,7 @@ namespace Vita.UnitTests.Web {
       //  He enters email in a text box, solves captcha and clicks Submit. The client code executes a request to start reset process
       //  "Magic" is a magic captcha value (it is set in login module settings) to bypass captcha check in unit tests.
       var request = new PasswordResetStartRequest() { Factor = ferbEmail, Captcha = "Magic" };
-      processTokenBox = client.Post<PasswordResetStartRequest, BoxedValue<string>>(request, "api/passwordreset/start");
-      var processToken = processTokenBox.Value;
+      processToken = client.Post<PasswordResetStartRequest, string>(request, "api/passwordreset/start");
       Assert.IsFalse(string.IsNullOrWhiteSpace(processToken), "Expected process token.");
       // We do not disclose any details, even the fact that actual process started or not;
       // even if ferb's email is not found, the server returns a process token as if everything is ok. 

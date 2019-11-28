@@ -18,7 +18,6 @@ namespace Vita.Web {
   /// <remarks><para>Use this class as a base for your custom controllers if you want to use 'classic' api controllers that are heavily 
   /// dependent on WebApi infrastructure. </para>
   /// </remarks>
-  //[CheckModelState] //ensures that exception is thrown automatically if there were failures in request data deserialization. 
   // ApiController is optional, we use it here for one effect - the [FromBody] attribute will be 
   // automatically inferred for complex input parameters
   [ApiController]

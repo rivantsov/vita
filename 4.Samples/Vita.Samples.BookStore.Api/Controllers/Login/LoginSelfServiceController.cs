@@ -171,7 +171,7 @@ namespace Vita.Samples.BookStore.Api {
     /// <param name="factorId">Factor ID.</param>
     /// <returns>The token identifying the started process for email verification.</returns>
     [HttpPost, Route("factors/{factorId}/pin")]
-    public async Task<BoxedValue<string>> SendPin(Guid factorId) {
+    public async Task<string> SendPin(Guid factorId) {
       var session = OpenSession(); 
       var login = GetCurrentLogin(session);
       var factor = login.ExtraFactors.FirstOrDefault(f => f.Id == factorId);
@@ -182,7 +182,7 @@ namespace Vita.Samples.BookStore.Api {
       var pin = processService.GeneratePin(process, factor);
       await processService.SendPinAsync(process, factor);
       session.SaveChanges(); 
-      return new BoxedValue<string>(process.Token);
+      return process.Token;
     }
 
     /// <summary>Submits the PIN received by user (in email) to verify it. </summary>

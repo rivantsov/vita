@@ -6,13 +6,13 @@ using System.Threading.Tasks;
 using System.Net;
 using Microsoft.AspNetCore.Mvc;
 using System.Diagnostics;
+using Microsoft.AspNetCore.Authorization;
 
 using Vita.Entities;
-using Vita.Samples.BookStore;
+using Vita.Entities.Api;
 using System.Data.SqlClient;
 using System.Data;
 using Vita.Web;
-using Microsoft.AspNetCore.Authorization;
 
 namespace Vita.Samples.BookStore.Api {
 

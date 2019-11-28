@@ -93,12 +93,35 @@ namespace Vita.Entities.Api {
   }//class
 
   public static class WebCallContextExtensions {
+
     public static bool IsSet(this WebCallFlags flags, WebCallFlags flag) {
       return (flags & flag) != 0;
     }
+
     public static void MarkConfidential(this WebCallContext context) {
       context.Flags |= WebCallFlags.Confidential;
     }
 
-  }
+    public static void SetResponseHeader(this WebCallContext context, string name, string value) {
+      context.EnsureResponseInfo();
+      context.Response.Headers[name] = value;
+    }
+
+    public static void SetResponse(this WebCallContext context, object body = null, string contentType = "text/plain",
+                                      HttpStatusCode? status = null) {
+      context.EnsureResponseInfo();
+      if (body != null) {
+        context.Response.Body = body;
+        context.Response.BodyContentType = contentType;
+      }
+      if (status != null)
+        context.Response.HttpStatus = status.Value;
+    }
+
+    public static void EnsureResponseInfo(this WebCallContext context) {
+      if (context.Response == null)
+        context.Response = new ResponseInfo();
+    }
+
+  } //class
 }

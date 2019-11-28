@@ -47,7 +47,7 @@ namespace Vita.Web {
 
     public Task OnJwtTokenValidated(TokenValidatedContext context) {
       var webCtx = context.HttpContext.GetWebCallContext();
-      webCtx.OperationContext.SetUserFromClaims(context.Principal.Claims);
+      SetUserFromClaims(webCtx.OperationContext, context.Principal.Claims);
       return Task.CompletedTask;
     }
 
@@ -63,6 +63,29 @@ namespace Vita.Web {
       var tokenStr = tokenHandler.WriteToken(token);
       return tokenStr; 
     }
+
+    private void SetUserFromClaims(OperationContext context, IEnumerable<Claim> claims) {
+      Guid userId = Guid.Empty;
+      string userName = string.Empty;
+      long altUserId = 0;
+      foreach (var claim in claims) {
+        var v = claim.Value;
+        switch (claim.Type) {
+          case nameof(UserInfo.UserId):
+            Guid.TryParse(claim.Value, out userId);
+            break;
+          case nameof(UserInfo.UserName):
+            userName = claim.Value;
+            break;
+          case nameof(UserInfo.AltUserId):
+            long.TryParse(claim.Value, out altUserId);
+            break;
+        } //switch
+      } //foreach
+      // Set UserInfo on current operation context
+      context.User = new UserInfo(userId, userName, UserKind.AuthenticatedUser, altUserId);
+    }
+
 
   }
 }

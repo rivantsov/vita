@@ -15,8 +15,10 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Extensions;
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.Http.Internal;
+using Microsoft.AspNetCore.Mvc.Formatters;
+using Microsoft.AspNetCore.Mvc.Infrastructure;
 using Microsoft.AspNetCore.Routing;
-
+using Microsoft.Extensions.DependencyInjection;
 using Vita.Entities;
 using Vita.Entities.Api;
 using Vita.Entities.Logging;
@@ -90,7 +92,7 @@ namespace Vita.Web {
       opCtx.Log = new BufferedLog(opCtx.LogContext);
       var webContext = opCtx.WebContext = new WebCallContext(opCtx, reqInfo);
 
-      httpContext.SetWebCallContext(webContext);
+      httpContext.Items[WebCallContext.WebCallContextKey] = webContext;
       ReplaceResponseStream(httpContext, webContext);
       OnWebCallStarting(webContext);
       return webContext;
@@ -127,7 +129,7 @@ namespace Vita.Web {
       switch (ex) {
         case ClientFaultException cfex:
           resp.StatusCode = (int)HttpStatusCode.BadRequest;
-          await httpContext.WriteResponseAsync(cfex.Faults); // writes resp respecting content negotiation
+          await WriteResponseAsync(httpContext, cfex.Faults); // writes resp respecting content negotiation
           break;
         default:
           bodyWriter.Write(ex.Message);
@@ -210,7 +212,7 @@ namespace Vita.Web {
             httpContext.Response.Body = new MemoryStream(Encoding.UTF8.GetBytes(s));
             return;
           case byte[] bytes:
-            await httpContext.WriteResponseAsync(bytes);
+            await WriteResponseAsync(httpContext, bytes);
             //httpResponse.ContentType = wantedResponse.ContentType ?? "application/octet-stream";
             return; 
         }
@@ -242,6 +244,18 @@ namespace Vita.Web {
       WebCallCompleting?.Invoke(this, new WebCallEventArgs(webCtx));
     }
     #endregion
+
+    // based on code from here: 
+    // https://www.strathweb.com/2018/09/running-asp-net-core-content-negotiation-by-hand/
+    private Task WriteResponseAsync<TModel>(HttpContext context, TModel model) {
+      var selector = context.RequestServices.GetRequiredService<OutputFormatterSelector>();
+      var writerFactory = context.RequestServices.GetRequiredService<IHttpResponseStreamWriterFactory>();
+      var formatterContext = new OutputFormatterWriteContext(context, writerFactory.CreateWriter,
+          typeof(TModel), model);
+      var selectedFormatter = selector.SelectFormatter(formatterContext,
+               Array.Empty<IOutputFormatter>(), new MediaTypeCollection());
+      return selectedFormatter.WriteAsync(formatterContext);
+    }
 
 
 

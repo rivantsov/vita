@@ -7,6 +7,7 @@ namespace Vita.Internals.Utilities {
 
   public interface ILinkedNode {
     ILinkedNode Next { get; set; } 
+    object Data { get; set; }
   }
 
   // Nov 23, the last, 'the best' version so far
@@ -14,7 +15,7 @@ namespace Vita.Internals.Utilities {
   public class BufferingQueue<TData> {
 
     class LinkedNode : ILinkedNode {
-      public TData Data;
+      public object Data { get; set; }
       public LinkedNode Next;
       ILinkedNode ILinkedNode.Next {get;set;}
     }
@@ -38,7 +39,7 @@ namespace Vita.Internals.Utilities {
       lock(_lock) {
         var list = new List<TData>();
         while (list.Count < maxCount && _first != null) {
-          list.Add(_first.Data);
+          list.Add((TData)_first.Data);
           Interlocked.Decrement(ref _count);
           _first = _first.Next; 
         }

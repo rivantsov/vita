@@ -13,7 +13,7 @@ using Microsoft.AspNetCore.Mvc;
 using Vita.Modules.Login;
 using Vita.Web;
 
-namespace Vita.Samples.BookStore.Api {
+namespace Vita.Modules.Login.Api {
 
   // Handles Login/logout operations
   [Route("api/login")]

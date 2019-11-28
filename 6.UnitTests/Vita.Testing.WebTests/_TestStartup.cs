@@ -22,7 +22,6 @@ using Arrest;
 using Vita.Samples.BookStore;
 using Vita.Samples.BookStore.SampleData;
 using Arrest.Xml;
-using Arrest.Internals;
 
 namespace Vita.UnitTests.Web {
 

@@ -1,18 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
-using System.Net;
+using Microsoft.AspNetCore.Mvc;
 
 using Vita.Entities;
 using Vita.Entities.Api;
-using Vita.Entities.Services;
-using Vita.Modules.Login;
-using Microsoft.AspNetCore.Mvc;
 using Vita.Web;
 
-namespace Vita.Samples.BookStore.Api {
+namespace Vita.Modules.Login.Api {
 
   // Handles Password reset
   [Route("api/passwordreset")] 

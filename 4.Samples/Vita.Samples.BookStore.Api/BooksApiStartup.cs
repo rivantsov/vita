@@ -41,8 +41,10 @@ namespace Vita.Samples.BookStore.Api {
       services.AddMvc()
         .SetCompatibilityVersion(CompatibilityVersion.Version_2_1)
         .AddXmlDataContractSerializerFormatters()
+        // Register controllers in Login.Api assembly
+        .AddApplicationPart(typeof(Vita.Modules.Login.Api.LoginController).Assembly)
+        .AddControllersAsServices()
         ;
-      ;
 
     }
 

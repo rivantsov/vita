@@ -39,6 +39,7 @@
     <ProjectReference Include="..\..\1.Framework\Vita.Web\030.Vita.Web.csproj" />
     <ProjectReference Include="..\..\1.Framework\Vita\010.Vita.csproj" />
     <ProjectReference Include="..\..\2.Drivers\Vita.Data.MsSql\210.Vita.Data.MsSql.csproj" />
+    <ProjectReference Include="..\..\3.Modules\Vita.Modules.Login.Api\321.Vita.Modules.Login.Api.csproj" />
     <ProjectReference Include="..\..\3.Modules\Vita.Modules.Login\320.Vita.Modules.Login.csproj" />
     <ProjectReference Include="..\..\4.Samples\Vita.Samples.BookStore.Api\430.Vita.Samples.BookStore.Api.csproj" />
     <ProjectReference Include="..\..\4.Samples\Vita.Samples.BookStore.SampleData\420.Vita.Samples.BookStore.SampleData.csproj" />

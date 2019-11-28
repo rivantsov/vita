@@ -10,7 +10,8 @@ using Vita.Entities.Api;
 using Vita.Modules.Login;
 using Vita.Web;
 
-namespace Vita.Samples.BookStore.Api {
+namespace Vita.Modules.Login.Api {
+
   [Route("api/logins"), Authorize(Roles = "StoreAdmin")] 
   public class LoginAdministrationController : BaseApiController {
     ILoginAdministrationService _adminService => OpContext.App.GetService<ILoginAdministrationService>(); 

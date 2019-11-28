@@ -1,25 +1,18 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.Linq;
-using System.Reflection;
+using System.Threading.Tasks;
+using System.Threading;
+using System.Security.Claims;
+using System.Globalization;
 
-using Vita.Entities.Api;
 using Vita.Entities.Model;
 using Vita.Entities.Services;
 using Vita.Entities.Logging;
 using Vita.Entities.Services.Implementations;
 using Vita.Data;
-using System.Diagnostics;
-using Vita.Data.Model;
 using Vita.Entities.Model.Construction;
-using Vita.Entities.Utilities;
 using Vita.Data.Runtime;
-using System.Threading.Tasks;
-using System.Threading;
-using System.Security.Claims;
-using System.Globalization;
-using Vita.Entities.Model.Emit;
 
 namespace Vita.Entities {
 
@@ -64,7 +57,7 @@ namespace Vita.Entities {
     /// <summary>Default length for string properties without Size attribute. </summary>
     public int DefaultStringLength = 50;
 
-    /// <summary>Entity class provider. The service responsible for generating (emitting) entity classes. </summary>
+    /// <summary>Obsolete. Entity class provider. The service responsible for generating (emitting) entity classes. </summary>
     /// <remarks>The default implementation based on IL-emit. 
     /// </remarks>
     [Obsolete("Do not assign this property, it is no longer used.")]
@@ -172,7 +165,6 @@ namespace Vita.Entities {
     public bool IsConnected() {
       return Status == EntityAppStatus.Connected || Status == EntityAppStatus.Shutdown;
     }
-
 
     #region Services
     /// <summary> Gets a service by service type. </summary>
@@ -383,8 +375,5 @@ namespace Vita.Entities {
 
     #endregion
 
-
-
   }//class
-
 }//ns

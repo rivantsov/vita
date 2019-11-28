@@ -85,7 +85,8 @@ namespace Vita.Samples.BookStore.Api {
   public class UserSignup {
     public string UserName;
     public string DisplayName;
-    public string Password; 
+    public string Password;
   }
+
 
 }

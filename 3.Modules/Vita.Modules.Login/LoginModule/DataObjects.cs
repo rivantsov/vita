@@ -1,11 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-using Vita.Entities;
-using Vita.Entities.Services;
 
 namespace Vita.Modules.Login {
 

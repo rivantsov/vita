@@ -132,7 +132,9 @@ namespace Vita.Web {
           await WriteResponseAsync(httpContext, cfex.Faults); // writes resp respecting content negotiation
           break;
         default:
-          bodyWriter.Write(ex.Message);
+          var bodyText = this.Settings.Options.IsSet(WebOptions.ReturnExceptionDetails) ?
+                                     ex.ToLogString() : ex.Message;
+          bodyWriter.Write(bodyText);
           resp.StatusCode = (int)HttpStatusCode.InternalServerError;
           break;
       }

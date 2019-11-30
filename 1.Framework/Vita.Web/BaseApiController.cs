@@ -33,7 +33,7 @@ namespace Vita.Web {
       }
     } WebCallContext _webContext; 
 
-    public virtual void Init() {
+    protected virtual void Init() {
       Util.Check(this.ControllerContext != null, "Controller not initialized, ControllerContext is null");
       _webContext = base.HttpContext.GetWebCallContext();
     }

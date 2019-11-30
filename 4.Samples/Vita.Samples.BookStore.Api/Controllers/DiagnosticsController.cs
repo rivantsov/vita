@@ -35,9 +35,6 @@ namespace Vita.Samples.BookStore.Api {
       return "Hello, " + name;
     }
 
-
-
-
     public static bool EnableTimeOffset = true;
     static DateTime _lastCalledOn;
     public const string TimeframeLockout = "Denied: wait 5 Seconds";
@@ -80,11 +77,13 @@ namespace Vita.Samples.BookStore.Api {
       if(_lastCalledOn.AddSeconds(ThrowErrorPauseSeconds) > now)
         return TimeframeLockout;
       _lastCalledOn = now;
-      throw new TestException();
+      var testEx = new TestException();
+      testEx.Data["CustomData1"] = "CustomExcValue1";
+      throw testEx;
     }
 
     class TestException : Exception {
-      public TestException() : base("TestException thrown on request.") { }
+      public TestException(string message = "TestException thrown on request.") : base(message) { }
     }
 
     [HttpGet, Route("timeoffset")]

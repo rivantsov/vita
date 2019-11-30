@@ -75,13 +75,11 @@ namespace Vita.Modules.Login {
       if(login == null || login.Flags.IsSet(LoginFlags.Inactive))
         return new LoginResult() { Status = LoginAttemptStatus.Failed };
       context.User = login.CreateUserInfo();
-      var sessionId = Guid.NewGuid();
-      context.UserSession = new UserSessionBase() { SessionId = sessionId };
-      OnLoginEvent(context, LoginEventType.Login, login);
       var prevLoginOn = login.LastLoggedInOn; //save prev value
       login.LastLoggedInOn = AppTime.UtcNow;
       session.SaveChanges();
-      OnLoginEvent(context, LoginEventType.Login, login);
+      OnLoginEvent(context, LoginEventType.Login, login); //this might start user session
+      var sessionId = context.UserSession?.SessionId;
       return new LoginResult() { Status = LoginAttemptStatus.Success, Login = login, User = context.User,
         SessionId = sessionId, PreviousLoginOn = prevLoginOn };
     }

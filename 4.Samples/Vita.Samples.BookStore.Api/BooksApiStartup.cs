@@ -37,20 +37,17 @@ namespace Vita.Samples.BookStore.Api {
       services.Add(new ServiceDescriptor(typeof(IAuthenticationTokenHandler), jwtTokenHandler));
 
       services.AddRouting();
-      // add action filter; Json is there by default, we also add xml for testing xml serialization
       services.AddMvc()
         .SetCompatibilityVersion(CompatibilityVersion.Version_2_1)
         .AddXmlDataContractSerializerFormatters()
-        // Register controllers in Login.Api assembly
+        // Register controllers in Login.Api assembly - they provide Login functionality
         .AddApplicationPart(typeof(Vita.Modules.Login.Api.LoginController).Assembly)
         .AddControllersAsServices()
         ;
-
     }
 
     // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
     public void Configure(IApplicationBuilder app, IHostingEnvironment env) {
-
       if (env.IsDevelopment()) {
         app.UseDeveloperExceptionPage();
       } else {

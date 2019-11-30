@@ -9,21 +9,10 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Remove="Controllers\Login\LoginAdministrationController.cs" />
-    <Compile Remove="Controllers\Login\LoginController.cs" />
-    <Compile Remove="Controllers\Login\LoginSelfServiceController.cs" />
-    <Compile Remove="Controllers\Login\PasswordResetController.cs" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="wwwroot\" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <None Include="Controllers\Login\LoginAdministrationController.cs" />
-    <None Include="Controllers\Login\LoginController.cs" />
-    <None Include="Controllers\Login\LoginSelfServiceController.cs" />
-    <None Include="Controllers\Login\PasswordResetController.cs" />
+    <Compile Remove="wwwroot\**" />
+    <Content Remove="wwwroot\**" />
+    <EmbeddedResource Remove="wwwroot\**" />
+    <None Remove="wwwroot\**" />
   </ItemGroup>
 
   <ItemGroup>

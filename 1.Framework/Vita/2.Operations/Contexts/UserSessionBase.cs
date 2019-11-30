@@ -8,7 +8,6 @@ namespace Vita.Entities {
     Active = 1,
     Expired = 2,
     LoggedOut = 3,
-    PendingMultifactor = 4,
   }
 
 

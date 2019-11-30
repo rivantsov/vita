@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace Vita.Entities {
+namespace Vita.Entities.Logging {
 
   // some information shared between multiple log entries; copied from OperationContext
   public class LogContext {

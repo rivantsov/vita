@@ -29,7 +29,7 @@ namespace Vita.UnitTests.Web {
     public static BooksEntityApp BooksApp; 
     public static RestClient Client;
     public static string LogFilePath;
-    internal static IConfigurationRoot AppSettings;
+    internal static IConfigurationRoot AppConfiguration;
     public static MockLoginMessagingService LoginMessagingService;
 
     public static void Init() {
@@ -41,20 +41,20 @@ namespace Vita.UnitTests.Web {
       }
     }
 
-    public static void InitAppSettings() {
-      if (AppSettings != null)
+    public static void LoadAppConfig() {
+      if (AppConfiguration != null)
         return;
       var builder = new ConfigurationBuilder();
       builder.SetBasePath(Directory.GetCurrentDirectory()).AddJsonFile("appSettings.json");
-      AppSettings = builder.Build();
+      AppConfiguration = builder.Build();
     }
 
 
     public static void InitImpl() {
       if(BooksApp != null)
         return;
-      InitAppSettings(); 
-      LogFilePath = AppSettings["LogFilePath"];
+      LoadAppConfig(); 
+      LogFilePath = AppConfiguration["LogFilePath"];
       if (File.Exists(LogFilePath))
         File.Delete(LogFilePath);
 
@@ -72,7 +72,7 @@ namespace Vita.UnitTests.Web {
       //connect to database
       var driver = new MsSqlDbDriver();
       var dbOptions = MsSqlDbDriver.DefaultMsSqlDbOptions;
-      var connString = AppSettings["MsSqlConnectionString"];
+      var connString = AppConfiguration["MsSqlConnectionString"];
       var dbSettings = new DbSettings(driver, dbOptions, connString, upgradeMode: DbUpgradeMode.Always); // schemas);
       BooksApp.ConnectTo(dbSettings);
       // create sample data
@@ -81,7 +81,7 @@ namespace Vita.UnitTests.Web {
       SampleDataGenerator.CreateUnitTestData(BooksApp);
 
       // Start service 
-      var serviceUrl = AppSettings["ServiceUrl"];
+      var serviceUrl = AppConfiguration["ServiceUrl"];
       StartService(serviceUrl);
       // create client
       var useXml = false;

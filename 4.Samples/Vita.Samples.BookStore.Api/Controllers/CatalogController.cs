@@ -30,7 +30,13 @@ namespace Vita.Samples.BookStore.Api {
     public SearchResults<Book> SearchBooks([FromQuery] BookSearch searchParams) {
       searchParams = searchParams.DefaultIfNull(defaultOrderBy: "title"); //creates empty object if null and sets Take = 10 and default sort
       var session = OpenSession();
-      return session.SearchBooks(searchParams); 
+      // Original method returns results with IBook entities 
+      var tempResults = session.SearchBooks(searchParams);
+      // convert to Book dto objects 
+      var results = new SearchResults<Book>() {
+          TotalCount = tempResults.TotalCount,
+          Results = tempResults.Results.Select(b => b.ToModel()).ToList() };
+      return results; 
     }
 
     [HttpGet, Route("books/{id}")]

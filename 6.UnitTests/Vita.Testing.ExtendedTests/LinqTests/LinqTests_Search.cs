@@ -10,7 +10,6 @@ using Vita.Entities;
 using Vita.Data;
 using Vita.Data.Driver;
 using Vita.Samples.BookStore;
-using Vita.Samples.BookStore.Api;
 
 namespace Vita.Testing.ExtendedTests {
 

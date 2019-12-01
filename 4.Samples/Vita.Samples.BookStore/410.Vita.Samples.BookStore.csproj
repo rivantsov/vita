@@ -9,22 +9,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Remove="BooksModule\ApiControllers_disabled\CatalogController.cs" />
-    <Compile Remove="BooksModule\ApiControllers_disabled\DiagnosticsController.cs" />
-    <Compile Remove="BooksModule\ApiControllers_disabled\SignupController.cs" />
-    <Compile Remove="BooksModule\ApiControllers_disabled\UserAccountController.cs" />
-    <Compile Remove="BooksModule\ApiControllers_disabled\_BooksControllerBase.cs" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <None Include="BooksModule\ApiControllers_disabled\CatalogController.cs" />
-    <None Include="BooksModule\ApiControllers_disabled\DiagnosticsController.cs" />
-    <None Include="BooksModule\ApiControllers_disabled\SignupController.cs" />
-    <None Include="BooksModule\ApiControllers_disabled\UserAccountController.cs" />
-    <None Include="BooksModule\ApiControllers_disabled\_BooksControllerBase.cs" />
-  </ItemGroup>
-
-  <ItemGroup>
     <ProjectReference Include="..\..\1.Framework\Vita\010.Vita.csproj" />
     <ProjectReference Include="..\..\3.Modules\Vita.Modules.Login\320.Vita.Modules.Login.csproj" />
   </ItemGroup>

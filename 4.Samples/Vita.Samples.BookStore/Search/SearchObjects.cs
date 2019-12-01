@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 using Vita.Entities;
 
-namespace Vita.Samples.BookStore.Api {
+namespace Vita.Samples.BookStore {
   // Containers for search parameters, used as '[FromUri]' parameter in search API methods. 
   // Important - use properties, fields do not work for FromUri controller method parameter. 
   // Base SearchParams defines OrderBy, Skip, Take - common search parameters

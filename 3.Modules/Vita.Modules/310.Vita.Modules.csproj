@@ -7,11 +7,17 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Remove="AddressPhone\AddressPhoneEntities.cs" />
+    <Compile Remove="UserSession\UserSessionEntities.cs" />
+    <Compile Remove="UserSession\UserSessionModule.cs" />
+    <Compile Remove="UserSession\UserSessionSettings.cs" />
+    <Compile Remove="UserSession\XmlSerializationHelper.cs" />
   </ItemGroup>
 
   <ItemGroup>
-    <None Include="AddressPhone\AddressPhoneEntities.cs" />
+    <None Include="UserSession\UserSessionEntities.cs" />
+    <None Include="UserSession\UserSessionModule.cs" />
+    <None Include="UserSession\UserSessionSettings.cs" />
+    <None Include="UserSession\XmlSerializationHelper.cs" />
   </ItemGroup>
 
   <ItemGroup>
@@ -20,7 +26,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\1.Framework\Vita\010.Vita.csproj" />
-    <ProjectReference Include="..\Vita.NCron\Vita.NCron.csproj" />
   </ItemGroup>
 
 </Project>

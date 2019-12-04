@@ -6,6 +6,7 @@ using Vita.Entities;
 using Vita.Samples.BookStore.Api;
 using Arrest;
 using Arrest.Sync;
+using Vita.Samples.BookStore;
 
 namespace Vita.UnitTests.Web {
 
@@ -24,6 +25,7 @@ namespace Vita.UnitTests.Web {
       Assert.IsNotNull(csBkDet, "Failed to get c# book details.");
       //check latest reviews are returned
       Assert.IsTrue(csBkDet.LatestReviews.Count > 0, "Reviews not returned");
+
       // search with multiple terms - should return c# book
       //Let's make a specific search that should bring c# book.
       var bks = client.Get<SearchResults<Book>>(

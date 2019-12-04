@@ -21,11 +21,13 @@ namespace Vita.Modules.Logging {
     public Guid LogError(Exception exception, OperationContext context = null) {
       if(!this.App.IsConnected()) {
         OnErrorLogged(context, exception);
-        Util.WriteToTrace(exception, context.GetLogContents(), copyToEventLog: true);
+        Util.WriteToTrace(exception, context.GetLogContents());
+        App.SystemLog.Error(exception);
         return Guid.Empty;
       }
       try {
         var session = this.App.OpenSystemSession();
+        session.DisableStoredProcs(); //as a precaution, taking simpler path, in case something wrong with stored procs 
         var errInfo = session.NewEntity<IErrorLog>();
         errInfo.CreatedOn = App.TimeService.UtcNow;
         errInfo.LocalTime = App.TimeService.Now;
@@ -46,20 +48,22 @@ namespace Vita.Modules.Logging {
         OnErrorLogged(context, exception);
         return errInfo.Id;
       } catch (Exception logEx) {
+        WriteToSystemLog(logEx, exception);
         Util.WriteToTrace(logEx, "Fatal failure in database error log. See next error log entry for original error.");
-        Util.WriteToTrace(exception, null, copyToEventLog: true);
+        Util.WriteToTrace(exception, null);
+
         return Guid.NewGuid(); 
       }
     }
+
     public Guid LogError(string message, string details, OperationContext context = null) {
       if(!this.App.IsConnected()) {
         OnErrorLogged(context, new Exception(message + Environment.NewLine + details));
-        Util.WriteToTrace(message, details, context.GetLogContents(), copyToEventLog: true);
+        Util.WriteToTrace(message, details, context.GetLogContents());
         return Guid.Empty; 
       }
       try {
         var session = this.App.OpenSystemSession();
-        session.DisableStoredProcs(); //as a precaution, taking simpler path, in case something wrong with stored procs 
         var errInfo = session.NewEntity<IErrorLog>();
         errInfo.ExceptionType = "Unknown";
         //Some messages might be really long; check length to fit into the field; full message will still go into details column
@@ -81,8 +85,9 @@ namespace Vita.Modules.Logging {
         OnErrorLogged(context, new Exception(message + Environment.NewLine + details));
         return errInfo.Id;
       } catch (Exception logEx) {
+        WriteToSystemLog(logEx, message, details);
         Util.WriteToTrace(logEx, "Fatal failure in database error log. See next error log entry for original error.");
-        Util.WriteToTrace(message, details, null, copyToEventLog: true);
+        Util.WriteToTrace(message, details, null);
         return Guid.NewGuid();
       }
     }
@@ -120,8 +125,9 @@ namespace Vita.Modules.Logging {
         OnErrorLogged(context, new Exception("ClientError: " + message + Environment.NewLine + details));
         return errInfo.Id;
       } catch(Exception logEx) {
+        WriteToSystemLog(logEx, message, details);
         Util.WriteToTrace(logEx, "Fatal failure in database error log. See next error log entry for original error.");
-        Util.WriteToTrace(message, details, null, copyToEventLog: true);
+        Util.WriteToTrace(message, details, null);
         return Guid.NewGuid();
       }
     }
@@ -134,6 +140,20 @@ namespace Vita.Modules.Logging {
         evt(this, new ErrorLogEventArgs(context, ex));
     }
     #endregion
+
+    private void WriteToSystemLog(Exception logExc, Exception exc) {
+      App.SystemLog.Error("Failed to write to error log: " + logExc.Message);
+      App.SystemLog.Error(logExc);
+      App.SystemLog.Error("(original exception)");
+      App.SystemLog.Error(exc);
+    }
+    private void WriteToSystemLog(Exception logExc, string message, string details) {
+      App.SystemLog.Error("Failed to write to error log: " + logExc.Message);
+      App.SystemLog.Error(logExc);
+      App.SystemLog.Error(" original error: " + message);
+      App.SystemLog.Error(details);
+    }
+
 
   }// ErrorLogModule class
 

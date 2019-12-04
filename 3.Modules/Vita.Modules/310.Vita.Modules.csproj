@@ -7,20 +7,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Remove="UserSession\UserSessionEntities.cs" />
-    <Compile Remove="UserSession\UserSessionModule.cs" />
-    <Compile Remove="UserSession\UserSessionSettings.cs" />
-    <Compile Remove="UserSession\XmlSerializationHelper.cs" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <None Include="UserSession\UserSessionEntities.cs" />
-    <None Include="UserSession\UserSessionModule.cs" />
-    <None Include="UserSession\UserSessionSettings.cs" />
-    <None Include="UserSession\XmlSerializationHelper.cs" />
-  </ItemGroup>
-
-  <ItemGroup>
     <PackageReference Include="Newtonsoft.Json" Version="12.0.2" />
   </ItemGroup>
 

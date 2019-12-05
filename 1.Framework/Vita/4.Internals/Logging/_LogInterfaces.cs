@@ -8,17 +8,22 @@ namespace Vita.Entities.Logging {
 
   public interface ILog {
     void AddEntry(LogEntry entry);
+  }
+
+  public class LogEntryEventArgs: EventArgs {
+    public readonly LogEntry Entry; 
+    public LogEntryEventArgs(LogEntry entry) {
+      Entry = entry; 
+    }
+  }
+
+  public interface ILogService : ILog {
+    event EventHandler<LogEntryEventArgs> EntryAdded;
+    event EventHandler FlushRequested; 
     void Flush(); 
   }
 
-  public interface ILogListener : ILog { }
-
-  public interface ILogService : ILog {
-    void AddListener(ILogListener listener, Func<LogEntry, bool> filter = null);
-    void RemoveListener(ILogListener listener);
-  }
-
-  public interface IBufferingLog : ILog {
+  public interface IBufferedLog : ILog {
     IList<LogEntry> GetAll();
     int ErrorCount { get; }
   }

@@ -10,7 +10,6 @@ namespace Vita.Modules.Logging {
   //Entities
   [Entity, OrderBy("CreatedOn:DESC"), ClusteredIndex("CreatedOn,Id"), DoNotTrack]
   public interface IErrorLog : ILogEntityBase {
-    DateTime LocalTime { get; set; }
 
     [Size(50), Nullable]
     string MachineName { get; set; }

@@ -74,13 +74,12 @@ namespace Vita.Entities {
     protected void SetupLogFileWriters() {
       var logService = GetService<ILogService>();
       if (!string.IsNullOrEmpty(this.LogPath)) {
-        LogFileWriter = new LogFileWriter(LogPath, startMessage: $" ======== Log Started {AppTime.UtcNow} ============");
-        logService.AddListener(LogFileWriter);
+        LogFileWriter = new LogFileWriter(logService, LogPath, startMessage: $" ======== Log Started {AppTime.UtcNow} ============");
       }
       if(!string.IsNullOrEmpty(this.ErrorLogPath)) {
-        ErrorLogFileWriter = new LogFileWriter(ErrorLogPath, batchSize: 1, 
+        ErrorLogFileWriter = new LogFileWriter(logService, ErrorLogPath, batchSize: 1, 
+          filter: entry => entry.EntryType == LogEntryType.Error,
           startMessage: $"==== Error Log Started {AppTime.UtcNow} ===========");
-        logService.AddListener(ErrorLogFileWriter, entry => entry.EntryType == LogEntryType.Error);
       }
     }
 
@@ -100,11 +99,11 @@ namespace Vita.Entities {
       this.DataAccess.RegisterDataSource(ds);
       this.DataSourceEvents.OnDataSourceChange(new DataSourceEventArgs(db, dbSettings.DataSourceName, DataSourceEventType.Connecting));
       CheckUpgradeDatabase(db);
-      ActivationLog.Flush(); 
+      LogService.Flush(); 
       this.Status = EntityAppStatus.Connected;
       this.DataSourceEvents.OnDataSourceChange(new DataSourceEventArgs(db, dbSettings.DataSourceName, DataSourceEventType.Connected));
       ActivationLog.WriteMessage("Connected to {0}.", dbSettings.DataSourceName);
-      ActivationLog.Flush();
+      LogService.Flush();
     }
 
     protected virtual DbModel GetCreateDbModel(DbSettings settings) {

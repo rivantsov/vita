@@ -24,6 +24,7 @@ namespace Vita.Entities.Logging {
       Details = exception.ToLogString();
       ExceptionType = exception.GetType();
     }
+
     public ErrorLogEntry(LogContext context, string message, string details, ErrorKind kind = ErrorKind.Internal, DateTime? remoteTime = null) 
            : base(LogEntryType.Error, context) {
       Message = message;

@@ -26,9 +26,9 @@ namespace Vita.Data.Model {
     DbDriver _driver;
     DbModelConfig _dbModelConfig;
     IDbNamingPolicy _namingPolicy; 
-    IBufferingLog _log;
+    IBufferedLog _log;
 
-    public DbModelBuilder(EntityModel entityModel, DbModelConfig config, IBufferingLog log) {
+    public DbModelBuilder(EntityModel entityModel, DbModelConfig config, IBufferedLog log) {
       _entityModel = entityModel;
       _dbModelConfig = config;
       _namingPolicy = _dbModelConfig.NamingPolicy; 

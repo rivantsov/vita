@@ -187,10 +187,8 @@ namespace Vita.Data.Runtime {
     }
 
     protected void LogException(EntitySession session, Exception ex) {
-      if(!session.LogEnabled)
-        return;
       var entry = new ErrorLogEntry(session.Context.LogContext, ex);
-      session.AddLogEntry(entry);
+      session.Context.App.LogService.AddEntry(entry);
     }
 
     #endregion

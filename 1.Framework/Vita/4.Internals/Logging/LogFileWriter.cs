@@ -3,42 +3,54 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq; 
 using Vita.Entities.Utilities;
+using Vita.Internals.Utilities;
 
 namespace Vita.Entities.Logging {
 
-  public class LogFileWriter : ILogListener, IDisposable {
+  public class LogFileWriter : IDisposable {
     string _fileName;
+    ILogService _logService;
+    int _batchSize; 
+    Func<LogEntry, bool> _filter;
+    bool _disposed;
 
-    BatchingQueue<LogEntry> _queue; 
-
+    BufferingQueue<LogEntry> _queue; 
     static object _fileWriteLock = new object(); 
 
-    public LogFileWriter(string fileName, int batchSize = 1000, int maxLingerMs = 200, string startMessage = null) {
+    public LogFileWriter(ILogService logService, string fileName, int batchSize = 100, 
+                Func<LogEntry, bool> filter = null,   string startMessage = null) {
+      _logService = logService; 
       _fileName = fileName;
-      _queue = new BatchingQueue<LogEntry>(batchSize, maxLingerMs);
-      _queue.Batched += Queue_Batched;
+      _filter = filter;
+      _batchSize = batchSize;
+      _logService.EntryAdded += LogService_EntryAdded;
+      _logService.FlushRequested += LogService_FlushRequested;
+      _queue = new BufferingQueue<LogEntry>();
       if (startMessage != null)
         WriteToFile(startMessage + Environment.NewLine); 
-      
     }
 
-    private void Queue_Batched(object sender, QueueBatchEventArgs<LogEntry> e) {
-      var strings = e.Items.Select(i => i.AsText()).ToList();
-      strings.Add(Environment.NewLine);
-      var text = string.Join(Environment.NewLine, strings);
-      WriteToFile(text);
+    private void LogService_FlushRequested(object sender, EventArgs e) {
+      Flush(); 
+    }
+
+    private void LogService_EntryAdded(object sender, LogEntryEventArgs e) {
+      if(_filter == null || _filter(e.Entry))
+        _queue.Enqueue(e.Entry); 
     }
 
     public void AddEntry(LogEntry entry) {
       if(entry != null) {
         _queue.Enqueue(entry);
-        if (entry.EntryType == LogEntryType.Error)
-          _queue.ProduceBatch();  // Force saving to file          
       }
     }
 
     public void Flush() {
-      _queue.ProduceBatch();
+      var entries = _queue.DequeueMany();
+      var strings =  entries.Select(i => i.AsText()).ToList();
+      strings.Add(Environment.NewLine);
+      var text = string.Join(Environment.NewLine, strings);
+      WriteToFile(text);
     }
 
     private void WriteToFile(string text) {
@@ -48,16 +60,20 @@ namespace Vita.Entities.Logging {
       } catch(Exception ex) {
         LastResortErrorLog.Instance.LogFatalError(ex.ToLogString(), text);
       }
-
     }
 
      ~LogFileWriter() {
-      Dispose(); 
+      if (!_disposed)
+        Dispose();
+      GC.SuppressFinalize(this);
     }
 
     public void Dispose() {
       if (_queue.Count > 0)
-        _queue.ProduceBatch(); 
+        Flush();
+      _logService.EntryAdded -= LogService_EntryAdded;
+      _logService.FlushRequested -= LogService_FlushRequested;
+      _disposed = true;
     }
 
   }

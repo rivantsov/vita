@@ -68,7 +68,7 @@ namespace Vita.Entities {
 
     public Sizes.SizeTable SizeTable = Sizes.GetDefaultSizes();
 
-    public IBufferingLog ActivationLog; 
+    public IBufferedLog ActivationLog; 
     /// <summary>Gets or sets a path for the activation log file. </summary>
     /// <remarks>System log contains messages/errors regarding app startup/connect/shutdown events. </remarks>
     public string ActivationLogPath { get; set; }
@@ -78,8 +78,8 @@ namespace Vita.Entities {
     public string ErrorLogPath;
 
     // created automatically if LogPath is specified
-    public ILogListener LogFileWriter;
-    public ILogListener ErrorLogFileWriter;
+    public LogFileWriter LogFileWriter;
+    public LogFileWriter ErrorLogFileWriter;
 
     /// <summary>Gets the instance of the application time service. </summary>
     public readonly ITimeService TimeService;
@@ -270,7 +270,6 @@ namespace Vita.Entities {
 
     /// <summary>Fires an event requesting all logging facilities to flush buffers. </summary>
     public void Flush() {
-      ActivationLog.Flush();
       this.LogService.Flush(); 
       foreach(var linkedApp in LinkedApps)
         linkedApp.Flush();

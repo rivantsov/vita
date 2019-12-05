@@ -21,7 +21,7 @@ namespace Vita.Entities.Model.Construction {
 
   public partial class EntityModelBuilder {
     public readonly EntityModel Model;
-    public readonly IBufferingLog Log;
+    public readonly IBufferedLog Log;
 
 
     EntityModelCustomizationService _customization; 

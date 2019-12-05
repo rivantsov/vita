@@ -1,36 +1,44 @@
 ﻿using System;
 
 using Vita.Entities;
+using Vita.Entities.Logging;
 using Vita.Entities.Services;
 
 namespace Vita.Modules.Logging {
 
-  public class ErrorLogModule : EntityModule, IErrorLogService {
+  public class ErrorLogModule : EntityModule {
     public static readonly Version CurrentVersion = new Version("1.0.0.0");
+
+    ILogService _logService; 
 
     public ErrorLogModule(EntityArea area) : base(area, "ErrorLog", "Error Logging Module.", version: CurrentVersion) {
       RegisterEntities(typeof(IErrorLog));
-      App.RegisterService<IErrorLogService>(this);
     }
     public override  void Init() {
       base.Init();
+      _logService = App.GetService<ILogService>();
+      _logService.EntryAdded += LogService_EntryAdded;
+    }
+
+    private void LogService_EntryAdded(object sender, LogEntryEventArgs e) {
+      if (e.Entry.EntryType != LogEntryType.Error)
+        return;
+      var errEntry = e.Entry as ErrorLogEntry;
+      LogError(errEntry.Exception, errEntry.Context) ??? ;
     }
 
     #region IErrorLogService Members
 
     public Guid LogError(Exception exception, OperationContext context = null) {
       if(!this.App.IsConnected()) {
+        LastResortErrorLog.Instance.LogFatalError("(app not connected)", exception.ToLogString());
         OnErrorLogged(context, exception);
-        Util.WriteToTrace(exception, context.GetLogContents());
-        App.SystemLog.Error(exception);
         return Guid.Empty;
       }
       try {
         var session = this.App.OpenSystemSession();
-        session.DisableStoredProcs(); //as a precaution, taking simpler path, in case something wrong with stored procs 
         var errInfo = session.NewEntity<IErrorLog>();
         errInfo.CreatedOn = App.TimeService.UtcNow;
-        errInfo.LocalTime = App.TimeService.Now;
         errInfo.Message = Util.CheckLength(exception.Message, 250);
         errInfo.Details = exception.ToLogString(); //writes exc.ToString() and exc.Data collection, along with all inner exception details
         errInfo.ExceptionType = exception.GetType().Name;
@@ -42,24 +50,22 @@ namespace Vita.Modules.Logging {
           if(context.UserSession != null)
             errInfo.UserSessionId = context.UserSession.SessionId;
           if (context.WebContext != null)
-            errInfo.WebCallId = context.WebContext.Id; 
+            errInfo.WebCallId = context.WebContext.Request.Id; 
         }
         session.SaveChanges();
         OnErrorLogged(context, exception);
         return errInfo.Id;
       } catch (Exception logEx) {
-        WriteToSystemLog(logEx, exception);
-        Util.WriteToTrace(logEx, "Fatal failure in database error log. See next error log entry for original error.");
-        Util.WriteToTrace(exception, null);
-
+        LastResortErrorLog.Instance.LogFatalError(logEx.ToLogString(), exception.ToLogString());
         return Guid.NewGuid(); 
       }
     }
 
-    public Guid LogError(string message, string details, OperationContext context = null) {
-      if(!this.App.IsConnected()) {
-        OnErrorLogged(context, new Exception(message + Environment.NewLine + details));
-        Util.WriteToTrace(message, details, context.GetLogContents());
+    public Guid LogRemoteError(string message, string details, OperationContext context = null) {
+      var errAll = message + Environment.NewLine + details;
+      if (!this.App.IsConnected()) {
+        OnErrorLogged(context, new Exception(errAll));
+        LastResortErrorLog.Instance.LogFatalError("(app not connected)", errAll);
         return Guid.Empty; 
       }
       try {
@@ -70,7 +76,6 @@ namespace Vita.Modules.Logging {
         errInfo.Message = Util.CheckLength(message, 250);
         errInfo.Details = details;
         errInfo.MachineName = Environment.MachineName;
-        errInfo.LocalTime = App.TimeService.Now;
         errInfo.CreatedOn = App.TimeService.UtcNow;
         if (context != null) {
           errInfo.AppName = context.App.AppName;
@@ -86,8 +91,7 @@ namespace Vita.Modules.Logging {
         return errInfo.Id;
       } catch (Exception logEx) {
         WriteToSystemLog(logEx, message, details);
-        Util.WriteToTrace(logEx, "Fatal failure in database error log. See next error log entry for original error.");
-        Util.WriteToTrace(message, details, null);
+        LastResortErrorLog.Instance.LogFatalError(logEx.ToLogString(), errAll);
         return Guid.NewGuid();
       }
     }

@@ -60,6 +60,7 @@ namespace Vita.Entities.Api {
   /// <remarks>
   /// </remarks>
   public class WebCallContext {
+    public readonly Guid Id = Guid.NewGuid(); 
     // Used as key to save in Request properties. 
     public const string WebCallContextKey = "_vita_web_call_context_";
     public OperationContext OperationContext;

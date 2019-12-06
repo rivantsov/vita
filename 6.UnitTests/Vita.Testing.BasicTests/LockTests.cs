@@ -252,12 +252,12 @@ ALTER DATABASE {0} SET MULTI_USER;
           var entSession = (Vita.Entities.Runtime.EntitySession)session;
           if (entSession.CurrentConnection != null)
             entSession.CurrentConnection.Close();
-          session.Context.Log.Flush();
+          //session.Context.Log.Flush();
           _app.Flush(); 
         } finally {
           //_app.Flush();
         }
-        session.Context.Log.Flush();
+        //session.Context.Log.Flush();
       }//for i
     }//method
 

@@ -12,6 +12,7 @@ namespace Vita.Entities.Logging {
   }
 
   public class ErrorLogEntry : LogEntry {
+    public Exception Exception; 
     public string Message;
     public string Details;
     public Type ExceptionType;
@@ -20,6 +21,7 @@ namespace Vita.Entities.Logging {
 
     public ErrorLogEntry(LogContext context, Exception exception) 
            : base(LogEntryType.Error, context) {
+      Exception = exception; 
       Message = exception.Message; 
       Details = exception.ToLogString();
       ExceptionType = exception.GetType();

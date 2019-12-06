@@ -35,14 +35,14 @@ namespace Vita.Entities.Logging {
     public void Flush() {
       if(_logService == null)
         return;
-      var entries = _queue.DequeueMany(); 
+      var entries = _queue.DequeueItems(); 
       var compEntry = new BatchedLogEntry(_logContext, entries);
       _logService.AddEntry(compEntry);
     }
 
     public int ErrorCount => _errorCount;
 
-    public IList<LogEntry> GetAll() => _queue.DequeueMany(); 
+    public IList<LogEntry> GetAll() => _queue.DequeueItems(); 
 
   } //class
 

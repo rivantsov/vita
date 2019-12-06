@@ -35,8 +35,11 @@ namespace Vita.Entities.Logging {
     }
 
     private void LogService_EntryAdded(object sender, LogEntryEventArgs e) {
-      if(_filter == null || _filter(e.Entry))
-        _queue.Enqueue(e.Entry); 
+      if(_filter == null || _filter(e.Entry)) {
+        _queue.Enqueue(e.Entry);
+        if (e.Entry.EntryType == LogEntryType.Error)
+          Flush(); // error flush immediately
+      }
     }
 
     public void AddEntry(LogEntry entry) {
@@ -46,7 +49,7 @@ namespace Vita.Entities.Logging {
     }
 
     public void Flush() {
-      var entries = _queue.DequeueMany();
+      var entries = _queue.DequeueItems();
       var strings =  entries.Select(i => i.AsText()).ToList();
       strings.Add(Environment.NewLine);
       var text = string.Join(Environment.NewLine, strings);

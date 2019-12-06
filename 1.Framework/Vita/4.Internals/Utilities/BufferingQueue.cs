@@ -1,51 +1,45 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using System.Threading;
 
 namespace Vita.Internals.Utilities {
 
-  // Nov 23, the last, 'the best' version so far
+  public interface ILinkedNode {
+    ILinkedNode Next { get; set; }
+  }
+
   // Implements batching queue - concurrent no-lock push, batched pull/dequeue with lock
-  public class BufferingQueue<TData> {
 
-    public interface ILinkedNode {
-      ILinkedNode Next { get; set; }
-      object Data { get; set; }
-    }
-
-    class LinkedNode : ILinkedNode {
-      public object Data { get; set; }
-      public LinkedNode Next;
-      ILinkedNode ILinkedNode.Next {get;set;}
-    }
-
+  public class BufferingNodeQueue {
     public int Count => _count;
 
     ILinkedNode _last;
     ILinkedNode _first;
     int _count;
-    object _lock = new object(); 
+    object _lock = new object();
 
-    public void Enqueue(TData data) {
-      var newNode = new LinkedNode() { Data = data };
-      var prevLast = Interlocked.Exchange(ref _last, newNode);
+    public void EnqueueNode(ILinkedNode node) {
+      var prevLast = Interlocked.Exchange(ref _last, node);
       if (prevLast == null)
-        SetFirst(newNode);
-      else 
-        prevLast.Next = newNode;
-      Interlocked.Increment(ref _count); 
+        SetFirst(node);
+      else
+        prevLast.Next = node;
+      Interlocked.Increment(ref _count);
     }
 
-    public IList<TData> DequeueMany(int maxCount = int.MaxValue) {
-      lock(_lock) {
-        var list = new List<TData>();
+    public IList<ILinkedNode> DequeueNodes(int maxCount = int.MaxValue) {
+      lock (_lock) {
+        var list = new List<ILinkedNode>();
         while (list.Count < maxCount && _first != null) {
-          list.Add((TData)_first.Data);
+          list.Add(_first);
+          var next = _first.Next;
+          _first.Next = null; // break links between nodes
+          _first = next;
           Interlocked.Decrement(ref _count);
-          _first = _first.Next; 
         }
-        return list; 
+        return list;
       } //lock
     } //method
 
@@ -55,6 +49,25 @@ namespace Vita.Internals.Utilities {
         _first = first;
       }
     }
+  } //class
+
+  public class BufferingQueue<T>: BufferingNodeQueue {
+
+    class LinkedNode : ILinkedNode {
+      public T Item { get; set; }
+      public LinkedNode Next;
+      ILinkedNode ILinkedNode.Next {get;set;}
+    }
+
+    public void Enqueue(T data) {
+      EnqueueNode(new LinkedNode() { Item = data });
+    }
+
+    public IList<T> DequeueItems(int maxCount = int.MaxValue) {
+      var nodes = DequeueNodes(maxCount);
+      var list = nodes.Select(nd => ((LinkedNode)nd).Item).ToList();
+      return list; 
+    } //method
 
   }
 }

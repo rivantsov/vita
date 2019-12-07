@@ -79,7 +79,6 @@ namespace Vita.Samples.BookStore.Api {
         return "Error: Connection mode is not KeepOpen. Mode: " + OpContext.DbConnectionMode;
       _connectionCloseReport = "(empty)"; 
       var session = OpContext.OpenSession();
-      session.EnableCache(false);
       var bk = session.EntitySet<IBook>().OrderBy(b => b.Title).First(); 
       //this should creaet connection and attach to session
       var entSession = (Vita.Entities.Runtime.EntitySession) session;

@@ -114,7 +114,7 @@ namespace Vita.Web {
         var resp = httpContext.Response;
         webContext.Response = new ResponseInfo();
         webContext.Response.Body = ReadResponseBodyForLog(resp);
-      }catch(Exception fatal) { 
+      }catch(Exception) { 
 
       } finally {
         OnWebCallCompleting(webContext);

@@ -80,7 +80,6 @@ namespace Vita.Testing.ExtendedTests {
       var books = session.EntitySet<IBook>();
       var bk1 = books.First();
 
-      session.EnableCache(false);
       var createdOn = bk1.CreatedOn;
       IList<IBook> bookList;
       IDbCommand cmd;
@@ -177,7 +176,6 @@ namespace Vita.Testing.ExtendedTests {
     [TestMethod]
     public void TestLinqWithNullables() {
       var session = Startup.BooksApp.OpenSession();
-      session.EnableCache(false); //We are testing real SQLs
 
       //First query using literal null; this alwasy worked OK, SQL generated is "WHERE b.Abstract IS NULL"
       var qNotPublished = from b in session.EntitySet<IBook>()

@@ -67,14 +67,6 @@ namespace Vita.Entities {
       ext.SetOption(EntitySessionOptions.DisableLog, !enable);
     }
 
-    /// <summary>Enables/disables entity cache temporarily.</summary>
-    /// <param name="session">Entity session.</param>
-    /// <param name="enable">Optional, boolean flag indicating whether cache should enabled or disabled.</param>
-    public static void EnableCache(this IEntitySession session, bool enable = true) {
-      var ext = (EntitySession)session;
-      ext.SetOption(EntitySessionOptions.DisableCache, !enable);
-    }
-
     /// <summary>Returns the count of entities with pending changes not yet submitted to data store. </summary>
     /// <param name="session">Entity session.</param>
     /// <returns>Change count.</returns>

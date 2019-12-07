@@ -714,7 +714,6 @@ namespace Vita.Testing.ExtendedTests {
     public void TestLinqQueryFilter() {
       var app = Startup.BooksApp;
       var session = app.OpenSession();
-      session.EnableCache(false); 
       var filter = session.Context.QueryFilter;
 
       // Add automatic filter for programming-only books
@@ -756,7 +755,6 @@ namespace Vita.Testing.ExtendedTests {
       var doraLogin = loginService.Login(doraContext, "dora", password);
       Assert.AreEqual(LoginAttemptStatus.Success, doraLogin.Status, "Login failed.");
       var doraSession = doraContext.OpenSession();
-      doraSession.EnableCache(false);
       //Add filter to restrict orders to only current user's orders
       doraContext.QueryFilter.Add<IBookOrder, Guid>((bo, userid) => bo.User.Id == userid);
       // Now get 'all' orders - it should return only Dora's orders

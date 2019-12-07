@@ -93,7 +93,6 @@ namespace Vita.Testing.ExtendedTests {
     public void TestLinqArrayParameters() {
       // Not all servers support array parameters
       var session = Startup.BooksApp.OpenSession();
-      session.EnableCache(false);
       // count prog books reviews 
       var progReviewCount = session.EntitySet<IBookReview>().Where(r => r.Book.Category == BookCategory.Programming).Count();
       var progBooks = session.EntitySet<IBook>().Where(b => b.Category == BookCategory.Programming).ToList();

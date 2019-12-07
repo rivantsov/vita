@@ -23,7 +23,6 @@ namespace Vita.Samples.BookStore.SampleData {
 
     public static void CreateBasicTestData(EntityApp app) {
       var session = app.OpenSystemSession();
-      session.EnableCache(false);
       Vita.Modules.Login.LoginModule.ImportDefaultSecretQuestions(session);
       session.SaveChanges();
       //Create users
@@ -54,7 +53,6 @@ namespace Vita.Samples.BookStore.SampleData {
       var userInfo = new UserInfo(dataGenUser.Id, dataGenUser.UserName);
       var dataGenOpCtx = new OperationContext(app, userInfo);
       session = dataGenOpCtx.OpenSession();
-      session.EnableCache(false); 
 
       //Publishers and authors
       var msPub = session.NewPublisher("MS Books"); //we are using extension method here

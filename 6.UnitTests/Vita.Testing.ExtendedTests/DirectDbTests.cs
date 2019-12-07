@@ -86,8 +86,6 @@ namespace Vita.Testing.ExtendedTests {
 
       //Verify that everything went ok and price changed
       session = app.OpenSystemSession();
-      //Disable cache, to make sure we get value from db
-      session.EnableCache(false); 
       csBook = session.GetEntity<IBook>(csBook.Id);
       Assert.AreEqual((double)oldPrice + 2, (double)csBook.Price, 0.01, "Price did not change");
 

@@ -588,13 +588,6 @@ namespace Vita.Entities.Runtime {
       return new DummyDisposable();
     }
 
-    public virtual IDisposable WithNoCache() {
-      return new CacheDisableToken(this);
-    }
-
-    public bool CacheEnabled {
-      get { return !Options.IsSet(EntitySessionOptions.DisableCache); }
-    }
 
     public bool LogEnabled {
       get { return this.Log != null && !Options.IsSet(EntitySessionOptions.DisableLog); }
@@ -625,21 +618,6 @@ namespace Vita.Entities.Runtime {
     #endregion 
 
     #region nested Disposable tokens
-    class CacheDisableToken : IDisposable {
-      bool _wasEnabled; 
-      EntitySession _session;
-
-      public CacheDisableToken(EntitySession session) {
-        _session = session; 
-        _wasEnabled = session.CacheEnabled;
-        if(_wasEnabled)
-          session.EnableCache(false);
-      }
-      public void Dispose() {
-        if(_wasEnabled)
-          _session.EnableCache(true);
-      }
-    }
     class DummyDisposable : IDisposable {
       public void Dispose() { }
     }

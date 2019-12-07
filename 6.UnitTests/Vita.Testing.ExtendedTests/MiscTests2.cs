@@ -25,7 +25,6 @@ namespace Vita.Testing.ExtendedTests {
 
       var app = Startup.BooksApp;
       var session = app.OpenSession();
-      session.EnableCache(false);
       var utcNow = app.TimeService.UtcNow;
 
       // Bug - incorrect linq grouping of expressions with chained Where conditions
@@ -113,7 +112,6 @@ namespace Vita.Testing.ExtendedTests {
 
       // Count + LIMIT is not supported by any server; check that appropriate error message is thrown
       session = app.OpenSession();
-      session.EnableCache(false);
       var query = session.EntitySet<IBook>().Skip(1).Take(1);
       int count;
       var exc = TestUtil.ExpectFailWith<Exception>(() => count = query.Count());

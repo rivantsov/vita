@@ -55,8 +55,11 @@ namespace Vita.Internals.Utilities {
 
     class LinkedNode : ILinkedNode {
       public T Item { get; set; }
-      public LinkedNode Next;
-      ILinkedNode ILinkedNode.Next {get;set;}
+      public ILinkedNode Next;
+      ILinkedNode ILinkedNode.Next {
+        get { return Next; }
+        set { Next = value; }
+      }
     }
 
     public void Enqueue(T data) {

@@ -38,7 +38,6 @@ namespace Vita.Samples.BookStore.Api {
 
       services.AddRouting();
       services.AddMvc()
-        .SetCompatibilityVersion(CompatibilityVersion.Version_2_1)
         .AddXmlDataContractSerializerFormatters()
         // Register controllers in Login.Api assembly - they provide Login functionality
         .AddApplicationPart(typeof(Vita.Modules.Login.Api.LoginController).Assembly)
@@ -47,13 +46,7 @@ namespace Vita.Samples.BookStore.Api {
     }
 
     // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
-    public void Configure(IApplicationBuilder app, IHostingEnvironment env) {
-      if (env.IsDevelopment()) {
-        app.UseDeveloperExceptionPage();
-      } else {
-        app.UseHsts();
-      }
-
+    public void Configure(IApplicationBuilder app, IWebHostEnvironment env) {
       app.UseHttpsRedirection();
 
       // Vita middleware
@@ -61,8 +54,9 @@ namespace Vita.Samples.BookStore.Api {
       app.UseMiddleware<VitaWebMiddleware>(BooksEntityApp, stt);
       
       app.UseAuthentication();
-
-      app.UseMvc();
+      app.UseRouting(); 
+      // app.UseMvc();
+      app.UseEndpoints(endpoints => {  });
     }
 
     private BooksEntityApp CreateBooksEntityApp(string connString) {

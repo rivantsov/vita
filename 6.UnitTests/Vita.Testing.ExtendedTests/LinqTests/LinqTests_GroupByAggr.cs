@@ -77,7 +77,6 @@ namespace Vita.Testing.ExtendedTests {
       // GroupBy nullable field - this is a special case; Null values will come out as type default in group key;
       // So for authors that are not users (author.User is null), the resulting group will have key = Guid.Empty
       // this fails with entity cache
-      session.EnableCache(false);
       var queryS3 = session.EntitySet<IAuthor>().GroupBy(a => a.User.Id).Select(g => new { Id = g.Key, Count = g.Count() });
       var listS3 = queryS3.ToList();
       LogLastQuery(session);

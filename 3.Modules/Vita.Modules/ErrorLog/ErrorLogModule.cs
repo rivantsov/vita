@@ -39,7 +39,6 @@ namespace Vita.Modules.Logging {
         errInfo.CreatedOn = App.TimeService.UtcNow;
         errInfo.Message = Util.CheckLength(exception.Message, 250);
         errInfo.Details = exception.ToLogString(); //writes exc.ToString() and exc.Data collection, along with all inner exception details
-        errInfo.ExceptionType = exception.GetType().Name;
         errInfo.MachineName = Environment.MachineName;
         if(context != null) {
           errInfo.AppName = this.App.AppName;
@@ -65,7 +64,6 @@ namespace Vita.Modules.Logging {
       try {
         var session = this.App.OpenSystemSession();
         var errInfo = session.NewEntity<IErrorLog>();
-        errInfo.ExceptionType = "Unknown";
         //Some messages might be really long; check length to fit into the field; full message will still go into details column
         errInfo.Message = Util.CheckLength(message, 250);
         errInfo.Details = details;
@@ -103,7 +101,6 @@ namespace Vita.Modules.Logging {
         errInfo = session.NewEntity<IErrorLog>();
         if(idValue != Guid.Empty)
           errInfo.Id = idValue; 
-        errInfo.ExceptionType = "ClientError";
         //Some messages might be really long; check length to fit into the field; full message will still go into details column
         errInfo.Message = Util.CheckLength(message, 250);
         errInfo.Details = details;
@@ -117,6 +114,7 @@ namespace Vita.Modules.Logging {
         if (context.WebContext != null)
           errInfo.WebCallId = context.WebContext.Id;
         errInfo.IsClientError = true; 
+
         session.SaveChanges();
         return errInfo.Id;
       } catch(Exception logEx) {

@@ -20,6 +20,7 @@ namespace Vita.Modules.Login {
 
     public LoginResult Login(OperationContext context, string userName, string password, Guid? tenantId = null,
                              string deviceToken = null) {
+      context.ThrowIfNull(password, ClientFaultCodes.InvalidValue, "password", "Password may not be null.");
       context.ThrowIf(password.Length > 100, ClientFaultCodes.InvalidValue, "password", "Password too long, max size: 100.");
       userName = CheckUserName(context, userName);
       var session = context.OpenSession();

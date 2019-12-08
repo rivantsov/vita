@@ -73,14 +73,14 @@ namespace Vita.Web {
 
     public WebCallContext BeginRequest(HttpContext httpContext) {
       var req = httpContext.Request;
-      var body = ReadRequestBodyForLog(req);
+      // var body = ReadRequestBodyForLog(req);
       var reqInfo = new RequestInfo() {
         ReceivedOn = AppTime.UtcNow,
         HttpMethod = req.Method,
         Url = req.GetDisplayUrl(),
         ContentType = req.ContentType,
         ContentSize = req.ContentLength,
-        Body = body,
+        //Body = body,
         Headers = req.Headers.ToDictionary(h => h.Key, h => string.Join(" ", h.Value)),
         IPAddress = httpContext.Connection.RemoteIpAddress.ToString(),
         HttpContextRef = new WeakReference(httpContext)
@@ -93,7 +93,7 @@ namespace Vita.Web {
       var webContext = opCtx.WebContext = new WebCallContext(opCtx, reqInfo);
 
       httpContext.Items[WebCallContext.WebCallContextKey] = webContext;
-      ReplaceResponseStream(httpContext, webContext);
+      // ReplaceResponseStream(httpContext, webContext);
       OnWebCallStarting(webContext);
       return webContext;
     }
@@ -111,15 +111,15 @@ namespace Vita.Web {
           SetExplicitResponse(webContext.Response, httpContext);
           return;
         }
-        var resp = httpContext.Response;
+        //var resp = httpContext.Response;
         webContext.Response = new ResponseInfo();
-        webContext.Response.Body = ReadResponseBodyForLog(resp);
+        //webContext.Response.Body = ReadResponseBodyForLog(resp);
       }catch(Exception) { 
 
       } finally {
         OnWebCallCompleting(webContext);
         webContext.OperationContext.DisposeAll(); // dispose/close conn
-        RestoreOriginalResponseStream(httpContext, webContext);
+        // await RestoreOriginalResponseStreamAsync(httpContext, webContext);
       }
     }
 
@@ -132,16 +132,17 @@ namespace Vita.Web {
           await WriteResponseAsync(httpContext, cfex.Faults); // writes resp respecting content negotiation
           break;
         default:
+          // Important - set status code before writing to output! otherwise blows up
+          resp.StatusCode = (int)HttpStatusCode.InternalServerError;
           var bodyText = this.Settings.Options.IsSet(WebOptions.ReturnExceptionDetails) ?
                                      ex.ToLogString() : ex.Message;
-          bodyWriter.Write(bodyText);
-          resp.StatusCode = (int)HttpStatusCode.InternalServerError;
+          await bodyWriter.WriteAsync(bodyText);
           break;
       }
       bodyWriter.Flush();
     }
 
-
+    /*
     private void ReplaceResponseStream(HttpContext httpContext, WebCallContext webContext) {
       // Replace body stream with MemStream, so we can read response body for log
       // we will replace it back in EndRequest
@@ -149,7 +150,7 @@ namespace Vita.Web {
       httpContext.Response.Body = new MemoryStream();
     }
 
-    private void RestoreOriginalResponseStream(HttpContext httpContext, WebCallContext webContext) {
+    private async Task RestoreOriginalResponseStreamAsync(HttpContext httpContext, WebCallContext webContext) {
       try {
         // Swap stream back to original, then copy data from temp stream into original
         var tempResponseStream = httpContext.Response.Body;
@@ -161,17 +162,17 @@ namespace Vita.Web {
         httpContext.Response.ContentLength = null;
         tempResponseStream.Position = 0;
         // actually copy all from our temp stream into real original stream
-        tempResponseStream.CopyTo(origResponseStream);
-        tempResponseStream.Flush();
+        await tempResponseStream.CopyToAsync(origResponseStream);
+        await tempResponseStream.FlushAsync();
       } catch (Exception ex) {
         // Keeping it to have a stop point in debugger, just in case
         Debug.WriteLine(ex.ToLogString());
         throw;
       }
     }
-
+    
     private string ReadRequestBodyForLog(HttpRequest request) {
-      request.EnableRewind();
+      request.EnableBuffering();
       if (!IsTextContent(request.ContentType))
         return "(non-text content)";
       if (request.ContentLength == null || request.ContentLength == 0)
@@ -197,6 +198,7 @@ namespace Vita.Web {
         response.ContentLength = textBody.Length; 
       return textBody; 
     }
+    */
 
     private static bool IsTextContent(string contentType) {
       if (string.IsNullOrWhiteSpace(contentType))

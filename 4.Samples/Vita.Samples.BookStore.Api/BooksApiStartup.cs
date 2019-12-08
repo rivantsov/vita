@@ -6,9 +6,13 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.HttpsPolicy;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.ApplicationParts;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Tokens;
 using Vita.Data;
 using Vita.Data.MsSql;
@@ -36,17 +40,22 @@ namespace Vita.Samples.BookStore.Api {
       var jwtTokenHandler = new VitaJwtTokenHandler(BooksEntityApp, services, jwtSecret);
       services.Add(new ServiceDescriptor(typeof(IAuthenticationTokenHandler), jwtTokenHandler));
 
-      services.AddRouting();
-      services.AddMvc()
-        .AddXmlDataContractSerializerFormatters()
-        // Register controllers in Login.Api assembly - they provide Login functionality
-        .AddApplicationPart(typeof(Vita.Modules.Login.Api.LoginController).Assembly)
-        .AddControllersAsServices()
-        ;
+      var loginAssembly = typeof(Vita.Modules.Login.Api.LoginController).Assembly;
+      services.AddControllers()
+        // Note: by default System.Text.Json ns/serializer is used by AspNetCore 3.1; this serializer is broken piece of sh..
+        // - does not serialize fields, does not handle dictionaries, etc. So we put back Newtonsoft serializer.
+        .AddNewtonsoftJson()
+        .PartManager.ApplicationParts.Add(new AssemblyPart(loginAssembly));
+
+
     }
 
     // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
     public void Configure(IApplicationBuilder app, IWebHostEnvironment env) {
+      if (env.IsDevelopment()) {
+        app.UseDeveloperExceptionPage();
+      }
+
       app.UseHttpsRedirection();
 
       // Vita middleware
@@ -54,9 +63,12 @@ namespace Vita.Samples.BookStore.Api {
       app.UseMiddleware<VitaWebMiddleware>(BooksEntityApp, stt);
       
       app.UseAuthentication();
-      app.UseRouting(); 
-      // app.UseMvc();
-      app.UseEndpoints(endpoints => {  });
+      app.UseRouting();
+      app.UseAuthorization();
+      app.UseEndpoints(endpoints =>
+      {
+        endpoints.MapControllers();
+      });
     }
 
     private BooksEntityApp CreateBooksEntityApp(string connString) {

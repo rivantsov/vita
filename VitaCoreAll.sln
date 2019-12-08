@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 15
-VisualStudioVersion = 15.0.27130.2027
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.29519.181
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "1.Framework", "1.Framework", "{D362FBD5-C0D1-469E-8DB8-A3AD6A06E112}"
 EndProject
@@ -55,7 +55,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "630.Vita.Testing.WebTests",
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "310.Vita.Modules", "3.Modules\Vita.Modules\310.Vita.Modules.csproj", "{6D4EF4B2-2000-47E9-9E51-AD9DE789813D}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "321.Vita.Modules.Login.Api", "3.Modules\Vita.Modules.Login.Api\321.Vita.Modules.Login.Api.csproj", "{566C878A-B88D-4950-89EC-E28EC30C0F2C}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "321.Vita.Modules.Login.Api", "3.Modules\Vita.Modules.Login.Api\321.Vita.Modules.Login.Api.csproj", "{566C878A-B88D-4950-89EC-E28EC30C0F2C}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

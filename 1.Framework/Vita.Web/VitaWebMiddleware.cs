@@ -60,7 +60,7 @@ namespace Vita.Web {
     }
 
     public async Task InvokeAsync(HttpContext context) {
-      var webCtx = BeginRequest(context);
+      var webCtx = await BeginRequestAsync(context);
       Exception exc = null; 
       try {
         await _next(context);
@@ -71,16 +71,16 @@ namespace Vita.Web {
       }
     }
 
-    public WebCallContext BeginRequest(HttpContext httpContext) {
+    public async Task<WebCallContext> BeginRequestAsync(HttpContext httpContext) {
       var req = httpContext.Request;
-      // var body = ReadRequestBodyForLog(req);
+      var body = await ReadRequestBodyForLogAsync(req);
       var reqInfo = new RequestInfo() {
         ReceivedOn = AppTime.UtcNow,
         HttpMethod = req.Method,
         Url = req.GetDisplayUrl(),
         ContentType = req.ContentType,
         ContentSize = req.ContentLength,
-        //Body = body,
+        Body = body,
         Headers = req.Headers.ToDictionary(h => h.Key, h => string.Join(" ", h.Value)),
         IPAddress = httpContext.Connection.RemoteIpAddress.ToString(),
         HttpContextRef = new WeakReference(httpContext)
@@ -111,9 +111,11 @@ namespace Vita.Web {
           SetExplicitResponse(webContext.Response, httpContext);
           return;
         }
-        //var resp = httpContext.Response;
         webContext.Response = new ResponseInfo();
-        //webContext.Response.Body = ReadResponseBodyForLog(resp);
+        // TODO: copy response data
+
+        // Reading response stream does not work for now
+        // webContext.Response.Body = await ReadResponseBodyForLogAsync(httpContext);
       }catch(Exception) { 
 
       } finally {
@@ -142,8 +144,35 @@ namespace Vita.Web {
       bodyWriter.Flush();
     }
 
+    private async Task<string> ReadRequestBodyForLogAsync(HttpRequest request) {
+      if (request.ContentLength == null || request.ContentLength == 0 || request.Body == null)
+        return null;
+      if (!IsTextContent(request.ContentType))
+        return "(non-text content)";
+      // !!! Do not use 'using' or dispose reader - it will dispose the underlying stream
+      request.EnableBuffering(); 
+      var bodyReader = new StreamReader(request.Body);
+      var textBody = await bodyReader.ReadToEndAsync();
+      request.Body.Position = 0; //rewind it back
+      return textBody;
+    }
+
     /*
-    private void ReplaceResponseStream(HttpContext httpContext, WebCallContext webContext) {
+    private async Task<string> ReadResponseBodyForLogAsync(HttpContext httpContext) {
+      var response = httpContext.Response; 
+      
+      if (!IsTextContent(response.ContentType))
+        return "(non-text content)";
+
+      httpContext.Request.EnableBuffering(); 
+      var reader = new StreamReader(response.Body);
+      var  textBody = await reader.ReadToEndAsync();
+      response.Body.Position = 0;
+      return textBody;
+  }
+
+
+  private void ReplaceResponseStream(HttpContext httpContext, WebCallContext webContext) {
       // Replace body stream with MemStream, so we can read response body for log
       // we will replace it back in EndRequest
       webContext.OriginalResponseStream = httpContext.Response.Body;
@@ -171,33 +200,6 @@ namespace Vita.Web {
       }
     }
     
-    private string ReadRequestBodyForLog(HttpRequest request) {
-      request.EnableBuffering();
-      if (!IsTextContent(request.ContentType))
-        return "(non-text content)";
-      if (request.ContentLength == null || request.ContentLength == 0)
-        return null;
-      var body = request.Body;
-      string textBody = null;
-      // !!! Do not use 'using' or dispose reader - it will dispose the underlying stream
-      var bodyReader = new StreamReader(body);
-      textBody = bodyReader.ReadToEnd();
-      body.Position = 0; //rewind it back
-      return textBody;
-    }
-
-    private string ReadResponseBodyForLog(HttpResponse response) {
-      if (!IsTextContent(response.ContentType))
-        return "(non-text content)";
-      response.Body.Position = 0;
-      string textBody = null;
-      var reader = new StreamReader(response.Body); 
-      textBody = reader.ReadToEnd();
-      //set explicit length, to avoid chunking
-      if (response.ContentLength == null)
-        response.ContentLength = textBody.Length; 
-      return textBody; 
-    }
     */
 
     private static bool IsTextContent(string contentType) {

@@ -7,6 +7,7 @@ using Vita.Samples.BookStore.Api;
 using Arrest;
 using Arrest.Sync;
 using Vita.Samples.BookStore;
+using System.Globalization;
 
 namespace Vita.UnitTests.Web {
 
@@ -31,7 +32,20 @@ namespace Vita.UnitTests.Web {
       var bks = client.Get<SearchResults<Book>>(
         "api/books?title={0}&categories={1}&maxprice={2}&publisher={3}&publishedafter={4}&publishedbefore={5}&authorlastname={6}" +
         "&orderby={7}&skip={8}&take={9}",
-        "c#", "Programming", 100.0, "MS Books", "01/01/2001", DateTime.Now.ToShortDateString(), "Sharp", "PublishedOn-desc", 0, 10);
+        "c#", "Programming", 100.0, "MS Books", "2001/02/03", DateTime.Now.Date, "Sharp", "PublishedOn-desc", 0, 10);
+      Assert.AreEqual(1, bks.TotalCount, "Should return single c# book");
+      Assert.AreEqual(1, bks.Results.Count, "Should return single c# book");
+      Assert.AreEqual("c# Programming", bks.Results[0].Title, "Expected c# book title.");
+
+      // another way to do the same - formatting URL query from SearchObject
+      var searchParams = new BookSearch() {
+        Title = "c#", Categories = "Programming", MaxPrice = 100.0, Publisher = "MS Books",
+        PublishedAfter = new DateTime(2001, 1, 1), PublishedBefore = DateTime.Now.Date,
+        AuthorLastName = "Sharp", OrderBy = "PublishedOn-desc", Skip = 0, Take = 10
+      };
+
+      var bkQuery = client.BuildUrlQuery(searchParams);
+      bks = client.Get<SearchResults<Book>>("api/books?" + bkQuery);
       Assert.AreEqual(1, bks.TotalCount, "Should return single c# book");
       Assert.AreEqual(1, bks.Results.Count, "Should return single c# book");
       Assert.AreEqual("c# Programming", bks.Results[0].Title, "Expected c# book title.");

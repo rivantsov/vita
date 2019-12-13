@@ -16,6 +16,7 @@ using Vita.Data.Upgrades;
 using Vita.Entities;
 using Vita.Entities.Logging;
 using Vita.Entities.Model;
+using Vita.Entities.Runtime;
 using Vita.Tools.DbFirst;
 
 namespace Vita.Tools {
@@ -231,6 +232,18 @@ namespace Vita.Tools {
     private static void ExecuteDelete(DbDriver driver, IDbCommand cmd, string tableName) {
       cmd.CommandText = Util.SafeFormat("DELETE FROM {0}", tableName); 
       driver.ExecuteCommand(cmd, DbExecutionType.NonQuery);
+    }
+
+    public static void RandomizeRecordOrder(IEntitySession session) {
+      var entSession = session as EntitySession;
+      var recs = entSession.RecordsChanged;
+      var rand = new Random();
+      for (int i = 0; i < recs.Count; i++) {
+        var rec = recs[0];
+        recs.RemoveAt(0);
+        var newIndex = rand.Next(recs.Count - 1);
+        recs.Insert(newIndex, rec);
+      }
     }
 
 

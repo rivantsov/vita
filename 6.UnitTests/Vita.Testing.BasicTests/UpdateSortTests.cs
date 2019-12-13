@@ -3,6 +3,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 using Vita.Entities;
 using Vita.Entities.Runtime;
+using Vita.Tools;
 using Vita.Tools.Testing;
 
 namespace Vita.Testing.BasicTests.UpdateSort {
@@ -98,7 +99,7 @@ namespace Vita.Testing.BasicTests.UpdateSort {
       var emily = session.NewEmployee("Emily", "VP-IT");
       var depIT = session.NewDepartment("IT", emily);
       var linda = session.NewEmployee("Linda", "Support engineer", emily, depIT);
-      RandomizeRecordOrder(session); 
+      DataUtility.RandomizeRecordOrder(session); 
       session.SaveChanges(); 
 
       // The following does not work - we create Dep and Empl referencing each other. For SQL Server there's no way to find proper order in this case
@@ -112,18 +113,6 @@ namespace Vita.Testing.BasicTests.UpdateSort {
       var circEx = TestUtil.ExpectClientFault(() => { session.SaveChanges(); });
       Assert.AreEqual(ClientFaultCodes.CircularEntityReference, circEx.Faults[0].Code);
     }//method
-
-    private void RandomizeRecordOrder(IEntitySession session) {
-      var entSession = session as EntitySession;
-      var recs = entSession.RecordsChanged;
-      var rand = new Random();
-      for (int i = 0; i < recs.Count; i++) {
-        var rec = recs[0];
-        recs.RemoveAt(0);
-        var newIndex = rand.Next(recs.Count - 1);
-        recs.Insert(newIndex, rec); 
-      }
-    }
 
   }
 }

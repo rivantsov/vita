@@ -6,13 +6,15 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 using Vita.Entities;
 using Vita.Entities.Runtime;
+using Vita.Tools;
+using Vita.Data;
 
 namespace Vita.Testing.BasicTests.IdentityTests {
   // Using both int and long as identity columns, just to test proper type conversions
   [Entity]
   public interface ICar {
     [PrimaryKey, Identity]
-    long Id { get; set; }
+    long Id { get; }
     [Size(30)]
     string Model { get; set; }
     IPerson Owner { get; set; }
@@ -24,9 +26,23 @@ namespace Vita.Testing.BasicTests.IdentityTests {
   [Entity]
   public interface IPerson {
     [PrimaryKey, Identity]
-    int Id { get; set; }
+    int Id { get; }
     [Size(30)]
     string Name { get; set; }
+  }
+
+  // ITreeNode is used in a test with tree-like structure (self-ref entity type)
+  [Entity]
+  public interface ITreeNode {
+    [PrimaryKey, Identity]
+    int Id { get; set; }
+
+    [Nullable]
+    ITreeNode Parent { get; set; }
+
+    [Size(30)]
+    string Name { get; set; }
+
   }
 
   // We skip defining custom entity module and use base EntityModule class
@@ -34,7 +50,7 @@ namespace Vita.Testing.BasicTests.IdentityTests {
     public IdentityTestsEntityApp() {
       var area = AddArea("ident");
       var mainModule = new EntityModule(area, "MainModule");
-      mainModule.RegisterEntities(typeof(ICar), typeof(IPerson));
+      mainModule.RegisterEntities(typeof(ICar), typeof(IPerson), typeof(ITreeNode));
     }
   }//class
 
@@ -128,6 +144,58 @@ namespace Vita.Testing.BasicTests.IdentityTests {
       }
     }
 
+    // test for fix for reported bug: https://github.com/rivantsov/vita/issues/104
+    //   the SaveChanges error described was discovered with Postgres; but it happens
+    //   with other servers when batch mode is off. 
+    //   Posgres cannot do batch mode when inserting identity records, 
+    //   (it does not support output parameters in dynamic SQL), while MS SQL can use 
+    //    batch mode. So Postgres is switching to no-batch update and failed. Now fixecd
+    [TestMethod]
+    public void TestIdentityWithSelfRefEntities() {
+      var saveOptions = Startup.DbOptions; 
+      try {
+        // Run twice, 
+        // Batch mode
+        Startup.DbOptions |= DbOptions.UseBatchMode;
+        RunTestIdentityWithSelfRefEntities();
+        // No-batch mode
+        Startup.DbOptions &= ~DbOptions.UseBatchMode;
+        RunTestIdentityWithSelfRefEntities();
+      } finally {
+        Startup.DbOptions = saveOptions; 
+      }
+    }
+
+    public void RunTestIdentityWithSelfRefEntities() {
+      _app = new IdentityTestsEntityApp();
+      Startup.ActivateApp(_app);
+      //if(Startup.ServerType == Data.Driver.DbServerType.SQLite)
+      DeleteAllData();
+      var session = _app.OpenSession();
+
+      // Create 3-level tree and save it
+      var node1 = session.NewNode("N1");
+
+      // level 2
+      var node11 = session.NewNode("N11", node1);
+      var node12 = session.NewNode("N12", node1);
+      var node13 = session.NewNode("N13", node1);
+
+      // level 3 
+      var node111 = session.NewNode("N1111", node11);
+      var node112 = session.NewNode("N1112", node11);
+      var node121 = session.NewNode("N1121", node12);
+      var node122 = session.NewNode("N1122", node12);
+      var node131 = session.NewNode("N1131", node13);
+      var node132 = session.NewNode("N1132", node13);
+
+      DataUtility.RandomizeRecordOrder(session);
+      session.SaveChanges();
+
+      // test passed if it executed without exceptions
+      Assert.IsTrue(true, "never happens");
+    }
+
     // For SQLite objects are not dropped (FK problems), so we need to instead delete all data
     // to make sure we start with empty tables
     private void DeleteAllData() {
@@ -143,4 +211,14 @@ namespace Vita.Testing.BasicTests.IdentityTests {
     }
 
   }
+
+  static class IdentityHelper {
+    public static ITreeNode NewNode(this IEntitySession session, string name, ITreeNode parent = null) {
+      var node = session.NewEntity<ITreeNode>();
+      node.Name = name;
+      node.Parent = parent;
+      return node; 
+    }
+  }
+
 }

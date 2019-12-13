@@ -107,11 +107,12 @@ namespace Vita.Data.Runtime {
         //Apply record updates  
         foreach (var grp in updateSet.UpdateGroups)
           foreach (var tableGrp in grp.TableGroups) {
-            if (updateSet.InsertsIdentity && tableGrp.Table.Entity.Flags.IsSet(EntityFlags.ReferencesIdentity))
-              UpdateNewIdentityReferences(updateSet, tableGrp.Records);
             switch (tableGrp.Operation) {
               case LinqOperation.Insert:
                 if (CanProcessMany(tableGrp)) {
+                  var refreshIdentyRefs = updateSet.InsertsIdentity && tableGrp.Table.Entity.Flags.IsSet(EntityFlags.ReferencesIdentity);
+                  if (refreshIdentyRefs)
+                    RefreshIdentityReferences(updateSet, tableGrp.Records);
                   var cmdBuilder = new DataCommandBuilder(this._driver, mode: SqlGenMode.PreferLiteral);
                   var sql = SqlFactory.GetCrudInsertMany(tableGrp.Table, tableGrp.Records, cmdBuilder);
                   cmdBuilder.AddInsertMany(sql, tableGrp.Records);
@@ -150,7 +151,10 @@ namespace Vita.Data.Runtime {
     }
 
     private void SaveTableGroupRecordsOneByOne(DbUpdateTableGroup tableGrp, DataConnection conn, DbUpdateSet updateSet) {
+      var checkIdentities = updateSet.InsertsIdentity && tableGrp.Table.Entity.Flags.IsSet(EntityFlags.ReferencesIdentity);
       foreach (var rec in tableGrp.Records) {
+        if (checkIdentities)
+          rec.RefreshIdentityReferences();
         var cmdBuilder = new DataCommandBuilder(this._driver);
         var sql = SqlFactory.GetCrudSqlForSingleRecord(tableGrp.Table, rec);
         cmdBuilder.AddRecordUpdate(sql, rec);
@@ -159,13 +163,11 @@ namespace Vita.Data.Runtime {
       }
     }
 
-    private void UpdateNewIdentityReferences(DbUpdateSet updateSet, IList<EntityRecord> records) {
+    private void RefreshIdentityReferences(DbUpdateSet updateSet, IList<EntityRecord> records) {
       foreach (var rec in records)
         if (rec.EntityInfo.Flags.IsSet(EntityFlags.ReferencesIdentity))
           rec.RefreshIdentityReferences();
     }
-
-
 
     private void ExecuteScheduledCommands(DataConnection conn, EntitySession session, IList<LinqCommand> commands) {
       if(commands == null || commands.Count == 0)

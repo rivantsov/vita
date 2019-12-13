@@ -128,6 +128,7 @@ namespace Vita.Testing.BasicTests {
         if(dropOldTables)
           upgradeOptions |= DbUpgradeOptions.DropUnknownObjects; 
         var dbSettings = new DbSettings(Driver, DbOptions, ConnectionString, upgradeMode: upgradeMode, upgradeOptions: upgradeOptions);
+
         
         // Drop schema/ delete all
         if(dropOldSchema) {

@@ -18,14 +18,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Compile Remove="4.Internals\Logging\_ActivationLog_DISABLED.cs" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <None Include="4.Internals\Logging\_ActivationLog_DISABLED.cs" />
-  </ItemGroup>
-
-  <ItemGroup>
     <PackageReference Include="Proxemity" Version="2.0.1" />
     <PackageReference Include="System.Data.Common" Version="4.3.0" />
     <PackageReference Include="System.Diagnostics.EventLog" Version="4.5.0" />
@@ -42,5 +34,6 @@
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
     <DefineConstants>TRACE;DEBUG;NETSTANDARD;NETSTANDARD2_0;_new</DefineConstants>
+    <WarningLevel>4</WarningLevel>
   </PropertyGroup>
 </Project>

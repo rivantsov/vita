@@ -15,8 +15,5 @@ namespace Vita.Entities.Logging {
     public void AddEntry(LogEntry entry) {
       _logService.AddEntry(entry); 
     }
-    public void Flush() {
-
-    }
   }
 }

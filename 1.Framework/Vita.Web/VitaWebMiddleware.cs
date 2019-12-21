@@ -1,20 +1,12 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Collections.Specialized;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net;
-using System.Net.Http;
-using System.Net.Http.Headers;
 using System.Text;
-using System.Threading;
 using System.Threading.Tasks;
 
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Extensions;
-using Microsoft.AspNetCore.Http.Features;
-using Microsoft.AspNetCore.Http.Internal;
 using Microsoft.AspNetCore.Mvc.Formatters;
 using Microsoft.AspNetCore.Mvc.Infrastructure;
 using Microsoft.AspNetCore.Routing;
@@ -22,7 +14,6 @@ using Microsoft.Extensions.DependencyInjection;
 using Vita.Entities;
 using Vita.Entities.Api;
 using Vita.Entities.Logging;
-using Vita.Entities.Runtime;
 using Vita.Entities.Services;
 
 
@@ -37,13 +28,6 @@ namespace Vita.Web {
     readonly RequestDelegate _next;
     public readonly EntityApp App;
     public readonly VitaWebMiddlewareSettings Settings;
-
-    /*
-    IWebCallLogService _webCallLog;
-    IErrorLogService _errorLog;
-    IUserSessionService _sessionService; 
-    */
-
 
     public VitaWebMiddleware(RequestDelegate next, EntityApp app, VitaWebMiddlewareSettings settings) {
       _next = next;
@@ -93,7 +77,6 @@ namespace Vita.Web {
       var webContext = opCtx.WebContext = new WebCallContext(opCtx, reqInfo);
 
       httpContext.Items[WebCallContext.WebCallContextKey] = webContext;
-      // ReplaceResponseStream(httpContext, webContext);
       OnWebCallStarting(webContext);
       return webContext;
     }
@@ -112,8 +95,6 @@ namespace Vita.Web {
           return;
         }
         webContext.Response = new ResponseInfo();
-        // TODO: copy response data
-
         // Reading response stream does not work for now
         // webContext.Response.Body = await ReadResponseBodyForLogAsync(httpContext);
       }catch(Exception) { 
@@ -121,7 +102,6 @@ namespace Vita.Web {
       } finally {
         OnWebCallCompleting(webContext);
         webContext.OperationContext.DisposeAll(); // dispose/close conn
-        // await RestoreOriginalResponseStreamAsync(httpContext, webContext);
       }
     }
 

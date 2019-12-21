@@ -14,7 +14,7 @@ namespace Vita.Entities.Logging {
     Func<LogEntry, bool> _filter;
     bool _disposed;
 
-    BufferingQueue<LogEntry> _queue; 
+    LinkedQueue _queue; 
     static object _fileWriteLock = new object(); 
 
     public LogFileWriter(ILogService logService, string fileName, int batchSize = 100, 
@@ -25,7 +25,7 @@ namespace Vita.Entities.Logging {
       _batchSize = batchSize;
       _logService.EntryAdded += LogService_EntryAdded;
       _logService.FlushRequested += LogService_FlushRequested;
-      _queue = new BufferingQueue<LogEntry>();
+      _queue = new LinkedQueue();
       if (startMessage != null)
         WriteToFile(startMessage + Environment.NewLine); 
     }
@@ -36,7 +36,7 @@ namespace Vita.Entities.Logging {
 
     private void LogService_EntryAdded(object sender, LogEntryEventArgs e) {
       if(_filter == null || _filter(e.Entry)) {
-        _queue.Enqueue(e.Entry);
+        _queue.EnqueueNode(e.Entry);
         if (e.Entry.EntryType == LogEntryType.Error)
           Flush(); // error flush immediately
       }
@@ -44,12 +44,12 @@ namespace Vita.Entities.Logging {
 
     public void AddEntry(LogEntry entry) {
       if(entry != null) {
-        _queue.Enqueue(entry);
+        _queue.EnqueueNode(entry);
       }
     }
 
     public void Flush() {
-      var entries = _queue.DequeueItems();
+      var entries = _queue.DequeueNodes<LogEntry>();
       var strings =  entries.Select(i => i.AsText()).ToList();
       strings.Add(Environment.NewLine);
       var text = string.Join(Environment.NewLine, strings);

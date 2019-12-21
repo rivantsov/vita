@@ -10,6 +10,11 @@ namespace Vita.Entities.Logging {
     void AddEntry(LogEntry entry);
   }
 
+  public interface IBufferedLog : ILog {
+    IList<LogEntry> GetAll();
+    int ErrorCount { get; }
+  }
+
   public class LogEntryEventArgs: EventArgs {
     public readonly LogEntry Entry; 
     public LogEntryEventArgs(LogEntry entry) {
@@ -23,9 +28,10 @@ namespace Vita.Entities.Logging {
     void Flush(); 
   }
 
-  public interface IBufferedLog : ILog {
-    IList<LogEntry> GetAll();
-    int ErrorCount { get; }
+  /// <summary>The last-resort error log facility. <see cref="LastResortErrorLog" class is an implementation./> </summary>
+  public interface ILastResortErrorLog {
+    /// <summary> Logs a fatal error. </summary>
+    void LogFatalError(string logSystemError, string originalError = null);
   }
 
 

@@ -6,13 +6,15 @@ using System.Threading;
 
 namespace Vita.Internals.Utilities {
 
-  public interface ILinkedNode {
-    ILinkedNode Next { get; set; }
-  }
+  /// <summary>
+  /// Implements a queue of linked nodes - concurrent no-lock push, batched pull/dequeue with lock 
+  /// </summary>
+  public class LinkedQueue {
 
-  // Implements batching queue - concurrent no-lock push, batched pull/dequeue with lock
+    public interface ILinkedNode {
+      ILinkedNode Next { get; set; }
+    }
 
-  public class BufferingNodeQueue {
     public int Count => _count;
 
     ILinkedNode _last;
@@ -22,7 +24,7 @@ namespace Vita.Internals.Utilities {
 
     public void EnqueueNode(ILinkedNode node) {
       var prevLast = Interlocked.Exchange(ref _last, node);
-      if (prevLast == null)
+      if(prevLast == null)
         SetFirst(node);
       else
         prevLast.Next = node;
@@ -30,10 +32,13 @@ namespace Vita.Internals.Utilities {
     }
 
     public IList<ILinkedNode> DequeueNodes(int maxCount = int.MaxValue) {
+      return DequeueNodes<ILinkedNode>(maxCount); 
+    }
+    public IList<TNode> DequeueNodes<TNode>(int maxCount = int.MaxValue) where TNode: ILinkedNode {
       lock (_lock) {
-        var list = new List<ILinkedNode>();
+        var list = new List<TNode>();
         while (list.Count < maxCount && _first != null) {
-          list.Add(_first);
+          list.Add((TNode) _first);
           var next = _first.Next;
           _first.Next = null; // break links between nodes
           _first = next;
@@ -51,7 +56,7 @@ namespace Vita.Internals.Utilities {
     }
   } //class
 
-  public class BufferingQueue<T>: BufferingNodeQueue {
+  public class BufferingQueue<T>: LinkedQueue {
 
     class LinkedNode : ILinkedNode {
       public T Item { get; set; }

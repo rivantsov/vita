@@ -306,8 +306,7 @@ namespace Vita.Entities {
     }
 
     #endregion
-
-
+    
     #region Init, connect, shutdown
 
     public void Init() {

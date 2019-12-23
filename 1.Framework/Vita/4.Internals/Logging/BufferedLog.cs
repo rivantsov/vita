@@ -1,27 +1,26 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
-using Vita.Internals.Utilities;
 
 namespace Vita.Entities.Logging {
 
-  /// <summary>BufferedOperationLog accumulates entries internally.  </summary>
+  /// <summary>Accumulates entries, counts number of errors.  </summary>
   public class BufferedLog : IBufferedLog {
     ILogService _logService;
     LogContext _logContext; 
-    LinkedQueue _queue;
     int _maxEntries;
-    private int _errorCount;
+    int _errorCount;
+    BatchingQueue<LogEntry> _queue = new BatchingQueue<LogEntry>();
 
     public BufferedLog(LogContext context = null, int maxEntries = 1000, ILogService logService = null) {
       _logContext = context ?? LogContext.SystemLogContext;
       _maxEntries = maxEntries;
-      _queue = new LinkedQueue();
       _logService = logService; 
     }
 
     public void AddEntry(LogEntry entry) {
-      _queue.EnqueueNode(entry);
-      if (entry.EntryType == LogEntryType.Error)
+      _queue.Enqueue(entry);
+      if (entry.IsError)
         Interlocked.Increment(ref _errorCount);
     }
 
@@ -35,7 +34,7 @@ namespace Vita.Entities.Logging {
 
     public int ErrorCount => _errorCount;
 
-    public IList<LogEntry> GetAll() => _queue.DequeueNodes<LogEntry>(); 
+    public IList<LogEntry> GetAll()  =>_queue.DequeueMany();
 
   } //class
 

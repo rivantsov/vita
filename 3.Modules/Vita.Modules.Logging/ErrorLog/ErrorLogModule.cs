@@ -21,7 +21,7 @@ namespace Vita.Modules.Logging {
     }
 
     private void LogService_EntryAdded(object sender, LogEntryEventArgs e) {
-      if (e.Entry.EntryType != LogEntryType.Error)
+      if (e.Entry.IsError)
         return;
       var errEntry = e.Entry as ErrorLogEntry;
       LogError(errEntry.Exception, errEntry.Context);

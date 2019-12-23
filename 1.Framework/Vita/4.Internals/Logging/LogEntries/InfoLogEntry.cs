@@ -13,7 +13,7 @@ namespace Vita.Entities.Logging {
     object[] _args;
     string _formattedMessage;
     
-    public InfoLogEntry(LogContext context, string message, params object[] args) : base(LogEntryType.Information, context) {
+    public InfoLogEntry(LogContext context, string message, params object[] args) : base(context) {
       _message = message;
       _args = args;
     }

@@ -12,36 +12,41 @@ using Vita.Entities.Runtime;
 namespace Vita.Entities.Services.Implementations {
 
   public class TimerService : ITimerService, ITimerServiceControl {
-    private Timer _timer;
-    private ITimeService _timeService;
+    const double BaseTimerIntervalMs = 100.0;
+    private System.Timers.Timer _timer;
     private bool _enabled;
-    private ILogService _errorLog;
-    long _lastTickCount;
-    object _lock = new object();
+    private ILogService _log;
+    List<TimerSubscriptionInfo> _subscriptions = new List<TimerSubscriptionInfo>(); 
 
-    public event EventHandler Elapsed100Ms;
-    public event EventHandler Elapsed500Ms;
+    class TimerSubscriptionInfo {
+      public TimerInterval Interval; 
+      public int BaseCycleCount;
+      public IList<Action> Subscribers = new List<Action>();
 
-    public event EventHandler Elapsed1Second;
-
-    public event EventHandler Elapsed10Seconds;
-
-    public event EventHandler Elapsed1Minute;
-    public event EventHandler Elapsed5Minutes;
-    public event EventHandler Elapsed15Minutes;
-    public event EventHandler Elapsed30Minutes;
-    public event EventHandler Elapsed60Minutes;
-    public event EventHandler Elapsed6Hours;
-    public event EventHandler Elapsed24Hours;
+      public void Subscribe(Action action) {
+        var newList = new List<Action>(Subscribers);
+        newList.Add(action);
+        Subscribers = newList; 
+      }
+      
+      public void Unsubscribe(Action action) {
+        var newList = new List<Action>(Subscribers);
+        if (!newList.Contains(action))
+          newList.Remove(action);
+        Subscribers = newList;
+      }
+    }// class
 
     public TimerService() {
+      CreateVirtualTimers(); 
     }
-
+ 
     public void Init(EntityApp app) {
-      _errorLog = app.GetService<ILogService>();
-      _timeService = TimeService.Instance;
-      _timer = new Timer(Timer_Elapsed, null, 100, 100);
+      _log = app.GetService<ILogService>();
       app.AppEvents.Initializing += Events_Initializing;
+      _timer = new System.Timers.Timer(BaseTimerIntervalMs);
+      _timer.Elapsed += Timer_Elapsed;
+      _timer.Enabled = true;
     }
 
     void Events_Initializing(object sender, AppInitEventArgs e) {
@@ -50,83 +55,87 @@ namespace Vita.Entities.Services.Implementations {
       }
     }
 
-    void Timer_Elapsed(object state) {
-      if(!_enabled)
-        return;
-      lock(_lock) {
-        if(Elapsed100Ms != null)
-          SafeInvoke(Elapsed100Ms.GetInvocationList());
-        var utcNow =  _timeService.UtcNow;
-        var tickCount = (long)utcNow.TimeOfDay.TotalMilliseconds /100;
-        if(tickCount == _lastTickCount)
-          return;
-        _lastTickCount = tickCount; 
-        if(Elapsed500Ms != null && (tickCount % 5 == 0))
-          SafeInvoke(Elapsed500Ms.GetInvocationList());
-        // Now all in 1 second intervals
-        var seconds = tickCount / 10;
-        if(Elapsed1Second != null)
-          SafeInvoke(Elapsed1Second.GetInvocationList());
-        if(seconds % 10 == 0 && Elapsed10Seconds != null)
-          SafeInvoke(Elapsed10Seconds.GetInvocationList());
-        if(seconds % 60 == 0 && Elapsed1Minute != null)
-          SafeInvoke(Elapsed1Minute.GetInvocationList());
-        var oneMin = 60;
-        if(seconds % (5 * oneMin) == 0 && Elapsed5Minutes != null)
-          SafeInvoke(Elapsed5Minutes.GetInvocationList());
-        if(seconds % (15 * oneMin) == 0 && Elapsed15Minutes != null)
-          SafeInvoke(Elapsed15Minutes.GetInvocationList());
-        if(seconds % (30 * oneMin) == 0 && Elapsed30Minutes != null)
-          SafeInvoke(Elapsed30Minutes.GetInvocationList());
-        if(seconds % (60 * oneMin) == 0 && Elapsed60Minutes != null)
-          SafeInvoke(Elapsed60Minutes.GetInvocationList());
-        if(seconds % (60 * 6 * oneMin) == 0 && Elapsed6Hours != null)
-          SafeInvoke(Elapsed6Hours.GetInvocationList());
-        if(seconds % (60 * 24 * oneMin) == 0 && Elapsed24Hours != null)
-          SafeInvoke(Elapsed24Hours.GetInvocationList());
-      }
-    }
-
-    private void SafeInvoke(Delegate[] delegates) {
-      foreach(var d in delegates) {
-        var evh = (EventHandler)d;
-        try {
-          evh(this, EventArgs.Empty);
-        } catch(Exception ex) {
-          _errorLog.LogError(ex);
-        }
-      }
-    }
-
     public void Shutdown() {
       _enabled = false;
     }
 
-    public void EnableAutoFire(bool enable) {
+
+    #region ITimerService implementation
+    public void Subscribe(TimerInterval interval, Action handler) {
+      var subscr = GetSubscription(interval);
+      subscr?.Subscribe(handler); 
+    }
+    public void UnSubscribe(TimerInterval interval, Action handler) {
+      var subscr = GetSubscription(interval);
+      subscr.Unsubscribe(handler);
+    } //method
+    #endregion
+
+
+    #region ITimerServiceControl
+    public void EnableTimers(bool enable) {
       _enabled = enable;
+      _log.WriteMessage($"TimersService: Enabled status changed to {_enabled}");
     }
 
-    //ITimerServiceControl
+    public void Fire(TimerInterval interval) {
+      var timer = GetSubscription(interval);
+      SafeInvoke(timer); 
+    }
+
     public void FireAll() {
-      lock(_lock) {
+      foreach(var subscr in _subscriptions)
+        SafeInvoke(subscr);
+    }
+    #endregion
+
+    private TimerSubscriptionInfo GetSubscription(TimerInterval interval) {
+      return _subscriptions.First(tr => tr.Interval == interval);
+    }
+
+    private void CreateVirtualTimers() {
+      _subscriptions.Clear(); 
+      AddSubscriptionInfo(TimerInterval.T_100_Ms, 1);
+      AddSubscriptionInfo(TimerInterval.T_500_Ms, 5);
+      AddSubscriptionInfo(TimerInterval.T_1_Sec, 10);
+      AddSubscriptionInfo(TimerInterval.T_5_Sec, 10 * 5);
+      AddSubscriptionInfo(TimerInterval.T_15_Sec, 10 * 15);
+      AddSubscriptionInfo(TimerInterval.T_1_Min, 10 * 60);
+      AddSubscriptionInfo(TimerInterval.T_5_Min, 10 * 60 * 5);
+      AddSubscriptionInfo(TimerInterval.T_15_Min, 10 * 60 * 15);
+      AddSubscriptionInfo(TimerInterval.T_60_Min, 10 * 60 * 60);
+    }
+
+    private TimerSubscriptionInfo AddSubscriptionInfo(TimerInterval interval, int baseCycleCount) {
+      var subscr = new TimerSubscriptionInfo() { Interval = interval, BaseCycleCount = baseCycleCount };
+      _subscriptions.Add(subscr);
+      return subscr; 
+    }
+
+    private void Timer_Elapsed(object sender, System.Timers.ElapsedEventArgs e) {
+      if(!_enabled)
+        return;
+      // We use global tick count from UtcTime (1 tick = 100ms), instead of just counting timer elapses, 
+      //  in order to make sure that long-period events fire consistently, independent of this service restarts.
+      //  So that if this service restarts at 1:05:00, the next 15-minute timer will still fire at 1:15:00, not at 1:20 
+      var utcNow = TimeService.Instance.UtcNow;
+      var tickCount = (long)utcNow.TimeOfDay.TotalMilliseconds / 100;
+      foreach(var subscr in _subscriptions) {
+        if(tickCount % subscr.BaseCycleCount == 0 && subscr.Subscribers.Count > 0)
+          SafeInvoke(subscr);
+      }
+    }
+
+    private void SafeInvoke(TimerSubscriptionInfo subscr) {
+      var actions = subscr.Subscribers;
+      foreach(var action in actions) {
         try {
-          Elapsed100Ms?.Invoke(this, EventArgs.Empty);
-          Elapsed1Second?.Invoke(this, EventArgs.Empty);
-          Elapsed10Seconds?.Invoke(this, EventArgs.Empty);
-          Elapsed1Minute?.Invoke(this, EventArgs.Empty);
-          Elapsed5Minutes?.Invoke(this, EventArgs.Empty);
-          Elapsed15Minutes?.Invoke(this, EventArgs.Empty);
-          Elapsed15Minutes?.Invoke(this, EventArgs.Empty);
-          Elapsed30Minutes?.Invoke(this, EventArgs.Empty);
-          Elapsed60Minutes?.Invoke(this, EventArgs.Empty);
-          Elapsed6Hours?.Invoke(this, EventArgs.Empty);
-          Elapsed24Hours?.Invoke(this, EventArgs.Empty);
+          action();
         } catch(Exception ex) {
-          if(_errorLog != null)
-            _errorLog.LogError(ex);
+          _log.LogError(ex);
         }
       }
-
     }
+
   }
 }

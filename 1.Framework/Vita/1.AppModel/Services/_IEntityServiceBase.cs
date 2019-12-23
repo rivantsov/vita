@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace Vita.Entities.Services.Implementations {
+﻿namespace Vita.Entities.Services {
 
   /// <summary>An optional interface to initialize/shutdown a non-module service added to Services collection of EntityApp. 
   /// Module-based services - when an EntityModule implements a service - are initialized through overridable Init method. 

@@ -20,7 +20,7 @@ namespace Vita.Entities.Logging {
     public DateTime? RemoteTime;
 
     public ErrorLogEntry(LogContext context, Exception exception) 
-           : base(LogEntryType.Error, context) {
+           : base(context) {
       Exception = exception; 
       Message = exception.Message; 
       Details = exception.ToLogString();
@@ -28,12 +28,14 @@ namespace Vita.Entities.Logging {
     }
 
     public ErrorLogEntry(LogContext context, string message, string details, ErrorKind kind = ErrorKind.Internal, DateTime? remoteTime = null) 
-           : base(LogEntryType.Error, context) {
+           : base(context) {
       Message = message;
       Details = details;
       Kind = kind; 
       RemoteTime = remoteTime; 
     }
+
+    public override bool IsError => true; 
 
     public override string AsText() {
       return Details;

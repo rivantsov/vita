@@ -1,0 +1,13 @@
+﻿Performance concerns in logging activities
+The main concern is impact on performance - avoiding slowing down the main execution thread by logging activities. 
+Time consuming activities which are points of concern: 
+  a. Formatting log entries
+  b. Persisting the formatted entries (plain text)
+The solution
+To mitigate point 'a' (formatting), we do not format entries into text immediately. Log is implemented as a list/stream of objects containing raw information: 
+a message template with arguments array, or DbCommand for db log entries. The entries are formatted into text on a background thread when persisting the log. 
+For point b: First, entries are accumulated in chunks and persisted in chunks together. Secondly, the persisting activity 
+is delegated to a background thread, which wakes up by a timer and persists all accumulated entries. Entries formatting is also done on a background thread, right when we persist them.   
+
+
+

@@ -22,7 +22,7 @@ namespace Vita.Entities.Logging {
     public Guid? WebCallId;
 
     public WebClientLogEntry(LogContext context, string clientName, long duration, HttpRequestMessage request, HttpResponseMessage response, string requestBody, string responseBody,
-         Exception exception = null) : base(LogEntryType.WebClientCall, context) {
+         Exception exception = null) : base(context) {
       ClientName = clientName; 
       CreatedOn = AppTime.UtcNow;
       Duration = (int)duration;

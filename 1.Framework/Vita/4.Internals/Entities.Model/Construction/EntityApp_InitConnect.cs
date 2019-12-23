@@ -78,7 +78,7 @@ namespace Vita.Entities {
       }
       if(!string.IsNullOrEmpty(this.ErrorLogPath)) {
         ErrorLogFileWriter = new LogFileWriter(logService, ErrorLogPath, batchSize: 1, 
-          filter: entry => entry.EntryType == LogEntryType.Error,
+          filter: entry => entry.IsError,
           startMessage: $"==== Error Log Started {AppTime.UtcNow} ===========");
       }
     }

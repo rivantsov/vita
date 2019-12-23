@@ -1,9 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq; 
+using System.Linq;
 using Vita.Entities.Utilities;
-using Vita.Internals.Utilities;
 
 namespace Vita.Entities.Logging {
 
@@ -12,9 +11,10 @@ namespace Vita.Entities.Logging {
     ILogService _logService;
     int _batchSize; 
     Func<LogEntry, bool> _filter;
+    IDisposable _logSubscription; 
     bool _disposed;
 
-    LinkedQueue _queue; 
+    BatchingQueue<LogEntry> _queue = new BatchingQueue<LogEntry>(); 
     static object _fileWriteLock = new object(); 
 
     public LogFileWriter(ILogService logService, string fileName, int batchSize = 100, 
@@ -23,33 +23,31 @@ namespace Vita.Entities.Logging {
       _fileName = fileName;
       _filter = filter;
       _batchSize = batchSize;
-      _logService.EntryAdded += LogService_EntryAdded;
-      _logService.FlushRequested += LogService_FlushRequested;
-      _queue = new LinkedQueue();
+      _logSubscription = _logService.Subscribe(ObserverHelper.FromHandlers<LogEntry>(LogService_OnNext, LogService_OnCompleted));
       if (startMessage != null)
         WriteToFile(startMessage + Environment.NewLine); 
     }
 
-    private void LogService_FlushRequested(object sender, EventArgs e) {
+    private void LogService_OnCompleted() {
       Flush(); 
     }
 
-    private void LogService_EntryAdded(object sender, LogEntryEventArgs e) {
-      if(_filter == null || _filter(e.Entry)) {
-        _queue.EnqueueNode(e.Entry);
-        if (e.Entry.EntryType == LogEntryType.Error)
+    private void LogService_OnNext(LogEntry entry) {
+      if(_filter == null || _filter(entry)) {
+        _queue.Enqueue(entry);
+        if (entry.IsError)
           Flush(); // error flush immediately
       }
     }
 
     public void AddEntry(LogEntry entry) {
       if(entry != null) {
-        _queue.EnqueueNode(entry);
+        _queue.Enqueue(entry);
       }
     }
 
     public void Flush() {
-      var entries = _queue.DequeueNodes<LogEntry>();
+      var entries = _queue.DequeueMany();
       var strings =  entries.Select(i => i.AsText()).ToList();
       strings.Add(Environment.NewLine);
       var text = string.Join(Environment.NewLine, strings);
@@ -74,8 +72,6 @@ namespace Vita.Entities.Logging {
     public void Dispose() {
       if (_queue.Count > 0)
         Flush();
-      _logService.EntryAdded -= LogService_EntryAdded;
-      _logService.FlushRequested -= LogService_FlushRequested;
       _disposed = true;
     }
 

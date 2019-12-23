@@ -81,7 +81,7 @@ namespace Vita.Tools.Testing {
     private static void EnableAppTimers(EntityApp app, bool enable) {
       var timers = app.GetService<ITimerServiceControl>();
       if(timers != null)
-        timers.EnableAutoFire(enable); 
+        timers.EnableTimers(enable); 
     }
 
 

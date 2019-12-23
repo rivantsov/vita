@@ -4,7 +4,7 @@ using System.Text;
 
 namespace Vita.Entities.Logging {
 
-  //Temp object used to store trans information in the background update queue
+  // Not currently used
   public class TransactionLogEntry : LogEntry {
 
     public DateTime StartedOn; 
@@ -14,7 +14,7 @@ namespace Vita.Entities.Logging {
     public long TransactionId;
 
     public TransactionLogEntry(LogContext context, long transactionId, DateTime startedOn, int duration, int recordCount, string changes)
-                     : base(LogEntryType.Transaction, context){
+                     : base(context){
       TransactionId = transactionId;
       StartedOn = startedOn;
       CreatedOn = AppTime.UtcNow;

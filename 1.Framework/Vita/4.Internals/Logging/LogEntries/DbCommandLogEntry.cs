@@ -23,11 +23,10 @@ namespace Vita.Entities.Logging {
     private string _asText;
 
     public DbCommandLogEntry(LogContext logContext, IDbCommand command, long executionTime, int rowCount) 
-         : base (LogEntryType.DbCommand, logContext) {
+         : base (logContext) {
       _command = command;
       ExecutionTime = executionTime;
       RowCount = rowCount;
-      base.EntryType = LogEntryType.DbCommand;
     }
 
     public override string ToString() {

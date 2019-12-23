@@ -19,7 +19,7 @@ namespace Vita.Entities.Logging {
 
     //log and exceptions
 
-    public WebCallLogEntry(WebCallContext webCtx) : base(LogEntryType.WebCall, webCtx.OperationContext.LogContext) {
+    public WebCallLogEntry(WebCallContext webCtx) : base(webCtx.OperationContext.LogContext) {
       WebCallId = Guid.NewGuid();
       Request = webCtx.Request;
       Response = webCtx.Response; 

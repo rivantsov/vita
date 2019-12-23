@@ -1,10 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Collections.Concurrent; 
-using System.Text;
+using System.Collections.Concurrent;
+using System.Diagnostics;
 
 namespace Vita.Entities.Utilities {
-  using System.Diagnostics;
 
   public class DoubleBufferCache<TKey, TValue> {
     private ConcurrentDictionary<TKey, TValue> _frontSet = new ConcurrentDictionary<TKey, TValue>();

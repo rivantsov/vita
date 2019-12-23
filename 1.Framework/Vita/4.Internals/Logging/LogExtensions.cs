@@ -29,7 +29,7 @@ namespace Vita.Entities.Logging {
     }
 
     public static bool HasErrors (this IBufferedLog log) {
-      var hasErrors = log.GetAll().Any(e => e.EntryType == LogEntryType.Error);
+      var hasErrors = log.GetAll().Any(e => e.IsError);
       return hasErrors;
     }
 

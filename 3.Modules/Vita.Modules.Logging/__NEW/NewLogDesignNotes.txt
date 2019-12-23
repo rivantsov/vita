@@ -1,0 +1,36 @@
+﻿Standard modules: 
+  AppEventLog
+  ErrorLog
+  UserSession
+  EncryptedData
+  Party
+
+
+Log modules
+  OperationLog 
+  WebCallLog
+  RestClientLog
+  DbUpgradeLog - remove it?
+  TransLog
+
+Base Log entities
+
+LogContext
+  Id
+  ActorId
+  ApiCallId?
+  UserSessionId?
+
+ LogActor
+   UserId
+   AltUserId
+   UserName
+
+ TransactionLog props
+  long TransId autoinc,
+  DateTime
+  Duration
+  RecordCount
+  LogContextId
+  Changes
+  

@@ -8,10 +8,11 @@ using Vita.Entities.Utilities;
 namespace Vita.Entities.Logging {
 
   /// <summary>
-  ///   Provides buffering of input elements, and produces batches based on size limit, or triggered by timer
+  ///   Provides buffering of input elements, and produces batches based on size limit, triggered by timer or from external call.
   /// </summary>
   /// <typeparam name="T">Item type.</typeparam>
-  /// <remarks>Active in name refers to ability to automatically trigger batch creation; the batch is broadcasted through Observer pattern implementation.</remarks>
+  /// <remarks>Active in name refers to the ability to automatically trigger batch creation,
+  ///   and then broadcasting it through Observable pattern implementation.</remarks>
   public class ActiveBatchingBuffer<T>: Observable<IList<T>>, IObserver<T> {
     ITimerService _timerService;
     int _batchSize;
@@ -34,7 +35,7 @@ namespace Vita.Entities.Logging {
 
     private void OnFlushTimerElapsed() {
       // We skip flushing if there was another flush (by batch size) since last timer signal 
-      // - to avoid flushing small number of items, leftove== rs from flush by reaching batch size
+      // - to avoid flushing small number of items, leftovers from flush by size 
       if(_queue.Count > 0 && !_flushedSinceLastTimer)
         FlushImpl(FlushTrigger.Timer);
       _flushedSinceLastTimer = false; 

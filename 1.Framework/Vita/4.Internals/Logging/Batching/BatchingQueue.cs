@@ -1,52 +1,100 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+﻿using System.Collections.Generic;
+using System.Diagnostics;
+using System.Runtime.CompilerServices;
 using System.Threading;
 
 namespace Vita.Entities.Logging {
 
+  [DebuggerDisplay("Count = {Count}")]
   /// <summary>
-  /// Implements a batching queue - concurrent, no-lock enqueue-one, dequeue many 
+  ///   Implements a batching queue - concurrent no-lock enqueue-one; dequeue many with lock
   /// </summary>
   public class BatchingQueue<T> {
     public int Count => _count;
 
-    class LinkedNode {
-      public T Item { get; set; }
-      public LinkedNode Next { get; set; }
+    class Node {
+      public T Item;
+      public volatile Node Next;
     }
 
     // We use Interlocked operations when accessing last-in; we use lock when accessing first-in element
-    LinkedNode _lastIn;
-    LinkedNode _lastOut;
+    volatile Node _lastIn; //must be marked as volatile for interlocked ops
+    Node _lastOut;
     object _dequeueLock = new object();
-    int _count;
+    volatile int _count;
+    SimpleConcurrentNodeStack _savedNodes = new SimpleConcurrentNodeStack(); 
 
     public BatchingQueue() {
-      // There's always at least one 'empty' node in linked list
-      _lastIn = _lastOut = new LinkedNode();
+      // There's always at least one fake node in linked list
+      _lastIn = _lastOut = new Node();
     }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public int Enqueue(T item) {
-      var node = new LinkedNode() { Item = item };
-      var prevLastIn = Interlocked.Exchange(ref _lastIn, node);
-      prevLastIn.Next = node;
+      // try get previously saved nodes
+      var node = _savedNodes.TryPop() ?? new Node();
+      node.Item = item;
+      if(Interlocked.CompareExchange(ref _lastIn.Next, node, null) == null) {
+        _lastIn = node;
+        return Interlocked.Increment(ref _count);
+      }
+      return EnqueueSlowPath(node);
+    }
+
+    private int EnqueueSlowPath(Node node) {
+      SpinWait spin = new SpinWait();
+      // Keep trying with spin until we succeed.
+      do {
+        spin.SpinOnce();
+      } while(Interlocked.CompareExchange(ref _lastIn.Next, node, null) != null);
+      // success, replace last-in ref
+      _lastIn = node;
       return Interlocked.Increment(ref _count);
     }
 
     public IList<T> DequeueMany(int maxCount = int.MaxValue) {
-      // iterate over list starting with _firstIn
+      // iterate over list starting with _lastOut
       var list = new List<T>();
       lock(_dequeueLock) {
-        while(_count > 0 && list.Count < maxCount) {
+        while(_lastOut.Next != null && list.Count < maxCount) {
+          var oldLastOut = _lastOut; 
           _lastOut = _lastOut.Next;
           list.Add(_lastOut.Item);
           _lastOut.Item = default(T); //clear the ref to data 
           Interlocked.Decrement(ref _count);
+          // oldLastOut now goes out of scope - save it for future use, to avoid creating new ones. Save only 95% of nodes, so the saved nodes pool slowly drains
+          if(list.Count % 20 != 0)
+            _savedNodes.TryPush(oldLastOut);
         }
         return list;
       } //lock
     } //method
+
+    #region SimpleConcurrentNodeStack class
+    // The goal of this class is to reuse Node objects; we save 'used' nodes in a simple concurrent stack. 
+    // The stack is not 100% reliable - it might fail occasionally when pushing/popping up nodes
+    class SimpleConcurrentNodeStack {
+      Node _head;
+
+      public Node TryPop() {
+        var head = _head;
+        if(head == null)
+          return null; // stack is empty
+        if(Interlocked.CompareExchange(ref _head, head.Next, head) == head) {
+          head.Next = null; //drop the 
+          return head;
+        }
+        return null; 
+      }
+
+      public void TryPush(Node node) {
+        node.Item = default(T);
+        node.Next = _head;
+        // we make just one attempt; if it fails, we don't care - node will be GC-d
+        Interlocked.CompareExchange(ref _head, node, node.Next);
+      }
+    }// class 
+    #endregion
 
   } //class
 }

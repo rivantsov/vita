@@ -419,8 +419,9 @@ namespace Vita.Testing.ExtendedTests {
       // Simplest LEFT OUTER join  on nullable property (IAuthor.User is nullable) 
       // returns all authors that are or are not users; 
       // note that even for authors with a.User==null, the query does not fail and a.User.UserName evaluates to null
-      // NOTE: SQL is a bit odd here, it has 2 left joins to User table; because unlike qBooksWithEditors above, we have 'User' object itself, 
-      // and that breaks it (bug!); - to be fixed in new LINQ engine
+      // NOTE: SQL is a bit odd here, it has 2 left joins to User table; because unlike qBooksWithEditors above, we have 'User' object itself 
+      // in the output, and that breaks it (bug, TableExpression.EqualsTo compares Aliases as well, and one tblExpr has Alias, and other doesn't); 
+      // - to be fixed in new LINQ engine
       var qOuter = from a in authors
                    select new { A = a, U = a.User, UserName = a.User.UserName };
       var listOuter = qOuter.ToList();

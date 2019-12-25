@@ -9,6 +9,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Vita.Entities;
 using Vita.Data;
 using Vita.Data.Driver;
+using Vita.Tools.Testing;
 using Vita.Samples.BookStore;
 
 namespace Vita.Testing.ExtendedTests {
@@ -17,6 +18,8 @@ namespace Vita.Testing.ExtendedTests {
 
     [TestMethod]
     public void TestLinqSearch() {
+      Startup.BooksApp.LogTestStart();
+
       // SQLite sometimes fails this test (fails to find a book), but only when running ALL tests in extended project, 
       // for no apparent reason; trying to fix it
       if(Startup.ServerType == DbServerType.SQLite) {

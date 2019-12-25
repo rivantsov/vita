@@ -28,7 +28,7 @@ namespace Vita.Data.Upgrades {
       _database = database;
       _log = log;
       _app = _database.DbModel.EntityApp; 
-      _dbInfoService = _app.GetService<IDbInfoService>(throwIfNotFound: false);
+      _dbInfoService = (IDbInfoService) _app.GetService(typeof(IDbInfoService));
     }
 
     public DbUpgradeInfo UpgradeDatabase() {
@@ -179,7 +179,7 @@ namespace Vita.Data.Upgrades {
       } catch (Exception ex) {
         OnUpgraded(appliedScripts, ex, currScript);
         var logStr = ex.ToLogString();
-        System.Diagnostics.Debug.WriteLine(logStr);
+        // System.Diagnostics.Debug.WriteLine(logStr);
         _log.LogError(logStr);
         throw;
       } finally {
@@ -207,7 +207,7 @@ namespace Vita.Data.Upgrades {
       DbUpgradeEventType eventType = exception == null ? DbUpgradeEventType.DbModelUpgraded : DbUpgradeEventType.Error;
       var args = new DbUpgradeEventArgs(_database, eventType, _upgradeInfo, exception, failedScript); 
       _app.DataSourceEvents.OnDbUpgraded(args);
-      var logService = _app.GetService<IDbUpgradeLogService>(throwIfNotFound: false);
+      var logService = (IDbUpgradeLogService) _app.GetService(typeof(IDbUpgradeLogService));
       if(logService != null) {
         var oldVersionInfo = _upgradeInfo.OldDbModel.VersionInfo;
         var oldVersion = oldVersionInfo == null ? DbVersionInfo.ZeroVersion : oldVersionInfo.Version;

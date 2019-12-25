@@ -94,10 +94,15 @@ namespace Vita.Entities.Utilities {
   } //class
 
   // Utility class
-  public static class ObserverHelper {
+  public static class Observable {
 
-    public static IObserver<T> FromHandlers<T>(Action<T> onNext, Action onCompleted = null, Action<Exception> onError = null) {
+    public static IObserver<T> CreateObserver<T>(Action<T> onNext, Action onCompleted = null, Action<Exception> onError = null) {
       return new ActionBasedObserver<T>(onNext, onCompleted, onError);
+    }
+
+    public static IDisposable Subscribe<T>(this IObservable<T> observable, Action<T> onNext, Action onCompleted = null, Action<Exception> onError = null) {
+      var observer = CreateObserver(onNext, onCompleted, onError);
+      return observable.Subscribe(observer); 
     }
 
     class ActionBasedObserver<T> : IObserver<T> {

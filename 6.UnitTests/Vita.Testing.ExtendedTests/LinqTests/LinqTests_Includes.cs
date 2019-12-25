@@ -10,6 +10,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 using Vita.Entities;
 using Vita.Samples.BookStore;
+using Vita.Tools.Testing; 
 
 namespace Vita.Testing.ExtendedTests {
 
@@ -17,6 +18,8 @@ namespace Vita.Testing.ExtendedTests {
 
     [TestMethod] 
     public void TestLinqInclude() {
+      Startup.BooksApp.LogTestStart();
+
       try {
         //DisplayAttribute.Disabled = true;   // just for internal debugging, to disable automatic loading of entities for Display
         Startup.BooksApp.AppEvents.ExecutedSelect += AppEvents_ExecutedSelect; //to spy after executed selects

@@ -14,6 +14,7 @@ using System.Xml;
 using Vita.Entities;
 using Vita.Tools;
 using Vita.Tools.DbFirst;
+using Vita.Tools.Testing; 
 using Vita.Data.Driver;
 
 namespace Vita.Testing.ExtendedTests {
@@ -28,6 +29,8 @@ namespace Vita.Testing.ExtendedTests {
 
     [TestMethod]
     public void TestDbToEntitiesSourceGenerator() {
+      Startup.BooksApp.LogTestStart();
+
       var xmlConfigTemplate =
 @"<Settings>
   <Provider>@Provider@</Provider>

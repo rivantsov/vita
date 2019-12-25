@@ -679,13 +679,12 @@ namespace Vita.Data.Linq.Translation {
       }
 
       Expression objectExpression = null;
-      //maybe is a static member access like DateTime.Now
-      bool isStaticMemberAccess = expression.Member.IsStaticMember();
-
       var memberInfo = expression.Member;
       var memberType = memberInfo.GetMemberReturnType();
       var memberName = memberInfo.Name;
 
+      //maybe is a static member access like DateTime.Now
+      bool isStaticMemberAccess = expression.Member.IsStaticMember();
       if(!isStaticMemberAccess) {
         // special case - expr like book.Authors.Count
         if (memberName == "Count") {

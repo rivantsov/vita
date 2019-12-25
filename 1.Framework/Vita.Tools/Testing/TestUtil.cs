@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using Vita.Entities;
+using Vita.Entities.Logging;
 using Vita.Entities.Services;
 
 namespace Vita.Tools.Testing {
@@ -84,6 +86,9 @@ namespace Vita.Tools.Testing {
         timers.EnableTimers(enable); 
     }
 
+    public static void LogTestStart(this EntityApp app, [CallerMemberName] string testName = null) {
+      app.LogService.AddEntry(new InfoLogEntry(LogContext.SystemLogContext, $"\r\n============================ Starting test [{testName}] ========================================"));
+    }
 
   }
 }

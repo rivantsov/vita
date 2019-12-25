@@ -20,6 +20,8 @@ namespace Vita.Testing.ExtendedTests {
     // Test them all here.
     [TestMethod]
     public void TestLinqGroupBy() {
+      Startup.BooksApp.LogTestStart();
+
       var app = Startup.BooksApp;
       var session = app.OpenSession();
 
@@ -102,6 +104,8 @@ namespace Vita.Testing.ExtendedTests {
 
     [TestMethod]
     public void TestAggregates() {
+      Startup.BooksApp.LogTestStart();
+
       var app = Startup.BooksApp;
       var session = app.OpenSession();
       /*

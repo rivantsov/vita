@@ -15,59 +15,73 @@ namespace Vita.Entities.Logging {
   public class ActiveBatchingBuffer<T>: Observable<IList<T>>, IObserver<T> {
     ITimerService _timerService;
     int _batchSize;
-    BatchingQueue<T> _entries = new BatchingQueue<T>();
+    BatchingQueue<T> _queue = new BatchingQueue<T>();
     object _flushLock = new object();
-    bool _lastFlushWasByTimer = true; // just initial value
+    bool _flushedSinceLastTimer; 
     bool _flushing; //indicates that flush was requested or is in progress
+
+    enum FlushTrigger {
+      Timer,
+      Count,
+      Code,
+    }
 
     public ActiveBatchingBuffer(ITimerService timerService, int batchSize, TimerInterval flushInterval = TimerInterval.T_500_Ms) {
       _timerService = timerService;
       _batchSize = batchSize;
-      _timerService.Subscribe(flushInterval, OnFlushTimerElapsed);
+      _timerService?.Subscribe(flushInterval, OnFlushTimerElapsed);
     }
 
-    public int Count => _entries.Count; 
-
-    public void OnFlushTimerElapsed() {
+    private void OnFlushTimerElapsed() {
       // We skip flushing if there was another flush (by batch size) since last timer signal 
-      // - to avoid flushing small number of items, leftovers from flush by reaching batch size
-      if(_entries.Count > 0 && _lastFlushWasByTimer)
-        Flush();
-      _lastFlushWasByTimer = true; 
+      // - to avoid flushing small number of items, leftove== rs from flush by reaching batch size
+      if(_queue.Count > 0 && !_flushedSinceLastTimer)
+        FlushImpl(FlushTrigger.Timer);
+      _flushedSinceLastTimer = false; 
     }
 
-    private void Flush(bool forceAll = false) {
+    public int Count => _queue.Count;
+
+    public void Push(T item) {
+      var count = _queue.Enqueue(item);
+      if(count >= _batchSize && !_flushing) {
+        _flushing = true;
+        Task.Run(() => FlushImpl(FlushTrigger.Count));
+      }
+    }
+
+    public void Flush() {
+      FlushImpl(FlushTrigger.Code);
+    }
+
+    private void FlushImpl(FlushTrigger trigger) {
       try {
         // protect against multiple parallel calls to flush
         lock(_flushLock) {
-          while(_entries.Count > 0) {
-            //do not flush less than batch size, unless it is forced; it might also had been just Flushed from another thread. 
-            if(_entries.Count < _batchSize && !forceAll)
+          while(_queue.Count > 0) {
+            //do not flush less than batch size, if it is triggered by size; it can happen 
+            //  if we have multiple batches in this loop, and at the end a few items left in the queue
+            if(_queue.Count < _batchSize && trigger == FlushTrigger.Count)
               return;
-            var batch = _entries.DequeueMany(_batchSize);
+            var batch = _queue.DequeueMany(_batchSize);
             Broadcast(batch);
-            if(batch.Count < _batchSize / 2)
-              return; // this was last batch; this is extra exit to protect from endless loop when items continue to come
           }
         } //lock
       } finally {
-        _lastFlushWasByTimer = false; // timer handler will set this value to true  (if called by timer)
+        _flushedSinceLastTimer = true; // timer handler will overwrite it
         _flushing = false; 
       }
     } //method
 
     // IObserver implementation
-    public void OnNext(T value) {
-      var count = _entries.Enqueue(value);
-      if(count >= _batchSize && !_flushing) {
-        _flushing = true; 
-        Task.Run(() => Flush());
-      }
+    void IObserver<T>.OnNext(T item) {
+      Push(item);
     }
-    public void OnCompleted() {
-      Flush(forceAll: true); 
+    void IObserver<T>.OnCompleted() {
+      FlushImpl(FlushTrigger.Code); 
     }
-    public void OnError(Exception error) {
+    
+    void IObserver<T>.OnError(Exception error) {
     }
 
   } //class

@@ -19,35 +19,33 @@ namespace Vita.Entities.Logging {
 
     // We use Interlocked operations when accessing last-in; we use lock when accessing first-in element
     LinkedNode _lastIn;
-    LinkedNode _firstIn;
-    object _firstInLock = new object();
+    LinkedNode _lastOut;
+    object _dequeueLock = new object();
     int _count;
 
+    public BatchingQueue() {
+      // There's always at least one 'empty' node in linked list
+      _lastIn = _lastOut = new LinkedNode();
+    }
     public int Enqueue(T item) {
       var node = new LinkedNode() { Item = item };
       var prevLastIn = Interlocked.Exchange(ref _lastIn, node);
-      if(prevLastIn == null) {
-        // queue was empty, assign _firstIn element as well; protect access with lock
-        lock(_firstInLock)
-          _firstIn = node;
-      } else
-        prevLastIn.Next = node;
+      prevLastIn.Next = node;
       return Interlocked.Increment(ref _count);
     }
 
     public IList<T> DequeueMany(int maxCount = int.MaxValue) {
       // iterate over list starting with _firstIn
-      var list = new List<T>();  
-      lock(_firstInLock) {
-        while(_firstIn != null && list.Count < maxCount) {
-          list.Add(_firstIn.Item); 
-          var next = _firstIn.Next; // save in local var
-          _firstIn.Next = null; // break links between nodes
-          _firstIn = next;
+      var list = new List<T>();
+      lock(_dequeueLock) {
+        while(_count > 0 && list.Count < maxCount) {
+          _lastOut = _lastOut.Next;
+          list.Add(_lastOut.Item);
+          _lastOut.Item = default(T); //clear the ref to data 
           Interlocked.Decrement(ref _count);
         }
+        return list;
       } //lock
-      return list; 
     } //method
 
   } //class

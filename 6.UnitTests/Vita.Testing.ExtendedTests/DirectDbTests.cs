@@ -6,6 +6,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Vita.Entities;
 using Vita.Samples.BookStore;
 using Vita.Data.Driver;
+using Vita.Tools.Testing; 
 
 namespace Vita.Testing.ExtendedTests {
 
@@ -25,6 +26,7 @@ namespace Vita.Testing.ExtendedTests {
 
     [TestMethod]
     public void TestDirectDbAccess() {
+      Startup.BooksApp.LogTestStart();
 
       //Note: we need to use entity that is not cached, otherwise test does not work if cache is enabled. 
       // If an entity is cached and we change entity in the database through direct access, 

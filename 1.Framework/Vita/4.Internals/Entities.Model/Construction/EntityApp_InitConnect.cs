@@ -49,8 +49,8 @@ namespace Vita.Entities {
       //Notify modules that entity app is constructed
       foreach (var module in this.Modules)
         module.Init();
-      //init services
-      var servList = this.GetAllServices();
+      //init services; note that service might be registered more than once, under different interface
+      var servList = this.GetAllServices().Distinct().ToList();
       for(int i = 0; i < servList.Count; i++) {
         var service = servList[i];
         var iServiceInit = service as IEntityServiceBase;
@@ -72,12 +72,11 @@ namespace Vita.Entities {
     }
 
     protected void SetupLogFileWriters() {
-      var logService = GetService<ILogService>();
       if (!string.IsNullOrEmpty(this.LogPath)) {
-        LogFileWriter = new LogFileWriter(logService, LogPath, startMessage: $" ======== Log Started {AppTime.UtcNow} ============");
+        LogFileWriter = new LogFileWriter(this, LogPath, startMessage: $" ======== Log Started {AppTime.UtcNow} ============");
       }
       if(!string.IsNullOrEmpty(this.ErrorLogPath)) {
-        ErrorLogFileWriter = new LogFileWriter(logService, ErrorLogPath, batchSize: 1, 
+        ErrorLogFileWriter = new LogFileWriter(this, ErrorLogPath, batchSize: 1, 
           filter: entry => entry.IsError,
           startMessage: $"==== Error Log Started {AppTime.UtcNow} ===========");
       }

@@ -8,6 +8,7 @@ using Vita.Entities;
 using Vita.Data;
 using Vita.Data.Driver;
 using Vita.Modules.Login;
+using Vita.Tools.Testing;
 using Vita.Samples.BookStore;
 
 namespace Vita.Testing.ExtendedTests {
@@ -16,6 +17,8 @@ namespace Vita.Testing.ExtendedTests {
 
     [TestMethod]
     public void TestLinqNonQuery_Update () {
+      Startup.BooksApp.LogTestStart();
+
       var app = Startup.BooksApp;
       IEntitySession session;
       int updateCount;
@@ -206,6 +209,8 @@ namespace Vita.Testing.ExtendedTests {
 
     [TestMethod]
     public void TestLinqNonQuery_Delete() {
+      Startup.BooksApp.LogTestStart();
+
       var app = Startup.BooksApp;
       var session = app.OpenSession();
       var count0 = session.EntitySet<ICoupon>().Count(); 
@@ -271,6 +276,8 @@ namespace Vita.Testing.ExtendedTests {
 
     [TestMethod]
     public void TestLinqNonQuery_Insert() {
+      Startup.BooksApp.LogTestStart();
+
       // Postgres: If this test fails, you need to run the following command and install uuid-ossp extension:
       //   CREATE EXTENSION "uuid-ossp";
       // SQLite: SQLite does not have a function for generating GUID, so inserts that require new GUIDs for PK columns do not work for SQLite
@@ -307,8 +314,10 @@ namespace Vita.Testing.ExtendedTests {
 
     [TestMethod]
     public void TestLinqNonQuery_ScheduledCommands() {
+      Startup.BooksApp.LogTestStart();
+
       const string NewCode = "(NewCode)"; 
-    var app = Startup.BooksApp;
+     var app = Startup.BooksApp;
       var session = app.OpenSession();
 
       // Set descriptions and schedule update of special codes

@@ -180,7 +180,7 @@ namespace Vita.Data.Driver {
       foreach(var table in Model.Tables)
         if(table.PrimaryKey == null && table.Kind == EntityKind.Table) {
           //Just to have a line for a breakpoint
-          System.Diagnostics.Debug.WriteLine("DBModelLoader warning: Table without PK:" + table.TableName);
+          //System.Diagnostics.Debug.WriteLine("DBModelLoader warning: Table without PK:" + table.TableName);
         }
     }
     protected virtual void LoadTableConstraintColumns() {

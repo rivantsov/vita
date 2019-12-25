@@ -31,7 +31,7 @@ Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deseru
       var bytes = CompressionHelper.CompressString(testString);
       var resultString = CompressionHelper.DecompressString(bytes);
       Assert.AreEqual(testString, resultString, "Compress/decompress result does not match original.");
-      Debug.WriteLine("String size: " + testString.Length + ", compressed size: " + bytes.Length);
+     // Debug.WriteLine("String size: " + testString.Length + ", compressed size: " + bytes.Length);
     }
 
     [TestMethod]

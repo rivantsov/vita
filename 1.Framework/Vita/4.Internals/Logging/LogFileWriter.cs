@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using Vita.Entities.Services;
 using Vita.Entities.Utilities;
 
 namespace Vita.Entities.Logging {
@@ -9,55 +10,53 @@ namespace Vita.Entities.Logging {
   public class LogFileWriter : IDisposable {
     string _fileName;
     ILogService _logService;
-    int _batchSize; 
     Func<LogEntry, bool> _filter;
     IDisposable _logSubscription; 
     bool _disposed;
 
-    BatchingQueue<LogEntry> _queue = new BatchingQueue<LogEntry>(); 
+    ActiveBatchingBuffer<LogEntry> _buffer; 
     static object _fileWriteLock = new object(); 
 
-    public LogFileWriter(ILogService logService, string fileName, int batchSize = 100, 
+    public LogFileWriter(IServiceProvider services, string fileName, 
+                int batchSize = 100, TimerInterval interval = TimerInterval.T_5_Sec,
                 Func<LogEntry, bool> filter = null,   string startMessage = null) {
-      _logService = logService; 
+      _logService = services.GetService<ILogService>(); 
       _fileName = fileName;
       _filter = filter;
-      _batchSize = batchSize;
-      _logSubscription = _logService.Subscribe(ObserverHelper.FromHandlers<LogEntry>(LogService_OnNext, LogService_OnCompleted));
-      if (startMessage != null)
+      var timers = services.GetService<ITimerService>();
+      _logSubscription = _logService.Subscribe(LogService_OnNext, LogService_OnCompleted);
+      _buffer = new ActiveBatchingBuffer<LogEntry>(timers, batchSize, interval);
+      _buffer.Subscribe(Buffer_OnBatchProduced);
+      if(startMessage != null)
         WriteToFile(startMessage + Environment.NewLine); 
-    }
-
-    private void LogService_OnCompleted() {
-      Flush(); 
     }
 
     private void LogService_OnNext(LogEntry entry) {
       if(_filter == null || _filter(entry)) {
-        _queue.Enqueue(entry);
+        _buffer.Push(entry);
         if (entry.IsError)
           Flush(); // error flush immediately
       }
     }
-
-    public void AddEntry(LogEntry entry) {
-      if(entry != null) {
-        _queue.Enqueue(entry);
-      }
+    private void LogService_OnCompleted() {
+      _buffer.Flush(); 
     }
 
-    public void Flush() {
-      var entries = _queue.DequeueMany();
-      var strings =  entries.Select(i => i.AsText()).ToList();
-      strings.Add(Environment.NewLine);
+    private void Buffer_OnBatchProduced(IList<LogEntry> entries) {
+      var strings = entries.Select(i => i.AsText()).ToArray();
       var text = string.Join(Environment.NewLine, strings);
       WriteToFile(text);
     }
 
+    public void Flush() {
+      _buffer.Flush(); 
+    }
+
     private void WriteToFile(string text) {
       try {
+        // We use AppendAllLines to ensure NewLine between chunks
         lock(_fileWriteLock)
-          File.AppendAllText(_fileName, text);
+          File.AppendAllLines(_fileName, new string[] { text });
       } catch(Exception ex) {
         LastResortErrorLog.Instance.LogFatalError(ex.ToLogString(), text);
       }
@@ -70,7 +69,7 @@ namespace Vita.Entities.Logging {
     }
 
     public void Dispose() {
-      if (_queue.Count > 0)
+      if (_buffer.Count > 0)
         Flush();
       _disposed = true;
     }

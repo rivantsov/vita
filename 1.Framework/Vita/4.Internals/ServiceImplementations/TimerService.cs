@@ -16,7 +16,8 @@ namespace Vita.Entities.Services.Implementations {
     private System.Timers.Timer _timer;
     private bool _enabled;
     private ILogService _log;
-    List<TimerSubscriptionInfo> _subscriptions = new List<TimerSubscriptionInfo>(); 
+    List<TimerSubscriptionInfo> _subscriptions = new List<TimerSubscriptionInfo>();
+    long _tickCount;
 
     class TimerSubscriptionInfo {
       public TimerInterval Interval; 
@@ -53,12 +54,16 @@ namespace Vita.Entities.Services.Implementations {
       if(e.Step == EntityAppInitStep.Initialized) {
         _enabled = true;
       }
+      // We init tick count from UtcTime, 
+      //  in order to make sure that long-period events fire consistently, independent of this service restarts.
+      //  So that if this service restarts at 1:05:00, the next 15-minute timer will still fire at 1:15:00, not at 1:20 
+      var utcNow = TimeService.Instance.UtcNow;
+      _tickCount = (long)utcNow.TimeOfDay.TotalMilliseconds / 100;
     }
 
     public void Shutdown() {
       _enabled = false;
     }
-
 
     #region ITimerService implementation
     public void Subscribe(TimerInterval interval, Action handler) {
@@ -115,20 +120,15 @@ namespace Vita.Entities.Services.Implementations {
     private void Timer_Elapsed(object sender, System.Timers.ElapsedEventArgs e) {
       if(!_enabled)
         return;
-      // We use global tick count from UtcTime (1 tick = 100ms), instead of just counting timer elapses, 
-      //  in order to make sure that long-period events fire consistently, independent of this service restarts.
-      //  So that if this service restarts at 1:05:00, the next 15-minute timer will still fire at 1:15:00, not at 1:20 
-      var utcNow = TimeService.Instance.UtcNow;
-      var tickCount = (long)utcNow.TimeOfDay.TotalMilliseconds / 100;
+      _tickCount++;
       foreach(var subscr in _subscriptions) {
-        if(tickCount % subscr.BaseCycleCount == 0 && subscr.Subscribers.Count > 0)
+        if(_tickCount % subscr.BaseCycleCount == 0 && subscr.Subscribers.Count > 0)
           SafeInvoke(subscr);
       }
     }
 
     private void SafeInvoke(TimerSubscriptionInfo subscr) {
-      var actions = subscr.Subscribers;
-      foreach(var action in actions) {
+      foreach(var action in subscr.Subscribers) {
         try {
           action();
         } catch(Exception ex) {

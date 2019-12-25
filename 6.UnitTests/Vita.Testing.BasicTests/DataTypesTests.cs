@@ -466,7 +466,7 @@ namespace Vita.Testing.BasicTests.DataTypes {
       Assert.AreEqual(DataAccessException.SubTypeConcurrentUpdate, dex.SubType);
       var tableName = dex.Data[DataAccessException.KeyEntityName];
       Assert.AreEqual("MsSqlRowVersionedProduct", tableName, "Entity name mismatch in concurrent update exception");
-      Debug.WriteLine("Concurrent update conflict - as expected.");
+      // Debug.WriteLine("Concurrent update conflict - as expected.");
     }
 
     //Helper methods to compare 

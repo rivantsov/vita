@@ -31,12 +31,9 @@ namespace Vita.Testing.ExtendedTests {
     private static void LogLastQuery(IEntitySession session) {
       //Debug.WriteLine("---------------------------------------------------------------------------------------");
       var command = session.GetLastCommand();
-      if(command != null)
-        Debug.WriteLine("SQL:" + command.CommandText);
-      /*
-       */
+      //if(command != null)
+        // Debug.WriteLine("SQL:" + command.CommandText);
     }
-
 
     #region Helper objects for LINQ test
     public const string PublisherNameConst = "c# const string"; // to use in tests, to check how Linq handles references to constants
@@ -54,6 +51,8 @@ namespace Vita.Testing.ExtendedTests {
 
     [TestMethod]
     public void TestLinqBasics() {
+      Startup.BooksApp.LogTestStart();
+
       var app = Startup.BooksApp;
       IDbCommand lastCmd;
 
@@ -312,6 +311,8 @@ namespace Vita.Testing.ExtendedTests {
 
     [TestMethod]
     public void TestLinqWithNew() {
+      Startup.BooksApp.LogTestStart();
+
       //test for using new DateTime() in Linq queries; 
       // first with constants
       var session = Startup.BooksApp.OpenSession();
@@ -353,6 +354,8 @@ namespace Vita.Testing.ExtendedTests {
 
     [TestMethod]
     public void TestLinqLikeOperator() {
+      Startup.BooksApp.LogTestStart();
+
       //We test escaping wildcards
       var app = Startup.BooksApp;
       var session = app.OpenSession();
@@ -388,12 +391,24 @@ namespace Vita.Testing.ExtendedTests {
 
     [TestMethod]
     public void TestLinqJoins() {
+      Startup.BooksApp.LogTestStart();
+
       var app = Startup.BooksApp;
       var session = app.OpenSession();
       var books = session.EntitySet<IBook>();
       var pubs = session.EntitySet<IPublisher>();
       var authors = session.EntitySet<IAuthor>();
       var users = session.EntitySet<IUser>();
+
+      // Test that when we return multiple properties of ref entity (b.Editor.UserName, b.Editor.DisplayName), 
+      //  SQL contains a single join to User table, not 2
+      var qBooksWithEditors = books.Where(b => b.Editor != null)
+          .Select(b => new { Title = b.Title, Editor = b.Editor.UserName, EditorDisplayName = b.Editor.DisplayName });
+      var booksWithEditors = qBooksWithEditors.ToList(); 
+      var sql = session.GetLastCommand().CommandText;
+      // simple way to count 'LEFT JOIN' strings
+      var segments = sql.Split("LEFT JOIN");
+      Assert.AreEqual(2, segments.Length, "Expected single LEFT JOIN in query.");
 
       // Simplest INNER join
       var qInner = from b in books
@@ -402,12 +417,19 @@ namespace Vita.Testing.ExtendedTests {
       Assert.IsTrue(listInner.Count > 0, "Expected some books with publishers");
 
       // Simplest LEFT OUTER join  on nullable property (IAuthor.User is nullable) 
-      // returns all authors that are or are not not users; 
+      // returns all authors that are or are not users; 
       // note that even for authors with a.User==null, the query does not fail and a.User.UserName evaluates to null
+      // NOTE: SQL is a bit odd here, it has 2 left joins to User table; because unlike qBooksWithEditors above, we have 'User' object itself, 
+      // and that breaks it (bug!); - to be fixed in new LINQ engine
       var qOuter = from a in authors
                    select new { A = a, U = a.User, UserName = a.User.UserName };
       var listOuter = qOuter.ToList();
       Assert.IsTrue(listOuter.Count > 1, "Expected > 1 authors in outer join");
+      var authorUser = listOuter.FirstOrDefault(au => au.U != null);
+      Assert.IsNotNull(authorUser, "Failed to find author+user in left join query.");
+      var authorNonUser = listOuter.FirstOrDefault(au => au.U == null);
+      Assert.IsNotNull(authorNonUser, "Failed to find author/non-user in left join query.");
+      Assert.IsNull(authorNonUser.UserName, "Expected UserName==null");
 
       // Similar query but with INNER join, with join condition in WHERE clause
       // should return authors that are users only
@@ -455,11 +477,12 @@ namespace Vita.Testing.ExtendedTests {
       //last name is null if user is not author (a2 is null) - works OK
       var lstUsersWithAuthors = qUsersWithAuthors.ToList();
       Assert.IsTrue(lstUsersWithAuthors.Count > 0, "Failed to retrieve users with authors.");
-
     }
 
     [TestMethod]
     public void TestLinqLimitOffset() {
+      Startup.BooksApp.LogTestStart();
+
       var app = Startup.BooksApp;
       var session = app.OpenSession();
       var bookOrders = session.EntitySet<IBookOrder>();
@@ -490,6 +513,7 @@ namespace Vita.Testing.ExtendedTests {
 
     [TestMethod]
     public void TestSqlCache() {
+      Startup.BooksApp.LogTestStart();
 
       var app = Startup.BooksApp;
       var session = app.OpenSession();
@@ -539,6 +563,8 @@ namespace Vita.Testing.ExtendedTests {
 
     [TestMethod]
     public void TestLinqSpecialQueries() {
+      Startup.BooksApp.LogTestStart();
+
       //Some seemingly simple queries that caused problems for LINQ engine initially
       var app = Startup.BooksApp;
       var session = app.OpenSession();
@@ -669,7 +695,8 @@ namespace Vita.Testing.ExtendedTests {
 
     [TestMethod]
     public void TestLinqEntityListMembers() {
-      
+      Startup.BooksApp.LogTestStart();
+
       var app = Startup.BooksApp;
       var session = app.OpenSession();
 
@@ -712,6 +739,8 @@ namespace Vita.Testing.ExtendedTests {
 
     [TestMethod]
     public void TestLinqQueryFilter() {
+      Startup.BooksApp.LogTestStart();
+
       var app = Startup.BooksApp;
       var session = app.OpenSession();
       var filter = session.Context.QueryFilter;

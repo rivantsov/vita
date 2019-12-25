@@ -19,6 +19,8 @@ namespace Vita.Testing.ExtendedTests {
 
     [TestMethod]
     public void TestLinqUnionIntersect() {
+      Startup.BooksApp.LogTestStart();
+
       var app = Startup.BooksApp;
       IDbCommand lastCmd;
 
@@ -29,7 +31,6 @@ namespace Vita.Testing.ExtendedTests {
         .Select(b => new { b.Id, b.Title, b.Category, b.Price });
 
       // Union query
-      Debug.WriteLine("--------- UNION --------------");
       var unionList = books.Where(b => b.Category == BookCategory.Fiction)
                                 .Union(books.Where(b => b.Category == BookCategory.Programming))
                                 .ToList();
@@ -37,14 +38,12 @@ namespace Vita.Testing.ExtendedTests {
       LogLastQuery(session);
       Assert.IsTrue(unionList.Count > 0, "Empty list in UNION");
 
-      Debug.WriteLine("--------- UNION ALL (Concat) --------------");
       var fictionAndProgBooks2 = books.Where(b => b.Category == BookCategory.Fiction)
                                 .Concat(books.Where(b => b.Category == BookCategory.Programming))
                                 .ToList();
       LogLastQuery(session);
 
       if (Startup.Driver.Supports(DbFeatures.ExceptOperator)) {
-        Debug.WriteLine("--------- EXCEPT --------------");
         var exceptList = books.Where(b => b.Category == BookCategory.Fiction || b.Category == BookCategory.Programming)
                              .Except(books.Where(b => b.Category == BookCategory.Programming))
                               .ToList();
@@ -53,7 +52,6 @@ namespace Vita.Testing.ExtendedTests {
       }
 
       if (Startup.Driver.Supports(DbFeatures.IntersectOperator)) {
-        Debug.WriteLine("--------- INTERSECT --------------");
         var intersectList = books.Where(b => b.Category == BookCategory.Fiction || b.Category == BookCategory.Programming)
                              .Intersect(books.Where(b => b.Category == BookCategory.Programming))
                               .ToList();

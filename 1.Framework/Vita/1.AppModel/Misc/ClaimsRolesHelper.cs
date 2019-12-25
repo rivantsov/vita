@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Security.Claims;
 using System.Text;
 
-namespace Vita.Entities.Utilities {
+namespace Vita.Entities {
   public static class ClaimsRolesHelper {
     public const string UserRoleClaimType = "http://schemas.microsoft.com/ws/2008/06/identity/claims/role";
 

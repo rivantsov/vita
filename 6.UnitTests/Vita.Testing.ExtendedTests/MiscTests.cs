@@ -29,6 +29,8 @@ namespace Vita.Testing.ExtendedTests {
     // Not exactly a test, just generates a few authenticator passcodes for current time. 
     [TestMethod]
     public void TestGoogleAuthenticator() {
+      Startup.BooksApp.LogTestStart();
+
       var secretBase32 = "ABCDABCD33ABCDABCD44";
       var secret = Base32Encoder.Decode(secretBase32); 
       var appIdentity = "VitaBookStore";
@@ -46,6 +48,8 @@ namespace Vita.Testing.ExtendedTests {
 
     [TestMethod]
     public void TestValidation() {
+      Startup.BooksApp.LogTestStart();
+
       var app = Startup.BooksApp; 
       var session = app.OpenSession();
       // Entity validation: trying to save entities with errors -----------------------------------------
@@ -63,6 +67,8 @@ namespace Vita.Testing.ExtendedTests {
 
     [TestMethod]
     public void TestCanDelete() {
+      Startup.BooksApp.LogTestStart();
+
       var app = Startup.BooksApp;
       var session = app.OpenSession();
 
@@ -115,6 +121,8 @@ namespace Vita.Testing.ExtendedTests {
 
     [TestMethod]
     public void TestEntityToString() {
+      Startup.BooksApp.LogTestStart();
+
       // Entity.ToString() is determined by Display attribute
       var session = Startup.BooksApp.OpenSession();
 
@@ -134,6 +142,8 @@ namespace Vita.Testing.ExtendedTests {
 
     [TestMethod]
     public void TestPasswordStrengthChecker() {
+      Startup.BooksApp.LogTestStart();
+
       var app = Startup.BooksApp;
       var loginStt = Startup.BooksApp.GetConfig<LoginModuleSettings>(); 
       var checker = loginStt.PasswordChecker;

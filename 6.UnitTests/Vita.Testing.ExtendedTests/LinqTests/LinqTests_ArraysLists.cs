@@ -2,15 +2,11 @@
 using System.Collections.Generic;
 using System.Data;
 using System.Linq;
-using System.Diagnostics;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 using Vita.Entities;
 using Vita.Samples.BookStore;
-using Vita.Data.Driver;
-using Vita.Modules.Login;
 using Vita.Tools.Testing;
-using Vita.Data.Sql;
 
 namespace Vita.Testing.ExtendedTests {
 
@@ -18,6 +14,8 @@ namespace Vita.Testing.ExtendedTests {
 
     [TestMethod]
     public void TestLinqArrayContains() {
+      Startup.BooksApp.LogTestStart();
+
       var app = Startup.BooksApp;
       var session = app.OpenSession();
 
@@ -91,6 +89,8 @@ namespace Vita.Testing.ExtendedTests {
 
     [TestMethod]
     public void TestLinqArrayParameters() {
+      Startup.BooksApp.LogTestStart();
+
       // Not all servers support array parameters
       var session = Startup.BooksApp.OpenSession();
       // count prog books reviews 
@@ -115,6 +115,7 @@ namespace Vita.Testing.ExtendedTests {
 
     [TestMethod]
     public void TestLinqContains() {
+      Startup.BooksApp.LogTestStart();
 
       var app = Startup.BooksApp;
       var session = app.OpenSession();

@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 
 namespace Vita.Entities.Utilities {
-  /// <summary>A class representing template with named args intstead of indexes in place holders, ex: "Some text {arg1}, {arg2}"</summary>
+  /// <summary>A class representing template with named args instead of indexes in place holders, ex: "Some text {arg1}, {arg2}"</summary>
   public class StringTemplate {
     public readonly string OriginalTemplate;
     public readonly string StandardForm;

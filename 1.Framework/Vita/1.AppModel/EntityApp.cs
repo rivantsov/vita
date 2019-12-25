@@ -28,7 +28,7 @@ namespace Vita.Entities {
 
 
   /// <summary>Entity application. </summary>
-  public partial class EntityApp {
+  public partial class EntityApp: IServiceContainer {
 
     /// <summary>The app name. Defaults to type name. </summary>
     public string AppName;
@@ -92,12 +92,10 @@ namespace Vita.Entities {
     /// <summary>Entity model. Initially null, available after the app is initialized. </summary>
     public EntityModel Model { get; internal set; }
 
-    private readonly IDictionary<Type, object> _services;
     private readonly object _lock = new object();
 
     /// <summary> Constructs a new EntityApp instance. </summary>
     public EntityApp(string appName = null, string version = "1.0.0.0", string activationLogPath = null) {
-      _services = new Dictionary<Type, object>();
       _shutdownTokenSource = new CancellationTokenSource();
       AppName = appName ?? this.GetType().Name;
       Version = new Version(version);
@@ -112,12 +110,16 @@ namespace Vita.Entities {
       ActivationLog = new BufferedLog(LogContext.SystemLogContext, 10000, LogService);
 
       // Time service and Timers service  are global singletons, we register these here, as early as possible
-      this.TimeService = this.RegisterService<ITimeService>(Vita.Entities.Services.Implementations.TimeService.Instance);
-      var timers = this.RegisterService<ITimerService>(new TimerService());
-      this.RegisterService<ITimerServiceControl>(timers as ITimerServiceControl);
+      this.TimeService = Vita.Entities.Services.Implementations.TimeService.Instance; 
+      this.RegisterService<ITimeService>(this.TimeService);
+
+      var timers = new TimerService();
+      this.RegisterService<ITimerService>(timers);
+      this.RegisterService<ITimerServiceControl>(timers);
       var custService = new EntityModelCustomizationService(this);
       this.RegisterService<IEntityModelCustomizationService>(custService);
-      this.DataAccess = RegisterService<IDataAccessService>(new DataAccessService(this));
+      this.DataAccess = new DataAccessService(this);
+      RegisterService<IDataAccessService>(this.DataAccess);
       RegisterService<IBackgroundTaskService>(new DefaultBackgroundTaskService());
       RegisterService<IHashingService>(new HashingService());
     }
@@ -166,15 +168,15 @@ namespace Vita.Entities {
       return Status == EntityAppStatus.Connected || Status == EntityAppStatus.Shutdown;
     }
 
-    #region Services
+    #region IServiceContainer implementation
+    private readonly IDictionary<Type, object> _services = new Dictionary<Type, object>();
+
     /// <summary> Gets a service by service type. </summary>
     /// <typeparam name="TService">Service type, usually an interface type.</typeparam>
-    /// <param name="throwIfNotFound">Throw exception if service is not found.</param>
     /// <returns>Service implementation.</returns>
-    public TService GetService<TService>(bool throwIfNotFound = true) where TService : class {
+    public TService GetService<TService>() where TService : class {
       var serv = (TService)this.GetService(typeof(TService));
-      if(serv == null && throwIfNotFound)
-        Util.Check(false, "Service {0} not registered.", typeof(TService));
+      Util.Check(serv != null, "Service {0} not registered.", typeof(TService));
       return serv;
     }
     /// <summary> Gets a service by service type. </summary>
@@ -195,20 +197,19 @@ namespace Vita.Entities {
     /// <summary>Registers a service with an application. </summary>
     /// <typeparam name="T">Service type used as a key in internal servcies dictionary. Usually it is an interface type.</typeparam>
     /// <param name="service">Service implementation.</param>
-    /// <returns>Service instance.</returns>
     /// <remarks>The most common use for the services is entity module registering itself as a service for the application.
     /// For example, ErrorLogModule registers IErrorLogService that application code and other modules can use to log errors.
     /// </remarks>
-    public T RegisterService<T>(T service) {
+    public void RegisterService<T>(T service) where T: class {
       _services[typeof(T)] = service;
       this.AppEvents.OnServiceAdded(this, typeof(T), service);
       //notify child apps
       foreach(var linkedApp in this.LinkedApps)
         linkedApp.AppEvents.OnServiceAdded(this, typeof(T), service);
-      return service;
     }
 
-    public void RemoveService(Type serviceType) {
+    public void RemoveService<T>() where T: class {
+      var serviceType = typeof(T); 
       if(_services.ContainsKey(serviceType))
         _services.Remove(serviceType);
     }
@@ -222,13 +223,13 @@ namespace Vita.Entities {
     }
 
     /// <summary>Imports services from external service provider. </summary>
-    /// <param name="app">External service provider, usually another entity applications.</param>
+    /// <param name="fromApp">External service provider, usually another entity applications.</param>
     /// <param name="serviceTypes">Types of services to import.</param>
-    public void ImportServices(EntityApp app, params Type[] serviceTypes) {
+    public void ImportServices(EntityApp fromApp, params Type[] serviceTypes) {
       foreach(var type in serviceTypes) {
-        var serv = app.GetService(type);
+        var serv = fromApp.GetService(type);
         if(serv != null)
-          this._services[type] = app.GetService(type);
+          this._services[type] = serv;
       }
     }
 

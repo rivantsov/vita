@@ -39,6 +39,8 @@ namespace Vita.Testing.ExtendedTests {
 
     [TestMethod]
     public void TestLinqReturnCustomObject() {
+      Startup.BooksApp.LogTestStart();
+
       var session = Startup.BooksApp.OpenSession();
       var books = session.EntitySet<IBook>();
 
@@ -72,8 +74,10 @@ namespace Vita.Testing.ExtendedTests {
 
     [TestMethod]
     public void TestLinqDates() {
+      Startup.BooksApp.LogTestStart();
+
       // SQLite date/time functions return strings, so tests do not work
-      if (Startup.ServerType == DbServerType.SQLite)
+      if(Startup.ServerType == DbServerType.SQLite)
         return;
 
       var session = Startup.BooksApp.OpenSession();
@@ -112,6 +116,8 @@ namespace Vita.Testing.ExtendedTests {
 
     [TestMethod]
     public void TestLinqBoolBitColumns() {
+      Startup.BooksApp.LogTestStart();
+
       // We test that LINQ engine correctly handles bit fields
       var app = Startup.BooksApp;
       var session = app.OpenSession();
@@ -154,6 +160,8 @@ namespace Vita.Testing.ExtendedTests {
 
     [TestMethod]
     public void TestLinqBoolOutputColumns() {
+      Startup.BooksApp.LogTestStart();
+
       // We test that LINQ engine correctly handles bool values in return columns
       var app = Startup.BooksApp;
       var session = app.OpenSession();
@@ -175,6 +183,8 @@ namespace Vita.Testing.ExtendedTests {
 
     [TestMethod]
     public void TestLinqWithNullables() {
+      Startup.BooksApp.LogTestStart();
+
       var session = Startup.BooksApp.OpenSession();
 
       //First query using literal null; this alwasy worked OK, SQL generated is "WHERE b.Abstract IS NULL"

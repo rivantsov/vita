@@ -4,7 +4,7 @@ using System.Threading;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 using Vita.Entities;
-using Vita.Data;
+using Vita.Tools.Testing;
 using Vita.Samples.BookStore;
 
 namespace Vita.Testing.ExtendedTests {
@@ -24,6 +24,8 @@ namespace Vita.Testing.ExtendedTests {
 
     [TestMethod]
     public void TestListProperties() {
+      Startup.BooksApp.LogTestStart();
+
       var app = Startup.BooksApp; 
       // Get some IDs
       var session = app.OpenSession(); 
@@ -80,6 +82,8 @@ namespace Vita.Testing.ExtendedTests {
 
     [TestMethod] 
     public void TestPersistOrderInAttr() {
+      Startup.BooksApp.LogTestStart();
+
       var app = Startup.BooksApp;
       var session = app.OpenSession();
       // Find order with 2 lines

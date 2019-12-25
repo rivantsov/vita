@@ -22,6 +22,7 @@ namespace Vita.Testing.ExtendedTests {
 
     [TestMethod]
     public void TestBugFixes() {
+      Startup.BooksApp.LogTestStart();
 
       var app = Startup.BooksApp;
       var session = app.OpenSession();
@@ -123,9 +124,9 @@ namespace Vita.Testing.ExtendedTests {
       Assert.IsNotNull(bkNotPublished, "Failed to find not published book.");
 
       // Test that using entity-type parameter with null value works
-        IUser nullUser = null;
-        var authorsNonUsers = session.EntitySet<IAuthor>().Where(a => a.User == nullUser).ToList();
-        Assert.IsTrue(authorsNonUsers.Count > 0, "Failed to find non users");
+      IUser nullUser = null;
+      var authorsNonUsers = session.EntitySet<IAuthor>().Where(a => a.User == nullUser).ToList();
+      Assert.IsTrue(authorsNonUsers.Count > 0, "Failed to find non users");
 
       //Query by null in nullable column - find not published book; there must be IronMan comic there.
       var qBooksNotPublished = from b in allBooks
@@ -184,6 +185,8 @@ namespace Vita.Testing.ExtendedTests {
 
     [TestMethod]
     public void TestDbViews() {
+      Startup.BooksApp.LogTestStart();
+
       var app = Startup.BooksApp;
       var session = app.OpenSession();
       if(Startup.ServerType == DbServerType.Postgres) {
@@ -231,6 +234,7 @@ namespace Vita.Testing.ExtendedTests {
 
     [TestMethod]
     public void TestDbModelCompare() {
+      Startup.BooksApp.LogTestStart();
 
       var app = Startup.BooksApp;
       //Once we started tests, db model is updated; now if we compare db model with entity model, there should be no changes
@@ -261,6 +265,8 @@ namespace Vita.Testing.ExtendedTests {
 
     [TestMethod]
     public void TestPasswordHashers() {
+      Startup.BooksApp.LogTestStart();
+
       //run it only for MS SQL, to avoid slowing down console run for all servers
       if(Startup.ServerType != DbServerType.MsSql)
         return;

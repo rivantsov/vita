@@ -1,4 +1,11 @@
-﻿namespace Vita.Entities.Services {
+﻿using System; 
+
+namespace Vita.Entities.Services {
+
+  public interface IServiceContainer : IServiceProvider {
+    void RegisterService<T>(T service) where T: class;
+  }
+
 
   /// <summary>An optional interface to initialize/shutdown a non-module service added to Services collection of EntityApp. 
   /// Module-based services - when an EntityModule implements a service - are initialized through overridable Init method. 
@@ -14,4 +21,12 @@
     void Shutdown();
   }
 
+  public static class ServiceExtensions {
+    public static T GetService<T>(this IServiceProvider provider) where T : class {
+      var serv = (T) provider.GetService(typeof(T));
+      Util.Check(serv != null, "Service {0} not registered with service provder.", typeof(T));
+      return serv; 
+    }
+
+  }
 }

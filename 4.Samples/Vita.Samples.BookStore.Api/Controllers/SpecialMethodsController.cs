@@ -12,6 +12,7 @@ using Vita.Entities.Api;
 using System.Data.SqlClient;
 using System.Data;
 using Vita.Web;
+using Vita.Entities.Utilities;
 
 namespace Vita.Samples.BookStore.Api {
 
@@ -138,7 +139,7 @@ namespace Vita.Samples.BookStore.Api {
     }
 
     private IActionResult DoDelaySyncCorrect() {
-      AsyncHelper.RunSync(() => DoDelayAsync()); //this is our helper method, we test it here under IIS
+      SyncAsync.RunSync(() => DoDelayAsync()); //this is our helper method, we test it here under IIS
       return AsPlainText("Time: " + DateTime.Now.ToString("hh:MM:ss"));
     }
 

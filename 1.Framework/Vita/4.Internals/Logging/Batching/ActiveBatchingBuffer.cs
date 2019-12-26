@@ -17,6 +17,7 @@ namespace Vita.Entities.Logging {
     ITimerService _timerService;
     int _batchSize;
     BatchingQueue<T> _queue = new BatchingQueue<T>();
+    // BatchingQueueEnhanced<T> _queue = new BatchingQueueEnhanced<T>();
     object _flushLock = new object();
     bool _flushedSinceLastTimer; 
     bool _flushing; //indicates that flush was requested or is in progress

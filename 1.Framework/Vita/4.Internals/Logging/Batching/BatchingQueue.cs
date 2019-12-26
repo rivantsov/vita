@@ -9,7 +9,7 @@ namespace Vita.Entities.Logging {
   /// <summary>
   ///   Implements a batching queue - concurrent no-lock enqueue-one; dequeue many with lock
   /// </summary>
-  public class BatchingQueue<T> {
+  public sealed class BatchingQueue<T> {
     public int Count => _count;
 
     class Node {
@@ -24,7 +24,9 @@ namespace Vita.Entities.Logging {
     volatile int _count;
 
     public BatchingQueue() {
-      // There's always at least one fake node in linked list
+      // There's always at least one empty node in linked list; so empty queue holds just one node.
+      //  this is necessary to avoid problem with pushing first node (or popping the last one) - when you have 
+      // to modify both pointers to start and end of the list from null to this first element.  
       _lastIn = _lastOut = new Node();
     }
 

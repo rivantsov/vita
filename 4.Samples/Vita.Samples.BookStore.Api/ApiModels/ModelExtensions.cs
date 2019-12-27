@@ -5,6 +5,8 @@ using System.Text;
 using System.Threading.Tasks;
 
 using Vita.Entities;
+using Vita.Modules.EncryptedData;
+
 
 namespace Vita.Samples.BookStore.Api {
 
@@ -73,8 +75,11 @@ namespace Vita.Samples.BookStore.Api {
       var ord = new BookOrder() {
         Id = order.Id, CreatedOn = order.CreatedOn, Total = order.Total, Status = order.Status,  UserId = order.User.Id, UserName = order.User.DisplayName
       };
-      if(details)
+      if(details) {
         ord.Items = order.Lines.Select(l => l.ToModel()).ToList();
+        // decrypt tracking number if present
+        ord.TrackingNumber = order.TrackingNumber?.DecryptString();
+      }
       return ord;
     }
 

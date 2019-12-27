@@ -22,7 +22,7 @@ namespace Vita.Modules.EncryptedData {
     #region IEncryptionService methods
   
     public void AddChannel(byte[] cryptoKey, SymmetricAlgorithm algorithm = null, string channelName = null) {
-      algorithm = algorithm ?? SymmetricAlgorithm.Create();
+      algorithm = algorithm ?? RijndaelManaged.Create();
       var channel = new EncryptionChannel(channelName, cryptoKey, algorithm);
       if(channelName == null)
         _defaultChannel = channel;

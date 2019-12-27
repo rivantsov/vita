@@ -74,6 +74,8 @@ namespace Vita.UnitTests.Web {
       //get order details
       var orderDet = client.Get<BookOrder>("api/user/orders/{0}", order0.Id);
       Assert.IsTrue(orderDet.Items.Count > 0, "Expected items in Dora's book order."); //there must be 2 items
+      // check tracking number - it is stored encrypted in db
+      Assert.AreEqual("123456", orderDet.TrackingNumber, "Invalid tracking number");
 
       //cart
       var cart = client.Get<BookOrder>("api/user/cart");

@@ -10,6 +10,7 @@ using Vita.Entities;
 using Vita.Entities.DbInfo;
 using Vita.Entities.Services;
 using Vita.Entities.Utilities;
+using Vita.Modules.EncryptedData;
 using Vita.Modules.Login;
 
 namespace Vita.Samples.BookStore {
@@ -41,13 +42,13 @@ namespace Vita.Samples.BookStore {
       loginStt.DefaultEmailFrom = "team@bookstore.com";
 
       var loginModule = new LoginModule(loginArea, loginStt);
+      
+      // Setup encrypted data module
+      var encrModule = new EncryptedDataModule(booksArea);
+      var cryptoKey = "5F29E686B74F176F74AD0D0B54937F5FD9FB190173AB06C5000CC35ED5C5E49E";
+      var cryptoBytes = HexUtil.HexToByteArray(cryptoKey);
+      encrModule.AddChannel(cryptoBytes); //creates default channel
 
-      /* SlimApi not migrated yet
-      //api config - register controllers defined in Vita.Modules.Login assembly; books controllers are registered by BooksModule
-      base.ApiConfiguration.RegisterControllerTypes(
-        typeof(LoginController), typeof(PasswordResetController), typeof(LoginSelfServiceController), typeof(LoginAdministrationController)
-        );
-        */
       Instance = this; 
     }
 

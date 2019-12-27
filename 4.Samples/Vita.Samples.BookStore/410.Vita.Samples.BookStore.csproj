@@ -6,11 +6,14 @@
     <AssemblyName>Vita.Samples.BookStore</AssemblyName>
     <RootNamespace>Vita.Samples.BookStore</RootNamespace>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <RunAnalyzersDuringBuild>false</RunAnalyzersDuringBuild>
+    <RunAnalyzersDuringLiveAnalysis>false</RunAnalyzersDuringLiveAnalysis>
   </PropertyGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\..\1.Framework\Vita\010.Vita.csproj" />
     <ProjectReference Include="..\..\3.Modules\Vita.Modules.Login\320.Vita.Modules.Login.csproj" />
+    <ProjectReference Include="..\..\3.Modules\Vita.Modules\310.Vita.Modules.csproj" />
   </ItemGroup>
 
 </Project>

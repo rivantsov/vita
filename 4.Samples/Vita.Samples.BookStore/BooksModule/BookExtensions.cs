@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 
 using Vita.Entities;
 using Vita.Entities.Utilities;
+using Vita.Modules.EncryptedData;
 
 namespace Vita.Samples.BookStore {
   //Helper methods to create entities
@@ -91,6 +92,9 @@ namespace Vita.Samples.BookStore {
         }
       }
       order.Status = OrderStatus.Completed;
+      // assign tracking number and encrypt it
+      var trackingNumber = "123456";
+      order.TrackingNumber = session.NewEncryptedData(trackingNumber);
     }
 
     //Schedules update LINQ-based command that will recalculate totals at the end of SaveChanges transaction

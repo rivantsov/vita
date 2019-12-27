@@ -22,21 +22,6 @@ namespace Vita.Samples.BookStore {
       RegisterEntities(typeof(IBook), typeof(IPublisher), typeof(IAuthor), typeof(IBookAuthor), typeof(IBookReview),
                        typeof(IUser), typeof(IBookOrder), typeof(IBookOrderLine), typeof(ICoupon), typeof(IImage));
 
-      /*
-      //Add extra tracking columns in book, order, coupon entities  
-      var tranLogExt = new TransactionLogModelExtender();
-      tranLogExt.AddUpdateStampColumns(new[] { typeof(IBook), typeof(IBookOrder), typeof(IBookOrderLine), typeof(ICoupon) },
-        createIdPropertyName: "CreatedIn", updateIdPropertyName: "UpdatedIn");
-      App.ModelExtenders.Add(tranLogExt);
-      */    
-
-      //Set cached types
-      // App.CacheSettings.AddCachedTypes(CacheType.FullSet, typeof(IBook), typeof(IPublisher), typeof(IAuthor), typeof(IBookAuthor));
-      // App.CacheSettings.AddCachedTypes(CacheType.Sparse, typeof(IBookOrder), typeof(IBookOrderLine), typeof(IUser), typeof(IImage));
-
-      // Register api controllers - disabled, SlimApi not migrated
-      // App.ApiConfiguration.RegisterControllerTypes(typeof(CatalogController), typeof(UserAccountController), typeof(SignupController), typeof(DiagnosticsController));
-
       RegisterViews();
     }//method
 

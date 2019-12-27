@@ -14,6 +14,7 @@ namespace Vita.Entities.Logging {
   /// <remarks>Active in name refers to the ability to automatically trigger batch creation,
   ///   and then broadcasting it through Observable pattern implementation.</remarks>
   public class ActiveBatchingBuffer<T>: Observable<IList<T>>, IObserver<T> {
+
     ITimerService _timerService;
     int _batchSize;
     BatchingQueue<T> _queue = new BatchingQueue<T>();
@@ -22,16 +23,18 @@ namespace Vita.Entities.Logging {
     bool _flushedSinceLastTimer; 
     bool _flushing; //indicates that flush was requested or is in progress
 
-    enum FlushTrigger {
-      Timer,
-      Count,
-      Code,
-    }
+    public int Count => _queue.Count;
 
     public ActiveBatchingBuffer(ITimerService timerService, int batchSize, TimerInterval flushInterval = TimerInterval.T_500_Ms) {
       _timerService = timerService;
       _batchSize = batchSize;
       _timerService?.Subscribe(flushInterval, OnFlushTimerElapsed);
+    }
+
+    enum FlushTrigger {
+      Timer,
+      Count,
+      Code,
     }
 
     private void OnFlushTimerElapsed() {
@@ -41,8 +44,6 @@ namespace Vita.Entities.Logging {
         FlushImpl(FlushTrigger.Timer);
       _flushedSinceLastTimer = false; 
     }
-
-    public int Count => _queue.Count;
 
     public void Push(T item) {
       var count = _queue.Enqueue(item);

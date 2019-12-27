@@ -61,7 +61,8 @@ namespace Vita.Samples.BookStore.Api {
     public string UserName; 
     public DateTime CreatedOn;
     public Decimal Total;
-    public OrderStatus Status; 
+    public OrderStatus Status;
+    public string TrackingNumber;
     //Details
     public List<BookOrderItem> Items;
   }

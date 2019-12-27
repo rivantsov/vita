@@ -25,12 +25,12 @@ namespace Vita.Modules.EncryptedData {
     }
 
     // implementing NewEncryptedData as non-extension method, to discourage use. Use NewOrUpdate instead.
-    public static IEncryptedData NewEncryptedData(IEntitySession session, string value, string channelName = null) {
+    public static IEncryptedData NewEncryptedData(this IEntitySession session, string value, string channelName = null) {
       var bytes = Encoding.UTF8.GetBytes(value);
       return NewEncryptedData(session, bytes, channelName);
     }
 
-    public static IEncryptedData NewEncryptedData(IEntitySession session, byte[] data, string channelName = null) {
+    public static IEncryptedData NewEncryptedData(this IEntitySession session, byte[] data, string channelName = null) {
       var encrService = GetService(session);
       var ent = session.NewEntity<IEncryptedData>();
       ent.Data = encrService.Encrypt(data, ent.Id.ToString(), channelName);

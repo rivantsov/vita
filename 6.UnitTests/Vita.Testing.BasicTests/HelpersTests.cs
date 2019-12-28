@@ -6,6 +6,8 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 using Vita.Entities;
 using Vita.Entities.Utilities;
+using Vita.Data.Driver;
+using System.Security.Cryptography;
 
 namespace Vita.Testing.BasicTests.Helpers {
 
@@ -136,6 +138,30 @@ SELECT SOME NONSENSE
       var expected = "0008 4210 0000 0000 0000 0001 000F 0000".Replace(" ", string.Empty);
       Assert.AreEqual(expected, hex, "Hex value of mask does not match expected.");
     }
+
+    [TestMethod]
+    public void TestGenerateCryptoKeys() {
+      //It is not actually a test but simple convenience method to generate cryptokeys of appropriate length for various crypto algorithms
+      // Run it when you need a key to setup encryption channel in EncryptedDataModule
+      // Enable it only for MS SQL, to avoid slowing down console run for all servers
+      if(Startup.ServerType != DbServerType.MsSql)
+        return;
+      Debug.WriteLine("\r\n-------------------- TestGenerateCryptoKeys: generated Crypto Keys ---------------------------------\r\n");
+      GenerateAndPrintKey(new RijndaelManaged());
+      GenerateAndPrintKey(new AesManaged());
+      GenerateAndPrintKey(new DESCryptoServiceProvider());
+      GenerateAndPrintKey(new RC2CryptoServiceProvider());
+      GenerateAndPrintKey(new TripleDESCryptoServiceProvider());
+    }
+
+    private void GenerateAndPrintKey(SymmetricAlgorithm alg) {
+      alg.GenerateKey();
+      alg.GenerateIV();
+      var algName = alg.GetType().Name.PadRight(30);
+      var hexKey = HexUtil.ByteArrayToHex(alg.Key);
+      Debug.WriteLine($"Algorithm: {algName}, keySize(bits): {alg.KeySize}, key: {hexKey}");
+    }
+
 
   }
 }

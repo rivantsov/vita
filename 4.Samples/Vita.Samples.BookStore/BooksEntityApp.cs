@@ -42,10 +42,12 @@ namespace Vita.Samples.BookStore {
       loginStt.DefaultEmailFrom = "team@bookstore.com";
 
       var loginModule = new LoginModule(loginArea, loginStt);
-      
-      // Setup encrypted data module
+
+      // Setup encrypted data module. 
       var encrModule = new EncryptedDataModule(booksArea);
-      var cryptoKey = "5F29E686B74F176F74AD0D0B54937F5FD9FB190173AB06C5000CC35ED5C5E49E";
+      //  Use TestGenerateCryptoKeys test in BasicTests project to generate 
+      // and print crypto keys for all algorithms.
+      var cryptoKey = "8E487AD4C490AC43DF15D33AB654E5A222A02C9C904BC51E48C4FE5B7D86F90A";
       var cryptoBytes = HexUtil.HexToByteArray(cryptoKey);
       encrModule.AddChannel(cryptoBytes); //creates default channel
 

@@ -84,9 +84,6 @@ namespace Vita.Entities {
     /// <summary>Gets the instance of the application time service. </summary>
     public readonly ITimeService TimeService;
 
-    /// <summary>Linked applications. Linked applications provide external services to the main app. </summary>
-    public readonly IList<EntityApp> LinkedApps = new List<EntityApp>();
-
     /// <summary>Data access service. </summary>
     public readonly IDataAccessService DataAccess;
     /// <summary>Entity model. Initially null, available after the app is initialized. </summary>
@@ -154,13 +151,6 @@ namespace Vita.Entities {
 
     public TModule GetModule<TModule>() where TModule : EntityModule {
       var result = Modules.FirstOrDefault(m => m is TModule) as TModule;
-      if(result != null)
-        return result;
-      foreach(var linkedApp in LinkedApps) {
-        result = linkedApp.GetModule<TModule>();
-        if(result != null)
-          return result;
-      }
       return null;
     }
 
@@ -186,11 +176,6 @@ namespace Vita.Entities {
       object result;
       if(_services.TryGetValue(serviceType, out result))
         return result;
-      foreach(var linkedApp in LinkedApps) {
-        result = linkedApp.GetService(serviceType);
-        if(result != null)
-          return result;
-      }
       return null;
     }
 
@@ -203,9 +188,6 @@ namespace Vita.Entities {
     public void RegisterService<T>(T service) where T: class {
       _services[typeof(T)] = service;
       this.AppEvents.OnServiceAdded(this, typeof(T), service);
-      //notify child apps
-      foreach(var linkedApp in this.LinkedApps)
-        linkedApp.AppEvents.OnServiceAdded(this, typeof(T), service);
     }
 
     public void RemoveService<T>() where T: class {
@@ -272,8 +254,6 @@ namespace Vita.Entities {
     /// <summary>Fires an event requesting all logging facilities to flush buffers. </summary>
     public void Flush() {
       this.LogService.Flush(); 
-      foreach(var linkedApp in LinkedApps)
-        linkedApp.Flush();
       AppEvents.OnFlushRequested();
     }
 

@@ -17,23 +17,23 @@ namespace Vita.UnitTests.Web {
 
     [ClassInitialize]
     public static void InitTest(TestContext ctx) {
-      Web.TestStartup.Init();
+      Web.Startup.Init();
     }
 
     [ClassCleanup]
     public static void TestCleanup() {
-      Web.TestStartup.ShutDown();
+      Web.Startup.ShutDown();
     }
 
     //Helper methods used by othere tests
     private LoginResponse LoginAs(string userName, string password = null, bool assertSuccess = true, string deviceToken = null) {
       password = password ?? Samples.BookStore.SampleData.SampleDataGenerator.DefaultPassword;
       var loginRq = new LoginRequest() { UserName = userName, Password = password , DeviceToken = deviceToken};
-      var resp = TestStartup.Client.Post<LoginRequest, LoginResponse>(loginRq, "api/login");
+      var resp = Startup.Client.Post<LoginRequest, LoginResponse>(loginRq, "api/login");
       Assert.IsTrue(resp != null, "Authentication failed.");
       if(resp.Status == LoginAttemptStatus.Success) {
         //We can use AddAuthorizationHeader here as well
-        TestStartup.Client.AddAuthorizationHeader(resp.AuthenticationToken);
+        Startup.Client.AddAuthorizationHeader(resp.AuthenticationToken);
         return resp; 
       }
       if (assertSuccess)
@@ -42,8 +42,8 @@ namespace Vita.UnitTests.Web {
     }
 
     private void Logout() {
-      TestStartup.Client.Delete("api/login");
-      TestStartup.Client.RemoveRequestHeader("Authorization");
+      Startup.Client.Delete("api/login");
+      Startup.Client.RemoveRequestHeader("Authorization");
     }
 
   }//class

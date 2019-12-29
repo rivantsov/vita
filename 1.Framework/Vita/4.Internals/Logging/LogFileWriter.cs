@@ -18,7 +18,7 @@ namespace Vita.Entities.Logging {
     static object _fileWriteLock = new object(); 
 
     public LogFileWriter(IServiceProvider services, string fileName, 
-                int batchSize = 100, TimerInterval interval = TimerInterval.T_5_Sec,
+                int batchSize = 100, TimerInterval interval = TimerInterval.T_500_Ms,
                 Func<LogEntry, bool> filter = null,   string startMessage = null) {
       _logService = services.GetService<ILogService>(); 
       _fileName = fileName;

@@ -5,10 +5,9 @@ using System.Text;
 using System.Threading.Tasks;
 
 using Vita.Entities;
-using Vita.Entities.Services;
 using Vita.Entities.DbInfo;
-using Vita.Data.Upgrades;
 using Vita.Entities.Logging;
+using Vita.Entities.Utilities;
 
 namespace Vita.Modules.Logging {
 
@@ -16,30 +15,25 @@ namespace Vita.Modules.Logging {
   public class LoggingEntityApp : EntityApp {
     public const string CurrentVersion = "1.1.0.0";
 
-    public LogEntityModule LogModule;
-    public DbInfoModule DbInfoModule; 
+    public ErrorLogModule ErrorLog;
 
-    //ErrorLog is available as property in base EntityApp class
-    public readonly ILogService OperationLog;
-    public readonly IDbUpgradeLogService DbUpgradeLog;
-    public readonly LogServiceListener LogListener; 
-
-    public LoggingEntityApp(string schema = "log") : base("LoggingApp", CurrentVersion) {
+    public LoggingEntityApp(string schema = "log") : base("LoggingEntityApp", CurrentVersion) {
       var area = base.AddArea(schema);
-      // DbInfo module is not shared with main app, it is local for the database
-      DbInfoModule = new DbInfoModule(area);
-      LogModule = new LogEntityModule(area);
-      LogListener = new LogServiceListener(this);
+      ErrorLog = new ErrorLogModule(area); 
     }
 
-    public void LinkTo(EntityApp mainApp) {
-      Util.Check(mainApp.Status == EntityAppStatus.Created, "Invalid target/main app status: {0}, should be Created. " + 
-                     "Call LoggingEntityApp.LinkTo(mainApp) immediately after creating the main app instance.", mainApp.Status);
-      mainApp.LinkedApps.Add(this);
-      var targetLogService = mainApp.GetService<ILogService>();
-      targetLogService.AddListener(this.LogListener);
+    public void ListenTo(EntityApp targetApp) {
+      // Hook to target log service
+      var targetLogService = targetApp.GetService<ILogService>();
+      targetLogService.Subscribe(OnLogEntryAdded, OnLogServiceOnCompleted);
     }
 
+    public void OnLogEntryAdded(LogEntry entry) {
+      base.LogService.AddEntry(entry); 
+    }
+    public void OnLogServiceOnCompleted() {
+      base.LogService.Flush();
+    }
 
   }//class
 }

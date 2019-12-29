@@ -18,7 +18,7 @@ namespace Vita.UnitTests.Web {
     // Tests special methods in controller
     [TestMethod]
     public void TestSpecialMethods() {
-      var client = TestStartup.Client;
+      var client = Startup.Client;
       Logout(); // just in case there's still session there from other tests
 
       //Test values handling in URL
@@ -47,7 +47,7 @@ namespace Vita.UnitTests.Web {
 
     [TestMethod]
     public void TestDiagnosticsController() {
-      var client = TestStartup.Client;
+      var client = Startup.Client;
       var acceptText = "application/text,text/plain";
       //Heartbeat
       DiagnosticsController.Reset();
@@ -89,7 +89,7 @@ namespace Vita.UnitTests.Web {
     // We then retrieve this report thru second call and verify that connection was in fact closed properly. 
     [TestMethod]
     public void TestDbConnectionHandling() {
-      var client = TestStartup.Client;
+      var client = Startup.Client;
       var ok = client.Get<string>("api/special/connectiontest");
       Assert.AreEqual("OK", ok, "Connection test did not return OK");
       //get report

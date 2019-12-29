@@ -23,7 +23,7 @@ namespace Vita.Samples.BookStore.Api {
 
   public class BooksApiStartup {
     public BooksApiStartup(IConfiguration configuration) {
-      Configuration = configuration;
+      Configuration = configuration; 
     }
 
     public IConfiguration Configuration { get; }

@@ -36,11 +36,6 @@ namespace Vita.Entities {
       }
       CheckActivationErrors(); 
 
-      // Init linked apps 
-      foreach(var linkedApp in LinkedApps)
-        if (linkedApp.Status == EntityAppStatus.Created)
-          linkedApp.Init();
-
       //Build model
       var builder = new EntityModelBuilder(this);
       builder.BuildModel();

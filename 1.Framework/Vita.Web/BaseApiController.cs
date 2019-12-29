@@ -1,25 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Net;
-
-using Vita.Entities.Services;
+﻿using Microsoft.AspNetCore.Mvc;
 using Vita.Entities;
 using Vita.Entities.Api;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Routing;
 
 namespace Vita.Web {
 
-  /// <summary>Base controller integrated with VITA functionality. Based on WebApi's ControllerBase class. </summary>
-  /// <remarks><para>Use this class as a base for your custom controllers if you want to use 'classic' api controllers that are heavily 
-  /// dependent on WebApi infrastructure. </para>
-  /// </remarks>
-  // ApiController is optional, we use it here for one effect - the [FromBody] attribute will be 
-  // automatically inferred for complex input parameters
+  /// <summary>Base controller integrated with VITA functionality. </summary>
   [ApiController]
   public class BaseApiController : ControllerBase {
 

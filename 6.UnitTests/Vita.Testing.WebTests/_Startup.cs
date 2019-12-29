@@ -22,11 +22,13 @@ using Arrest;
 using Vita.Samples.BookStore;
 using Vita.Samples.BookStore.SampleData;
 using Arrest.Xml;
+using Vita.Modules.Logging;
 
 namespace Vita.UnitTests.Web {
 
-  public static class TestStartup {
-    public static BooksEntityApp BooksApp; 
+  public static class Startup {
+    public static BooksEntityApp BooksApp;
+    public static LoggingEntityApp LoggingApp; 
     public static RestClient Client;
     public static string LogFilePath;
     internal static IConfigurationRoot AppConfiguration;
@@ -66,8 +68,6 @@ namespace Vita.UnitTests.Web {
       LoginMessagingService = new MockLoginMessagingService();
       var loginConfig = BooksApp.GetConfig<Modules.Login.LoginModuleSettings>();
       loginConfig.MessagingService = LoginMessagingService;
-
-
       BooksApp.Init();
       //connect to database
       var driver = new MsSqlDbDriver();
@@ -75,6 +75,14 @@ namespace Vita.UnitTests.Web {
       var connString = AppConfiguration["MsSqlConnectionString"];
       var dbSettings = new DbSettings(driver, dbOptions, connString, upgradeMode: DbUpgradeMode.Always); // schemas);
       BooksApp.ConnectTo(dbSettings);
+
+      // Logging app
+      LoggingApp = new LoggingEntityApp();
+      LoggingApp.ListenTo(BooksApp); 
+      var logConnString = AppConfiguration["MsSqlLogConnectionString"];
+      var logDbSettings = new DbSettings(driver, dbOptions, logConnString, upgradeMode: DbUpgradeMode.Always); // schemas);
+      LoggingApp.ConnectTo(logDbSettings);
+
       // create sample data
       DataUtility.DeleteAllData(BooksApp, 
         exceptEntities: new Type[] { typeof(IDbInfo), typeof(IDbModuleInfo) });
@@ -102,8 +110,9 @@ namespace Vita.UnitTests.Web {
     static IWebHost _webHost; 
     public static void StartService(string baseAddress) {
       var hostBuilder = WebHost.CreateDefaultBuilder()
-          .ConfigureAppConfiguration((context, config) => { })
+          .ConfigureAppConfiguration((context, config) => {  })
           .UseStartup<Samples.BookStore.Api.BooksApiStartup>()
+          .UseEnvironment("Development") //To return exception details info on ServerError
           .UseUrls(baseAddress);
       _webHost = hostBuilder.Build();
       

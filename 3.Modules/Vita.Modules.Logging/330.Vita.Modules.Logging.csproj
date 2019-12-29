@@ -17,7 +17,12 @@
     <Compile Remove="Z_OLD_CODE\OperationLogModule.cs" />
     <Compile Remove="Z_OLD_CODE\WebCallLogModule.cs" />
     <Compile Remove="Z_OLD_CODE\WebClientLogModule.cs" />
+    <Compile Remove="__NEW\AllLogEntities.cs" />
     <Compile Remove="__NEW\AzureLogAnalyticsClient.cs" />
+    <Compile Remove="__NEW\Entities_UserSession.cs" />
+    <Compile Remove="__NEW\LogEntityExtensions.cs" />
+    <Compile Remove="__NEW\LogSaveService.cs" />
+    <Compile Remove="__NEW\LogServiceListener.cs" />
   </ItemGroup>
 
   <ItemGroup>
@@ -31,7 +36,12 @@
     <None Include="Z_OLD_CODE\OperationLogModule.cs" />
     <None Include="Z_OLD_CODE\WebCallLogModule.cs" />
     <None Include="Z_OLD_CODE\WebClientLogModule.cs" />
+    <None Include="__NEW\AllLogEntities.cs" />
     <None Include="__NEW\AzureLogAnalyticsClient.cs" />
+    <None Include="__NEW\Entities_UserSession.cs" />
+    <None Include="__NEW\LogEntityExtensions.cs" />
+    <None Include="__NEW\LogSaveService.cs" />
+    <None Include="__NEW\LogServiceListener.cs" />
   </ItemGroup>
 
   <ItemGroup>

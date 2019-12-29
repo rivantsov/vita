@@ -86,6 +86,5 @@ namespace Vita.Web {
       context.User = new UserInfo(userId, userName, UserKind.AuthenticatedUser, altUserId);
     }
 
-
   }
 }

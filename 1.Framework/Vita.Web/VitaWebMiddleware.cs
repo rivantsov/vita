@@ -19,7 +19,6 @@ using Vita.Entities.Services;
 
 namespace Vita.Web {
 
-
   /// <summary>AspNetCore middleware 
   /// Creates and injects into HTTP context the WebCallContext (with OperationContext) holding all information about the web call. 
   /// Provides automatic web call logging and exception/error logging.  
@@ -27,20 +26,11 @@ namespace Vita.Web {
   public class VitaWebMiddleware : IWebCallNotificationService {
     readonly RequestDelegate _next;
     public readonly EntityApp App;
-    public readonly VitaWebMiddlewareSettings Settings;
 
-    public VitaWebMiddleware(RequestDelegate next, EntityApp app, VitaWebMiddlewareSettings settings) {
+    public VitaWebMiddleware(RequestDelegate next, EntityApp app) {
       _next = next;
       App = app;
-      Settings = settings ?? new VitaWebMiddlewareSettings();
-      App.RegisterConfig(Settings);
-      /*
-      _webCallLog = App.GetService<IWebCallLogService>();
-      _errorLog = App.GetService<IErrorLogService>();
-      _sessionService = App.GetService<IUserSessionService>();
-      */
       App.RegisterService<IWebCallNotificationService>(this);
-
     }
 
     public async Task InvokeAsync(HttpContext context) {
@@ -48,8 +38,11 @@ namespace Vita.Web {
       Exception exc = null; 
       try {
         await _next(context);
+      } catch(ClientFaultException ex) {
+        exc = ex;
       } catch (Exception ex) {
-        exc = ex; 
+        exc = ex;
+        throw; // rethrow
       } finally {
         await EndRequestAsync(context, exc);
       }
@@ -71,8 +64,7 @@ namespace Vita.Web {
       };
 
       var log = new BufferedLog();
-      var opCtx = new OperationContext(this.App,
-        connectionMode: this.Settings.ConnectionReuseMode);
+      var opCtx = new OperationContext(this.App, connectionMode: DbConnectionReuseMode.KeepOpen);
       opCtx.Log = new BufferedLog(opCtx.LogContext);
       var webContext = opCtx.WebContext = new WebCallContext(opCtx, reqInfo);
 
@@ -89,7 +81,7 @@ namespace Vita.Web {
         RetrieveRoutingData(httpContext, webContext);
         if (ex != null) {
           webContext.Exception = ex;
-          await EndFailedRequestAsync(httpContext, ex);
+          await EndFailedRequestAsync(httpContext, webContext.OperationContext, ex);
         } else if (webContext.Response != null) {
           SetExplicitResponse(webContext.Response, httpContext);
           return;
@@ -105,23 +97,18 @@ namespace Vita.Web {
       }
     }
 
-    private async Task EndFailedRequestAsync(HttpContext httpContext, Exception ex) {
+    private async Task EndFailedRequestAsync(HttpContext httpContext, OperationContext opContext, Exception ex) {
       var resp = httpContext.Response;
-      var bodyWriter = new StreamWriter(resp.Body);
       switch (ex) {
         case ClientFaultException cfex:
           resp.StatusCode = (int)HttpStatusCode.BadRequest;
           await WriteResponseAsync(httpContext, cfex.Faults); // writes resp respecting content negotiation
           break;
         default:
-          // Important - set status code before writing to output! otherwise blows up
-          resp.StatusCode = (int)HttpStatusCode.InternalServerError;
-          var bodyText = this.Settings.Options.IsSet(WebOptions.ReturnExceptionDetails) ?
-                                     ex.ToLogString() : ex.Message;
-          await bodyWriter.WriteAsync(bodyText);
+          App.LogService.LogError(ex, opContext.LogContext); 
+          // the exception is already rethrown in the top Next method, we are just intercepting here to log it
           break;
       }
-      bodyWriter.Flush();
     }
 
     private async Task<string> ReadRequestBodyForLogAsync(HttpRequest request) {

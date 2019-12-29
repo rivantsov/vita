@@ -75,19 +75,15 @@ namespace Vita.Tools.Testing {
       return true;
     }
 
-    public static void EnableTimers(EntityApp app, bool enable) {
-      EnableAppTimers(app, enable);
-      foreach(var linked in app.LinkedApps)
-        EnableAppTimers(linked, enable); 
-    }
-    private static void EnableAppTimers(EntityApp app, bool enable) {
+    public static void EnableAppTimers(EntityApp app, bool enable) {
       var timers = app.GetService<ITimerServiceControl>();
       if(timers != null)
         timers.EnableTimers(enable); 
     }
 
     public static void LogTestStart(this EntityApp app, [CallerMemberName] string testName = null) {
-      app.LogService.AddEntry(new InfoLogEntry(LogContext.SystemLogContext, $"\r\n============================ Starting test [{testName}] ========================================"));
+      app.LogService.AddEntry(new InfoLogEntry(LogContext.SystemLogContext, 
+        $"\r\n============================ Starting test [{testName}] ========================================"));
     }
 
   }

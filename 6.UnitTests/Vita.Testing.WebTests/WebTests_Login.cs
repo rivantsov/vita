@@ -23,7 +23,7 @@ namespace Vita.UnitTests.Web {
 
     [TestMethod]
     public void TestLogin() {
-      var client = TestStartup.Client;
+      var client = Startup.Client;
       var loginUrl = "api/login";
 
       // try bad credentials
@@ -43,7 +43,7 @@ namespace Vita.UnitTests.Web {
 
     [TestMethod]
     public void TestSignup() {
-      var client = TestStartup.Client;
+      var client = Startup.Client;
       //bad signup attempts
       var badSignup = new UserSignup() { UserName = "dora", Password = "abcefg", DisplayName = "Anonymous" }; //should get 'username is already used'
       var faultExc = TestUtil.ExpectClientFault(() => client.Post<UserSignup, User>(badSignup, "api/signup"));
@@ -64,7 +64,7 @@ namespace Vita.UnitTests.Web {
     }
     [TestMethod]
     public void TestLoginAdministration() {
-      var client = TestStartup.Client;
+      var client = Startup.Client;
 
       // Test authorization - access to login admin API controller is allowed only to administrators
       // Dora is not admin
@@ -121,7 +121,7 @@ namespace Vita.UnitTests.Web {
 
     [TestMethod]
     public void TestLoginMultipleFailures() {
-      var client = TestStartup.Client;
+      var client = Startup.Client;
       //first try successful login
       var resp = LoginAs("stan");
       Logout();
@@ -159,7 +159,7 @@ namespace Vita.UnitTests.Web {
     public void TestLoginAdvancedFeatures() {
       // ================================ Completing login setup - verifying email, setup secret questions =====================
       // User Ferb has email (non-verified) and no secret questions setup. Let's setup his account thru API calls.
-      var client = TestStartup.Client;
+      var client = Startup.Client;
       var ferbUserName = "Ferb";
       var ferbEmail = "ferb@email.com";
 
@@ -187,7 +187,7 @@ namespace Vita.UnitTests.Web {
       var processToken = client.Post<object, string>(null, "api/mylogin/factors/{0}/pin", emailFactor.Id);
       //let's do it twice - to make sure it works even if we have multiple pins sent
       processToken = client.Post<object, string>(null, "api/mylogin/factors/{0}/pin", emailFactor.Id);
-      var pinEmail = TestStartup.GetLastMessageTo(ferbEmail);
+      var pinEmail = Startup.GetLastMessageTo(ferbEmail);
       Assert.IsNotNull(pinEmail, "Pin email not received.");
       var pin = pinEmail.Pin; //get pin from email
       Assert.IsFalse(string.IsNullOrEmpty(pin), "Expected non-null pin");
@@ -278,7 +278,7 @@ namespace Vita.UnitTests.Web {
       var httpStatus = client.Post<SendPinRequest, HttpStatusCode>(sendPinRequest, "api/passwordreset/pin/send");
       Assert.AreEqual(HttpStatusCode.OK, httpStatus, "Failed to send pin.");
       // 3. Ferb receives email - we check our mock email service, retrieve the message and pin
-      pinEmail = TestStartup.GetLastMessageTo(ferbEmail);
+      pinEmail = Startup.GetLastMessageTo(ferbEmail);
       Assert.IsNotNull(pinEmail, "Email with pin not received.");
       pin = pinEmail.Pin;
       Assert.IsTrue(!string.IsNullOrWhiteSpace(pin), "Failed to receive/extract pin.");
@@ -316,7 +316,7 @@ namespace Vita.UnitTests.Web {
       var success = client.Put<PasswordChangeInfo, bool>(passwordResetReq, "api/passwordreset/new?token={0}", processToken);
       Assert.IsTrue(success, "Failed to change password");
       // 9. Verify that email notification was sent about password change
-      var notifEmail = TestStartup.GetLastMessageTo(ferbEmail);
+      var notifEmail = Startup.GetLastMessageTo(ferbEmail);
       Assert.IsNotNull(notifEmail, "Password change notification was not sent.");
       Assert.AreEqual(LoginMessageType.PasswordResetCompleted, notifEmail.MessageType, "Expected password change message.");
       // 10. Try to login with changed password
@@ -357,7 +357,7 @@ namespace Vita.UnitTests.Web {
       httpStatus = client.Post<SendPinRequest, HttpStatusCode>(sendPinRequest, "api/login/multifactor/pin/send");
       Assert.AreEqual(HttpStatusCode.OK, httpStatus, "Expected OK status");
       //Get message with pin from mock inbox and extract pin
-      pinEmail = TestStartup.GetLastMessageTo(ferbEmail);
+      pinEmail = Startup.GetLastMessageTo(ferbEmail);
       Assert.IsNotNull(pinEmail, "Email with pin not sent.");
       pin = pinEmail.Pin;
       // Ferb copies pin from email and enters it in UI. UI submits the pin 

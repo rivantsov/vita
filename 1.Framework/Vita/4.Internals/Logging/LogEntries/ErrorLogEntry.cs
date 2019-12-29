@@ -15,24 +15,29 @@ namespace Vita.Entities.Logging {
     public Exception Exception; 
     public string Message;
     public string Details;
-    public Type ExceptionType;
+    public string ExceptionType;
     public ErrorKind Kind;
-    public DateTime? RemoteTime;
+    public string MachineName;
 
-    public ErrorLogEntry(LogContext context, Exception exception) 
-           : base(context) {
+    public ErrorLogEntry(LogContext context, Exception exception) : base(context) {
       Exception = exception; 
       Message = exception.Message; 
       Details = exception.ToLogString();
-      ExceptionType = exception.GetType();
+      ExceptionType = exception.GetType().Name;
+      MachineName = Environment.MachineName; 
     }
 
-    public ErrorLogEntry(LogContext context, string message, string details, ErrorKind kind = ErrorKind.Internal, DateTime? remoteTime = null) 
+    // Remote/client error, or error without explicit exception
+    public ErrorLogEntry(LogContext context, string message, string details, ErrorKind kind = ErrorKind.Internal, 
+              DateTime? remoteTime = null) 
            : base(context) {
       Message = message;
       Details = details;
       Kind = kind; 
-      RemoteTime = remoteTime; 
+      if (remoteTime != null)
+        this.CreatedOn = remoteTime.Value;
+      Exception = new Exception(message);
+      ExceptionType = kind.ToString(); 
     }
 
     public override bool IsError => true; 

@@ -5,7 +5,7 @@ using Vita.Entities.Api;
 
 namespace Vita.Web {
 
-  public static class WebExtensions {
+  public static class VitaWebExtensions {
 
     public static WebCallContext GetWebCallContext(this HttpContext httpContext) {
       Util.Check(httpContext.Items.TryGetValue(WebCallContext.WebCallContextKey, out object webContextObj),

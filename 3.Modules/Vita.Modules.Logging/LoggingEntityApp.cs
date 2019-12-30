@@ -16,7 +16,6 @@ namespace Vita.Modules.Logging {
     public const string CurrentVersion = "1.1.0.0";
 
     public ErrorLogModule ErrorLog;
-    LogPersistenceService _logBatchingService; 
 
     public LoggingEntityApp(string schema = "log") : base("LoggingEntityApp", CurrentVersion) {
       var area = base.AddArea(schema);

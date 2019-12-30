@@ -8,16 +8,17 @@ using Vita.Entities.Utilities;
 
 namespace Vita.Modules.Logging {
 
-  class LogPersistenceService: ILogPersistenceService, IEntityServiceBase {
+  class LogBatchingService: Observable<LogEntryBatch>, ILogBatchingService, IEntityServiceBase {
     int _batchSize;
     TimerInterval _timerInterval;
     EntityApp _app; 
     ActiveBatchingBuffer<LogEntry> _buffer;
     List<ILogBatchListener> _handlers = new List<ILogBatchListener>(); 
 
-    public LogPersistenceService(int batchSize = 1000, TimerInterval timerInterval = TimerInterval.T_500_Ms) {
+    public LogBatchingService(int batchSize = 1000, TimerInterval timerInterval = TimerInterval.T_500_Ms) {
       _batchSize = batchSize;
       _timerInterval = timerInterval;
+      
     }
 
     public void Init(EntityApp app) {

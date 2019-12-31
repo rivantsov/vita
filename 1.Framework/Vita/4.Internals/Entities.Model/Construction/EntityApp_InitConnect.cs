@@ -68,11 +68,11 @@ namespace Vita.Entities {
 
     protected void SetupLogFileWriters() {
       if (!string.IsNullOrEmpty(this.LogPath)) {
-        LogFileWriter = new LogFileWriter(this, LogPath, startMessage: $" ======== Log Started {AppTime.UtcNow} ============");
+        LogFileWriter = new LogFileWriter(LogPath, 
+          startMessage: $" ======== Log Started {AppTime.UtcNow} ============");
       }
       if(!string.IsNullOrEmpty(this.ErrorLogPath)) {
-        ErrorLogFileWriter = new LogFileWriter(this, ErrorLogPath, batchSize: 1, 
-          filter: entry => entry.IsError,
+        ErrorLogFileWriter = new LogFileWriter(ErrorLogPath, 
           startMessage: $"==== Error Log Started {AppTime.UtcNow} ===========");
       }
     }

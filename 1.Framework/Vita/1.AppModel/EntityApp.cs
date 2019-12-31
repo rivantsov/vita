@@ -9,6 +9,7 @@ using System.Globalization;
 using Vita.Entities.Model;
 using Vita.Entities.Services;
 using Vita.Entities.Logging;
+using Vita.Entities.Utilities; 
 using Vita.Entities.Services.Implementations;
 using Vita.Data;
 using Vita.Entities.Model.Construction;
@@ -104,6 +105,10 @@ namespace Vita.Entities {
       //Setup log
       this.LogService = new LogService();
       RegisterService<ILogService>(LogService);
+      this.LogService.Subscribe(OnLogEntryWritten);
+      var logBatchingService = new LogBatchingService();
+      RegisterService<ILogBatchingService>(logBatchingService);
+      logBatchingService.Subscribe(OnLogBatchProduced);
       ActivationLog = new BufferedLog(LogContext.SystemLogContext, 10000, LogService);
 
       // Time service and Timers service  are global singletons, we register these here, as early as possible
@@ -119,6 +124,18 @@ namespace Vita.Entities {
       RegisterService<IDataAccessService>(this.DataAccess);
       RegisterService<IBackgroundTaskService>(new DefaultBackgroundTaskService());
       RegisterService<IHashingService>(new HashingService());
+    }
+
+    protected virtual void OnLogEntryWritten(LogEntry entry) {
+      if(entry.IsError && ErrorLogFileWriter != null)
+        ErrorLogFileWriter.WriteLines(new[] { entry.AsText() });
+    }
+
+    protected virtual void OnLogBatchProduced(IList<LogEntry> entries) {
+      if (LogFileWriter != null) {
+        var lines = entries.Select(e => e.AsText()).ToList();
+        LogFileWriter.WriteLines(lines); 
+      }
     }
 
     private void CurrentDomain_DomainUnload(object sender, EventArgs e) {

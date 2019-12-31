@@ -8,7 +8,7 @@ using Vita.Entities.Utilities;
 
 namespace Vita.Modules.Logging {
 
-  class LogBatchingService: Observable<LogEntryBatch>, ILogBatchingService, IEntityServiceBase {
+  class DbLogBatchingService: Observable<LogEntryBatch>, ILogBatchingService, IEntityServiceBase {
     int _batchSize;
     TimerInterval _timerInterval;
     EntityApp _app; 

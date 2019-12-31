@@ -36,22 +36,23 @@ namespace Vita.Entities.Logging {
     public int Enqueue(T item) {
       var node = NodePoolTryPop() ?? new Node();
       node.Item = item;
-      if(Interlocked.CompareExchange(ref _lastIn.Next, node, null) == null) {
-        _lastIn = node;
-        return Interlocked.Increment(ref _count);
-      }
-      return EnqueueSlowPath(node);
+      // 1. Change _lastIn.Next to point to new node
+      if(Interlocked.CompareExchange(ref _lastIn.Next, node, null) != null)
+        EnqueueSlowPath(node);
+      // 2. Advance _lastIn pointer until .Next is null
+      var lastInVar = _lastIn;
+      while (lastInVar.Next != null)
+        _lastIn = lastInVar = lastInVar.Next;
+      // 3. Increment and return counter
+      return Interlocked.Increment(ref _count);
     }
 
-    private int EnqueueSlowPath(Node node) {
+    private void EnqueueSlowPath(Node node) {
       SpinWait spin = new SpinWait();
       // Keep trying with spin until we succeed.
       do {
         spin.SpinOnce();
       } while(Interlocked.CompareExchange(ref _lastIn.Next, node, null) != null);
-      // success, replace last-in ref
-      _lastIn = node;
-      return Interlocked.Increment(ref _count);
     }
 
     public IList<T> DequeueMany(int maxCount = int.MaxValue) {
@@ -80,7 +81,7 @@ namespace Vita.Entities.Logging {
       if(head == null)
         return null; // stack is empty
       if(Interlocked.CompareExchange(ref _nodePoolHead, head.Next, head) == head) {
-        head.Next = null; //drop the 
+        head.Next = null; 
         return head;
       }
       return null; 

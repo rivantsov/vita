@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading;
 
@@ -15,8 +16,8 @@ namespace Vita.Entities.Utilities {
     public Observable() {
     }
 
-    // We use copy, add/remove, replace method when adding/removing subscriptions
-    // As a benefit, when we call OnNext on each subscriber, we iterate the list without locks
+    // We use copy+add/remove+replace method when adding/removing subscriptions
+    // As a benefit, when we broadcast an itme (call OnNext on each subscriber), we iterate the list without locks
     private IList<Subscription> _subscriptions = new List<Subscription>();
     private readonly object _lock = new object();
 
@@ -39,26 +40,36 @@ namespace Vita.Entities.Utilities {
 
     /// <summary>Broadcasts an data. Calls the OnNext method of all subscribed observers. </summary>
     /// <param name="item">An data to broadcast.</param>
-    /// <remarks>The subscribers are notified according to the broadcast mode - in sync or async manner.</remarks>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void Broadcast(T item) {
-      ForEachSubscription(obs => obs.OnNext(item));
+      var sList = _subscriptions;
+      for (int i = 0; i < sList.Count; i++)
+        sList[i].Observer.OnNext(item);
+    }
+
+    /// <summary>Broadcasts OnCompleted call. </summary>
+    public void BroadcastOnCompleted() {
+      var sList = _subscriptions;
+      for (int i = 0; i < sList.Count; i++)
+        sList[i].Observer.OnCompleted();
     }
 
     /// <summary>Broadcasts an error. Calls OnError method of all subscribers passing the exception as a parameter. </summary>
     /// <param name="error">The exception to broadcast.</param>
     protected void BroadcastError(Exception error) {
-      ForEachSubscription(obs => obs.OnError(error));
+      var sList = _subscriptions;
+      for (int i = 0; i < sList.Count; i++)
+        sList[i].Observer.OnError(error);
     }
 
     // Subscription list operations
     // We use copy, add/remove, replace method when adding/removing subscriptions
-    // As a benefit, when we call OnNext on each subscriber, we iterate the list without locks
     private Subscription AddSubscription(IObserver<T> observer) {
       lock(_lock) {
         var newList = new List<Subscription>(_subscriptions);
         var subscr = new Subscription() { Observable = this, Observer = observer };
         newList.Add(subscr);
-        Interlocked.Exchange(ref _subscriptions, newList);
+        _subscriptions = newList.ToArray(); // array is more efficient
         return subscr;
       }
     }
@@ -69,7 +80,7 @@ namespace Vita.Entities.Utilities {
         var subscr = newList.FirstOrDefault(s => s.Observer == observer);
         if(subscr != null) {
           newList.Remove(subscr);
-          Interlocked.Exchange(ref _subscriptions, newList);
+          _subscriptions = newList.ToArray(); //array is more efficient in loops
         }
       }
     }
@@ -96,13 +107,13 @@ namespace Vita.Entities.Utilities {
   // Utility class
   public static class Observable {
 
-    public static IObserver<T> CreateObserver<T>(Action<T> onNext, Action onCompleted = null, Action<Exception> onError = null) {
-      return new ActionBasedObserver<T>(onNext, onCompleted, onError);
-    }
-
     public static IDisposable Subscribe<T>(this IObservable<T> observable, Action<T> onNext, Action onCompleted = null, Action<Exception> onError = null) {
       var observer = CreateObserver(onNext, onCompleted, onError);
       return observable.Subscribe(observer); 
+    }
+
+    public static IObserver<T> CreateObserver<T>(Action<T> onNext, Action onCompleted = null, Action<Exception> onError = null) {
+      return new ActionBasedObserver<T>(onNext, onCompleted, onError);
     }
 
     class ActionBasedObserver<T> : IObserver<T> {

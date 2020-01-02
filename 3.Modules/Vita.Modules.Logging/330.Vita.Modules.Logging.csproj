@@ -7,7 +7,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Remove="LogBatchingService.cs" />
     <Compile Remove="TransactionLog\TransactionLogModule.cs" />
     <Compile Remove="TransactionLog\_Disabled_Attributes.cs" />
     <Compile Remove="TransactionLog\_Disabled_TransactionLogModelExtender.cs" />
@@ -27,7 +26,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Include="LogBatchingService.cs" />
     <None Include="TransactionLog\TransactionLogModule.cs" />
     <None Include="TransactionLog\_Disabled_Attributes.cs" />
     <None Include="TransactionLog\_Disabled_TransactionLogModelExtender.cs" />

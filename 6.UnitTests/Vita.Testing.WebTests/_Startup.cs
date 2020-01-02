@@ -23,6 +23,7 @@ using Vita.Samples.BookStore;
 using Vita.Samples.BookStore.SampleData;
 using Arrest.Xml;
 using Vita.Modules.Logging;
+using Vita.Modules.Logging.Db;
 
 namespace Vita.UnitTests.Web {
 

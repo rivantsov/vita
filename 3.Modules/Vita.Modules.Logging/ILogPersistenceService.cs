@@ -12,16 +12,13 @@ namespace Vita.Modules.Logging {
 
     public IEntitySession Session; 
     public IList<LogEntry> Entries;
+
+    public IDictionary<Type, LogEntry[]> EntriesByType;
     public object CustomData;
 
-    public IDictionary<Type, LogEntry[]> EntriesByType {
-      get {
-        if(_entriesByType == null)
-          _entriesByType = Entries.GroupBy(e => e.GetType()).ToDictionary(g => g.Key, g => g.ToArray());
+/*        if(_entriesByType == null)
         return _entriesByType; 
-      }
-    }  IDictionary<Type, LogEntry[]> _entriesByType;
-
+*/
 
     public IList<LogEntry> GetEntries(Type entryType) {
       if(EntriesByType.TryGetValue(entryType, out var entries))
@@ -30,12 +27,9 @@ namespace Vita.Modules.Logging {
     }
   } //class
 
-  public interface ILogBatchingService: IObserver<LogEntry>, IObservable<LogEntryBatch> {
-    
-  }
 
-  public interface ILogBatchListener {
-    void SaveBatch(LogEntryBatch batch);
+  public interface ILogPersistenceService : IObserver<IList<LogEntry>>, IObservable<LogEntryBatch> {
+
   }
 
 

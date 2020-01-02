@@ -62,7 +62,7 @@ namespace Vita.Modules.Login {
         context = EntityHelper.GetSession(login).Context; 
       if(_logService != null)
         _logService.AddEntry(new AppEventEntry("Login", eventType.ToString(), EventSeverity.Info, 
-              message: message,  objectId: login?.Id, context: context.LogContext, objectName: login?.UserName ?? userName));
+              message: message,  guidParam: login?.Id, stringParam: login?.UserName ?? userName, context: context.LogContext));
       var args = new LoginEventArgs(eventType, login, context);
       LoginEvent?.Invoke(this, args);
     }

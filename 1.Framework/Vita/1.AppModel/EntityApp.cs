@@ -181,7 +181,7 @@ namespace Vita.Entities {
 
     /// <summary> Gets a service by service type. </summary>
     /// <typeparam name="TService">Service type, usually an interface type.</typeparam>
-    /// <returns>Service implementation.</returns>
+    /// <returns>Service implementation; throws exception if service not registered.</returns>
     public TService GetService<TService>() where TService : class {
       var serv = (TService)this.GetService(typeof(TService));
       Util.Check(serv != null, "Service {0} not registered.", typeof(TService));
@@ -189,7 +189,7 @@ namespace Vita.Entities {
     }
     /// <summary> Gets a service by service type. </summary>
     /// <param name="serviceType">Service type.</param>
-    /// <returns></returns>
+    /// <returns>Service instance, or null if service is not registered.</returns>
     public object GetService(Type serviceType) {
       object result;
       if(_services.TryGetValue(serviceType, out result))

@@ -4,26 +4,71 @@ using Vita.Entities;
 using Vita.Entities.Logging;
 using Vita.Entities.Utilities;
 
-namespace Vita.Modules.Logging {
+namespace Vita.Modules.Logging.Db {
 
-  public class ErrorLogModule : EntityModule {
+
+  [Entity, OrderBy("CreatedOn:DESC"), ClusteredIndex("CreatedOn,Id")]
+  public interface IErrorLog {
+    [PrimaryKey]
+    Guid Id { get; set; }
+
+    //Note - we do not use Auto(AutoType.CreatedOn) attribute here - if we did, it would result in datetime
+    // of record creation, which happens later (on background thread) than actual error. 
+    // So it should be set explicitly in each case, when the log call is made
+    [Utc, Index]
+    DateTime CreatedOn { get; set; }
+
+    [Size(Sizes.UserName)]
+    string UserName { get; set; }
+
+    [Index]
+    Guid? UserId { get; set; }
+    long? AltUserId { get; set; }
+
+    Guid? UserSessionId { get; set; }
+
+    Guid? WebCallId { get; set; }
+
+    [Size(Sizes.Name), Nullable]
+    string MachineName { get; set; }
+
+    [Size(Sizes.Name), Nullable]
+    string AppName { get; set; }
+
+    ErrorKind Kind { get; set; }
+
+    [Size(250)]
+    string Message { get; set; }
+
+    [Unlimited, Nullable]
+    string Details { get; set; }
+
+    [Unlimited, Nullable]
+    string OperationLog { get; set; }
+
+  }
+
+
+  public class ErrorLogModule : EntityModule, IObserver<LogEntry> {
     public static readonly Version CurrentVersion = new Version("1.0.0.0");
 
-    ILogService _logService; 
+    bool _autoSubscribeToLocalLog;
 
-    public ErrorLogModule(EntityArea area) : base(area, "ErrorLog", "Error Logging Module.", version: CurrentVersion) {
+    public ErrorLogModule(EntityArea area, bool autoSubscribeToLocalLog = true) : base(area, "ErrorLog", "Error Logging Module.", version: CurrentVersion) {
+      _autoSubscribeToLocalLog = autoSubscribeToLocalLog; 
       RegisterEntities(typeof(IErrorLog));
     }
     public override  void Init() {
       base.Init();
-      _logService = App.GetService<ILogService>();
-      _logService.Subscribe(LogService_EntryAdded);
+      if (_autoSubscribeToLocalLog) {
+        var logService = App.GetService<ILogService>();
+        logService.Subscribe(this);
+      }
     }
 
-    // We listen to Log, catch all error entries, and write these to db immediately
-    private void LogService_EntryAdded(LogEntry entry) {
+    public void OnNext(LogEntry entry) {
       if (entry.IsError)
-        LogError(entry);
+        LogError(entry); 
     }
 
     public void LogError(LogEntry entry) {
@@ -64,6 +109,12 @@ namespace Vita.Modules.Logging {
       }
     }
 
+    public void OnCompleted() {
+    }
+
+    public void OnError(Exception error) {
+    }
+
     private void LogFatalLogFailure(Exception logExc, string originalError) {
       LogFatalLogFailure(logExc.ToLogString(), originalError);
     }
@@ -73,6 +124,5 @@ namespace Vita.Modules.Logging {
     }
 
   }// ErrorLogModule class
-
 
 }//ns

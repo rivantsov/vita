@@ -21,12 +21,4 @@ namespace Vita.Entities.Services {
     void Shutdown();
   }
 
-  public static class ServiceExtensions {
-    public static T GetService<T>(this IServiceProvider provider) where T : class {
-      var serv = (T) provider.GetService(typeof(T));
-      Util.Check(serv != null, "Service {0} not registered with service provder.", typeof(T));
-      return serv; 
-    }
-
-  }
 }

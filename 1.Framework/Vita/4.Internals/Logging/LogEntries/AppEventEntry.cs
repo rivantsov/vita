@@ -15,27 +15,25 @@ namespace Vita.Entities.Logging {
     public string EventType;
     public EventSeverity Severity;
     public string Message;
-    public string Details = null;
-    public Guid? ObjectId = null;
-    public string ObjectName = null;
     public int? IntParam = null;
+    public string StringParam = null;
+    public Guid? GuidParam;
 
-    public AppEventEntry(string category, string eventType, EventSeverity severity, string message, string details = null, 
-                         Guid? objectId = null, string objectName = null, int? intParam = null, 
+    public AppEventEntry(string category, string eventType, EventSeverity severity, string message,  
+                         int? intParam = null, string stringParam = null, Guid? guidParam = null,
                          LogContext context = null) : base(context) {
       Category = category;
       EventType = eventType;
       Severity = severity;
       Message = message;
-      Details = details;
-      ObjectId = objectId;
-      ObjectName = objectName;
-      IntParam = intParam; 
+      StringParam = stringParam;
+      IntParam = intParam;
+      GuidParam = guidParam;
     }
 
     private string _asText;
     public override string AsText() {
-      _asText = _asText ?? $"--- AppEvent: {Category}/{EventType} ({ObjectName}) {Message}";
+      _asText = _asText ?? $"--- AppEvent: {Category}/{EventType} ({StringParam}) {Message}";
       return _asText; 
     }
 

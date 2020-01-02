@@ -65,8 +65,8 @@ namespace Vita.Web {
 
       var log = new BufferedLog();
       var opCtx = new OperationContext(this.App, connectionMode: DbConnectionReuseMode.KeepOpen);
-      opCtx.Log = new BufferedLog(opCtx.LogContext);
       var webContext = opCtx.WebContext = new WebCallContext(opCtx, reqInfo);
+      opCtx.Log = new BufferedLog(opCtx.LogContext);
 
       httpContext.Items[WebCallContext.WebCallContextKey] = webContext;
       OnWebCallStarting(webContext);

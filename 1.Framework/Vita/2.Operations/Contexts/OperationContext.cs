@@ -27,7 +27,6 @@ namespace Vita.Entities {
 
   public class OperationContext : IDisposable {
     public EntityApp App { get; internal set; }
-    public UserInfo User { get; set; }
     public string UserCulture { get; set; } = "EN-US";
     public WebCallContext WebContext { get; set; }
     public ILog Log;
@@ -35,6 +34,14 @@ namespace Vita.Entities {
     public QueryFilter QueryFilter { get; } = new QueryFilter();
 
     internal DataSource LastDataSource; //last data source reference
+
+    public UserInfo User {
+      get => _user;  
+      set {
+        _user = value;
+        _logContext = null; 
+      } 
+    } UserInfo _user; 
 
     public LogContext LogContext {
       get {

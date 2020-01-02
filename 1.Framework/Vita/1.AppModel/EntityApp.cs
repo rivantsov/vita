@@ -102,22 +102,23 @@ namespace Vita.Entities {
       DataSourceEvents = new DataSourceEvents(this); 
       AppDomain.CurrentDomain.DomainUnload += CurrentDomain_DomainUnload;
 
-      //Setup log
+      // Time service and Timers service  are global singletons, we register these here, as early as possible
+      this.TimeService = Vita.Entities.Services.Implementations.TimeService.Instance;
+      this.RegisterService<ITimeService>(this.TimeService);
+      var timers = new TimerService();
+      this.RegisterService<ITimerService>(timers);
+      this.RegisterService<ITimerServiceControl>(timers);
+
+      // Logging services
       this.LogService = new LogService();
       RegisterService<ILogService>(LogService);
       this.LogService.Subscribe(OnLogEntryWritten);
       var logBatchingService = new LogBatchingService();
       RegisterService<ILogBatchingService>(logBatchingService);
-      logBatchingService.Subscribe(OnLogBatchProduced);
+      logBatchingService.Subscribe(OnLogBatchProduced);      
       ActivationLog = new BufferedLog(LogContext.SystemLogContext, 10000, LogService);
 
-      // Time service and Timers service  are global singletons, we register these here, as early as possible
-      this.TimeService = Vita.Entities.Services.Implementations.TimeService.Instance; 
-      this.RegisterService<ITimeService>(this.TimeService);
-
-      var timers = new TimerService();
-      this.RegisterService<ITimerService>(timers);
-      this.RegisterService<ITimerServiceControl>(timers);
+      //Misc services
       var custService = new EntityModelCustomizationService(this);
       this.RegisterService<IEntityModelCustomizationService>(custService);
       this.DataAccess = new DataAccessService(this);

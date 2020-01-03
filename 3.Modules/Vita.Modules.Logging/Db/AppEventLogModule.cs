@@ -48,7 +48,7 @@ namespace Vita.Modules.Logging.Db {
 
 
   public class AppEventLogModule: EntityModule, IObserver<LogEntryBatch> {
-    public static readonly Version CurrentVersion = new Version("1.0.0.0");
+    public static readonly Version CurrentVersion = new Version("2.0.0.0");
 
     public AppEventLogModule(EntityArea area) : base(area, "AppEventLog", "App events log.", CurrentVersion) {
       RegisterEntities(typeof(IAppEvent));

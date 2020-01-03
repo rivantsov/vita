@@ -28,12 +28,10 @@ namespace Vita.Modules.Login {
       try {
         var login = FindLogin(session, userName, password, tenantId);
         if(login == null || !VerifyPassword(login, password)) {
-          if(context.WebContext != null)
-            context.WebContext.Flags |= WebCallFlags.AttackRedFlag;
-          if(login != null)
-            OnLoginFailed(login);
-          OnLoginEvent(context, LoginEventType.LoginFailed, null, userName: userName);
-          return new LoginResult() { Status = LoginAttemptStatus.Failed };
+        if(login != null)
+           OnLoginFailed(login);
+           OnLoginEvent(context, LoginEventType.LoginFailed, null, userName: userName);
+           return new LoginResult() { Status = LoginAttemptStatus.Failed };
         }
         VerifyExpirationSuspensionDates(login);
         var status = CheckCanLogin(login, deviceToken); 
@@ -77,7 +75,7 @@ namespace Vita.Modules.Login {
         return new LoginResult() { Status = LoginAttemptStatus.Failed };
       context.User = login.CreateUserInfo();
       var prevLoginOn = login.LastLoggedInOn; //save prev value
-      login.LastLoggedInOn = AppTime.UtcNow;
+      login.LastLoggedInOn = App.TimeService.UtcNow;
       session.SaveChanges();
       OnLoginEvent(context, LoginEventType.Login, login); //this might start user session
       var sessionId = context.UserSession?.SessionId;

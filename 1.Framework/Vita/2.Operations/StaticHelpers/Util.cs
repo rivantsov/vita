@@ -117,8 +117,26 @@ namespace Vita.Entities {
       exception.Data[varName] = strValue;
     }
 
+    public static long GetTimestamp() {
+      return Stopwatch.GetTimestamp();
+    }
+
+    public static TimeSpan GetTimeSince(long fromTimestamp) {
+      var tsNow = Stopwatch.GetTimestamp();
+      var ticks = (tsNow - fromTimestamp);
+      var time = TimeSpan.FromTicks(ticks);
+      return time;
+    }
+
+    public static int GetTimeMsSince(long fromTimestamp) {
+      try {
+        return (int)GetTimeSince(fromTimestamp).TotalMilliseconds;
+      } catch {
+        return -1; 
+      }
+    }
 
 
-  }//class
+    }//class
 
-}//namespace
+  }//namespace

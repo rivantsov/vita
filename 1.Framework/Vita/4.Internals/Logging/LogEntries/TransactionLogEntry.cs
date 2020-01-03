@@ -17,7 +17,6 @@ namespace Vita.Entities.Logging {
                      : base(context){
       TransactionId = transactionId;
       StartedOn = startedOn;
-      CreatedOn = AppTime.UtcNow;
       Duration = duration;
       RecordCount = recordCount;
       Changes = changes;

@@ -52,7 +52,8 @@ namespace Vita.Web {
       var req = httpContext.Request;
       var body = await ReadRequestBodyForLogAsync(req);
       var reqInfo = new RequestInfo() {
-        ReceivedOn = AppTime.UtcNow,
+        ReceivedOn = App.TimeService.UtcNow,
+        StartTimestamp = Util.GetTimestamp(),
         HttpMethod = req.Method,
         Url = req.GetDisplayUrl(),
         ContentType = req.ContentType,
@@ -80,20 +81,25 @@ namespace Vita.Web {
       try {
         RetrieveRoutingData(httpContext, webContext);
         if (ex != null) {
-          webContext.Exception = ex;
+          webContext.Request.Exception = ex;
           await EndFailedRequestAsync(httpContext, webContext.OperationContext, ex);
         } else if (webContext.Response != null) {
           SetExplicitResponse(webContext.Response, httpContext);
           return;
         }
-        webContext.Response = new ResponseInfo();
+        var resp = webContext.Response = new ResponseInfo();
+        resp.HttpStatus = (HttpStatusCode) httpContext.Response.StatusCode;
+        resp.BodyContentType = httpContext.Response.ContentType; 
         // Reading response stream does not work for now
         // webContext.Response.Body = await ReadResponseBodyForLogAsync(httpContext);
       }catch(Exception) { 
 
       } finally {
+        webContext.Response.DurationMs = Util.GetTimeMsSince(webContext.Request.StartTimestamp);
+        webContext.Response.OperationLog = webContext.OperationContext.GetLogContents();
         OnWebCallCompleting(webContext);
         webContext.OperationContext.DisposeAll(); // dispose/close conn
+        App.LogService.AddEntry(new WebCallLogEntry(webContext));
       }
     }
 
@@ -197,9 +203,9 @@ namespace Vita.Web {
       if (routeData == null)
         return; 
       routeData.Values.TryGetValue("action", out var action);
-      webCtx.HandlerMethodName = action?.ToString();
+      webCtx.Request.HandlerMethodName = action?.ToString();
       routeData.Values.TryGetValue("controller", out var contr);
-      webCtx.HandlerControllerName = contr?.ToString();
+      webCtx.Request.HandlerControllerName = contr?.ToString();
     }
 
     #region IWebCallNotificationService implementation

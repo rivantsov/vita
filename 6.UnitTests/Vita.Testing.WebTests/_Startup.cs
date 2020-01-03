@@ -29,7 +29,7 @@ namespace Vita.UnitTests.Web {
 
   public static class Startup {
     public static BooksEntityApp BooksApp;
-    public static LoggingEntityApp LoggingApp; 
+    public static DbLoggingEntityApp LoggingApp; 
     public static RestClient Client;
     public static string LogFilePath;
     internal static IConfigurationRoot AppConfiguration;
@@ -78,7 +78,7 @@ namespace Vita.UnitTests.Web {
       BooksApp.ConnectTo(dbSettings);
 
       // Logging app
-      LoggingApp = new LoggingEntityApp();
+      LoggingApp = new DbLoggingEntityApp();
       LoggingApp.ListenTo(BooksApp); 
       var logConnString = AppConfiguration["MsSqlLogConnectionString"];
       var logDbSettings = new DbSettings(driver, dbOptions, logConnString, upgradeMode: DbUpgradeMode.Always); // schemas);

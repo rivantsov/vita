@@ -17,41 +17,38 @@ namespace Vita.Entities.Api {
   public enum WebCallFlags {
     None = 0,
     Confidential = 1,
-    UsedCache = 1 << 1, 
-
-    NoLogRequestBody = 1 << 4, 
-    NoLogResponseBody = 1 << 5,
-
-    CancelProcessing = 1 << 8,
-    AttackRedFlag = 1 << 9,
-    AttackInProgress = 1 << 10,
-    AttackClearAll = 1 << 11, // clear all attack red flags
-
-    HideRequestBody = Confidential | NoLogRequestBody,
-    HideResponseBody = Confidential | NoLogResponseBody,
+    NoLogRequestBody = 1 << 2, 
+    NoLogResponseBody = 1 << 3,
   }
 
   public class RequestInfo {
-    public DateTime ReceivedOn; 
+    public DateTime ReceivedOn;
+    public long StartTimestamp; 
     public string HttpMethod;
     public string UrlTemplate;
     public string Url;
     public IDictionary<string, string> Headers;
 
-    public object Body;
+    public string Body;
     public long? ContentSize;
     public string ContentType;
     public string IPAddress;
+
+    public Exception Exception;
+    public string HandlerControllerName;
+    public string HandlerMethodName;
 
     public WeakReference HttpContextRef;
   }
 
   public class ResponseInfo {
-    public TimeSpan Duration;
+    public int DurationMs;
     public HttpStatusCode HttpStatus = HttpStatusCode.OK;
     public IDictionary<string, string> Headers = new Dictionary<string, string>();
+    public int Size; 
     public object Body;
     public string BodyContentType;
+    public string OperationLog;
   }
 
 
@@ -75,19 +72,13 @@ namespace Vita.Entities.Api {
     public ResponseInfo Response; 
 
     public WebCallFlags Flags;
-    // list of custom indicators for use by app that will be saved in web call log
-    public IList<string> CustomTags = new List<string>();
-
-    public Exception Exception;
-    public string HandlerControllerName;
-    public string HandlerMethodName;
 
     public WebCallContext(OperationContext opContext, RequestInfo request) {
       this.OperationContext = opContext;
       opContext.WebContext = this;
       Request = request; 
       LogEntry = new WebCallLogEntry(this);
-      TickCountStart = AppTime.GetTimestamp();
+      TickCountStart = Util.GetTimestamp();
     }
 
   

@@ -22,7 +22,9 @@ namespace Vita.Entities.Logging {
     public WebCallLogEntry(WebCallContext webCtx) : base(webCtx.OperationContext.LogContext) {
       WebCallId = Guid.NewGuid();
       Request = webCtx.Request;
-      Response = webCtx.Response; 
+      Response = webCtx.Response;
+      Flags = webCtx.Flags;
+      Exception = webCtx.Request.Exception; 
     }
 
     public override string AsText() {

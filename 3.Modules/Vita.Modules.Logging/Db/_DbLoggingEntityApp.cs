@@ -11,20 +11,23 @@ using Vita.Entities.Utilities;
 
 namespace Vita.Modules.Logging.Db {
 
-  //An attempt to provide a pre-build app for logging that can run side-by-side with main app, and use different logging database
-  public class LoggingEntityApp : EntityApp {
-    public const string CurrentVersion = "1.1.0.0";
+  /// <summary> A pre-build app for logging to database, the app runs side-by-side with main app
+  /// and uses a separate logging database. </summary>
+  public class DbLoggingEntityApp : EntityApp {
+    public const string CurrentVersion = "2.0.0.0";
 
     public ErrorLogModule ErrorPersistenceModule; //saving errors, immediately
     public ILogPersistenceService PersistenceService; // batching and saving in batches
-    public AppEventLogModule AppEventModule; 
+    public AppEventLogModule AppEventModule;
+    public WebCallLogModule WebCallLog; 
 
-    public LoggingEntityApp(string schema = "log") : base("LoggingEntityApp", CurrentVersion) {
+    public DbLoggingEntityApp(string schema = "log") : base("LoggingEntityApp", CurrentVersion) {
       var area = base.AddArea(schema);
       ErrorPersistenceModule = new ErrorLogModule(area);
       PersistenceService = new LogPersistenceService();
       RegisterService<ILogPersistenceService>(PersistenceService);
       AppEventModule = new AppEventLogModule(area);
+      WebCallLog = new WebCallLogModule(area); 
     }
 
     public void ListenTo(EntityApp targetApp) {

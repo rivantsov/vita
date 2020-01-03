@@ -50,7 +50,7 @@ namespace Vita.Modules.Logging.Db {
 
 
   public class ErrorLogModule : EntityModule, IObserver<LogEntry> {
-    public static readonly Version CurrentVersion = new Version("1.0.0.0");
+    public static readonly Version CurrentVersion = new Version("2.0.0.0");
 
     bool _autoSubscribeToLocalLog;
 

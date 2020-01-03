@@ -7,9 +7,12 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Remove="TransactionLog\TransactionLogModule.cs" />
-    <Compile Remove="TransactionLog\_Disabled_Attributes.cs" />
-    <Compile Remove="TransactionLog\_Disabled_TransactionLogModelExtender.cs" />
+    <Compile Remove="AzureLogAnalytics\AzureLogAnalyticsClient.cs" />
+    <Compile Remove="Z_OLD_CODE\Entities_UserSession.cs" />
+    <Compile Remove="Z_OLD_CODE\NewLogEntities.cs" />
+    <Compile Remove="Z_OLD_CODE\TransactionLog\TransactionLogModule.cs" />
+    <Compile Remove="Z_OLD_CODE\TransactionLog\_Disabled_Attributes.cs" />
+    <Compile Remove="Z_OLD_CODE\TransactionLog\_Disabled_TransactionLogModelExtender.cs" />
     <Compile Remove="Z_OLD_CODE\AppEventLogExtensions.cs" />
     <Compile Remove="Z_OLD_CODE\AppEventLogModule.cs" />
     <Compile Remove="Z_OLD_CODE\ErrorLogModule.cs" />
@@ -17,18 +20,12 @@
     <Compile Remove="Z_OLD_CODE\OperationLogModule.cs" />
     <Compile Remove="Z_OLD_CODE\WebCallLogModule.cs" />
     <Compile Remove="Z_OLD_CODE\WebClientLogModule.cs" />
-    <Compile Remove="__NEW\AllLogEntities.cs" />
-    <Compile Remove="__NEW\AzureLogAnalyticsClient.cs" />
-    <Compile Remove="__NEW\Entities_UserSession.cs" />
-    <Compile Remove="__NEW\LogEntityExtensions.cs" />
-    <Compile Remove="__NEW\LogSaveService.cs" />
-    <Compile Remove="__NEW\LogServiceListener.cs" />
   </ItemGroup>
 
   <ItemGroup>
-    <None Include="TransactionLog\TransactionLogModule.cs" />
-    <None Include="TransactionLog\_Disabled_Attributes.cs" />
-    <None Include="TransactionLog\_Disabled_TransactionLogModelExtender.cs" />
+    <None Include="Z_OLD_CODE\TransactionLog\TransactionLogModule.cs" />
+    <None Include="Z_OLD_CODE\TransactionLog\_Disabled_Attributes.cs" />
+    <None Include="Z_OLD_CODE\TransactionLog\_Disabled_TransactionLogModelExtender.cs" />
     <None Include="Z_OLD_CODE\AppEventLogExtensions.cs" />
     <None Include="Z_OLD_CODE\AppEventLogModule.cs" />
     <None Include="Z_OLD_CODE\ErrorLogModule.cs" />
@@ -36,12 +33,9 @@
     <None Include="Z_OLD_CODE\OperationLogModule.cs" />
     <None Include="Z_OLD_CODE\WebCallLogModule.cs" />
     <None Include="Z_OLD_CODE\WebClientLogModule.cs" />
-    <None Include="__NEW\AllLogEntities.cs" />
-    <None Include="__NEW\AzureLogAnalyticsClient.cs" />
-    <None Include="__NEW\Entities_UserSession.cs" />
-    <None Include="__NEW\LogEntityExtensions.cs" />
-    <None Include="__NEW\LogSaveService.cs" />
-    <None Include="__NEW\LogServiceListener.cs" />
+    <None Include="Z_OLD_CODE\NewLogEntities.cs" />
+    <None Include="AzureLogAnalytics\AzureLogAnalyticsClient.cs" />
+    <None Include="Z_OLD_CODE\Entities_UserSession.cs" />
   </ItemGroup>
 
   <ItemGroup>

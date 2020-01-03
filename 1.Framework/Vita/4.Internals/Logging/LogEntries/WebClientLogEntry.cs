@@ -21,10 +21,9 @@ namespace Vita.Entities.Logging {
     public Guid? ErrorLogId;
     public Guid? WebCallId;
 
-    public WebClientLogEntry(LogContext context, string clientName, long duration, HttpRequestMessage request, HttpResponseMessage response, string requestBody, string responseBody,
-         Exception exception = null) : base(context) {
+    public WebClientLogEntry(LogContext logContext, string clientName, long duration, HttpRequestMessage request, HttpResponseMessage response, string requestBody, string responseBody,
+         Exception exception = null) : base(logContext) {
       ClientName = clientName; 
-      CreatedOn = AppTime.UtcNow;
       Duration = (int)duration;
       RequestUri = request?.RequestUri;
       HttpMethod = request?.Method.Method;

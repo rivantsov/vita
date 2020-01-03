@@ -2,16 +2,16 @@
 
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
+    <AssemblyName>Vita.Modules.Legacy</AssemblyName>
+    <RootNamespace>Vita.Modules.Legacy</RootNamespace>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.AspNetCore.Mvc.Core" Version="2.2.5" />
+    <PackageReference Include="Newtonsoft.Json" Version="12.0.2" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\1.Framework\Vita.Web\030.Vita.Web.csproj" />
     <ProjectReference Include="..\..\1.Framework\Vita\010.Vita.csproj" />
-    <ProjectReference Include="..\Vita.Modules.Login\320.Vita.Modules.Login.csproj" />
   </ItemGroup>
 
 </Project>

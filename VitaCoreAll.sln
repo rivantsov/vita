@@ -35,7 +35,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "610.Vita.Testing.BasicTests
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "250.Vita.Data.SQLite", "2.Drivers\Vita.Data.SQLite\250.Vita.Data.SQLite.csproj", "{04ECDD8E-46D9-42D9-BE5C-B6CC54E67B45}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "320.Vita.Modules.Login", "3.Modules\Vita.Modules.Login\320.Vita.Modules.Login.csproj", "{6615B044-A5F6-4105-926F-E453897CAFFD}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "310.Vita.Modules.Login", "3.Modules\Vita.Modules.Login\310.Vita.Modules.Login.csproj", "{6615B044-A5F6-4105-926F-E453897CAFFD}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "620.Vita.Testing.ExtendedTests", "6.UnitTests\Vita.Testing.ExtendedTests\620.Vita.Testing.ExtendedTests.csproj", "{0052C761-941E-4141-9E7C-D7685B387221}"
 EndProject
@@ -53,11 +53,11 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "430.Vita.Samples.BookStore.
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "630.Vita.Testing.WebTests", "6.UnitTests\Vita.Testing.WebTests\630.Vita.Testing.WebTests.csproj", "{21E84486-D0D2-4779-BD31-EB5660619D75}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "310.Vita.Modules", "3.Modules\Vita.Modules\310.Vita.Modules.csproj", "{6D4EF4B2-2000-47E9-9E51-AD9DE789813D}"
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "321.Vita.Modules.Login.Api", "3.Modules\Vita.Modules.Login.Api\321.Vita.Modules.Login.Api.csproj", "{566C878A-B88D-4950-89EC-E28EC30C0F2C}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "320.Vita.Modules.Login.Api", "3.Modules\Vita.Modules.Login.Api\320.Vita.Modules.Login.Api.csproj", "{566C878A-B88D-4950-89EC-E28EC30C0F2C}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "330.Vita.Modules.Logging", "3.Modules\Vita.Modules.Logging\330.Vita.Modules.Logging.csproj", "{1449653D-3A1F-4D89-BC0E-242AC2817A57}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "350.Vita.Modules.Legacy", "3.Modules\Vita.Modules.Legacy\350.Vita.Modules.Legacy.csproj", "{35D6B85B-7EFB-4661-8558-E610B300BF4E}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -261,18 +261,6 @@ Global
 		{21E84486-D0D2-4779-BD31-EB5660619D75}.Release|x64.Build.0 = Release|Any CPU
 		{21E84486-D0D2-4779-BD31-EB5660619D75}.Release|x86.ActiveCfg = Release|Any CPU
 		{21E84486-D0D2-4779-BD31-EB5660619D75}.Release|x86.Build.0 = Release|Any CPU
-		{6D4EF4B2-2000-47E9-9E51-AD9DE789813D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{6D4EF4B2-2000-47E9-9E51-AD9DE789813D}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{6D4EF4B2-2000-47E9-9E51-AD9DE789813D}.Debug|x64.ActiveCfg = Debug|Any CPU
-		{6D4EF4B2-2000-47E9-9E51-AD9DE789813D}.Debug|x64.Build.0 = Debug|Any CPU
-		{6D4EF4B2-2000-47E9-9E51-AD9DE789813D}.Debug|x86.ActiveCfg = Debug|Any CPU
-		{6D4EF4B2-2000-47E9-9E51-AD9DE789813D}.Debug|x86.Build.0 = Debug|Any CPU
-		{6D4EF4B2-2000-47E9-9E51-AD9DE789813D}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{6D4EF4B2-2000-47E9-9E51-AD9DE789813D}.Release|Any CPU.Build.0 = Release|Any CPU
-		{6D4EF4B2-2000-47E9-9E51-AD9DE789813D}.Release|x64.ActiveCfg = Release|Any CPU
-		{6D4EF4B2-2000-47E9-9E51-AD9DE789813D}.Release|x64.Build.0 = Release|Any CPU
-		{6D4EF4B2-2000-47E9-9E51-AD9DE789813D}.Release|x86.ActiveCfg = Release|Any CPU
-		{6D4EF4B2-2000-47E9-9E51-AD9DE789813D}.Release|x86.Build.0 = Release|Any CPU
 		{566C878A-B88D-4950-89EC-E28EC30C0F2C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{566C878A-B88D-4950-89EC-E28EC30C0F2C}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{566C878A-B88D-4950-89EC-E28EC30C0F2C}.Debug|x64.ActiveCfg = Debug|Any CPU
@@ -297,6 +285,18 @@ Global
 		{1449653D-3A1F-4D89-BC0E-242AC2817A57}.Release|x64.Build.0 = Release|Any CPU
 		{1449653D-3A1F-4D89-BC0E-242AC2817A57}.Release|x86.ActiveCfg = Release|Any CPU
 		{1449653D-3A1F-4D89-BC0E-242AC2817A57}.Release|x86.Build.0 = Release|Any CPU
+		{35D6B85B-7EFB-4661-8558-E610B300BF4E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{35D6B85B-7EFB-4661-8558-E610B300BF4E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{35D6B85B-7EFB-4661-8558-E610B300BF4E}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{35D6B85B-7EFB-4661-8558-E610B300BF4E}.Debug|x64.Build.0 = Debug|Any CPU
+		{35D6B85B-7EFB-4661-8558-E610B300BF4E}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{35D6B85B-7EFB-4661-8558-E610B300BF4E}.Debug|x86.Build.0 = Debug|Any CPU
+		{35D6B85B-7EFB-4661-8558-E610B300BF4E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{35D6B85B-7EFB-4661-8558-E610B300BF4E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{35D6B85B-7EFB-4661-8558-E610B300BF4E}.Release|x64.ActiveCfg = Release|Any CPU
+		{35D6B85B-7EFB-4661-8558-E610B300BF4E}.Release|x64.Build.0 = Release|Any CPU
+		{35D6B85B-7EFB-4661-8558-E610B300BF4E}.Release|x86.ActiveCfg = Release|Any CPU
+		{35D6B85B-7EFB-4661-8558-E610B300BF4E}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -318,9 +318,9 @@ Global
 		{39E79B0C-B727-41DE-928F-28ECFBCEFA42} = {D362FBD5-C0D1-469E-8DB8-A3AD6A06E112}
 		{7B40E192-AA91-4EAB-872B-191AA450DB14} = {4662F816-C6F3-480C-AF97-B74ED603387A}
 		{21E84486-D0D2-4779-BD31-EB5660619D75} = {00F1A0AB-F2FC-42B6-9DFE-2AF08BC94E09}
-		{6D4EF4B2-2000-47E9-9E51-AD9DE789813D} = {6EF72608-15C1-4443-9E60-30363D8ECE6B}
 		{566C878A-B88D-4950-89EC-E28EC30C0F2C} = {6EF72608-15C1-4443-9E60-30363D8ECE6B}
 		{1449653D-3A1F-4D89-BC0E-242AC2817A57} = {6EF72608-15C1-4443-9E60-30363D8ECE6B}
+		{35D6B85B-7EFB-4661-8558-E610B300BF4E} = {6EF72608-15C1-4443-9E60-30363D8ECE6B}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {B6E4E3B8-D467-4592-8AF9-AB8E1C5F1F9A}

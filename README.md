@@ -20,15 +20,12 @@ Works with MS SQL Server, MySql, PostgreSQL, SQLite.
 * **Compiled LINQ Query Cache** - dynamic LINQ queries are compiled into SQL on the first use, and later served from the query cache, avoiding the overhead of SQL translation. 
 * **Computed properties**.
 * **Entities support INotifyPropertyChanged interface** - readily usable in data binding and MVVM solutions.
-
-## Features available in Version 1.* and yet to be ported to Version 2 (.NET core version)
-* **Built-in Role-based Authorization framework** - access permissions are configured at table/row/field level at application startup. During application execution all read/write operations by the current user are checked automatically (and transparently, behind the scene) by VITA.  
-* **Full-featured data cache** - you can specify a set of entity types (database tables) that must be cached - VITA loads the data in memory, and all subsequent data queries (including dynamic LINQ queries) are served from this cache. Additional 'sparse' cache holds most recently used records/entities from tables that are too big to be cached entirely.
-* **Standard modules** - VITA comes with a number of pre-built modules: ErrorLog, UserLogin, TransactionLog, etc. Note: Login module is ported and available. 
 * **Web API stack integration**. Fully integrated with Web API technology stack, provides numerous benefits for easy creation of fast and reliable RESTful data services. 
+* **Built-in efficient logging and diagnostics infrastructure** with logging to file or database. Easy to setup other logging targets. 
+
 
 ### System Requirements
-* .NET Standard 2.0, Visual Studio 2017. 
+* .NET Standard 2.0, Visual Studio 2019; .NET Core 3.1 for test and sample projects 
 * MS SQL Server 2012+; MySql, PostgreSQL, Oracle, SQLite
 
 

@@ -57,7 +57,7 @@ In VS Solution Explorer there is a number of folders in the main solution:
     - Vita - core entity model, entity CRUD operations
     - Vita.Tools - tools library
   2. Drivers - contains database drivers (providers) for different database servers. The following servers are supported: 
-     MS SQL; MySql; Postgres; SQLite. 
+     MS SQL, MySql, Postgres, Oracle, SQLite. 
   3. Modules - contains Vita.Modules.Login project, more to come. Login module implements standard Login functionality.
   4. Samples - contains a sample application: 
       - Vita.Samples.BookStore - an online Book store, a class library containing data and business logic. 

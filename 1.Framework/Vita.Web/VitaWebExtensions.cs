@@ -9,7 +9,7 @@ namespace Vita.Web {
 
     public static WebCallContext GetWebCallContext(this HttpContext httpContext) {
       Util.Check(httpContext.Items.TryGetValue(WebCallContext.WebCallContextKey, out object webContextObj),
-        "Failed to retrieve WebCallContext from request context, WebCallContextHandler middleware is not installed.");
+        "Failed to retrieve WebCallContext from HttpContext, VITA Web middleware is not activated in pipeline.");
       return (WebCallContext)webContextObj; 
     }
 

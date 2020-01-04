@@ -19,7 +19,11 @@ namespace Vita.Entities.Logging {
       Context = context;
     }
 
-    public virtual bool IsError => false;  
+    public virtual bool IsError => false;
+    // BatchGroup is used by log batching service to group log entries before sending them 
+    // out to save in different tables. It is identical to entry's type in most cases, except 
+    // for DbCommandLogEntry - it returns 
+    public virtual Type BatchGroup => this.GetType(); 
 
     public abstract string AsText();
 

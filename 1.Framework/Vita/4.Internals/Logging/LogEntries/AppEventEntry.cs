@@ -19,9 +19,8 @@ namespace Vita.Entities.Logging {
     public string StringParam = null;
     public Guid? GuidParam;
 
-    public AppEventEntry(string category, string eventType, EventSeverity severity, string message,  
-                         int? intParam = null, string stringParam = null, Guid? guidParam = null,
-                         LogContext context = null) : base(context) {
+    public AppEventEntry(LogContext context, string category, string eventType, EventSeverity severity, string message,  
+                         int? intParam = null, string stringParam = null, Guid? guidParam = null) : base(context) {
       Category = category;
       EventType = eventType;
       Severity = severity;

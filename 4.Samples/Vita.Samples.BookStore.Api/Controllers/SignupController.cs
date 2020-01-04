@@ -35,7 +35,12 @@ namespace Vita.Samples.BookStore.Api {
       var loginMgr = OpContext.App.GetService<ILoginManagementService>();
       var user = session.NewUser(signup.UserName, UserType.Customer, signup.UserName);
       var login = loginMgr.NewLogin(session, signup.UserName, signup.Password, loginId: user.Id, userId: user.Id); //Login.Id is the same as userID
-      session.SaveChanges(); 
+      session.SaveChanges();
+      // Let's create custom app event; we test here that this appEvent gets to AppEventLog
+      //  log entries in web app are accumulated in buffered log attached to web call, and later 
+      // dumped to WebCallLog.OperationLog column as text. Except - errors and app events, they are 
+      // passed to global log as well. 
+      OpContext.WriteAppEvent("Customer", "Signup", $"Customer {signup.UserName} signed up.");
       return user.ToModel(); 
     }
 

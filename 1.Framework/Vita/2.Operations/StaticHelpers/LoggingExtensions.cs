@@ -14,9 +14,17 @@ using Vita.Entities.Logging;
 namespace Vita.Entities {
   public static class LoggingExtensions {
 
-    public static void WriteLogMessage(this OperationContext context, string message) {
-      context.Log.AddEntry(new InfoLogEntry(context.LogContext, message));
+    public static void WriteLogMessage(this OperationContext context, string message, params object[] args) {
+      context.Log.AddEntry(new InfoLogEntry(context.LogContext, message, args));
     }
+
+    public static void WriteAppEvent(this OperationContext context, string category, string eventType,
+          string message, EventSeverity severity = EventSeverity.Info, string stringParam = null, 
+          int? intParam = null, Guid? guidParam = null) {
+      context.Log.AddEntry(new AppEventEntry(context.LogContext, category, eventType, severity, message,
+        intParam, stringParam, guidParam));
+    }
+
     public static string ToLogString(this object value) {
       string strValue = string.Empty;
       try {

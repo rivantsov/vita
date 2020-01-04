@@ -13,25 +13,22 @@ using Vita.Entities.Model;
 
 namespace Vita.Entities.Logging {
 
-  // The goal here is to delay formatting of the output to the background thread (logging thread) at later time
-  // so that the main thread executing commands is not delayed by log formatting.
-  public class DbCommandLogEntry : LogEntry {
-
+  // We treat DbCommandLogEntry as subtype of InfoLogEntry, so it ends up in OperationLog just like other 
+  //  info log entries. 
+  public class DbCommandLogEntry : InfoLogEntry {
     IDbCommand _command; 
     public long ExecutionTime;
     public int RowCount;
     private string _asText;
 
     public DbCommandLogEntry(LogContext logContext, IDbCommand command, long executionTime, int rowCount) 
-         : base (logContext) {
+         : base (logContext, null) {
       _command = command;
       ExecutionTime = executionTime;
       RowCount = rowCount;
     }
 
-    public override string ToString() {
-      return AsText();
-    }
+    public override Type BatchGroup => typeof(InfoLogEntry);
 
     public override string AsText() {
       if(_asText == null)

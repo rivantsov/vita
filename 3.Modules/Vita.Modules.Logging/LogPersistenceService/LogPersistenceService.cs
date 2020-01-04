@@ -36,7 +36,7 @@ namespace Vita.Modules.Logging {
 
     private void PersisteEntries(IList<LogEntry> entries) {
       try {
-        var entriesByType = entries.GroupBy(e => e.GetType()).ToDictionary(g => g.Key, g => g.ToArray());
+        var entriesByType = entries.GroupBy(e => e.BatchGroup).ToDictionary(g => g.Key, g => g.ToArray());
         var session = _app.OpenSystemSession();
         var batch = new LogEntryBatch() { Session = session, Entries = entries, EntriesByType = entriesByType };
         Broadcast(batch);

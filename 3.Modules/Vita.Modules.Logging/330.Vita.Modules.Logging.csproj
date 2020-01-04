@@ -7,35 +7,11 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Remove="AzureLogAnalytics\AzureLogAnalyticsClient.cs" />
-    <Compile Remove="Z_OLD_CODE\Entities_UserSession.cs" />
-    <Compile Remove="Z_OLD_CODE\NewLogEntities.cs" />
-    <Compile Remove="Z_OLD_CODE\TransactionLog\TransactionLogModule.cs" />
-    <Compile Remove="Z_OLD_CODE\TransactionLog\_Disabled_Attributes.cs" />
-    <Compile Remove="Z_OLD_CODE\TransactionLog\_Disabled_TransactionLogModelExtender.cs" />
-    <Compile Remove="Z_OLD_CODE\AppEventLogExtensions.cs" />
-    <Compile Remove="Z_OLD_CODE\AppEventLogModule.cs" />
-    <Compile Remove="Z_OLD_CODE\ErrorLogModule.cs" />
-    <Compile Remove="Z_OLD_CODE\LogModules.cs" />
-    <Compile Remove="Z_OLD_CODE\OperationLogModule.cs" />
-    <Compile Remove="Z_OLD_CODE\WebCallLogModule.cs" />
-    <Compile Remove="Z_OLD_CODE\WebClientLogModule.cs" />
+    <Compile Remove="AzureLogAnalytics\AzureLogAnalyticsClient_DRAFT.cs" />
   </ItemGroup>
 
   <ItemGroup>
-    <None Include="AzureLogAnalytics\AzureLogAnalyticsClient.cs" />
-    <None Include="Z_OLD_CODE\TransactionLog\TransactionLogModule.cs" />
-    <None Include="Z_OLD_CODE\TransactionLog\_Disabled_Attributes.cs" />
-    <None Include="Z_OLD_CODE\TransactionLog\_Disabled_TransactionLogModelExtender.cs" />
-    <None Include="Z_OLD_CODE\AppEventLogExtensions.cs" />
-    <None Include="Z_OLD_CODE\AppEventLogModule.cs" />
-    <None Include="Z_OLD_CODE\ErrorLogModule.cs" />
-    <None Include="Z_OLD_CODE\LogModules.cs" />
-    <None Include="Z_OLD_CODE\OperationLogModule.cs" />
-    <None Include="Z_OLD_CODE\WebCallLogModule.cs" />
-    <None Include="Z_OLD_CODE\WebClientLogModule.cs" />
-    <None Include="Z_OLD_CODE\NewLogEntities.cs" />
-    <None Include="Z_OLD_CODE\Entities_UserSession.cs" />
+    <None Include="AzureLogAnalytics\AzureLogAnalyticsClient_DRAFT.cs" />
   </ItemGroup>
 
   <ItemGroup>

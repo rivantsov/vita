@@ -19,7 +19,8 @@ namespace Vita.Modules.Logging.Db {
     public ErrorLogModule ErrorPersistenceModule; //saving errors, immediately
     public ILogPersistenceService PersistenceService; // batching and saving in batches
     public AppEventLogModule AppEventModule;
-    public WebCallLogModule WebCallLog; 
+    public WebCallLogModule WebCallLog;
+    public OperationLogModule OperationLog; 
 
     public DbLoggingEntityApp(string schema = "log") : base("LoggingEntityApp", CurrentVersion) {
       var area = base.AddArea(schema);
@@ -27,7 +28,8 @@ namespace Vita.Modules.Logging.Db {
       PersistenceService = new LogPersistenceService();
       RegisterService<ILogPersistenceService>(PersistenceService);
       AppEventModule = new AppEventLogModule(area);
-      WebCallLog = new WebCallLogModule(area); 
+      WebCallLog = new WebCallLogModule(area);
+      OperationLog = new OperationLogModule(area); 
     }
 
     public void ListenTo(EntityApp targetApp) {

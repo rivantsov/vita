@@ -61,8 +61,6 @@ namespace Vita.Modules.Logging.Db {
     string Error { get; set; }
     [Nullable, Unlimited]
     string ErrorDetails { get; set; }
-
-    Guid? ErrorLogId { get; set; }
   }
 
   public class WebCallLogModule : EntityModule, IObserver<LogEntryBatch> {

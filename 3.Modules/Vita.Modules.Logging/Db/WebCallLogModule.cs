@@ -27,8 +27,6 @@ namespace Vita.Modules.Logging.Db {
 
     [Nullable, Unlimited]
     string Url { get; set; }
-    [Nullable, Size(250)]
-    string UrlTemplate { get; set; }
 
     [Nullable, Size(Sizes.IPv6Address)] //50
     string IPAddress { get; set; }
@@ -94,7 +92,6 @@ namespace Vita.Modules.Logging.Db {
 
         var req = entry.Request; 
         ent.Url = req.Url;
-        ent.UrlTemplate = req.UrlTemplate;
         ent.IPAddress = req.IPAddress;
         ent.HttpMethod = req.HttpMethod;
         ent.RequestHeaders = DictAsString(req.Headers);

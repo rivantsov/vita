@@ -25,7 +25,6 @@ namespace Vita.Entities.Api {
     public DateTime ReceivedOn;
     public long StartTimestamp; 
     public string HttpMethod;
-    public string UrlTemplate;
     public string Url;
     public IDictionary<string, string> Headers;
 

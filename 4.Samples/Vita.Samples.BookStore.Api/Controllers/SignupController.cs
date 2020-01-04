@@ -18,6 +18,10 @@ namespace Vita.Samples.BookStore.Api {
 
     [HttpPost]
     public User SignupUser([FromBody] UserSignup signup) {
+      // signup request contains password, so mark it confidential, so the request body will NOT be logged
+      //  to prevent passwords appearing in logs
+      this.WebContext.Flags |= WebCallFlags.Confidential; 
+
       //Validate 
       OpContext.ThrowIfNull(signup, ClientFaultCodes.InvalidValue, "UserSignup", "UserSignup object may not be null.");
       OpContext.ValidateNotEmpty(signup.UserName, "UserName", "UserName may not be empty.");

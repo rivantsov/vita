@@ -23,6 +23,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Include="AzureLogAnalytics\AzureLogAnalyticsClient.cs" />
     <None Include="Z_OLD_CODE\TransactionLog\TransactionLogModule.cs" />
     <None Include="Z_OLD_CODE\TransactionLog\_Disabled_Attributes.cs" />
     <None Include="Z_OLD_CODE\TransactionLog\_Disabled_TransactionLogModelExtender.cs" />
@@ -34,8 +35,11 @@
     <None Include="Z_OLD_CODE\WebCallLogModule.cs" />
     <None Include="Z_OLD_CODE\WebClientLogModule.cs" />
     <None Include="Z_OLD_CODE\NewLogEntities.cs" />
-    <None Include="AzureLogAnalytics\AzureLogAnalyticsClient.cs" />
     <None Include="Z_OLD_CODE\Entities_UserSession.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Newtonsoft.Json" Version="12.0.3" />
   </ItemGroup>
 
   <ItemGroup>

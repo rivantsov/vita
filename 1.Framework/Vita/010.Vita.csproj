@@ -18,6 +18,14 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Compile Remove="4.Internals\Logging\DefaultOperationLog_Disabled.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="4.Internals\Logging\DefaultOperationLog_Disabled.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="Proxemity" Version="2.0.1" />
     <PackageReference Include="System.Data.Common" Version="4.3.0" />
     <PackageReference Include="System.Diagnostics.EventLog" Version="4.5.0" />

@@ -92,7 +92,7 @@ namespace Vita.Entities {
       App = app; 
       User = user ?? UserInfo.Anonymous;
       WebContext = webContext;
-      Log = log ?? new DefaultOperationLog(this);
+      Log = log ?? app.LogService;
       DbConnectionMode = connectionMode;
     }
 

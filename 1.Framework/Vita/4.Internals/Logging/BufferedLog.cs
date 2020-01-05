@@ -35,14 +35,6 @@ namespace Vita.Entities.Logging {
         Interlocked.Increment(ref _errorCount);
     }
 
-    public void Flush() {
-      if(_logService == null)
-        return;
-      var entries = GetAll(); 
-      var compEntry = new BatchedLogEntry(_logContext, entries);
-      _logService.AddEntry(compEntry);
-    }
-
     public int ErrorCount => _errorCount;
 
     public IList<LogEntry> GetAll()  =>_queue.DequeueMany();

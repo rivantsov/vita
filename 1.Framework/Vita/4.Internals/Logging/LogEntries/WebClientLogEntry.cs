@@ -7,6 +7,7 @@ using System.Text;
 
 namespace Vita.Entities.Logging {
 
+  // Not used currently
   public class WebClientLogEntry : LogEntry {
     public string ClientName;
     public int Duration;

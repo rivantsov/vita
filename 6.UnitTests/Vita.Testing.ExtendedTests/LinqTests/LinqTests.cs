@@ -317,13 +317,13 @@ namespace Vita.Testing.ExtendedTests {
       // first with constants
       var session = Startup.BooksApp.OpenSession();
       var dateQ = from bo in session.EntitySet<IBookOrder>()
-                  where bo.CreatedOn < new DateTime(2020, 1, 1)
+                  where bo.CreatedOn < new DateTime(2030, 1, 1)
                   select bo;
       var listByDate = dateQ.ToList();
       Assert.IsTrue(listByDate.Count > 1, "Query with new DateTime(const) failed. ");
 
       // now more complex case
-      var year = 2020;
+      var year = 2030;
       var month = 1;
       var dateQ2 = from bo in session.EntitySet<IBookOrder>()
                    where bo.CreatedOn < new DateTime(year, month, 1)

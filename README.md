@@ -1,5 +1,5 @@
 # VITA Application Framework  
-*Entity Framework - DONE RIGHT*  
+*Full-feature .NET ORM - DONE RIGHT*  
 
 VITA is a framework for creating data-connected .NET applications. It is a full-featured .NET [ORM](http://en.wikipedia.org/wiki/Object-relational_mapping) - and much more than ORM. Automatic schema management, full Linq implementation with query caching, support for CRUD stored procedures, modular application composition, transparent data cache implementation with Linq queries redirection, row-level authorization subsystem. Supports data models distributed over multiple databases. 
 Works with MS SQL Server, MySql, PostgreSQL, SQLite.

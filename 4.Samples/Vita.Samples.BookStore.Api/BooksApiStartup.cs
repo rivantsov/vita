@@ -45,9 +45,8 @@ namespace Vita.Samples.BookStore.Api {
         // Note: by default System.Text.Json ns/serializer is used by AspNetCore 3.1; this serializer is broken piece of sh..
         // - does not serialize fields, does not handle dictionaries, etc. So we put back Newtonsoft serializer.
         .AddNewtonsoftJson()
+        // make API controllers in Vita.Modules.Login.dll discovered by ASP.NET infrastructure
         .PartManager.ApplicationParts.Add(new AssemblyPart(loginAssembly));
-
-
     }
 
     // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

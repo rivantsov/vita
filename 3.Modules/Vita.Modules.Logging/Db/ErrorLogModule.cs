@@ -2,7 +2,6 @@
 
 using Vita.Entities;
 using Vita.Entities.Logging;
-using Vita.Entities.Utilities;
 
 namespace Vita.Modules.Logging.Db {
 

@@ -47,6 +47,13 @@ namespace Vita.Samples.BookStore.Api {
         .AddNewtonsoftJson()
         // make API controllers in Vita.Modules.Login.dll discovered by ASP.NET infrastructure
         .PartManager.ApplicationParts.Add(new AssemblyPart(loginAssembly));
+
+      // clear out default configuration - it installs Console output logger which sends out tons of garbage
+      //  https://weblog.west-wind.com/posts/2018/Dec/31/Dont-let-ASPNET-Core-Default-Console-Logging-Slow-your-App-down
+      services.AddLogging(config => {
+        config.ClearProviders();
+      });
+
     }
 
     // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

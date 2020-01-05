@@ -9,9 +9,9 @@ using Arrest.Sync;
 using Vita.Samples.BookStore;
 using System.Globalization;
 
-namespace Vita.UnitTests.Web {
+namespace Vita.Testing.WebTests {
 
-  public partial class WebTests  {
+  public partial class BooksApiTests  {
 
     [TestMethod]
     public void TestCatalogFunctions() {
@@ -83,7 +83,7 @@ namespace Vita.UnitTests.Web {
 
     [TestMethod]
     public void TestGetImage() {
-      var client = Web.Startup.Client;
+      var client = Startup.Client;
 
       //Get c# book
       var searchBooks = client.Get<SearchResults<Book>>("api/books?title=c#");

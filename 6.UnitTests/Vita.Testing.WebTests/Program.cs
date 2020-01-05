@@ -4,14 +4,15 @@ using System.Configuration;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Vita.Tools.Testing;
 
-using Vita.UnitTests.Common;
+namespace Vita.Testing.WebTests {
 
-namespace Vita.UnitTests.WebTests {
   class Program {
-    // For now runs only for MsSql2008 (or 2012)
+    // For now runs only for MsSql2012 
     public static int Main(string[] args) {
       Console.WindowWidth = 120;
+      Startup.Init(); 
       var noPause = args.Contains("/nopause");
       var runner = new TestRunner(errorFile: "_errors.log");
 
@@ -28,8 +29,6 @@ namespace Vita.UnitTests.WebTests {
         Console.ReadKey();
       }
       return errCount == 0 ? 0 : -1;
-    }
-
-  
+    }  
   }
 }

@@ -2,27 +2,16 @@
 
   <PropertyGroup>
     <TargetFramework>netcoreapp3.1</TargetFramework>
-
     <IsPackable>false</IsPackable>
-
-    <StartupObject></StartupObject>
+    <AssemblyName>Vita.Testing.WebTests</AssemblyName>
+    <RootNamespace>Vita.Testing.WebTests</RootNamespace>
+    <StartupObject>Vita.Testing.WebTests.Program</StartupObject>
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Remove="DisabledForNow\WebTests_ErrorLog.cs" />
-    <Compile Remove="DisabledForNow\WebTests_Errors.cs" />
-    <Compile Remove="DisabledForNow\WebTests_LogViewer.cs" />
-    <Compile Remove="DisabledForNow\WebTests_Session.cs" />
-    <Compile Remove="Program.cs" />
     <Compile Remove="WebTests_LogViewer.cs" />
     <Compile Remove="WebTests_Session.cs" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <None Include="DisabledForNow\WebTests_ErrorLog.cs" />
-    <None Include="DisabledForNow\WebTests_LogViewer.cs" />
-    <None Include="DisabledForNow\WebTests_Session.cs" />
-    <None Include="Program.cs" />
   </ItemGroup>
 
   <ItemGroup>

@@ -10,14 +10,14 @@
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
     <description>VITA ORM driver for MS SQL Server. </description>
     <releaseNotes></releaseNotes>
-    <copyright>Copyright Roman Ivantsov 2018</copyright>
+    <copyright>Copyright Roman Ivantsov</copyright>
     <tags>VITA ORM SQLServer</tags>
     <dependencies>
        <group>
          <dependency id="Vita" version="$version$"/>
        </group>	
        <group>
-         <dependency id="System.Data.SqlClient" version="4.6.0"/>
+         <dependency id="System.Data.SqlClient" version="4.8.0"/>
        </group>	
     </dependencies>
   </metadata>

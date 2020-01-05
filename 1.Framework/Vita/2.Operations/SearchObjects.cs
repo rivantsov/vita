@@ -7,8 +7,7 @@ using Vita.Entities.Api;
 
 namespace Vita.Entities {
   /// <summary>Base class for search parameters containers. 
-  /// Use a derived class as a parameter for search method in controllers with the  <see cref="FromUrlAttribute"/>.
-  /// For classic WebApi ApiController use it with FromUri attribute.</summary>
+  /// Use a derived class as a parameter for search methods in controllers.</summary>
   /// <remarks>
   /// <para>The <c>"IEntitySession.ExecuteSearch"</c> expects an instance of SearchParams sub-class.  </para>
   /// <para> Use the <see cref="EntityQueryExtensions.DefaultIfNull"/> extension method at the beginning 

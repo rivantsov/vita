@@ -24,7 +24,7 @@ namespace Vita.Entities.Logging {
   /// </summary>
   public interface ILogBatchingService : IObserver<LogEntry>, IObservable<IList<LogEntry>> { }
 
-  /// <summary>The last-resort error log facility. <see cref="LastResortErrorLog" class is an implementation./> </summary>
+  /// <summary>The last-resort error log facility. <see cref="LastResortErrorLog"/> class is an implementation./> </summary>
   public interface ILastResortErrorLog {
     /// <summary> Logs a fatal error in logging system. </summary>
     void LogFatalError(string logSystemError, string originalError = null);

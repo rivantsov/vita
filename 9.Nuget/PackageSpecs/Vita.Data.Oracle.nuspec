@@ -8,16 +8,16 @@
     <projectUrl>https://github.com/rivantsov/vita</projectUrl>
     <license type="expression">MIT</license>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
-    <description>VITA ORM driver for Oracle Server. </description>
+    <description>VITA ORM driver for Oracle. </description>
     <releaseNotes></releaseNotes>
-    <copyright>Copyright Roman Ivantsov 2018</copyright>
+    <copyright>Copyright Roman Ivantsov</copyright>
     <tags>VITA ORM Oracle</tags>
     <dependencies>
        <group>
          <dependency id="Vita" version="$version$"/>
        </group>	
        <group>
-         <dependency id="Oracle.ManagedDataAccess.Core" version="2.18.3"/>
+         <dependency id="Oracle.ManagedDataAccess.Core" version="2.19.60"/>
        </group>	
     </dependencies>
   </metadata>

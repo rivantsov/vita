@@ -1,28 +1,20 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using Arrest.Sync;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using System.Net;
-using System.Net.Http;
-using System.Diagnostics;
 using Vita.Modules.Login;
-using Arrest.Sync;
 
-namespace Vita.UnitTests.Web {
+namespace Vita.Testing.WebTests {
 
   [TestClass]
-  public partial class WebTests  {
+  public partial class BooksApiTests  {
 
     [ClassInitialize]
     public static void InitTest(TestContext ctx) {
-      Web.Startup.Init();
+      Startup.Init();
     }
 
     [ClassCleanup]
     public static void TestCleanup() {
-      Web.Startup.ShutDown();
+      Startup.ShutDown();
     }
 
     //Helper methods used by othere tests

@@ -17,9 +17,9 @@ using Vita.Tools.Testing;
 using Arrest;
 using Arrest.Sync;
 
-namespace Vita.UnitTests.Web {
+namespace Vita.Testing.WebTests {
 
-  public partial class WebTests {
+  public partial class BooksApiTests {
 
     [TestMethod]
     public void TestLogin() {

@@ -1,13 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
+﻿
 using Vita.Entities;
-using Vita.Entities.DbInfo;
 using Vita.Entities.Logging;
-using Vita.Entities.Utilities;
 
 namespace Vita.Modules.Logging.Db {
 

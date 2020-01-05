@@ -5,11 +5,11 @@ using System.Threading;
 
 namespace Vita.Entities.Logging {
 
-  [DebuggerDisplay("Count = {Count}")]
   /// <summary>
   ///   Implements a batching queue - concurrent no-lock enqueue-one; dequeue many with lock.
   ///   This is enhanced version - with pooling Node objects for later reuse. 
   /// </summary>
+  [DebuggerDisplay("Count = {Count}")]
   public sealed class BatchingQueue<T> {
     public int Count => _count;
 

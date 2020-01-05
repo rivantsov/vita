@@ -1,14 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
+
 using Vita.Entities;
 using Vita.Entities.Logging;
 using Vita.Entities.Services;
 using Vita.Entities.Utilities;
 
 namespace Vita.Modules.Logging {
-  
+
   public class LogPersistenceService : Observable<LogEntryBatch>, ILogPersistenceService, IEntityServiceBase {
     EntityApp _app;
     IBackgroundTaskService _taskService; 

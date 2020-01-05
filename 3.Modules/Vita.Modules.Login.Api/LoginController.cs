@@ -1,16 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Globalization;
+﻿using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
-using System.Net;
+using Microsoft.AspNetCore.Mvc;
 
 using Vita.Entities;
-using Vita.Entities.Services; 
 using Vita.Entities.Api;
-using Microsoft.AspNetCore.Mvc;
-using Vita.Modules.Login;
 using Vita.Web;
 
 namespace Vita.Modules.Login.Api {

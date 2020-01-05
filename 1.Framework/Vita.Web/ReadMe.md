@@ -1,5 +1,5 @@
-﻿# Vita.Web project and package
-The package provides classes for integration with ASP.NET-Core environment. See BooksApiStartup.cs code file for an example of configuring the middleware class. 
+﻿# Vita.Web project and nuget package
+The package provides classes for integration with ASP.NET-Core environment. See BooksApiStartup.cs code file for an example of configuring the middleware in your ASP.NET-Core application. 
 
 ## Main classes in the assembly: 
 * VitaWebMiddleware - an ASP.NET-core middleware class to be installed into HTTP pipeline. Provides initial handling of the request: sets up OperationContext and WebContext objects - these will be used in the API controllers; handles 'soft exceptions' and converts them into BadRequest response; handles automatic logging of each Web request/response information. 

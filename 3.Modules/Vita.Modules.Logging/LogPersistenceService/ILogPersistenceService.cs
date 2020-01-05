@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+
 using Vita.Entities;
 using Vita.Entities.Logging;
 
@@ -16,10 +15,6 @@ namespace Vita.Modules.Logging {
     public IDictionary<Type, LogEntry[]> EntriesByType;
     public object CustomData;
 
-/*        if(_entriesByType == null)
-        return _entriesByType; 
-*/
-
     public IList<LogEntry> GetEntries(Type entryType) {
       if(EntriesByType.TryGetValue(entryType, out var entries))
         return entries;
@@ -31,6 +26,5 @@ namespace Vita.Modules.Logging {
   public interface ILogPersistenceService : IObserver<IList<LogEntry>>, IObservable<LogEntryBatch> {
 
   }
-
 
 }

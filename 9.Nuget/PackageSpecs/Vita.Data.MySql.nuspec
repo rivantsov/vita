@@ -10,14 +10,14 @@
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
     <description>VITA ORM driver for MySql. </description>
     <releaseNotes></releaseNotes>
-    <copyright>Copyright Roman Ivantsov 2018</copyright>
+    <copyright>Copyright Roman Ivantsov</copyright>
     <tags>VITA ORM MySql</tags>
     <dependencies>
        <group>
          <dependency id="Vita" version="$version$"/>
        </group>	
        <group>
-         <dependency id="MySql.Data" version="8.0.14"/>
+         <dependency id="MySql.Data" version="8.0.18"/>
        </group>	
     </dependencies>
   </metadata>

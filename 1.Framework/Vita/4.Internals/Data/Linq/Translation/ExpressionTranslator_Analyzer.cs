@@ -1550,24 +1550,16 @@ namespace Vita.Data.Linq.Translation {
     protected virtual Expression AnalyzeSubQuery(Expression expression, TranslationContext context) {
       var exprChain = ExpressionChain.Build(expression);
       var tableExpression = ExtractFirstTable(exprChain[0], context);
-
       return this.Analyze(exprChain, tableExpression, context);
     }
 
-    /// <summary>
-    /// Analyses InvokeExpression
-    /// </summary>
-    /// <param name="expression"></param>
-    /// <param name="parameters"></param>
-    /// <param name="context"></param>
-    /// <returns></returns>
-    protected virtual Expression AnalyzeInvoke(InvocationExpression expr, IList<Expression> parameters,
+    protected virtual Expression AnalyzeInvoke(InvocationExpression expression, IList<Expression> parameters,
                                                TranslationContext context) {
-      var lambda = expr.Expression as LambdaExpression;
+      var lambda = expression.Expression as LambdaExpression;
       if(lambda == null)
-        Util.Throw("The invocation/call not supported: {0}", expr.Expression);
+        Util.Throw("The invocation/call not supported: {0}", expression.Expression);
       var localBuilderContext = context.NewQuote();
-      return Analyze(lambda, expr.Arguments, localBuilderContext);
+      return Analyze(lambda, expression.Arguments, localBuilderContext);
     }
 
     protected virtual Expression AnalyzeUnionIntersect(MultiSetType multiSetType, IList<Expression> parameters, TranslationContext context) {

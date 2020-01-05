@@ -8,9 +8,9 @@
     <projectUrl>https://github.com/rivantsov/vita</projectUrl>
     <license type="expression">MIT</license>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
-    <description>Login module based on VITA Framework.</description>
+    <description>Login management module based on VITA Framework.</description>
     <releaseNotes></releaseNotes>
-    <copyright>Copyright Roman Ivantsov 2018</copyright>
+    <copyright>Copyright Roman Ivantsov</copyright>
     <tags>VITA Login</tags>
     <dependencies>
        <group>

@@ -4,6 +4,16 @@
     <TargetFramework>netstandard2.0</TargetFramework>
     <AssemblyName>Vita.Modules.Legacy</AssemblyName>
     <RootNamespace>Vita.Modules.Legacy</RootNamespace>
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+    <NoWarn>1701;1702;1591</NoWarn>
+    <DocumentationFile>bin\Release\netstandard2.0\Vita.Modules.Legacy.xml</DocumentationFile>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <DocumentationFile></DocumentationFile>
   </PropertyGroup>
 
   <ItemGroup>

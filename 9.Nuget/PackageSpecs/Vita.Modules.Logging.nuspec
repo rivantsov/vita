@@ -1,0 +1,27 @@
+<?xml version="1.0"?>
+<package >
+  <metadata>
+    <id>Vita.Modules.Logging</id>
+    <version>$version$</version>
+    <authors>Roman Ivantsov</authors>
+    <owners>Roman Ivantsov</owners>
+    <projectUrl>https://github.com/rivantsov/vita</projectUrl>
+    <license type="expression">MIT</license>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <description>Logging to database functionality.</description>
+    <releaseNotes></releaseNotes>
+    <copyright>Copyright Roman Ivantsov</copyright>
+    <tags>VITA Logging</tags>
+    <dependencies>
+       <group>
+         <dependency id="Vita" version="$version$"/>
+       </group>	
+    </dependencies>
+  </metadata>
+  <files>
+	 <file src="..\..\3.Modules\Vita.Modules.Logging\bin\Release\netstandard2.0\Vita.Modules.Logging.dll" target="lib\netstandard2.0" />
+	 <file src="..\..\3.Modules\Vita.Modules.Logging\bin\Release\netstandard2.0\Vita.Modules.Logging.pdb" target="lib\netstandard2.0" />
+	 <file src="..\..\3.Modules\Vita.Modules.Logging\bin\Release\netstandard2.0\Vita.Modules.Logging.xml" target="lib\netstandard2.0" />
+	 <file src="..\..\3.Modules\Vita.Modules.Logging\**\*.cs" target="src\3.Modules\Vita.Modules.Logging" />
+  </files>
+</package>

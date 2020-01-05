@@ -1,0 +1,30 @@
+<?xml version="1.0"?>
+<package >
+  <metadata>
+    <id>Vita.Modules.Legacy</id>
+    <version>$version$</version>
+    <authors>Roman Ivantsov</authors>
+    <owners>Roman Ivantsov</owners>
+    <projectUrl>https://github.com/rivantsov/vita</projectUrl>
+    <license type="expression">MIT</license>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <description>Legacy entity modules: AddressPhone, EncryptedData, Party.</description>
+    <releaseNotes></releaseNotes>
+    <copyright>Copyright Roman Ivantsov</copyright>
+    <tags>VITA Party</tags>
+    <dependencies>
+       <group>
+         <dependency id="Vita" version="$version$"/>
+       </group>	
+       <group>
+         <dependency id="Newtonsoft.Json" version="12.0.2"/>
+       </group>	
+    </dependencies>
+  </metadata>
+  <files>
+	 <file src="..\..\3.Modules\Vita.Modules.Legacy\bin\Release\netstandard2.0\Vita.Modules.Legacy.dll" target="lib\netstandard2.0" />
+	 <file src="..\..\3.Modules\Vita.Modules.Legacy\bin\Release\netstandard2.0\Vita.Modules.Legacy.pdb" target="lib\netstandard2.0" />
+	 <file src="..\..\3.Modules\Vita.Modules.Legacy\bin\Release\netstandard2.0\Vita.Modules.Legacy.xml" target="lib\netstandard2.0" />
+	 <file src="..\..\3.Modules\Vita.Modules.Legacy\**\*.cs" target="src\3.Modules\Vita.Modules.Legacy" />
+  </files>
+</package>

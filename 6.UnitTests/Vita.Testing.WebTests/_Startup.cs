@@ -1,31 +1,26 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Collections.Specialized;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
-using System.Configuration;
-using System.Diagnostics;
-using Microsoft.Extensions.Configuration;
-using Microsoft.AspNetCore.Hosting;
+using Arrest;
+using Arrest.Xml;
 using Microsoft.AspNetCore;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.Extensions.Configuration;
 
-using Vita.Entities;
 using Vita.Data;
 using Vita.Data.MsSql;
-using Vita.Tools;
+using Vita.Entities;
 using Vita.Entities.DbInfo;
+using Vita.Modules.Logging.Db;
 using Vita.Modules.Login.Mocks;
-
-using Arrest;
 using Vita.Samples.BookStore;
 using Vita.Samples.BookStore.SampleData;
-using Arrest.Xml;
-using Vita.Modules.Logging;
-using Vita.Modules.Logging.Db;
+using Vita.Tools;
 
-namespace Vita.UnitTests.Web {
+namespace Vita.Testing.WebTests {
 
   public static class Startup {
     public static BooksEntityApp BooksApp;
@@ -108,13 +103,14 @@ namespace Vita.UnitTests.Web {
       };
     }
 
-    static IWebHost _webHost; 
+    static IWebHost _webHost;
     public static void StartService(string baseAddress) {
       var hostBuilder = WebHost.CreateDefaultBuilder()
-          .ConfigureAppConfiguration((context, config) => {  })
+          .ConfigureAppConfiguration((context, config) => { })
           .UseStartup<Samples.BookStore.Api.BooksApiStartup>()
           .UseEnvironment("Development") //To return exception details info on ServerError
-          .UseUrls(baseAddress);
+          .UseUrls(baseAddress)
+          ;
       _webHost = hostBuilder.Build();
       
       Task.Run(()=> _webHost.Run());

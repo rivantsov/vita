@@ -235,7 +235,6 @@ namespace Vita.Testing.ExtendedTests {
     [TestMethod]
     public void TestDbModelCompare() {
       Startup.BooksApp.LogTestStart();
-
       var app = Startup.BooksApp;
       //Once we started tests, db model is updated; now if we compare db model with entity model, there should be no changes
       // We test here how well the DbModelComparer works - it should not signal any false positives (find differences when there are none)
@@ -253,11 +252,15 @@ namespace Vita.Testing.ExtendedTests {
         var viewCount = app.Model.Entities.Where(e => e.Kind == Entities.Model.EntityKind.View).Count(); 
         changeCount -= viewCount; // views are marked as mismatch, so ignore these
       }
+      //Known issue in v3.0, SQLite in Release mode - fails, one diff detected, FK_BookOrder_EncryptedData
+      if (changeCount == 1 && Startup.ServerType == DbServerType.SQLite)
+        Assert.Fail("Known issue: SQLite fails in Relase mode in DbModelCompare test. Fails to load FK BookOrder->EncrData");
+      //  is not found in database
       if (changeCount > 0) {
         // sometimes randomly fails, trying to catch it
         var changes = string.Join(Environment.NewLine, upgradeInfo.AllScripts.Select(s => s.Sql).ToList());
-        Debug.WriteLine("\r\nFAILED DbModelCompare test, update scripts: ====================================================\r\n" 
-           + changes);
+        Trace.WriteLine(//"\r\nFAILED DbModelCompare test, update scripts: ====================================================\r\n" +
+           changes);
         //Debugger.Break();  
       }
       Assert.AreEqual(0, changeCount, "Expected no changes");

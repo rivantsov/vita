@@ -101,6 +101,7 @@ namespace Vita.Data.SQLite {
           continue;
         var tname = tbl.TableName;
         var tblFKs = ExecuteSelect("PRAGMA foreign_key_list('{0}')", tname);
+        //System.Diagnostics.Trace.WriteLine($"Table: {tname}, FKs: {tblFKs.Rows.Count}");
         var lastKeyId = -1;
         DbRefConstraintInfo constr = null; 
         foreach(var fkColRow in tblFKs.Rows) {

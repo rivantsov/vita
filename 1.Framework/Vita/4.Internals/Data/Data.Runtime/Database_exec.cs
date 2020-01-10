@@ -26,7 +26,7 @@ namespace Vita.Data.Runtime {
       try {
         dbCommand.Connection = conn.DbConnection;
         dbCommand.Transaction = conn.DbTransaction;
-        var start = _timeService.ElapsedMilliseconds;
+        var start = Util.GetTimestamp();
         command.Result = _driver.ExecuteCommand(dbCommand, command.ExecutionType);
         conn.ActiveReader = command.Result as IDataReader; // if it is reader, save it in connection
         command.ProcessedResult = (command.ResultProcessor == null) 
@@ -34,8 +34,7 @@ namespace Vita.Data.Runtime {
                                    : command.ResultProcessor.ProcessResult(command);
         _driver.CommandExecuted(conn, dbCommand, command.ExecutionType);
         ProcessOutputCommandParams(command);
-        var end = _timeService.ElapsedMilliseconds;
-        command.TimeMs = (int)(end - start);
+        command.TimeMs = Util.GetTimeSince(start).TotalMilliseconds;
         LogCommand(conn.Session, dbCommand, command.TimeMs, command.RowCount);
       } catch(Exception ex) {
         // Important: in some cases exception on invalid SQL is not thrown immediately but is thrown later when we try to read the results
@@ -172,10 +171,10 @@ namespace Vita.Data.Runtime {
 
     #region Logging
 
-    private void LogCommand(EntitySession session, IDbCommand command, long executionTime, int rowCount = -1) {
+    private void LogCommand(EntitySession session, IDbCommand command, double executionTimeMs, int rowCount = -1) {
       if (!session.LogEnabled)
         return;
-      var entry = new DbCommandLogEntry(session.Context.LogContext, command, executionTime, rowCount);
+      var entry = new DbCommandLogEntry(session.Context.LogContext, command, executionTimeMs, rowCount);
       session.Context.Log.AddEntry(entry);
     }
 

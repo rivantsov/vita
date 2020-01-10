@@ -17,11 +17,11 @@ namespace Vita.Entities.Logging {
   //  info log entries. 
   public class DbCommandLogEntry : InfoLogEntry {
     IDbCommand _command; 
-    public long ExecutionTime;
+    public double ExecutionTime;
     public int RowCount;
     private string _asText;
 
-    public DbCommandLogEntry(LogContext logContext, IDbCommand command, long executionTime, int rowCount) 
+    public DbCommandLogEntry(LogContext logContext, IDbCommand command, double executionTime, int rowCount) 
          : base (logContext, null) {
       _command = command;
       ExecutionTime = executionTime;

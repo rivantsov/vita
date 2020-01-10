@@ -7,6 +7,7 @@ using System.Text;
 using Microsoft.SqlServer.Server;
 using Vita.Data.Driver;
 using Vita.Data.Linq.Translation.Expressions;
+using Vita.Data.Model;
 using Vita.Data.Sql;
 using Vita.Entities.Utilities;
 
@@ -107,7 +108,22 @@ namespace Vita.Data.MsSql {
             lph.PreviewParameter = ConfigureListParameter; //sets up special properties of DbParameter
             var template = GetSelectFromListParamTemplate(lph.ElementType);
             lph.FormatParameter = (prm) => string.Format(template, prm.ParameterName);
-            break; 
+            break;
+            
+          case SqlColumnValuePlaceHolder cph:
+            // Special case for binary, varbinary nullable column/param, you should use VarBinary.Null
+            //  instead of plain DbNull.Value. Otherwise a strange and stupid error is thrown: 
+            //  no implicit conv from nvarchar to varbinary
+            var col = cph.Column; 
+            if (cph.ParamDirection == ParameterDirection.Input && 
+                col.Flags.IsSet(DbColumnFlags.Nullable) && 
+                col.TypeInfo.DbTypeSpec.Contains("binary")) {
+              cph.PreviewParameter = (prm, ph) => {
+                if(prm.Value == DBNull.Value)
+                  prm.Value = System.Data.SqlTypes.SqlBinary.Null; 
+              }; //lambda
+            } //if
+            break;            
         }
       }
     }

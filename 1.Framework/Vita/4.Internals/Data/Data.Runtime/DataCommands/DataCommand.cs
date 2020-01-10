@@ -30,7 +30,7 @@ namespace Vita.Data.Runtime {
     public object Result; // direct result, DataReader, not record list
     public object ProcessedResult; 
     public int RowCount = -1;
-    public int TimeMs; 
+    public double TimeMs; 
 
     public DataCommand(DataConnection connection, IDbCommand dbCommand, DbExecutionType executionType, 
                                 IDataCommandResultProcessor resultsProcessor, IList<EntityRecord> records,

@@ -86,6 +86,8 @@ namespace Vita.Testing.BasicTests.DataTypes {
       // binary 
       [Size(64)]
       byte[] ByteArrayProp { get; set; }
+      [Nullable, Unlimited]
+      byte[] ByteArrayNullProp { get; set; } //testing bug fix with nullable varbinary(max)
       [Nullable, Size(128)]
       Binary BinaryProp { get; set; }
 
@@ -232,6 +234,11 @@ namespace Vita.Testing.BasicTests.DataTypes {
       var session = ctx.OpenSession();
       session.LogMessage("TestDataTypes test started.");
 
+      // Bug fix - single-record insert fails, on column varbinary(max), nullable, with NULL value.
+      // Single-record insert uses all-parameters format, so failure comes from invalid parameter value
+      // if more than one record, fwk goes for multi-record insert with literals mostly instead of parameters. 
+      var ent0 = CreateDataTypesEntity(session, "XYZ01234", "Unlimited property 0");
+      session.SaveChanges(); 
 
       //Create 2 entities, to verify how batch updates work for all data types; batch is used only when there's more than 1 update
       var ent1 = CreateDataTypesEntity(session, "abcd", "Unlimited property 1");
@@ -244,7 +251,7 @@ namespace Vita.Testing.BasicTests.DataTypes {
 
       session = ctx.OpenSession();
       var allEntities = session.GetEntities<IDataTypesEntity>(); 
-      Assert.AreEqual(2, allEntities.Count, "Expected 2 entities.");
+      Assert.AreEqual(3, allEntities.Count, "Expected 3 entities.");
 
       session = ctx.OpenSession();
       var ent1copy = session.GetEntity<IDataTypesEntity>(ent1Id);

@@ -34,7 +34,7 @@ namespace Vita.Testing.ExtendedTests {
     public static DbDriver Driver; 
     public static DbSettings DbSettings;
     public static string LogFilePath = "_books.log";
-    public static string ActivationLogFilePath = "_booksActivation.log"; //schema changes SQLs
+    public static string ErrorLogFilePath = "_errors.log"; //schema changes SQLs
 
     public static DbServerType ServerType;
     //public static bool CacheEnabled;
@@ -69,7 +69,7 @@ namespace Vita.Testing.ExtendedTests {
         //Setup model, initialize Books module, create database model, update schema -------------------------------------------------
         BooksApp = new BooksEntityApp();
         BooksApp.LogPath = LogFilePath;
-        BooksApp.ActivationLogPath = ActivationLogFilePath;
+        BooksApp.ErrorLogPath = ErrorLogFilePath;
         BooksApp.Init();
 
         // Oracle - uncomment this to see tablespace use, but you must pre-create the tablespace in SQL-Developer
@@ -111,6 +111,7 @@ namespace Vita.Testing.ExtendedTests {
         //Unit test framework shows only ex message, not details; let's write specifics into debug output - it will be shown in test failure report
         Debug.WriteLine("app init encountered errors: ");
         Debug.WriteLine(sx.ToLogString());
+
         throw;
       }
     }
@@ -176,8 +177,8 @@ namespace Vita.Testing.ExtendedTests {
         return;
       if(File.Exists(LogFilePath))
         File.Delete(LogFilePath);
-      if(File.Exists(ActivationLogFilePath))
-        File.Delete(ActivationLogFilePath);
+      if(File.Exists(ErrorLogFilePath))
+        File.Delete(ErrorLogFilePath);
       _logFilesDeleted = true;
     }
 

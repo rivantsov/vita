@@ -36,9 +36,6 @@ namespace Vita.Entities.Logging {
       return _asText; 
     }
 
-    public override string ToString() {
-      return AsText(); 
-    }
   }
 
 

@@ -27,6 +27,9 @@ namespace Vita.Entities.Logging {
 
     public abstract string AsText();
 
+    public override string ToString() {
+      return AsText();
+    }
   }
 
   /// <summary>

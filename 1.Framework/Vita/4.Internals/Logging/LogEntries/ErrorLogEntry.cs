@@ -43,8 +43,11 @@ namespace Vita.Entities.Logging {
     public override bool IsError => true; 
 
     public override string AsText() {
-      return Details;
+      return $@"{Message} 
+[{CreatedOn}] ErrorKind:{Kind} 
+{Details}";
     }
+
     public override string ToString() {
       return Message;
     }

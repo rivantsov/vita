@@ -78,26 +78,29 @@ namespace Vita.Entities {
     }
 
     protected virtual void ConnectToDatabase(DbSettings dbSettings) {
-      switch(this.Status) {
-        case EntityAppStatus.Created:
-          this.Init();
-          break;
-        case EntityAppStatus.Shutdown:
-          return;
-      } 
-      ActivationLog.WriteMessage("  Connecting to data source {0}.", dbSettings.DataSourceName);
-      dbSettings.CheckConnectivity(rethrow: true);
-      var dbModel = GetCreateDbModel(dbSettings);
-      var db = new Database(dbModel, dbSettings);      
-      var ds = new DataSource(dbSettings.DataSourceName, db);
-      this.DataAccess.RegisterDataSource(ds);
-      this.DataSourceEvents.OnDataSourceChange(new DataSourceEventArgs(db, dbSettings.DataSourceName, DataSourceEventType.Connecting));
-      CheckUpgradeDatabase(db);
-      LogService.Flush(); 
-      this.Status = EntityAppStatus.Connected;
-      this.DataSourceEvents.OnDataSourceChange(new DataSourceEventArgs(db, dbSettings.DataSourceName, DataSourceEventType.Connected));
-      ActivationLog.WriteMessage("Connected to {0}.", dbSettings.DataSourceName);
-      LogService.Flush();
+      try {
+        switch(this.Status) {
+          case EntityAppStatus.Created:
+            this.Init();
+            break;
+          case EntityAppStatus.Shutdown:
+            return;
+        }
+        ActivationLog.WriteMessage("  Connecting to data source {0}.", dbSettings.DataSourceName);
+        dbSettings.CheckConnectivity(rethrow: true);
+        var dbModel = GetCreateDbModel(dbSettings);
+        var db = new Database(dbModel, dbSettings);
+        var ds = new DataSource(dbSettings.DataSourceName, db);
+        this.DataAccess.RegisterDataSource(ds);
+        this.DataSourceEvents.OnDataSourceChange(new DataSourceEventArgs(db, dbSettings.DataSourceName, DataSourceEventType.Connecting));
+        CheckUpgradeDatabase(db);
+        LogService.Flush();
+        this.Status = EntityAppStatus.Connected;
+        this.DataSourceEvents.OnDataSourceChange(new DataSourceEventArgs(db, dbSettings.DataSourceName, DataSourceEventType.Connected));
+        ActivationLog.WriteMessage("Connected to {0}.", dbSettings.DataSourceName);
+      } finally {
+        LogService.Flush();
+      }
     }
 
     protected virtual DbModel GetCreateDbModel(DbSettings settings) {

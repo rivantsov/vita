@@ -11,7 +11,9 @@ namespace Vita.Entities.Logging {
   public class LogService : Observable<LogEntry>, ILogService {
 
     public void AddEntry(LogEntry entry) {
-      Broadcast(entry); 
+      Broadcast(entry);
+      if(entry.IsError)
+        Flush(); 
     }
 
     public void Flush() {

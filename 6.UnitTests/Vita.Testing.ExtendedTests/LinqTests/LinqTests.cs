@@ -701,6 +701,20 @@ namespace Vita.Testing.ExtendedTests {
       var app = Startup.BooksApp;
       var session = app.OpenSession();
 
+      // bug fix #114: Enumerable ops over ent lists fail with 'array len' error
+      var pubMs = session.EntitySet<IPublisher>().Where(p => p.Name.StartsWith("MS")).First();
+      // Many to one list: pub.Books
+      var allMsBooks = pubMs.Books.ToList();
+      Assert.IsTrue(allMsBooks.Count > 0, "Enumerable method on entity list property failed.");
+      // other methods: OrderBy and First
+      var firstMsBook = pubMs.Books.OrderByDescending(b => b.Title).First();
+      Assert.IsNotNull(firstMsBook, "Enumerable methods (OrderByDesc, First) on entity list property failed.");
+      // ManytoMany: book.Authors
+      var lastMsAuthor = firstMsBook.Authors.OrderBy(a => a.FullName).Last();
+      Assert.IsNotNull(lastMsAuthor, "Enumerable method on m2m entity list property failed.");
+
+
+
       // One-to-many relationship. Use publisher.Books member in LINQ query - this should result in sub-query against Book table
       // Find publisher with at least one book priced above $10
       var qPubsWExpBooks = from p in session.EntitySet<IPublisher>()

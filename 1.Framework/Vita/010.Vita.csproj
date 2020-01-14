@@ -23,6 +23,10 @@
     <PackageReference Include="System.Diagnostics.EventLog" Version="4.7.0" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="4.Internals\Entities.Runtime\EntityLists_New\" />
+  </ItemGroup>
+
   <PropertyGroup>
     <NuspecFile>Vita.Entities.nuspec</NuspecFile>
   </PropertyGroup>

@@ -24,6 +24,7 @@ namespace Vita.Entities.Services.Implementations {
       public int BaseCycleCount;
       public IList<Action> Subscribers = new List<Action>();
 
+      // access to these methods is protected by lock, so we don't lock inside
       public void Subscribe(Action action) {
         var newList = new List<Action>(Subscribers);
         newList.Add(action);
@@ -32,7 +33,7 @@ namespace Vita.Entities.Services.Implementations {
       
       public void Unsubscribe(Action action) {
         var newList = new List<Action>(Subscribers);
-        if (!newList.Contains(action))
+        if (newList.Contains(action))
           newList.Remove(action);
         Subscribers = newList;
       }
@@ -66,13 +67,20 @@ namespace Vita.Entities.Services.Implementations {
     }
 
     #region ITimerService implementation
+
+    object _subscriptionLock = new object();
+
     public void Subscribe(TimerInterval interval, Action handler) {
-      var subscr = GetSubscription(interval);
-      subscr?.Subscribe(handler); 
+      lock(_subscriptionLock) {
+        var subscr = GetSubscription(interval);
+        subscr?.Subscribe(handler);
+      }
     }
     public void UnSubscribe(TimerInterval interval, Action handler) {
-      var subscr = GetSubscription(interval);
-      subscr.Unsubscribe(handler);
+      lock(_subscriptionLock) {
+        var subscr = GetSubscription(interval);
+        subscr.Unsubscribe(handler);
+      }
     } //method
     #endregion
 

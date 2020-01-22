@@ -169,7 +169,7 @@ namespace Vita.Entities {
 
     public TModule GetModule<TModule>() where TModule : EntityModule {
       var result = Modules.FirstOrDefault(m => m is TModule) as TModule;
-      return null;
+      return result;
     }
 
     public bool IsConnected() {

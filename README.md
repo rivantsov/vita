@@ -1,12 +1,10 @@
 # VITA Application Framework  
-*Full-feature .NET ORM - DONE RIGHT*  
 
-VITA is a framework for creating data-connected .NET applications. It is a full-featured .NET [ORM](http://en.wikipedia.org/wiki/Object-relational_mapping) - and much more than ORM. Automatic schema management, full Linq implementation with query caching, support for CRUD stored procedures, modular application composition, transparent data cache implementation with Linq queries redirection, row-level authorization subsystem. Supports data models distributed over multiple databases. 
-Works with MS SQL Server, MySql, PostgreSQL, SQLite.
+VITA is a full-featured .NET [ORM](http://en.wikipedia.org/wiki/Object-relational_mapping)
 
-## Highlights
+## Quick Highlights
 * **Entities are defined as .NET interfaces** - minimum coding required. Just _'string Name {get;set;}'_ for a property - compact and clear. 
-* **Entities are self-tracking** - they maintain original and modified property values, automatically register for update. 
+* **Entities are self-tracking** - they maintain original and modified property values, system automatically tracks modified entities to submit in *SaveChanges* call. 
 * **Database model is automatically created/updated from entity model**. Existing data is preserved. Database schema follows c# code. 
 * **Database keys and indexes** are defined through entity attributes in c# - you can define most of the database artifacts in c# code.
 * **Automatically generated CRUD SQLs**. 
@@ -27,5 +25,3 @@ Works with MS SQL Server, MySql, PostgreSQL, SQLite.
 ### System Requirements
 * .NET Standard 2.0, Visual Studio 2019; .NET Core 3.1 for test and sample projects 
 * MS SQL Server 2012+; MySql, PostgreSQL, Oracle, SQLite
-
-

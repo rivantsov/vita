@@ -85,7 +85,7 @@ namespace Vita.Entities {
     public static object CreatePrimaryKey<TEntity>(this IEntitySession session, params object[] values) {
       Util.CheckParam(values, "values");
       var entInfo = session.Context.App.Model.GetEntityInfo(typeof(TEntity), throwIfNotFound: true);
-      var pk = new EntityKey(entInfo.PrimaryKey, values);
+      var pk = EntityKey.Create(entInfo.PrimaryKey, values);
       return pk; 
     }
 

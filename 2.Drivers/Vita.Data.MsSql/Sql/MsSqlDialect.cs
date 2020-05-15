@@ -9,6 +9,7 @@ using Vita.Data.Driver;
 using Vita.Data.Linq.Translation.Expressions;
 using Vita.Data.Model;
 using Vita.Data.Sql;
+using Vita.Entities.Services;
 using Vita.Entities.Utilities;
 
 namespace Vita.Data.MsSql {
@@ -129,6 +130,8 @@ namespace Vita.Data.MsSql {
     }
 
     private string GetSelectFromListParamTemplate(Type elemType) {
+      if (elemType == typeof(long) || elemType == typeof(ulong))
+        return "SELECT CAST(\"Value\" AS BIGINT) FROM {0}";
       if(elemType.IsInt())
         return "SELECT CAST(\"Value\" AS INT) FROM {0}";
       else if(elemType == typeof(Guid))

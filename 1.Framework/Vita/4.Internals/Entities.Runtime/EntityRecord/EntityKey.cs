@@ -20,7 +20,7 @@ namespace Vita.Entities.Runtime {
     }
 
     public EntityKey(EntityKeyInfo key, params object[] values) {
-      var keyCount = key.KeyMembers.Count; 
+      var keyCount = key.ExpandedKeyMembers.Count; 
       Util.Check(keyCount == values.Length, "Invalid number of key values, expected: {0}, provided: {1}.", keyCount, values.Length);
       KeyInfo = key; 
       Values = values;

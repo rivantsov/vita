@@ -52,8 +52,8 @@ namespace Vita.Entities.Utilities {
       var jobT = (AsyncJob<TResult>)job;
       try {
         jobT.Result = jobT.JobFunc().Result;
-      } catch (AggregateException aex) {
-        jobT.Exception = aex.InnerExceptions[0];
+        // Note to myself - do not try to catch AggrExc and unwrap it here - this destroys call stack, and other bad stuff
+        //  taking and rethrowing as-is is the best option
       } catch (Exception ex) {
         jobT.Exception = ex;
       }

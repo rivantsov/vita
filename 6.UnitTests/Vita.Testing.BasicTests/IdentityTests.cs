@@ -108,6 +108,13 @@ namespace Vita.Testing.BasicTests.Identity {
       Assert.IsTrue(car1.Owner == john, "Owner expected to be John");
       Assert.IsTrue(car2.Owner == john, "Owner expected to be John");
 
+      // Testing list.Contains with long (bigint) values, used to fail for SQL Server
+      var longArray = new long[] { long.MaxValue - 10, long.MaxValue - 9, long.MaxValue - 8 };
+      // we just test that this does not blow up
+      var someCars = session.EntitySet<ICar>().Where(c => longArray.Contains(c.Id)).ToList();
+      var sql = session.GetLastCommand().CommandText;
+      Assert.AreEqual(0, someCars.Count);
+
     }//method
 
     [TestMethod]

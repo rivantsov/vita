@@ -15,7 +15,7 @@ namespace Vita.Entities.Logging {
 
     class Node {
       public T Item;
-      public volatile Node Next;
+      public Node Next;
     }
 
     // We use Interlocked operations when accessing last-in (to push items); 
@@ -32,52 +32,44 @@ namespace Vita.Entities.Logging {
       _lastIn = _lastOut = new Node();
     }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void Enqueue(T item) {
-      var node = NodePoolTryPop() ?? new Node();
-      node.Item = item;
-      // 1. Change _lastIn.Next to point to new node; try quick way once, if fail - go slow path with spin
-      var lastIn = _lastIn;
-      if(Interlocked.CompareExchange(ref _lastIn.Next, node, null) == null) {
-        // fast, most common path; we might fail in next call but we don't care - it means another thread
-        // is already advancing the _lastIn ref
-        Interlocked.CompareExchange(ref _lastIn, node, lastIn); 
-      } else 
-        EnqueueSlowPath(node);
+      // 1. Get node from pool or create new one
+      var newNode = NodePoolTryPop() ?? new Node();
+      newNode.Item = item;
+      // 2. Quick path
+      var oldLastIn = _lastIn;
+      if(Interlocked.CompareExchange(ref _lastIn, newNode, oldLastIn) == oldLastIn)
+        oldLastIn.Next = newNode;
+      else
+        EnqueueSlowPath(newNode);
       Interlocked.Increment(ref _count);
     }
 
-    private void EnqueueSlowPath(Node node) {
-      SpinWait spin = new SpinWait();
-      // Keep trying with spin until we succeed.
+    // Same as Enqueue but in a loop with spin
+    private void EnqueueSlowPath(Node newNode) {
+      var spinWait = new SpinWait();
+      Node oldLastIn;
       do {
-        spin.SpinOnce();
-        // just in case if _lastIn is behind - advance it (if other thread pushed an item)
-        if(_lastIn.Next != null)
-          AdvanceLastIn(); 
-      } while(Interlocked.CompareExchange(ref _lastIn.Next, node, null) != null);
-      AdvanceLastIn();
+        spinWait.SpinOnce();
+        oldLastIn = _lastIn;
+      } while(Interlocked.CompareExchange(ref _lastIn, newNode, oldLastIn) != oldLastIn);
+      oldLastIn.Next = newNode;
     }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private void AdvanceLastIn() {
-      var lastInCopy = _lastIn;
-      while(lastInCopy.Next != null)
-        lastInCopy = _lastIn = lastInCopy.Next;
-    }
 
     public IList<T> DequeueMany(int maxCount = int.MaxValue) {
       // iterate over list starting with _lastOut
-      var list = new List<T>();
+      var list = new List<T>(maxCount);
       lock(_dequeueLock) {
-        // _lastOut == _lastIn is a condition of empty queue
-        while(_lastOut != _lastIn && list.Count < maxCount) {
-          var oldLastOut = _lastOut; 
+        while(_lastOut.Next != null && list.Count < maxCount) {
+          // save the ref to the node to return it to the pool at the end
+          var savedLastOut = _lastOut;
+          // Advance _lastOut, copy item to result list.
           _lastOut = _lastOut.Next;
-          NodePoolTryPush(oldLastOut);
           list.Add(_lastOut.Item);
           _lastOut.Item = default(T); //clear the ref to data 
           Interlocked.Decrement(ref _count);
+          NodePoolTryPush(savedLastOut); // return the node to the pool
         }
         return list;
       } //lock
@@ -86,23 +78,26 @@ namespace Vita.Entities.Logging {
     #region Node pooling
     // We pool/reuse Node objects; we save nodes in a simple concurrent stack. 
     // The stack is not 100% reliable - it might fail occasionally when pushing/popping up nodes
-    Node _nodePoolHead;
+    volatile Node _nodePoolHead;
 
     private Node NodePoolTryPop() {
       var head = _nodePoolHead;
-      if(head == null)
-        return null; // stack is empty
+      if(head == null) // stack is empty
+        return null;
       if(Interlocked.CompareExchange(ref _nodePoolHead, head.Next, head) == head) {
-        head.Next = null; 
+        head.Next = null;
         return head;
       }
-      return null; 
+      // Node pool is not reliable (push and pop), 
+      // Hypotethically this may result in pool growth over time: let's say all pushes succeed, but some rare pops fail.  
+      // To prevent this from ever happening, we drop the entire pool if we ever fail to pop.
+      // This is an EXTREMELY rare event, and if it happens - no impact, just extra objects for GC to collect
+      _nodePoolHead = null; //drop the pool
+      return null;
     }
 
     private void NodePoolTryPush(Node node) {
-      // Do not pool some of the nodes, so the pool slowly drains if it occasionally gets too big
-      if(_count % 100 == 0)
-        return; 
+      node.Item = default(T);
       node.Next = _nodePoolHead;
       // we make just one attempt; if it fails, we don't care - node will be GC-d
       Interlocked.CompareExchange(ref _nodePoolHead, node, node.Next);

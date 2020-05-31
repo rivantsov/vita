@@ -103,11 +103,25 @@ namespace Vita.Testing.ExtendedTests {
     }
 
     [TestMethod]
-    public void TestAggregates() {
+    public void TestLinqAggregates() {
       Startup.BooksApp.LogTestStart();
 
       var app = Startup.BooksApp;
       var session = app.OpenSession();
+
+      // Calc Avg in SQL and compare with Avs over entities in c#
+      var avgBkPrice = session.EntitySet<IBook>().Average(b => b.Price);
+      var avgBkPrice2 = session.GetEntities<IBook>().Average(b => b.Price);
+      var avgDiff = Math.Abs(avgBkPrice - avgBkPrice2);
+      Assert.IsTrue(avgDiff < 0.01m, "Avg mismatch - in db vs in c#");
+
+      // Avg with Int field - currently blows up
+      var avgOrderCnt = session.EntitySet<IBookOrderLine>().Average(ol => ol.Quantity);
+      // this works:
+      // var avgOrderCnt = session.EntitySet<IBookOrderLine>().Average(ol => (double)ol.Quantity);
+      Assert.IsTrue(avgOrderCnt > 0, "Expected avg > 0");
+
+
       /*
        //currently does not work - join with non-table/subquery not supported
       var bkSet = session.EntitySet<IBook>();

@@ -57,9 +57,9 @@ namespace Vita.Entities.Logging {
     }
 
 
-    public IList<T> DequeueMany(int maxCount = int.MaxValue) {
+    public IList<T> DequeueMany(int maxCount) {
       // iterate over list starting with _lastOut
-      var list = new List<T>(maxCount);
+      var list = new List<T>();
       lock(_dequeueLock) {
         while(_lastOut.Next != null && list.Count < maxCount) {
           // save the ref to the node to return it to the pool at the end

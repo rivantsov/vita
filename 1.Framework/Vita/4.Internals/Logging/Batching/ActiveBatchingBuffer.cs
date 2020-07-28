@@ -68,6 +68,10 @@ namespace Vita.Entities.Logging {
               return;
             var batch = _queue.DequeueMany(_batchSize);
             Broadcast(batch);
+            // another exit path, to avoid endless loop: send small batch, but new items came in, 
+            //   so another batch, but more input, etc 
+            if(batch.Count < _batchSize)
+              return; 
           }
         } //lock
       } finally {

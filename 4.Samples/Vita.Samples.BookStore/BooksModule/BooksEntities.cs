@@ -9,9 +9,6 @@ using Vita.Modules.EncryptedData;
 namespace Vita.Samples.BookStore {
 
   //Entities for Books module
-  // Note that Book and Author have Paged attribute - meaning they are paged in database (in stored procedure)
-  // Publisher does not have this attribute, we expect it to be a small table. We can still read/query it with 
-  // skip/take parameters, but paging is performed on the client: all records are loaded and then code extracts the span of requested records. 
   [Entity, OrderBy("Title"), Validate(typeof(BooksModule), nameof(BooksModule.ValidateBook))]
   [ClusteredIndex("CreatedOn,Id")]
   [Display("{Title}, {Editions}, {Publisher.Name}")]

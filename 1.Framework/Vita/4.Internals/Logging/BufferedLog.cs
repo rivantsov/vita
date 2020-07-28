@@ -37,7 +37,7 @@ namespace Vita.Entities.Logging {
 
     public int ErrorCount => _errorCount;
 
-    public IList<LogEntry> GetAll()  =>_queue.DequeueMany();
+    public IList<LogEntry> GetAll()  =>_queue.DequeueMany(1000);
 
   } //class
 

@@ -102,7 +102,7 @@ namespace Vita.Modules.Logging.Db {
         ent.ResponseHeaders = DictAsString(resp.Headers);
         ent.ResponseSize = resp.Size;
         ent.DurationMs = resp.DurationMs;
-        ent.LocalLog = resp.OperationLog;
+        ent.LocalLog = entry.GetLogContents();
         ent.Error = entry.Exception?.Message; 
         ent.ErrorDetails = entry.Exception?.ToLogString(); 
       }

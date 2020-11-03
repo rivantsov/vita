@@ -100,7 +100,6 @@ namespace Vita.Web {
 
       } finally {
         webContext.Response.DurationMs = Util.GetTimeMsSince(webContext.Request.StartTimestamp);
-        webContext.Response.OperationLog = webContext.OperationContext.GetLogContents();
         OnWebCallCompleting(webContext);
         webContext.OperationContext.DisposeAll(); // dispose/close conn
         App.LogService.AddEntry(new WebCallLogEntry(webContext));

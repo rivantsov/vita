@@ -47,7 +47,6 @@ namespace Vita.Entities.Api {
     public int Size; 
     public object Body;
     public string BodyContentType;
-    public string OperationLog;
   }
 
 
@@ -63,9 +62,7 @@ namespace Vita.Entities.Api {
 
     public Stream OriginalResponseStream;
 
-    public WebCallLogEntry LogEntry; 
-
-    public long TickCountStart;
+    public long StartTimestamp;
 
     public RequestInfo Request;
     public ResponseInfo Response; 
@@ -76,8 +73,7 @@ namespace Vita.Entities.Api {
       this.OperationContext = opContext;
       opContext.WebContext = this;
       Request = request; 
-      LogEntry = new WebCallLogEntry(this);
-      TickCountStart = Util.GetTimestamp();
+      StartTimestamp = Util.GetTimestamp();
     }
 
   

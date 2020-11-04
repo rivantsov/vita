@@ -96,6 +96,7 @@ namespace Vita.Entities {
         CheckUpgradeDatabase(db);
         LogService.Flush();
         this.Status = EntityAppStatus.Connected;
+        this.AppEvents.OnConnected(dbSettings.DataSourceName);
         this.DataSourceEvents.OnDataSourceChange(new DataSourceEventArgs(db, dbSettings.DataSourceName, DataSourceEventType.Connected));
         ActivationLog.WriteMessage("Connected to {0}.", dbSettings.DataSourceName);
       } finally {

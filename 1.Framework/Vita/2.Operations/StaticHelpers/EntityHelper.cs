@@ -37,7 +37,7 @@ namespace Vita.Entities {
     /// <returns>The entity record.</returns>
     public static EntityRecord GetRecord(object entity) {
       //Util.CheckParam(entity, nameof(entity));
-      if (entity == null)
+      if (entity == null || entity == DBNull.Value)
         return null;
       if (entity is EntityRecord)
         return (EntityRecord) entity;

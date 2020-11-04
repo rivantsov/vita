@@ -575,9 +575,12 @@ namespace Vita.Entities {
         //check full code with module's namespace prefix or short size code
         var fullCode = Sizes.GetFullSizeCode(HostMember.Entity.EntityType.Namespace, this.SizeCode); 
         if (!sizeTable.TryGetValue(fullCode, out size) && !sizeTable.TryGetValue(this.SizeCode, out size)) {
-          builder.Log.LogError(
-            $"Size code '{SizeCode}' not found, entity member: {HostRef}");
-          return; 
+          if (this.Size > 0)
+            size = this.Size;
+          else {
+            builder.Log.LogError($"Size code '{SizeCode}' not found, entity member: {HostRef}");
+            return;
+          }
         } 
         HostMember.Size = size;
         return; 

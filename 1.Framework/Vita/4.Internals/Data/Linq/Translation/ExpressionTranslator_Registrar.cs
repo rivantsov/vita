@@ -352,9 +352,8 @@ namespace Vita.Data.Linq.Translation {
       expectedType = expectedType ?? expression.Type;
       int valueIndex = RegisterOutputValue(expression, context);
       DbValueConverter conv = null;
-      if(expression is ColumnExpression) {
+      if(expression is ColumnExpression colExpr) {
         //With column everything is simple
-        var colExpr = (ColumnExpression)expression;
         conv = colExpr.ColumnInfo.Converter;
       } else {
         //Otherwise get converter from type registry;

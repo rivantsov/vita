@@ -115,12 +115,9 @@ namespace Vita.Testing.ExtendedTests {
       var avgDiff = Math.Abs(avgBkPrice - avgBkPrice2);
       Assert.IsTrue(avgDiff < 0.01m, "Avg mismatch - in db vs in c#");
 
-      // Avg with Int field - currently blows up
+      // Bug fix: Avg over Int field - fixed
       var avgOrderCnt = session.EntitySet<IBookOrderLine>().Average(ol => ol.Quantity);
-      // this works:
-      // var avgOrderCnt = session.EntitySet<IBookOrderLine>().Average(ol => (double)ol.Quantity);
       Assert.IsTrue(avgOrderCnt > 0, "Expected avg > 0");
-
 
       /*
        //currently does not work - join with non-table/subquery not supported

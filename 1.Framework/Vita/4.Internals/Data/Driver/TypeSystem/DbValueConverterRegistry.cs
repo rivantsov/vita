@@ -151,7 +151,11 @@ namespace Vita.Data.Driver {
         AddConverter(conv);
         return conv; 
       }
-      return null;
+      // last resort - use Convert.ChangeType
+      conv = new DbValueConverter(columnType, memberType,
+        x => Convert.ChangeType(x, memberType), x => Convert.ChangeType(x, columnType));
+      AddConverter(conv);
+      return conv;
     }//method
 
 

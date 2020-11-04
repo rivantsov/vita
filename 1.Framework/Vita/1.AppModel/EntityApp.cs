@@ -79,8 +79,8 @@ namespace Vita.Entities {
     public string ErrorLogPath;
 
     // created automatically if LogPath is specified
-    public LogFileWriter LogFileWriter;
-    public LogFileWriter ErrorLogFileWriter;
+    public ILogFileWriter LogFileWriter;
+    public ILogFileWriter ErrorLogFileWriter;
 
     /// <summary>Gets the instance of the application time service. </summary>
     public readonly ITimeService TimeService;

@@ -7,7 +7,11 @@ using Vita.Entities.Utilities;
 
 namespace Vita.Entities.Logging {
 
-  public class LogFileWriter {
+  public interface ILogFileWriter {
+    void WriteLines(IList<string> lines);
+  }
+
+  public class LogFileWriter: ILogFileWriter {
     string _fileName;
     static object _fileWriteLock = new object(); 
 

@@ -1,12 +1,5 @@
-﻿using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.Data;
-using System.Data.SqlClient;
-using System.Linq;
+﻿using System.Collections.Generic;
 using System.Linq.Expressions;
-using System.Text;
-using Microsoft.SqlServer.Server;
 using Vita.Data.Driver;
 using Vita.Data.Linq;
 using Vita.Data.Linq.Translation.Expressions;
@@ -15,7 +8,6 @@ using Vita.Data.Sql;
 using Vita.Entities;
 using Vita.Entities.Locking;
 using Vita.Entities.Model;
-using Vita.Entities.Utilities;
 
 namespace Vita.Data.MsSql {
 

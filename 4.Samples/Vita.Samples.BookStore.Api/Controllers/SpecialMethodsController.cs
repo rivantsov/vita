@@ -1,18 +1,15 @@
 ﻿using System;
-using System.Collections.Generic;
+using System.Data;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Net;
-using Microsoft.AspNetCore.Mvc;
+using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
-
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.Data.SqlClient;
 using Vita.Entities;
 using Vita.Entities.Api;
-using System.Data.SqlClient;
-using System.Data;
-using Vita.Web;
 using Vita.Entities.Utilities;
+using Vita.Web;
 
 namespace Vita.Samples.BookStore.Api {
 

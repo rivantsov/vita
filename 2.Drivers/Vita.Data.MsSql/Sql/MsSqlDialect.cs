@@ -2,14 +2,12 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Data;
-using System.Data.SqlClient;
-using System.Text;
-using Microsoft.SqlServer.Server;
+using Microsoft.Data.SqlClient;
+using Microsoft.Data.SqlClient.Server;
 using Vita.Data.Driver;
 using Vita.Data.Linq.Translation.Expressions;
 using Vita.Data.Model;
 using Vita.Data.Sql;
-using Vita.Entities.Services;
 using Vita.Entities.Utilities;
 
 namespace Vita.Data.MsSql {

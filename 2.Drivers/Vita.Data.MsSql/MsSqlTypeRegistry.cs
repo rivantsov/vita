@@ -1,19 +1,12 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Data;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Microsoft.SqlServer.Server;
-
-using Vita.Data.Model;
-using Vita.Entities;
-using Vita.Entities.Logging;
-using Vita.Entities.Model;
-using Vita.Entities.Utilities;
+using Microsoft.Data.SqlClient.Server;
 using Vita.Data.Driver;
 using Vita.Data.Driver.TypeSystem;
+using Vita.Entities;
+using Vita.Entities.Model;
+using Vita.Entities.Utilities;
 
 namespace Vita.Data.MsSql {
   public class MsSqlTypeRegistry : DbTypeRegistry {

@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Linq;
-using System.Data.SqlClient;
 using System.Diagnostics;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
@@ -8,6 +7,7 @@ using Vita.Entities;
 using Vita.Entities.Utilities;
 using Vita.Data.Driver;
 using System.Security.Cryptography;
+using Microsoft.Data.SqlClient;
 
 namespace Vita.Testing.BasicTests.Helpers {
 

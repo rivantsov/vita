@@ -212,6 +212,10 @@ namespace Vita.Entities.Model.Construction {
     }
 
     private bool TryGetMemberKind(EntityInfo entity, PropertyInfo property, out EntityMemberKind kind) {
+      if (property.HasAttribute<NoColumnAttribute>()) {
+        kind = EntityMemberKind.Transient;
+        return true; 
+      }
       return TryGetMemberKind(entity, property.Name, property.PropertyType, out kind);
     }
 

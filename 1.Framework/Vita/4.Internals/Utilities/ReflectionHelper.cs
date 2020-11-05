@@ -112,6 +112,11 @@ namespace Vita.Entities.Utilities {
       return (type.GetTypeInfo().IsGenericType && typeof(IQueryable).IsAssignableFrom(type));
     }
 
+    public static bool HasAttribute<TAttr>(this MemberInfo member) where TAttr: Attribute {
+      var attr = member.GetAttribute<TAttr>();
+      return attr != null; 
+    }
+
     public static T GetAttribute<T>(this MemberInfo member, bool orSubClass = false) where T: Attribute {
       return GetAttributes<T>(member, orSubClass).FirstOrDefault();
     }

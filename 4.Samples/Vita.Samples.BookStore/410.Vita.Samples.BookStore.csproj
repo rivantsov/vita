@@ -14,4 +14,8 @@
     <ProjectReference Include="..\..\3.Modules\Vita.Modules.Login\310.Vita.Modules.Login.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Properties\" />
+  </ItemGroup>
+
 </Project>

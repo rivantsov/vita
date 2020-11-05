@@ -1,24 +1,28 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
-  <PropertyGroup>
-    <TargetFramework>netstandard2.0</TargetFramework>
-    <LangVersion>latest</LangVersion>
-    <AssemblyName>Vita.Data.SQLite</AssemblyName>
-    <RootNamespace>Vita.Data.SQLite</RootNamespace>
-    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
-  </PropertyGroup>
+    <PropertyGroup>
+        <TargetFramework>netstandard2.0</TargetFramework>
+        <LangVersion>latest</LangVersion>
+        <AssemblyName>Vita.Data.SQLite</AssemblyName>
+        <RootNamespace>Vita.Data.SQLite</RootNamespace>
 
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
-    <DocumentationFile>bin\Release\netstandard2.0\Vita.Data.SQLite.xml</DocumentationFile>
-    <NoWarn>1701;1702;1591</NoWarn>
-  </PropertyGroup>
+        <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
+        <Copyright>Roman Ivantsov</Copyright>
+        <AssemblyVersion>3.0.5</AssemblyVersion>
+        <Version>3.0.5</Version>
+    </PropertyGroup>
 
-  <ItemGroup>
-    <PackageReference Include="System.Data.SQLite.Core" Version="1.0.113.5" />
-  </ItemGroup>
+    <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+        <DocumentationFile>bin\Release\netstandard2.0\Vita.Data.SQLite.xml</DocumentationFile>
+        <NoWarn>1701;1702;1591</NoWarn>
+    </PropertyGroup>
 
-  <ItemGroup>
-    <ProjectReference Include="..\..\1.Framework\Vita\010.Vita.csproj" />
-  </ItemGroup>
+    <ItemGroup>
+        <PackageReference Include="System.Data.SQLite.Core" Version="1.0.113.5" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\..\1.Framework\Vita\010.Vita.csproj" />
+    </ItemGroup>
 
 </Project>

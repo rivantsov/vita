@@ -6,8 +6,6 @@
     <AssemblyName>Vita.Samples.BookStore</AssemblyName>
     <RootNamespace>Vita.Samples.BookStore</RootNamespace>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
-    <RunAnalyzersDuringBuild>false</RunAnalyzersDuringBuild>
-    <RunAnalyzersDuringLiveAnalysis>false</RunAnalyzersDuringLiveAnalysis>
   </PropertyGroup>
 
   <ItemGroup>

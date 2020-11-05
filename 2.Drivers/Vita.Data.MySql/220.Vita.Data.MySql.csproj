@@ -1,29 +1,29 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
-  <PropertyGroup>
-    <TargetFramework>netstandard2.0</TargetFramework>
-    <LangVersion>latest</LangVersion>
-    <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
-    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
-    <AssemblyName>Vita.Data.MySql</AssemblyName>
-    <RootNamespace>Vita.Data.MySql</RootNamespace>
-  </PropertyGroup>
+    <PropertyGroup>
+        <TargetFramework>netstandard2.0</TargetFramework>
+        <LangVersion>latest</LangVersion>
+        <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
+        <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+        <AssemblyName>Vita.Data.MySql</AssemblyName>
 
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
-    <DocumentationFile>bin\Release\netstandard2.0\Vita.Data.MySql.xml</DocumentationFile>
-    <NoWarn>1701;1702;1591</NoWarn>
-  </PropertyGroup>
+        <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
+        <Copyright>Roman Ivantsov</Copyright>
+        <AssemblyVersion>3.0.5</AssemblyVersion>
+        <Version>3.0.5</Version>
+    </PropertyGroup>
 
-  <ItemGroup>
-    <Compile Remove="MySqlDbSqlDialect_DISABLED.cs" />
-  </ItemGroup>
+    <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+        <DocumentationFile>bin\Release\netstandard2.0\Vita.Data.MySql.xml</DocumentationFile>
+        <NoWarn>1701;1702;1591</NoWarn>
+    </PropertyGroup>
 
-  <ItemGroup>
-    <PackageReference Include="MySql.Data" Version="8.0.22" />
-  </ItemGroup>
+    <ItemGroup>
+        <PackageReference Include="MySql.Data" Version="8.0.22" />
+    </ItemGroup>
 
-  <ItemGroup>
-    <ProjectReference Include="..\..\1.Framework\Vita\010.Vita.csproj" />
-  </ItemGroup>
+    <ItemGroup>
+        <ProjectReference Include="..\..\1.Framework\Vita\010.Vita.csproj" />
+    </ItemGroup>
 
 </Project>

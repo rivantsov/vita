@@ -1,42 +1,30 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
-  <PropertyGroup>
-    <TargetFramework>netstandard2.0</TargetFramework>
-    <LangVersion>latest</LangVersion>
-    <AssemblyName>Vita</AssemblyName>
-    <RootNamespace>Vita</RootNamespace>
-    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
-  </PropertyGroup>
+    <PropertyGroup>
+        <TargetFramework>netstandard2.0</TargetFramework>
+        <LangVersion>latest</LangVersion>
+        <AssemblyName>Vita</AssemblyName>
+        <RootNamespace>Vita</RootNamespace>
 
-  <ItemGroup>
-    <Compile Remove="4.Internals\Data\Sql\Disabled\**" />
-    <Compile Remove="4.Internals\_MetaD1\**" />
-    <EmbeddedResource Remove="4.Internals\Data\Sql\Disabled\**" />
-    <EmbeddedResource Remove="4.Internals\_MetaD1\**" />
-    <None Remove="4.Internals\Data\Sql\Disabled\**" />
-    <None Remove="4.Internals\_MetaD1\**" />
-  </ItemGroup>
+        <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
+        <Copyright>Roman Ivantsov</Copyright>
+        <AssemblyVersion>3.0.5</AssemblyVersion>
+        <Version>3.0.5</Version>
+        <Description>VITA ORM Core Functionality. </Description>
+    </PropertyGroup>
 
-  <ItemGroup>
-    <PackageReference Include="Proxemity" Version="2.0.1" />
-    <PackageReference Include="System.Diagnostics.EventLog" Version="4.7.0" />
-  </ItemGroup>
+    <ItemGroup>
+        <PackageReference Include="Proxemity" Version="2.0.1" />
+        <PackageReference Include="System.Diagnostics.EventLog" Version="4.7.0" />
+    </ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="4.Internals\Entities.Runtime\EntityLists_New\" />
-  </ItemGroup>
+    <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+        <DocumentationFile>bin\Release\netstandard2.0\Vita.xml</DocumentationFile>
+        <NoWarn>1701;1702;1591</NoWarn>
+    </PropertyGroup>
 
-  <PropertyGroup>
-    <NuspecFile>Vita.Entities.nuspec</NuspecFile>
-  </PropertyGroup>
-
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
-    <DocumentationFile>bin\Release\netstandard2.0\Vita.xml</DocumentationFile>
-    <NoWarn>1701;1702;1591</NoWarn>
-  </PropertyGroup>
-
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
-    <DefineConstants>TRACE;DEBUG;NETSTANDARD;NETSTANDARD2_0;_new</DefineConstants>
-    <WarningLevel>4</WarningLevel>
-  </PropertyGroup>
+    <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+        <DefineConstants>TRACE;DEBUG;NETSTANDARD;NETSTANDARD2_0;_new</DefineConstants>
+        <WarningLevel>4</WarningLevel>
+    </PropertyGroup>
 </Project>

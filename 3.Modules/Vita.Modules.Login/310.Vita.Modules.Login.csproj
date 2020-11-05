@@ -1,32 +1,36 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
-  <PropertyGroup>
-    <TargetFramework>netstandard2.0</TargetFramework>
-    <LangVersion>latest</LangVersion>
-    <RootNamespace>Vita.Modules.Login</RootNamespace>
-    <AssemblyName>Vita.Modules.Login</AssemblyName>
-    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
-  </PropertyGroup>
+    <PropertyGroup>
+        <TargetFramework>netstandard2.0</TargetFramework>
+        <LangVersion>latest</LangVersion>
+        <RootNamespace>Vita.Modules.Login</RootNamespace>
+        <AssemblyName>Vita.Modules.Login</AssemblyName>
 
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
-    <DocumentationFile>bin\Release\netstandard2.0\Vita.Modules.Login.xml</DocumentationFile>
-    <NoWarn>1701;1702;1591</NoWarn>
-  </PropertyGroup>
+        <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
+        <Copyright>Roman Ivantsov</Copyright>
+        <AssemblyVersion>3.0.5</AssemblyVersion>
+        <Version>3.0.5</Version>
+    </PropertyGroup>
 
-  <ItemGroup>
-    <None Remove="MigrationReadMe.txt" />
-  </ItemGroup>
+    <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+        <DocumentationFile>bin\Release\netstandard2.0\Vita.Modules.Login.xml</DocumentationFile>
+        <NoWarn>1701;1702;1591</NoWarn>
+    </PropertyGroup>
 
-  <ItemGroup>
-    <Content Include="PasswordHashing\BCrypt.Net\LICENSE_bcrypt.txt" />
-  </ItemGroup>
+    <ItemGroup>
+        <None Remove="MigrationReadMe.txt" />
+    </ItemGroup>
 
-  <ItemGroup>
-    <EmbeddedResource Include="DefaultSecretQuestions.txt" />
-  </ItemGroup>
+    <ItemGroup>
+        <Content Include="PasswordHashing\BCrypt.Net\LICENSE_bcrypt.txt" />
+    </ItemGroup>
 
-  <ItemGroup>
-    <ProjectReference Include="..\..\1.Framework\Vita\010.Vita.csproj" />
-  </ItemGroup>
+    <ItemGroup>
+        <EmbeddedResource Include="DefaultSecretQuestions.txt" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\..\1.Framework\Vita\010.Vita.csproj" />
+    </ItemGroup>
 
 </Project>

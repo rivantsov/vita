@@ -7,7 +7,7 @@
     <OutputType>Exe</OutputType>
     <AssemblyName>Vita.Testing.BasicTests</AssemblyName>
     <RootNamespace>Vita.Testing.BasicTests</RootNamespace>
-    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
   </PropertyGroup>
 
   <ItemGroup>

@@ -5,8 +5,8 @@
     <LangVersion>latest</LangVersion>
     <AssemblyName>Vita.Tools</AssemblyName>
     <RootNamespace>Vita.Tools</RootNamespace>
-    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
-  </PropertyGroup>
+
+    </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|netstandard1.6|AnyCPU'">
     <DefineConstants>TRACE;RELEASE</DefineConstants>
@@ -24,4 +24,4 @@
     <ProjectReference Include="..\Vita\010.Vita.csproj" />
   </ItemGroup>
 
-</Project>
+</Project>    

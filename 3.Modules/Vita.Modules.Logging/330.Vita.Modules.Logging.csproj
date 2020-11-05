@@ -1,30 +1,27 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
-  <PropertyGroup>
-    <TargetFramework>netstandard2.0</TargetFramework>
-    <AssemblyName>Vita.Modules.Logging</AssemblyName>
-    <RootNamespace>Vita.Modules.Logging</RootNamespace>
-  </PropertyGroup>
+    <PropertyGroup>
+        <TargetFramework>netstandard2.0</TargetFramework>
+        <AssemblyName>Vita.Modules.Logging</AssemblyName>
+        <RootNamespace>Vita.Modules.Logging</RootNamespace>
 
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
-    <NoWarn>1701;1702;1591</NoWarn>
-    <DocumentationFile>bin\Release\netstandard2.0\Vita.Modules.Logging.xml</DocumentationFile>
-  </PropertyGroup>
+        <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
+        <Copyright>Roman Ivantsov</Copyright>
+        <AssemblyVersion>3.0.5</AssemblyVersion>
+        <Version>3.0.5</Version>
+    </PropertyGroup>
 
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
-    <DocumentationFile></DocumentationFile>
-  </PropertyGroup>
+    <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+        <NoWarn>1701;1702;1591</NoWarn>
+        <DocumentationFile>bin\Release\netstandard2.0\Vita.Modules.Logging.xml</DocumentationFile>
+    </PropertyGroup>
 
-  <ItemGroup>
-    <Compile Remove="AzureLogAnalytics\AzureLogAnalyticsClient_DRAFT.cs" />
-  </ItemGroup>
+    <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+        <DocumentationFile></DocumentationFile>
+    </PropertyGroup>
 
-  <ItemGroup>
-    <None Include="AzureLogAnalytics\AzureLogAnalyticsClient_DRAFT.cs" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <ProjectReference Include="..\..\1.Framework\Vita\010.Vita.csproj" />
-  </ItemGroup>
+    <ItemGroup>
+        <ProjectReference Include="..\..\1.Framework\Vita\010.Vita.csproj" />
+    </ItemGroup>
 
 </Project>

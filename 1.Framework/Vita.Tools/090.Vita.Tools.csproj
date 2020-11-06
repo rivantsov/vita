@@ -5,8 +5,9 @@
     <LangVersion>latest</LangVersion>
     <AssemblyName>Vita.Tools</AssemblyName>
     <RootNamespace>Vita.Tools</RootNamespace>
-
-    </PropertyGroup>
+    <AssemblyVersion>$(VITA_VERSION)</AssemblyVersion>
+    <Version>$(VITA_VERSION)</Version>
+  </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|netstandard1.6|AnyCPU'">
     <DefineConstants>TRACE;RELEASE</DefineConstants>

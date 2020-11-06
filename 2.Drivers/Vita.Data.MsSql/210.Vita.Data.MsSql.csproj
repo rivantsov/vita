@@ -1,5 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
+    <Import Project="..\..\Version.proj" />
+
     <PropertyGroup>
         <VersionPrefix>2.0.0</VersionPrefix>
         <TargetFramework>netstandard2.0</TargetFramework>
@@ -9,8 +11,6 @@
 
         <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
         <Copyright>Roman Ivantsov</Copyright>
-        <AssemblyVersion>$(VITA_VERSION)</AssemblyVersion>
-        <Version>$(VITA_VERSION)</Version>
     </PropertyGroup>
 
     <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">

@@ -1,5 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
+    <Import Project="..\..\Version.proj" />
+
     <PropertyGroup>
         <TargetFramework>netstandard2.0</TargetFramework>
         <LangVersion>latest</LangVersion>
@@ -8,11 +10,9 @@
 
         <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
         <Copyright>Roman Ivantsov</Copyright>
-        <AssemblyVersion>$(VITA_VERSION)</AssemblyVersion>
-        <Version>$(VITA_VERSION)</Version>
         <Description>VITA ORM Core Functionality. </Description>
     </PropertyGroup>
-
+    
     <ItemGroup>
         <PackageReference Include="Proxemity" Version="2.0.1" />
         <PackageReference Include="System.Diagnostics.EventLog" Version="4.7.0" />

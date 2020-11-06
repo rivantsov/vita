@@ -1,12 +1,12 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
-  <PropertyGroup>
+    <Import Project="..\..\Version.proj" />
+
+    <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
     <LangVersion>latest</LangVersion>
     <AssemblyName>Vita.Tools</AssemblyName>
     <RootNamespace>Vita.Tools</RootNamespace>
-    <AssemblyVersion>$(VITA_VERSION)</AssemblyVersion>
-    <Version>$(VITA_VERSION)</Version>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|netstandard1.6|AnyCPU'">

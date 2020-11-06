@@ -1,6 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
-  <PropertyGroup>
+    <Import Project="..\..\Version.proj" />
+    <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
     <LangVersion>latest</LangVersion>
     <AssemblyName>Vita.Samples.BookStore.SampleData</AssemblyName>

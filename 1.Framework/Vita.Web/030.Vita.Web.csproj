@@ -1,19 +1,19 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <Import Project="..\..\Version.proj" />
 
     <PropertyGroup>
         <TargetFramework>netstandard2.0</TargetFramework>
         <AssemblyName>Vita.Web</AssemblyName>
         <RootNamespace>Vita.Web</RootNamespace>
-
         <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
         <Copyright>Roman Ivantsov</Copyright>
-        <AssemblyVersion>$(VITA_VERSION)</AssemblyVersion>
-        <Version>$(VITA_VERSION)</Version>
     </PropertyGroup>
 
     <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
-        <DocumentationFile>bin\Release\netstandard2.0\Vita.Web.xml</DocumentationFile>
+        <DocumentationFile>bin\Debug\netstandard2.0\Vita.Web.xml</DocumentationFile>
         <GenerateSerializationAssemblies>Off</GenerateSerializationAssemblies>
+        <NoWarn>1701;1702;1591</NoWarn>
     </PropertyGroup>
 
     <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">

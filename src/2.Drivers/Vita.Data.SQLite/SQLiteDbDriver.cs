@@ -9,6 +9,8 @@ using Vita.Entities.Logging;
 using Vita.Data.Linq;
 
 using System.Data.SQLite;
+using System.Threading.Tasks;
+using System.Threading;
 
 namespace Vita.Data.SQLite {
 
@@ -147,6 +149,15 @@ namespace Vita.Data.SQLite {
       return colList; 
     }
 
+    // Probing async methods
+    private async Task<object> ExecuteReaderAsync(CancellationToken token) {
+      var sqlCmd = new SQLiteCommand();
+      var reader = await sqlCmd.ExecuteReaderAsync(token);
+      while (await reader.ReadAsync()) {
+        var someValue = reader["someValue"];
+      }
+      return new object();
+    }
 
   }
 }

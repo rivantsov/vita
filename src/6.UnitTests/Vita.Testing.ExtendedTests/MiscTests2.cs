@@ -14,11 +14,27 @@ using Vita.Modules.Login;
 using Vita.Data.Upgrades;
 using Vita.Data;
 using Vita.Tools.Testing;
+using System.Threading.Tasks;
 
 namespace Vita.Testing.ExtendedTests {
 
   // Not real tests, simple demos. disabled for now
   public partial class MiscTests {
+
+
+    [TestMethod]
+    public async Task TestAsyncMethods() {
+      Startup.BooksApp.LogTestStart();
+
+      var app = Startup.BooksApp;
+      var session = app.OpenSession();
+      var utcNow = app.TimeService.UtcNow;
+
+      IAsyncEnumerable<IBook> asyncBooks = null; // session.EntitySet<IBook>().AsEnumerable();//.GetAsyncEnumerator(); 
+      await foreach(var bk in asyncBooks) {
+        Console.WriteLine(bk.Title);
+      }
+    }
 
     [TestMethod]
     public void TestBugFixes() {

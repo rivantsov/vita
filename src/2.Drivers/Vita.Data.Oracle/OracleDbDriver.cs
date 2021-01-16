@@ -169,5 +169,16 @@ namespace Vita.Data.Oracle {
     public override void OnDbModelConstructing(DbModel dbModel) {
       base.OnDbModelConstructing(dbModel);
     }
+
+    // Probing async methods
+    private async Task<object> ExecuteReaderAsync(CancellationToken token) {
+      var sqlCmd = new OracleCommand();
+      var reader = await sqlCmd.ExecuteReaderAsync(token);
+      while (await reader.ReadAsync()) {
+        var someValue = reader["someValue"];
+      }
+      return new object();
+    }
+
   }
 }

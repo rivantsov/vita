@@ -15,6 +15,7 @@ using Vita.Entities.Logging;
 using Vita.Entities.Utilities;
 using System.Collections;
 using Vita.Data.Linq;
+using System.Threading;
 
 namespace Vita.Data.Postgres {
 
@@ -87,7 +88,6 @@ namespace Vita.Data.Postgres {
         case "23503": //integrity violation
           dataException.SubType = DataAccessException.SubTypeIntegrityViolation;
           break; 
-
       }
     }
 
@@ -104,6 +104,15 @@ namespace Vita.Data.Postgres {
       }
     }
 
+    // Probing async methods
+    private async Task<object> ExecuteReaderAsync(CancellationToken token) {
+      var sqlCmd = new NpgsqlCommand();
+      var reader = await sqlCmd.ExecuteReaderAsync(token);
+      while (await reader.ReadAsync()) {
+        var someValue = reader["someValue"];
+      }
+      return new object();
+    }
 
   }//class
 }

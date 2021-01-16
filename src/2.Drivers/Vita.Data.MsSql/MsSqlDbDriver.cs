@@ -13,6 +13,8 @@ using Vita.Entities.Logging;
 using Vita.Data.Linq;
 using Vita.Data.Sql;
 using Vita.Entities.Utilities;
+using System.Threading.Tasks;
+using System.Threading;
 
 namespace Vita.Data.MsSql {
 
@@ -156,6 +158,17 @@ namespace Vita.Data.MsSql {
         default: return IsolationLevel.Unspecified; 
       }
     }
+
+    // Probing async methods
+    private async Task<object> ExecuteReaderAsync(CancellationToken token) {
+      var sqlCmd = new SqlCommand();
+      var reader = await sqlCmd.ExecuteReaderAsync(token);
+      while (await reader.ReadAsync()) {
+        var someValue = reader["someValue"];
+      }
+      return null; 
+    }
+
 
   }//class
 }

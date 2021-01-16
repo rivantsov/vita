@@ -40,8 +40,8 @@ namespace Vita.Entities.Runtime {
       var oldRec = Find(record.PrimaryKey);
       if (oldRec != null)
         return oldRec; 
-      var weakRef = new WeakReference(record);
-      _table[record.PrimaryKey] = weakRef;
+      record.WeakSelfRef = new WeakReference(record);
+      _table[record.PrimaryKey] = record.WeakSelfRef;
       return record;
     }
 

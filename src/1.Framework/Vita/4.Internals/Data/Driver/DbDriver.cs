@@ -1,24 +1,16 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Data;
-using System.Diagnostics;
-
-using Vita.Entities.Utilities;
-using Vita.Entities;
-using Vita.Data.Model;
-using Vita.Entities.Locking;
-using Vita.Entities.Model;
-using Vita.Entities.Logging;
-using Vita.Data.Driver.InfoSchema;
-using System.Threading.Tasks;
 using System.Data.Common;
 using System.Threading;
-using Vita.Data.Sql;
-using Vita.Data.Runtime;
-using Vita.Data.Linq;
+using System.Threading.Tasks;
+using Vita.Data.Driver.InfoSchema;
 using Vita.Data.Driver.TypeSystem;
+using Vita.Data.Linq;
+using Vita.Data.Model;
+using Vita.Data.Runtime;
+using Vita.Entities;
+using Vita.Entities.Locking;
+using Vita.Entities.Logging;
 
 namespace Vita.Data.Driver {
 
@@ -81,6 +73,7 @@ namespace Vita.Data.Driver {
         var conn = command.Connection;
         if(conn.State != ConnectionState.Open)
           conn.Open();
+        
         switch (executionType) {
           case DbExecutionType.Reader:
             return command.ExecuteReader();

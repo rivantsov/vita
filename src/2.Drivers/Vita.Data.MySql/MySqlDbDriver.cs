@@ -12,6 +12,8 @@ using System.Collections.Generic;
 using MySql.Data.MySqlClient;
 using Vita.Entities.Logging;
 using Vita.Data.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Vita.Data.MySql {
   /* Note:
@@ -173,6 +175,17 @@ namespace Vita.Data.MySql {
       }     
       base.OnDbModelConstructed(dbModel);
     }
+
+    // Probing async methods
+    private async Task<object> ExecuteReaderAsync(CancellationToken token) {
+      var sqlCmd = new MySqlCommand();
+      var reader = await sqlCmd.ExecuteReaderAsync(token);
+      while (await reader.ReadAsync()) {
+        var someValue = reader["someValue"];
+      }
+      return new object();
+    }
+
 
   }//class
 }

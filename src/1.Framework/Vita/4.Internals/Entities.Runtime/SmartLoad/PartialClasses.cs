@@ -6,22 +6,19 @@ using Vita.Entities.Runtime.SmartLoad;
 using Vita.Entities.Utilities;
 
 namespace Vita.Entities.Runtime {
-  partial class EntitySession {
-    int _currentRecordId;
 
-    public int NextRecordId() {
-      return Interlocked.Increment(ref _currentRecordId);
-    }
+  partial class EntitySession {
+
+  }
+
+  public class SourceQuery {
+    public WeakReference[] RecordRefs;
   }
 
   partial class EntityRecord {
-    public int IntRecordId;
     public SourceQuery SourceQuery;
-    public BitMask MembersRead; 
+    public EntityReadTracker ReadTracker;
   }
 
-  partial class EntitySesion {
-
-  }
 
 }

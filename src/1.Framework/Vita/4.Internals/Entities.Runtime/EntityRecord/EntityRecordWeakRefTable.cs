@@ -5,6 +5,7 @@ using System.Text;
 using System.Diagnostics;
 using System.Collections.Concurrent;
 using Vita.Entities.Model;
+using System.Threading;
 
 namespace Vita.Entities.Runtime {
 
@@ -40,17 +41,14 @@ namespace Vita.Entities.Runtime {
       var oldRec = Find(record.PrimaryKey);
       if (oldRec != null)
         return oldRec; 
-      record.WeakSelfRef = new WeakReference(record);
       _table[record.PrimaryKey] = record.WeakSelfRef;
       return record;
     }
 
     public EntityRecord Find(EntityKey primaryKey) {
-      _readCount++; 
-      if (_readCount > ReadCountTrigger && Count > VolumeThreshold)
+      if (Interlocked.Increment(ref _readCount) > ReadCountTrigger && Count > VolumeThreshold)
         Cleanup(); 
-      WeakReference recRef;
-      if(_table.TryGetValue(primaryKey, out recRef)) {
+      if(_table.TryGetValue(primaryKey, out var recRef)) {
         var target = recRef.Target;
         if(target != null) 
           return (EntityRecord) target;

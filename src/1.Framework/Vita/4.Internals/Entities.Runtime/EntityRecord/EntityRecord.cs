@@ -17,7 +17,9 @@ namespace Vita.Entities.Runtime {
 
   public sealed partial class EntityRecord  {
     public EntitySession Session;
-    public EntityInfo EntityInfo; 
+    public EntityInfo EntityInfo;
+    public WeakReference WeakSelfRef;
+
     //If true, the record is registered in Session.RecordsLoaded set.
     public bool IsAttached;
     //Actual data 
@@ -53,19 +55,7 @@ namespace Vita.Entities.Runtime {
     // used internally by batch process for records with identities
     public object CustomTag;
 
-    //Entity record is used as a key in some dictionaries. It needs a hash code value independent 
-    // of PK values
-    int _hashCode;
-    static int _hashCounter; 
-
     #region Constructor and initialization
-    // Used by deserialization, when we serialize/deserialize records, not entities.
-    public EntityRecord() {
-      _status = EntityStatus.Loading;
-      var counter = System.Threading.Interlocked.Increment(ref _hashCounter);
-      _hashCode = counter.ToString().GetHashCode(); 
-      // do not call InitValuesStorage yet - EntityInfo is not known yet
-    }
 
     //Creates a stub
     public EntityRecord(EntityKey primaryKey) : this(primaryKey.KeyInfo.Entity, EntityStatus.Stub) {
@@ -84,6 +74,7 @@ namespace Vita.Entities.Runtime {
     public EntityRecord(EntityInfo entityInfo, EntityStatus status) {
       _status = status;
       EntityInfo = entityInfo;
+      WeakSelfRef = new WeakReference(this); 
       InitValuesStorage();
       MaskMembersRead = new EntityMemberMask(this.EntityInfo.PersistentValuesCount);
     }
@@ -329,13 +320,10 @@ namespace Vita.Entities.Runtime {
         } else
           return PrimaryKey + "/" + _status; 
       } catch(Exception ex) {
-        return "(Error in ToString(): " + ex.Message + ")";
+        return $"(Error in ToString(): {ex.Message})";
       }
     }
 
-    public override int GetHashCode() {
-      return _hashCode;
-    }
     #endregion
 
     #region PropertyChanged handling

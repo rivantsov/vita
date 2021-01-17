@@ -247,8 +247,6 @@ namespace Vita.Entities.Runtime {
         if (record.Status == EntityStatus.Stub && flags.IsSet(LoadFlags.Load)) record.Reload(); 
         return record; 
       }
-      // TODO: review returning Record stub in the context of SecureSession. 
-      // We might have security hole here if user is not authorized to access the record  
       if (flags.IsSet(LoadFlags.Stub))
         return CreateStub(primaryKey);
       if (!flags.IsSet(LoadFlags.Load))
@@ -316,8 +314,11 @@ namespace Vita.Entities.Runtime {
       var oldRecord = record; //might switch to the record already loaded in session
       //Add record to appropriate collection
       switch (record.Status) {
-        case EntityStatus.Loading:
         case EntityStatus.Stub:
+          RecordsLoaded.Add(record);
+          return record; 
+
+        case EntityStatus.Loading:
         case EntityStatus.Loaded:
           record.Status = EntityStatus.Loaded;
           oldRecord = RecordsLoaded.Add(record); //might return existing record
@@ -325,24 +326,22 @@ namespace Vita.Entities.Runtime {
             oldRecord.CopyOriginalValues(record);
             oldRecord.ClearEntityRefValues();
           }
-          record.EntityInfo.Events.OnLoaded(record);
-          break; 
+          record.EntityInfo.Events.OnLoaded(oldRecord);
+          return oldRecord;
+          
         case EntityStatus.New:
           RecordsChanged.Add(record);
-          break;
+          return record;
+        
         case EntityStatus.Deleting:
         case EntityStatus.Modified:
           oldRecord = RecordsLoaded.Add(record);
           RecordsChanged.Add(oldRecord);
-          break; 
+          return oldRecord;
+
+        default:
+          throw new Exception($"Session.Attach: invalid record status: '{record.Status}', record: {record.EntityInfo.Name}");
       }
-      //Just in case, if 'record' is freshly loaded from database, and we have already the same 'oldRecord' in session, 
-      // refresh the column values
-      if (oldRecord != record) {
-        oldRecord.CopyOriginalValues(record);
-        oldRecord.ClearEntityRefValues(); 
-      }
-      return oldRecord;
     }
 
     public void NotifyRecordStatusChanged(EntityRecord record, EntityStatus oldStatus) {
@@ -369,10 +368,9 @@ namespace Vita.Entities.Runtime {
 
     private EntityRecord CreateStub(EntityKey primaryKey) {
       var rec = new EntityRecord(primaryKey);
-      rec.Session = this;
-      RecordsLoaded.Add(rec);
-      return rec;
+      return Attach(rec);
     }
+
     protected virtual EntityRecord GetLoadedRecord(EntityKey primaryKey) {
       if(primaryKey == null)
         return null;

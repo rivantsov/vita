@@ -226,12 +226,12 @@ namespace Vita.Data.Linq {
     /// <summary>
     /// Builds the delegate to create a row
     /// </summary>
-    protected Func<IDataRecord, EntitySession, object> CompileRowReader(SelectExpression @select) {
+    protected Func<IDataRecord, EntitySession, object> CompileRowReader(SelectExpression selectExpr) {
       // fast track for reading entities
-      if(@select.EntityReader != null)
-        return @select.EntityReader.ReadEntity; 
+      if(selectExpr.EntityReader != null)
+        return selectExpr.EntityReader.ReadEntity; 
       // anything other than entities
-      var readerLambda = @select.RowReaderLambda;
+      var readerLambda = selectExpr.RowReaderLambda;
       // RI: reader is lambda returning typed object; to easier manage the execution,
       // so we don't have to convert it to generic version, convert the result to 'object' 
       // Now, we might have already a convert inside body to strongly typed object

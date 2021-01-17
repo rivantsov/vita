@@ -4,8 +4,8 @@ using System.Text;
 using Vita.Entities.Model;
 
 namespace Vita.Entities.Runtime.SmartLoad {
+  // tracking which members are read
 
-  // Figuring out which members are read
   public class EntityTrackingContext {
     public string ContextKey;
     public List<EntityReadTracker> EntityTrackers = new List<EntityReadTracker>(); 

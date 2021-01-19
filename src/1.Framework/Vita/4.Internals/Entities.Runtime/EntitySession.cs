@@ -25,6 +25,7 @@ namespace Vita.Entities.Runtime {
     DisableLog = 1,
     DisableCache = 1 << 1,
     DisableBatchMode = 1 << 2,
+    EnableSmartLoad = 1 << 4,
   }
 
 
@@ -244,7 +245,8 @@ namespace Vita.Entities.Runtime {
         return null; 
       var record = GetLoadedRecord(primaryKey);
       if (record != null) {
-        if (record.Status == EntityStatus.Stub && flags.IsSet(LoadFlags.Load)) record.Reload(); 
+        if (record.Status == EntityStatus.Stub && flags.IsSet(LoadFlags.Load)) 
+          record.Reload(); 
         return record; 
       }
       if (flags.IsSet(LoadFlags.Stub))
@@ -256,7 +258,7 @@ namespace Vita.Entities.Runtime {
       return ent?.Record; 
     }
     public virtual EntityRecord NewRecord(EntityInfo entityInfo) {
-      var record = new EntityRecord(entityInfo, EntityStatus.New);
+      var record = new EntityRecord(entityInfo, EntityStatus.New, null);
       record = Attach(record);
       record.EntityInfo.Events.OnNew(record);
       return record;
@@ -370,6 +372,20 @@ namespace Vita.Entities.Runtime {
       var rec = new EntityRecord(primaryKey);
       return Attach(rec);
     }
+
+    public void LoadStubAndSiblings(EntityRecord record) {
+      bool smartLoad = this.Options.IsSet(EntitySessionOptions.EnableSmartLoad);
+      
+      if (smartLoad) {
+      }
+      this.SourceQuery != null && this.SourceQuery.RecordRefs.Length > 1;
+      if (needReloadAll)
+        Session.ReloadRecordsFromSourceQuery(this.EntityInfo, this.SourceQuery);
+      else
+        this.SelectByPrimaryKey(record.EntityInfo, record.PrimaryKey.Values);
+
+    }
+
 
     protected virtual EntityRecord GetLoadedRecord(EntityKey primaryKey) {
       if(primaryKey == null)

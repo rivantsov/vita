@@ -104,6 +104,5 @@ namespace Vita.Entities.Runtime {
       return cnt;
     }
 
-
   } //class
 }

@@ -58,7 +58,7 @@ namespace Vita.Entities.Runtime {
     #region Constructor and initialization
 
     //Creates a stub
-    public EntityRecord(EntityKey primaryKey) : this(primaryKey.KeyInfo.Entity, EntityStatus.Stub) {
+    public EntityRecord(EntityKey primaryKey) : this(primaryKey.KeyInfo.Entity, EntityStatus.Stub, null) {
       //sanity check
       Util.Check(!primaryKey.IsNull(), "Primary key values are empty - cannot create a stub. Entity: {0}", EntityInfo.Name);
       _primaryKey = primaryKey;
@@ -71,9 +71,10 @@ namespace Vita.Entities.Runtime {
       }
     }
 
-    public EntityRecord(EntityInfo entityInfo, EntityStatus status) {
-      _status = status;
+    public EntityRecord(EntityInfo entityInfo, EntityStatus status, SourceQuery sourceQuery) {
       EntityInfo = entityInfo;
+      _status = status;
+      SourceQuery = sourceQuery; 
       WeakSelfRef = new WeakReference(this); 
       InitValuesStorage();
       MaskMembersRead = new EntityMemberMask(this.EntityInfo.PersistentValuesCount);
@@ -272,16 +273,17 @@ namespace Vita.Entities.Runtime {
 
     public void Reload() {
       Util.Check(Session != null, "Cannot reload record {0} - it is not attached to a session. ", EntityInfo);
-      // Executing SelectByPrimaryKey automatically refreshes the values in the record
-      // In some situations we need to elevate read, 
-      // Ex: record permissions are granted thru reference on other entity; user has no any permissions for entity type, 
-      // so SecureSession.ExecuteSelect would permissions for entity type and throw AccessDenied
-      using(Session.ElevateRead()) {
-        // var cmdInfo = EntityInfo.PrimaryKey.SelectByKeyValueCommand;
-        // var cmd = new LinqCommand(cmdInfo, this.EntityInfo, PrimaryKey.Values);
-        Session.SelectByPrimaryKey(this.EntityInfo, PrimaryKey.Values);
+      Util.Check(_status == EntityStatus.Stub || _status == EntityStatus.Loaded, 
+                            $"Invalid record statis : {_status}, cannot reload.");
+      // Smart loading - for a stub, load not only this record, but all its siblings 
+      // Note that it might not succeed to load all or even this one. The parent record(s) might be GC'd
+      if (_status == EntityStatus.Stub && this.StubParentRef != null && Session.SmartLoadEnabled) {
+        Session.TryReloadSiblingPackForRecordStub(this);
+        if (_status == EntityStatus.Loaded)
+          return; 
       }
-      this.ClearTransientValues();
+      Session.SelectByPrimaryKey(this.EntityInfo, this.PrimaryKey.Values);
+      ClearTransientValues();
     }
 
     #endregion

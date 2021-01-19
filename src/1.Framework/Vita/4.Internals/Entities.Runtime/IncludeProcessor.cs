@@ -61,7 +61,7 @@ namespace Vita.Entities.Runtime {
     StringSet _processedRecordKeys = new StringSet();
     IDictionary<Type, int> _runsPerEntityType = new Dictionary<Type, int>();
 
-    private IncludeProcessor(EntitySession session, IList<LambdaExpression> includes) {
+    internal IncludeProcessor(EntitySession session, IList<LambdaExpression> includes) {
       _session = session;
       _includes = includes; 
     }
@@ -118,7 +118,7 @@ namespace Vita.Entities.Runtime {
       }//foreach include
     }//method
 
-    private IList<EntityRecord> RunIncludeForMember(Type entityType, IList<EntityRecord> records, MemberExpression ma) {
+    internal IList<EntityRecord> RunIncludeForMember(Type entityType, IList<EntityRecord> records, MemberExpression ma) {
       IList<EntityRecord> resultRecords; 
       // Check for chained members
       if (ma.Expression.Type != entityType) {

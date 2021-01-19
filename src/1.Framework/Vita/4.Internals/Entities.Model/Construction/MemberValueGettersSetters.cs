@@ -212,6 +212,12 @@ namespace Vita.Entities.Model.Construction {
         targetRec = record.Session.GetRecord(pkValue, LoadFlags.Stub); //either already loaded or a stub
       else
         targetRec = new EntityRecord(pkValue); //create detached stub
+      // For stubs, set link to parent; it will be used with SmartLoad, to reload all sibling entities,
+      //   when 'this' stub is reloaded
+      if (targetRec.Status == EntityStatus.Stub) {
+        targetRec.StubParentRef = record.WeakSelfRef;
+        targetRec.StubParentMember = member;
+      }
       return targetRec;
     }//method
 

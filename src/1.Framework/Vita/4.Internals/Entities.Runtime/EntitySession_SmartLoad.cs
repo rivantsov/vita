@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using Vita.Data.Linq;
 
@@ -18,20 +19,13 @@ namespace Vita.Entities.Runtime {
       var refMember = record.StubParentMember;
       var fkKey = refMember.ReferenceInfo.FromKey;
       if (fkKey.ExpandedKeyMembers.Count > 1)
-        return false;
+        return false; // we can't do it with composite keys
       var fkMember = fkKey.ExpandedKeyMembers[0].Member;
-      var fkValues = new List<object>();
-      foreach (var recRef in srcQuery.RecordRefs) {
-        var parRec = (EntityRecord)recRef.Target;
-        // Note: there might be records of multiple types in the mix (when query was a join and produced tuple of entities)
-        //  we are interested in only records of the same type as original record
-        if (parRec == null || parRec.EntityInfo != parEnt)
-          continue;
-        var fkValue = parRec.GetValue(fkMember); // this hypothetically might cause another reload
-        if (fkValue == null || fkValue == DBNull.Value)
-          continue;
-        fkValues.Add(fkValue);
-      }
+      var records = srcQuery.RecordRefs.Select(r => (EntityRecord) r.Target)
+           .Where(rec => rec != null && rec.EntityInfo == parEnt)
+           .ToList();
+
+      var fkValues = IncludeProcessor.GetDistinctMemberValues(records, fkMember);
       if (fkValues.Count == 0)
         return false; 
       var selectCmd = LinqCommandFactory.CreateSelectByKeyValueArray(this, record.EntityInfo.PrimaryKey, null, fkValues);

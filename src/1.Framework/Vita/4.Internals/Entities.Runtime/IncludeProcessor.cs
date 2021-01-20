@@ -163,7 +163,7 @@ namespace Vita.Entities.Runtime {
         return _emptyList;
       var targetEntity = refMember.ReferenceInfo.ToKey.Entity;
       var fkMember = refMember.ReferenceInfo.FromKey.ExpandedKeyMembers[0].Member; // r.Book_Id
-      var fkValues = GetMemberValues(records, fkMember);
+      var fkValues = GetDistinctMemberValues(records, fkMember);
       var selectCmd = LinqCommandFactory.CreateSelectByKeyValueArray(_session, targetEntity.PrimaryKey, null, fkValues);
       var entList = (IList) _session.ExecuteLinqCommand(selectCmd, withIncludes: false);
       if (entList.Count == 0)
@@ -200,7 +200,7 @@ namespace Vita.Entities.Runtime {
       var expMembers = pkInfo.ExpandedKeyMembers; 
       Util.Check(expMembers.Count == 1, "Include expression not supported for entities with composite keys, property: {0}.", listMember);
       var pkMember = expMembers[0].Member; // IBookOrder.Id
-      var pkValuesArr = GetMemberValues(records, pkMember);
+      var pkValuesArr = GetDistinctMemberValues(records, pkMember);
       var listInfo = listMember.ChildListInfo;
       var parentRefMember = listInfo.ParentRefMember; //IBookOrderLine.Order
       var fromKey = parentRefMember.ReferenceInfo.FromKey;
@@ -240,7 +240,7 @@ namespace Vita.Entities.Runtime {
       var listInfo = listMember.ChildListInfo;
 
       // PK values of records
-      var pkValues = GetMemberValues(records, keyMembers[0].Member);
+      var pkValues = GetDistinctMemberValues(records, keyMembers[0].Member);
       //run include query; it will return LinkTuple list
       var cmd = LinqCommandFactory.CreateSelectByKeyArrayForListPropertyManyToMany(_session, listInfo, pkValues);
       var tuples = (IList<LinkTuple>) _session.ExecuteLinqCommand(cmd, withIncludes: false);
@@ -274,14 +274,14 @@ namespace Vita.Entities.Runtime {
       return targetRecords; 
     }
 
-    public static IList GetMemberValues(IList<EntityRecord> records, EntityMemberInfo member) {
-      var hset = new HashSet<object>(records.Select(r => r.GetValueDirect(member))); //hashset to remove dupes
-      var objArray = hset.Where(v => v != null && v != DBNull.Value).ToArray();
-      // convert to typed array?
-      var list = (IList) Array.CreateInstance(member.DataType, objArray.Length);
-      for(int i = 0; i < list.Count; i++)
-        list[i] = objArray[i];
-      return list;
+    public static IList GetDistinctMemberValues(IList<EntityRecord> records, EntityMemberInfo member) {
+      // using Distinct with untyped values - might be questionable, but it appears it works, 
+      // including with value types
+      var values = records.Select(r => r.GetValueDirect(member))
+                      .Where(v => v != null && v != DBNull.Value)
+                      .Distinct()
+                      .ToArray();
+      return values;
     }
 
     private static QueryResultShape GetResultShape(EntityModel model, Type outType) {

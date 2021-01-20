@@ -18,16 +18,19 @@ namespace Vita.Data.Runtime {
     public Func<IDataRecord, EntitySession, object> RowReader;
 
     public object ProcessResult(DataCommand command) {
+      var session = command.Connection.Session;
+      session.CurrentQueryResultsWeakSet = new QueryResultsWeakSet(); // for SmartLoad
       var reader = command.Result as IDataReader;
       var resultList = RowListCreator(); 
       while(reader.Read()) {
-        var row = this.RowReader(reader, command.Connection.Session);
+        var row = this.RowReader(reader, session);
         //row might be null if authorization filtered it out or if it is empty value set from outer join
         if(row != null)
           resultList.Add(row);
       }
       reader.Close();
-      command.RowCount = resultList.Count; 
+      command.RowCount = resultList.Count;
+      session.CurrentQueryResultsWeakSet = null; 
       if(RowListProcessor == null)
         return resultList; 
       else 

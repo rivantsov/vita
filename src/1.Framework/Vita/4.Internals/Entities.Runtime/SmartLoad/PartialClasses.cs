@@ -12,12 +12,12 @@ namespace Vita.Entities.Runtime {
 
   }
 
-  public class SourceQuery {
-    public WeakReference[] RecordRefs;
+  public class QueryResultsWeakSet {
+    public IList<WeakReference> RecordRefs = new List<WeakReference>();
   }
 
   partial class EntityRecord {
-    public SourceQuery SourceQuery;
+    public QueryResultsWeakSet SourceQueryResultSet;
     public EntityReadTracker ReadTracker;
 
     public WeakReference StubParentRef;

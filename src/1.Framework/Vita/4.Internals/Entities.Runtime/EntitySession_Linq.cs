@@ -13,6 +13,7 @@ using System.Linq;
 namespace Vita.Entities.Runtime {
 
   public partial class EntitySession {
+
     public TResult ExecuteQuery<TResult>(Expression expression) {
       var objResult = ExecuteQuery(expression);
       if(objResult == null)

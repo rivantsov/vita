@@ -274,7 +274,7 @@ namespace Vita.Entities.Runtime {
       return targetRecords; 
     }
 
-    private static IList GetMemberValues(IList<EntityRecord> records, EntityMemberInfo member) {
+    public static IList GetMemberValues(IList<EntityRecord> records, EntityMemberInfo member) {
       var hset = new HashSet<object>(records.Select(r => r.GetValueDirect(member))); //hashset to remove dupes
       var objArray = hset.Where(v => v != null && v != DBNull.Value).ToArray();
       // convert to typed array?

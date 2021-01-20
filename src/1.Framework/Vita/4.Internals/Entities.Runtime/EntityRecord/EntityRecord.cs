@@ -58,7 +58,7 @@ namespace Vita.Entities.Runtime {
     #region Constructor and initialization
 
     //Creates a stub
-    public EntityRecord(EntityKey primaryKey) : this(primaryKey.KeyInfo.Entity, EntityStatus.Stub, null) {
+    public EntityRecord(EntityKey primaryKey) : this(primaryKey.KeyInfo.Entity, EntityStatus.Stub) {
       //sanity check
       Util.Check(!primaryKey.IsNull(), "Primary key values are empty - cannot create a stub. Entity: {0}", EntityInfo.Name);
       _primaryKey = primaryKey;
@@ -71,10 +71,9 @@ namespace Vita.Entities.Runtime {
       }
     }
 
-    public EntityRecord(EntityInfo entityInfo, EntityStatus status, SourceQuery sourceQuery) {
+    public EntityRecord(EntityInfo entityInfo, EntityStatus status) {
       EntityInfo = entityInfo;
       _status = status;
-      SourceQuery = sourceQuery; 
       WeakSelfRef = new WeakReference(this); 
       InitValuesStorage();
       MaskMembersRead = new EntityMemberMask(this.EntityInfo.PersistentValuesCount);
@@ -273,13 +272,10 @@ namespace Vita.Entities.Runtime {
 
     public void Reload() {
       Util.Check(Session != null, "Cannot reload record {0} - it is not attached to a session. ", EntityInfo);
-      Util.Check(_status == EntityStatus.Stub || _status == EntityStatus.Loaded, 
-                            $"Invalid record statis : {_status}, cannot reload.");
       // Smart loading - for a stub, load not only this record, but all its siblings 
       // Note that it might not succeed to load all or even this one. The parent record(s) might be GC'd
       if (_status == EntityStatus.Stub && this.StubParentRef != null && Session.SmartLoadEnabled) {
-        Session.TryReloadSiblingPackForRecordStub(this);
-        if (_status == EntityStatus.Loaded)
+        if(Session.TryReloadSiblingPackForRecordStub(this) && _status == EntityStatus.Loaded) //status after call to ReloadSiblings
           return; 
       }
       Session.SelectByPrimaryKey(this.EntityInfo, this.PrimaryKey.Values);

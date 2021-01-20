@@ -11,6 +11,7 @@ using Vita.Entities;
 using Vita.Modules.Login;
 using Vita.Entities.Utilities;
 using Vita.Tools.Testing;
+using System.Threading.Tasks;
 
 namespace Vita.Testing.ExtendedTests {
 
@@ -28,7 +29,7 @@ namespace Vita.Testing.ExtendedTests {
     }
 
     [TestMethod]
-    public void TestLoginAdvancedFeatures() {
+    public async Task TestLoginAdvancedFeatures() {
       Startup.BooksApp.LogTestStart();
 
       var password = Samples.BookStore.SampleData.SampleDataGenerator.DefaultPassword; 
@@ -72,7 +73,7 @@ namespace Vita.Testing.ExtendedTests {
       // Important: in both cases (email found or not), present user (dora or not) with the same page 
       // saying 'Reset instructions were sent to email you provided, if it was found in our database. ', without disclosing if email was found or not
       // Embed process token in URL and send it in email
-      SyncAsync.RunSync(()=> loginProcessService.SendPinAsync(process, doraEmailFactor));
+      await loginProcessService.SendPinAsync(process, doraEmailFactor);
 
       //Dora receives email, copies pin; we get the pin thru our fake message service
       var pin = Startup.LoginMessagingService.SentMessages.Last().Pin;

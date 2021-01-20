@@ -77,7 +77,7 @@ namespace Vita.Modules.Login {
       process.Flags = processFlags; 
       var expPeriod = GetExpirationPeriod(processType);
       process.ExpiresOn = App.TimeService.UtcNow.Add(expPeriod);
-      process.Status = LoginProcessStatus.Active; 
+      process.Status = LoginProcessStatus.Active;
       session.SaveChanges();
       return process;
     }

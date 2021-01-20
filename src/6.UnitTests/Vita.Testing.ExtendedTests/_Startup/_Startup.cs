@@ -204,7 +204,7 @@ namespace Vita.Testing.ExtendedTests {
       if (BooksApp != null)
         BooksApp.Flush();
       SqlCacheLogHelper.FlushSqlCacheLog(); 
-      Thread.Sleep(200);
+      Thread.Sleep(20);
     }
 
     private static void CreateSampleData() {

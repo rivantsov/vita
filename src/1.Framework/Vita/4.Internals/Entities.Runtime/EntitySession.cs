@@ -258,7 +258,7 @@ namespace Vita.Entities.Runtime {
       return ent?.Record; 
     }
     public virtual EntityRecord NewRecord(EntityInfo entityInfo) {
-      var record = new EntityRecord(entityInfo, EntityStatus.New, null);
+      var record = new EntityRecord(entityInfo, EntityStatus.New);
       record = Attach(record);
       record.EntityInfo.Events.OnNew(record);
       return record;
@@ -324,10 +324,17 @@ namespace Vita.Entities.Runtime {
         case EntityStatus.Loaded:
           record.Status = EntityStatus.Loaded;
           oldRecord = RecordsLoaded.Add(record); //might return existing record
-          if (oldRecord != record) { // it is brand new record just loaded
+          if (oldRecord == record) {
+            // loaded record is not yet known in session
+            // SmartLoad: register in SourceQueryResultSet
+            record.SourceQueryResultSet = this.CurrentQueryResultsWeakSet;
+            record.SourceQueryResultSet?.RecordRefs.Add(record.WeakSelfRef);
+          } else { 
+            // it is copy of already existing record
             oldRecord.CopyOriginalValues(record);
             oldRecord.ClearEntityRefValues();
           }
+
           record.EntityInfo.Events.OnLoaded(oldRecord);
           return oldRecord;
           
@@ -372,20 +379,6 @@ namespace Vita.Entities.Runtime {
       var rec = new EntityRecord(primaryKey);
       return Attach(rec);
     }
-
-    public void LoadStubAndSiblings(EntityRecord record) {
-      bool smartLoad = this.Options.IsSet(EntitySessionOptions.EnableSmartLoad);
-      
-      if (smartLoad) {
-      }
-      this.SourceQuery != null && this.SourceQuery.RecordRefs.Length > 1;
-      if (needReloadAll)
-        Session.ReloadRecordsFromSourceQuery(this.EntityInfo, this.SourceQuery);
-      else
-        this.SelectByPrimaryKey(record.EntityInfo, record.PrimaryKey.Values);
-
-    }
-
 
     protected virtual EntityRecord GetLoadedRecord(EntityKey primaryKey) {
       if(primaryKey == null)

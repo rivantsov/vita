@@ -450,14 +450,18 @@ namespace Vita.Entities.Model.Construction {
         foreach (var member in entity.Members)
           switch (member.Kind) {
             case EntityMemberKind.Column:
-              object dftValue; 
-              if (member.Flags.IsSet(EntityMemberFlags.ForeignKey)) 
+              object dftValue;
+              if (member.Flags.IsSet(EntityMemberFlags.ForeignKey))
                 dftValue = DBNull.Value;
               else if (member.AutoValueType == AutoType.RowVersion) {
-                dftValue = _zeroBytes; 
-              } else 
-                dftValue = member.DataType.IsValueType ? Activator.CreateInstance(member.DataType) : DBNull.Value;
-              member.DefaultValue = member.DefaultValue = dftValue;
+                dftValue = _zeroBytes;
+              } else if (member.DataType.IsNullableValueType())
+                dftValue = DBNull.Value;
+              else if (member.DataType.IsValueType)
+                dftValue = Activator.CreateInstance(member.DataType);
+              else 
+                dftValue = DBNull.Value;
+              member.DefaultValue = dftValue;
               entity.InitialColumnValues[member.ValueIndex] = dftValue;
               break; 
             case EntityMemberKind.Transient:

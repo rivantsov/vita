@@ -23,17 +23,25 @@ namespace Vita.Testing.ExtendedTests {
       Startup.TearDown();
     }
 
+    private long GetSelectCount() {
+      return Startup.BooksApp.AppEvents.SelectCount;
+    }
+
+
     [TestMethod]
     public void TestSmartLoadBasics() {
       Startup.BooksApp.LogTestStart();
 
       var app = Startup.BooksApp; 
-      // Get some IDs
       var session =  app.OpenSession(EntitySessionOptions.EnableSmartLoad);
-      var books = session.EntitySet<IBook>().ToList(); 
+      
+      var oldCount = GetSelectCount(); 
+      var books = session.EntitySet<IBook>().ToList();
       foreach(var bk in books) {
         var pubName = bk.Publisher.Name;
       }
+      var qryCount = GetSelectCount() - oldCount;
+      Assert.AreEqual(2, qryCount, "expected 2 queries"); // books, publishers
     }//method
 
 

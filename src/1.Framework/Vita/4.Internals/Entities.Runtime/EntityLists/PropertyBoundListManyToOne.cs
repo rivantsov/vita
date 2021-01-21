@@ -37,29 +37,7 @@ namespace Vita.Entities.Runtime {
 
 
     public override void LoadList() {
-      if(this.OwnerRecord.Session.Kind == EntitySessionKind.ConcurrentReadOnly)
-        lock(OwnerRecord)
-          LoadListImpl();
-      else
-        LoadListImpl();
-    }
-
-    public void LoadListImpl() {  
-      Modified = false;
-      var status = OwnerRecord.Status;
-      if (status == EntityStatus.Fantom || status == EntityStatus.New) {
-        Entities = new List<IEntityRecordContainer>();
-        return;
-      }
-      var fromKey = OwnerMember.ChildListInfo.ParentRefMember.ReferenceInfo.FromKey;
-      var orderBy = OwnerMember.ChildListInfo.OrderBy;
-      var selectCmd = LinqCommandFactory.CreateSelectByKeyForListPropertyManyToOne(OwnerRecord.Session, OwnerMember.ChildListInfo,
-                                             OwnerRecord.PrimaryKey.Values);
-      var objEntList = (IList) OwnerRecord.Session.ExecuteLinqCommand(selectCmd);
-      var recContList = new List<IEntityRecordContainer>();
-      foreach (var ent in objEntList)
-        recContList.Add((IEntityRecordContainer)ent);
-      Entities = recContList;
+      OwnerRecord.Session.LoadListManyToOne(this); 
     }
 
     private void AssignPersistentOrder() {

@@ -30,7 +30,7 @@ namespace Vita.Entities.Runtime {
       switch (eventType) {
         case BoundListEventType.SavingChanges:
           if (!IsLoaded || !Modified) return;
-          UpdateLinkRecords();
+          UpdateLinkRecordsBeforeSave();
           break;
         case BoundListEventType.SavedChanges:
           // We effectively force reload of each m2m list if a single link entity was modified/added/deleted
@@ -50,41 +50,21 @@ namespace Vita.Entities.Runtime {
     }//method
 
     public override void SetItems(object data) {
-      SetItemsFromTuples((IList<LinkTuple>)data);
+      SetItemsFromLinkTuples((IList<LinkTuple>)data);
     }
     public override void SetAsEmpty() {
-      SetItemsFromTuples(LinkTuple.EmptyList);
+      SetItemsFromLinkTuples(LinkTuple.EmptyList);
     }
 
     public override void LoadList() {
-      if(this.OwnerRecord.Session.Kind == EntitySessionKind.ConcurrentReadOnly)
-        lock(OwnerRecord)
-          LoadListImpl();
-      else
-        LoadListImpl();
+      this.OwnerRecord.Session.LoadListManyToMany<TEntity>(this);
     }
 
-    private void LoadListImpl() { 
-      Modified = false;
-      LinkRecordsLookup.Clear();
-      var status = OwnerRecord.Status;
-      if (status == EntityStatus.Fantom || status == EntityStatus.New) {
-        Entities = new List<IEntityRecordContainer>();
-        return;
-      }
-      var session = OwnerRecord.Session;
-      var listInfo = OwnerMember.ChildListInfo;
-      var cmd = LinqCommandFactory.CreateSelectByKeyForListPropertyManyToMany(session, listInfo, OwnerRecord.PrimaryKey.Values);
-      var queryRes = session.ExecuteLinqCommand(cmd);
-      var tupleList = (IList<LinkTuple>)queryRes;
-      SetItemsFromTuples(tupleList); 
-    }
-
-    private void SetItemsFromTuples(IList<LinkTuple> tupleList) {
+    private void SetItemsFromLinkTuples(IList<LinkTuple> linkTuples) {
       LinkRecordsLookup.Clear();
       var listInfo = OwnerMember.ChildListInfo; 
       var entities = new List<IEntityRecordContainer>();
-      foreach(var tpl in tupleList) {
+      foreach(var tpl in linkTuples) {
         var linkRec = EntityHelper.GetRecord(tpl.LinkEntity);
         var targetRec = EntityHelper.GetRecord(tpl.TargetEntity);
         linkRec.SetValueDirect(listInfo.OtherEntityRefMember, tpl.TargetEntity);
@@ -97,7 +77,7 @@ namespace Vita.Entities.Runtime {
 
     // We do not create/modify link records when app code manipulates the list. Instead, we wait until Session.SaveChanges 
     // and then adjust link records for the entire list
-    private void UpdateLinkRecords() {
+    private void UpdateLinkRecordsBeforeSave() {
       var persistentOrderMember = OwnerMember.ChildListInfo.PersistentOrderMember;
       var toDeleteLinks = new HashSet<EntityRecord>(LinkRecordsLookup.Values); // initialize with all link records
       for (int i = 0; i < Entities.Count; i++) {

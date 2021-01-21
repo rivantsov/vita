@@ -57,8 +57,9 @@ namespace Vita.Entities.Runtime {
     private ITimeService _timeService;
     private EntityAppEvents _appEvents;
     DataSource _dataSource;
+    DataConnection _currentConnection;
 
-    #region constructor
+    #region constructor, ToString()
     public EntitySession(OperationContext context, EntitySessionKind kind = EntitySessionKind.ReadWrite,
             EntitySessionOptions options = EntitySessionOptions.None) {
       Context = context;
@@ -85,20 +86,14 @@ namespace Vita.Entities.Runtime {
         _appEvents.OnNewSession(this);
       }
     }
-    #endregion
 
     public override string ToString() {
       return "EntitySession(" + Context + ")";
     }
 
-    // copied into ITransactionLog.TransactionId
-    public long GetNextTransactionId() {
-      if (_nextTransactionId == 0) {
-        _nextTransactionId = Context.App.GenerateNextTransactionId(); 
-      }
-      return _nextTransactionId; 
-    } long _nextTransactionId; 
+    #endregion
 
+    #region CurrentConnection
     // Reusable connection object
     public DataConnection CurrentConnection {
       get { return _currentConnection; }
@@ -110,9 +105,7 @@ namespace Vita.Entities.Runtime {
           Context.RegisterDisposable(_currentConnection);
       }
     }
-    DataConnection _currentConnection;
-
-
+    #endregion
 
     #region IEntitySession Methods ===========================================================================================
     // to use field internally (for perf) but expose property in interface
@@ -409,13 +402,7 @@ namespace Vita.Entities.Runtime {
       return null;
     }
 
-    public virtual IList<TEntity> ToEntities<TEntity>(IEnumerable<EntityRecord> records) {
-      var entlist = records.Select(r => (TEntity)r.EntityInstance).ToList();
-      return entlist;
-    }
-
     #endregion
-
 
     #region OnSave methods
     // We might have new entities added on the fly, as we fire events. For example, ChangeTracking hooks to EntityStore and it adds new IChangeTrackEntries.
@@ -569,6 +556,15 @@ namespace Vita.Entities.Runtime {
 
     #region Misc methods
 
+    // copied into ITransactionLog.TransactionId
+    public long GetNextTransactionId() {
+      if (_nextTransactionId == 0) {
+        _nextTransactionId = Context.App.GenerateNextTransactionId();
+      }
+      return _nextTransactionId;
+    }
+    long _nextTransactionId;
+
     public void RegisterForClearLists(EntityRecord record) {
       // may need some concurrency safety (for m-threaded session)
       this.RecordsToClearLists.Add(record); 
@@ -591,7 +587,6 @@ namespace Vita.Entities.Runtime {
     public virtual IDisposable ElevateRead() {
       return new DummyDisposable();
     }
-
 
     public bool LogEnabled {
       get { return this.Log != null && !Options.IsSet(EntitySessionOptions.DisableLog); }
@@ -626,6 +621,11 @@ namespace Vita.Entities.Runtime {
       public void Dispose() { }
     }
     #endregion 
+
+    public virtual IList<TEntity> ToEntities<TEntity>(IEnumerable<EntityRecord> records) {
+      var entlist = records.Select(r => (TEntity)r.EntityInstance).ToList();
+      return entlist;
+    }
 
   }//class
 

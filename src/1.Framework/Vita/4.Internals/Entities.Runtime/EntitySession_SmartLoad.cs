@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -33,6 +34,42 @@ namespace Vita.Entities.Runtime {
       var entList = this.ExecuteLinqCommand(selectCmd, withIncludes: false);
       return true; 
     }
+
+    internal void LoadListManyToMany<T>(PropertyBoundListManyToMany<T> list) where T: class {
+      var ownerRec = list.OwnerRecord;
+      list.Modified = false;
+      list.LinkRecordsLookup.Clear();
+      if (ownerRec.Status == EntityStatus.Fantom || ownerRec.Status == EntityStatus.New) {
+        list.SetAsEmpty();
+        return;
+      }
+      var listInfo = list.OwnerMember.ChildListInfo;
+      var cmd = LinqCommandFactory.CreateSelectByKeyForListPropertyManyToMany(this, listInfo, ownerRec.PrimaryKey.Values);
+      var queryRes = this.ExecuteLinqCommand(cmd);
+      var tupleList = (IList<LinkTuple>)queryRes;
+      list.SetItems(tupleList);
+    }
+
+    internal void LoadListManyToOne<T>(PropertyBoundListManyToOne<T> list) where T: class {
+      list.Modified = false;
+      var ownerRec = list.OwnerRecord;
+      var ownerMember = list.OwnerMember;
+      if (ownerRec.Status == EntityStatus.Fantom || ownerRec.Status == EntityStatus.New) {
+        list.SetAsEmpty(); 
+        return;
+      }
+      var fromKey = ownerMember.ChildListInfo.ParentRefMember.ReferenceInfo.FromKey;
+      var orderBy = ownerMember.ChildListInfo.OrderBy;
+      var selectCmd = LinqCommandFactory.CreateSelectByKeyForListPropertyManyToOne(this, ownerMember.ChildListInfo,
+                                             ownerRec.PrimaryKey.Values);
+      var objEntList = (IList)this.ExecuteLinqCommand(selectCmd);
+      var recContList = new List<IEntityRecordContainer>();
+      foreach (var ent in objEntList)
+        recContList.Add((IEntityRecordContainer)ent);
+      list.SetItems(recContList);
+    }
+
+
 
   } //class
 }

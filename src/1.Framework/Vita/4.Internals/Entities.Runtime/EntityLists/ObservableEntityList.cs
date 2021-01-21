@@ -32,7 +32,7 @@ namespace Vita.Entities.Runtime {
     }
     #endregion
 
-    // Entities list might be set to null by list manager - this is an indicator that old list was stale, and must be reloaded.
+    // Entities list might be set to null - this is an indicator that old list was stale, and must be reloaded.
     // Attached lists do not reload immediately when they detect that the list is stale (this happens on session.SaveChanges), to avoid
     // unnecessary database trips. Instead, we set the list to null, and it will be reloaded on the first access. 
     public IList<IEntityRecordContainer> Entities { 

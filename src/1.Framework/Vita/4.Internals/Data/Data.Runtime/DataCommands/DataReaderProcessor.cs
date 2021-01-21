@@ -19,7 +19,8 @@ namespace Vita.Data.Runtime {
 
     public object ProcessResult(DataCommand command) {
       var session = command.Connection.Session;
-      session.CurrentQueryResultsWeakSet = new QueryResultsWeakSet(); // for SmartLoad
+      if (session.SmartLoadEnabled)
+        session.CurrentQueryResultsWeakSet = new QueryResultsWeakSet(); 
       var reader = command.Result as IDataReader;
       var resultList = RowListCreator(); 
       while(reader.Read()) {

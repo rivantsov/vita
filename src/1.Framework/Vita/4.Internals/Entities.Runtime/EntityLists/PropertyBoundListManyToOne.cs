@@ -76,9 +76,13 @@ namespace Vita.Entities.Runtime {
       }
     }//method
 
-    public override void Init(object data) {
+    public override void SetItems(object data) {
       this.Entities = (IList<IEntityRecordContainer>)data;
       base.Modified = false;
+    }
+    public override void SetAsEmpty() {
+      this.Entities = new List<IEntityRecordContainer>();
+      base.Modified = false; 
     }
 
   }//class

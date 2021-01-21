@@ -15,7 +15,14 @@ namespace Vita.Entities.Runtime {
   /// <summary>Observable entity list class. Implements <c>INotifyCollectionChanged</c> interface. </summary>
   /// <typeparam name="TEntity">Entity type.</typeparam>
   /// <remarks>All entity lists returned by the system are instances of ObservableEntityList</remarks>
-  internal class ObservableEntityList<TEntity> : IList<TEntity>, /* IList, */ INotifyCollectionChanged where TEntity: class {
+  internal abstract class ObservableEntityList<TEntity> : IList<TEntity>, INotifyCollectionChanged where TEntity: class {
+
+    IList<IEntityRecordContainer> _entities;
+    public bool IsLoaded { get { return _entities != null; } }
+    public virtual bool Modified { get; set; }
+
+    // INotifyCollectionChanged Members
+    public event NotifyCollectionChangedEventHandler CollectionChanged;
 
     #region constructors
     public ObservableEntityList() { 
@@ -25,28 +32,24 @@ namespace Vita.Entities.Runtime {
     }
     #endregion
 
-    public virtual bool Modified {get; set;}
-
     // Entities list might be set to null by list manager - this is an indicator that old list was stale, and must be reloaded.
     // Attached lists do not reload immediately when they detect that the list is stale (this happens on session.SaveChanges), to avoid
     // unnecessary database trips. Instead, we set the list to null, and it will be reloaded on the first access. 
     public IList<IEntityRecordContainer> Entities { 
       get {
-        if(_entities == null)
-            LoadList(); //this should assign Entities and fire CollectionChanged event 
+        if(_entities == null) {
+          LoadList(); //this should assign Entities and fire CollectionChanged event 
+          CollectionChanged?.Invoke(this, new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Reset));
+        }
         return _entities;
       }
       set {
         _entities = value;
-        if (CollectionChanged != null) 
-          CollectionChanged(this, new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Reset));
+        CollectionChanged?.Invoke(this, new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Reset));
       } 
-    } IList<IEntityRecordContainer> _entities;
-
-    public bool IsLoaded { get {return _entities != null;}}
-
-    public virtual void LoadList() {
     }
+
+    public abstract void LoadList();
 
     public IList<EntityRecord> GetRecords() {
       return Entities.Select(e => e.Record).ToList();
@@ -58,8 +61,7 @@ namespace Vita.Entities.Runtime {
         var oldValue = Entities[index];
         Entities[index] = (IEntityRecordContainer) value;
         Modified = true;
-        if(CollectionChanged != null)
-          CollectionChanged(this, new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Replace, value, oldValue));
+        CollectionChanged?.Invoke(this, new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Replace, value, oldValue));
 
       }
     }
@@ -68,17 +70,16 @@ namespace Vita.Entities.Runtime {
       Util.Check(ent != null, "Attempt to add null to entity list property. Expected: {0}.", typeof(TEntity).Name);
       Entities.Add(ent);
       Modified = true;
-      if(CollectionChanged != null)
-        CollectionChanged(this, new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Add, item, this.Count));
+      CollectionChanged?.Invoke(this, new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Add, item, this.Count));
 
     }
 
     public virtual void Clear() {
       Entities.Clear();
       Modified = true;
-      if(CollectionChanged != null)
-        CollectionChanged(this, new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Reset));
+      CollectionChanged?.Invoke(this, new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Reset));
     }
+
     public IEnumerator<TEntity> GetEnumerator() {
       foreach(var entity in Entities)
         yield return (TEntity)entity;
@@ -97,15 +98,13 @@ namespace Vita.Entities.Runtime {
     public int Count {
       get { return Entities.Count; }
     }
+
     public virtual void RemoveAt(int index) {
       var item = Entities[index];
       Entities.RemoveAt(index);
       Modified = true;
-      if(CollectionChanged != null)
-        CollectionChanged(this, new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Remove, item, index));
+      CollectionChanged?.Invoke(this, new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Remove, item, index));
     }
-
-
 
     public bool IsReadOnly {
       get { return Entities.IsReadOnly; }
@@ -123,8 +122,7 @@ namespace Vita.Entities.Runtime {
     public virtual void Insert(int index, TEntity item) {
       Entities.Insert(index, (IEntityRecordContainer)item);
       Modified = true;
-      if(CollectionChanged != null)
-        CollectionChanged(this, new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Add, item, index));
+      CollectionChanged?.Invoke(this, new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Add, item, index));
     }
 
     IEnumerator IEnumerable.GetEnumerator() {
@@ -134,13 +132,6 @@ namespace Vita.Entities.Runtime {
     public virtual int IndexOf(TEntity item) {
       return Entities.IndexOf((IEntityRecordContainer) item);
     }
-
-
-    #region INotifyCollectionChanged Members
-
-    public event NotifyCollectionChangedEventHandler CollectionChanged;
-
-    #endregion
 
     public override string ToString() {
       if (_entities == null)

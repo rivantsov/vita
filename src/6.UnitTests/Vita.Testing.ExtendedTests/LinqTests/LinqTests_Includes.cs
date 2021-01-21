@@ -22,21 +22,17 @@ namespace Vita.Testing.ExtendedTests {
 
       try {
         //DisplayAttribute.Disabled = true;   // just for internal debugging, to disable automatic loading of entities for Display
-        Startup.BooksApp.AppEvents.ExecutedSelect += AppEvents_ExecutedSelect; //to spy after executed selects
         //using (SetupHelper.BooksApp.LoggingApp.Suspend()) { //to suspend logging activity in debugging
-          TestLinqIncludeImpl(); 
+        TestLinqIncludeImpl(); 
         // }
       } finally {
         DisplayAttribute.Disabled = false;
-        Startup.BooksApp.AppEvents.ExecutedSelect -= AppEvents_ExecutedSelect;
       }
     }
 
-    int _loadCount;
-    void AppEvents_ExecutedSelect(object sender, EntityCommandEventArgs e) {
-      _loadCount++;
-    }//method
-
+    private long GetSelectCount() {
+      return Startup.BooksApp.AppEvents.SelectCount;
+    }
 
     private void TestLinqIncludeImpl() {
       var app = Startup.BooksApp;
@@ -50,13 +46,14 @@ namespace Vita.Testing.ExtendedTests {
       //Go through all reviews, touch properties of objects; 
       // Without Include, accessing 'review.Book.Title' would cause loading of IBook entity; with Include there should be no extra db roundrips
       // We handle ExecutedSelect app event (spying on the app); the event fired for any record loaded; we  increment loadCount in event handler
-      _loadCount = 0;
+      var oldSelectCount = GetSelectCount();
       summary.Clear();
       foreach (var rv in reviews) 
         summary.Add(string.Format(" User {0} reviewed '{1}' from {2} and gave rating: {3}", rv.User.DisplayName, rv.Book.Title, rv.Book.Publisher.Name, rv.Rating));
       Assert.IsTrue(summary.Count > 0, "Expected some summaries.");
       var txtSummary = string.Join(Environment.NewLine, summary);
-      Assert.AreEqual(0, _loadCount, "Expected 0 load count");
+      var numQueries = GetSelectCount() - oldSelectCount;
+      Assert.AreEqual(0, numQueries, "Expected 0 query count");
       Startup.BooksApp.Flush();
 
       // list properties, many2one and many2many; 2 forms of Include 
@@ -70,7 +67,7 @@ namespace Vita.Testing.ExtendedTests {
       session.LogMessage("----- query executed. Starting iterating over records");
 
       //verify - go thru all orders, touch lines, books, users, publishers; check there were no DB commands executed
-      _loadCount = 0;
+      oldSelectCount = GetSelectCount();
       summary.Clear(); 
       foreach (var order in orders)
         foreach (var ol in order.Lines) {
@@ -81,21 +78,23 @@ namespace Vita.Testing.ExtendedTests {
       session.LogMessage("---- Completed iterating over records ---------------- ");
       txtSummary = string.Join(Environment.NewLine, summary);
       Assert.IsTrue(summary.Count > 0, "Expected non-empty summary");
-      Assert.AreEqual(0, _loadCount, "Expected no extra db load commands.");
+      numQueries = GetSelectCount() - oldSelectCount; 
+      Assert.AreEqual(0, numQueries, "Expected no extra db load commands.");
 
       //Using nullable property
       session = app.OpenSession(); 
       var qBooks = session.EntitySet<IBook>().Where(b => b.Price > 0)
         .Include(b => b.Editor); //book.Editor is nullable property
       var books = qBooks.ToList();
-      _loadCount = 0; 
+      oldSelectCount = GetSelectCount(); 
       summary.Clear(); 
       foreach (var bk in books) {
         if (bk.Editor != null)
           summary.Add(string.Format("Book '{0}' edited by {1}.", bk.Title, bk.Editor.UserName));
       }
       txtSummary = string.Join(Environment.NewLine, summary);
-      Assert.AreEqual(0, _loadCount, "Expected zero load count.");
+      numQueries = GetSelectCount() - oldSelectCount;
+      Assert.AreEqual(0, numQueries, "Expected zero load count.");
       //var txtLog = session.Context.LocalLog.GetAllAsText(); 
 
       //single entity
@@ -103,9 +102,10 @@ namespace Vita.Testing.ExtendedTests {
       var someBook = session.EntitySet<IBook>().Where(b => b.Price > 0)
                   .Include(b => b.Publisher).First();
       Assert.IsNotNull(someBook, "Expected a book.");
-      _loadCount = 0;
+      oldSelectCount = GetSelectCount();
       var pubName = someBook.Publisher.Name;
-      Assert.AreEqual(0, _loadCount, "Expected no load commands.");
+      numQueries = GetSelectCount() - oldSelectCount;
+      Assert.AreEqual(0, numQueries, "Expected no load commands.");
 
       // for queries that do not return entities the include is simply ignored
       var bkGroups = session.EntitySet<IBook>().GroupBy(b => b.Publisher.Id).Include(b => b.Key).ToList();
@@ -120,14 +120,15 @@ namespace Vita.Testing.ExtendedTests {
       var qOrders2 = session.EntitySet<IBookOrder>().Where(o => o.Status != OrderStatus.Canceled);
       var orders2 = qOrders2.ToList();
       //verify - go thru all orders, touch lines, books, users, publishers; check there were no DB commands executed
-      _loadCount = 0;
+      oldSelectCount = GetSelectCount();
       summary.Clear();
       foreach (var order in orders2)
         foreach (var ol in order.Lines)
           summary.Add(string.Format(" User {0} bought {1} books titled '{2}' from {3}.", order.User.UserName, ol.Quantity, ol.Book.Title, ol.Book.Publisher.Name));
       txtSummary = string.Join(Environment.NewLine, summary);
       Assert.IsTrue(summary.Count > 0, "Expected non-empty summary");
-      Assert.AreEqual(0, _loadCount, "Expected no extra db load commands.");
+      numQueries = GetSelectCount() - oldSelectCount;
+      Assert.AreEqual(0, numQueries, "Expected no extra db load commands.");
 
       var removed = context.RemoveInclude((IBookOrder o) => new { o.Lines, o.User }) && context.RemoveInclude((IBookOrderLine l) => l.Book.Publisher);
       Assert.IsTrue(removed, "Removing Include from operation context failed.");
@@ -140,13 +141,33 @@ namespace Vita.Testing.ExtendedTests {
         .And(r => r.Book.Category == BookCategory.Programming);
       var foundReviews = session.ExecuteSearch(where, searchParams, include: r => new { r.Book.Publisher, r.User });
       Assert.IsTrue(foundReviews.Results.Count > 0, "Expected some reviews");
-      _loadCount = 0;
+      oldSelectCount = GetSelectCount();
       summary.Clear();
       foreach (var rv in foundReviews.Results)
         summary.Add(string.Format(" User {0} reviewed '{1}' from {2} and gave rating: {3}", rv.User.DisplayName, rv.Book.Title, rv.Book.Publisher.Name, rv.Rating));
       txtSummary = string.Join(Environment.NewLine, summary);
-      Assert.AreEqual(0, _loadCount, "Expected 0 load count");
+      numQueries = GetSelectCount() - oldSelectCount;
+      Assert.AreEqual(0, numQueries, "Expected 0 load count");
 
+      // testing bug fix https://github.com/rivantsov/vita/issues/158
+      //  bug - when included list property is empty, the property was not set to loaded+empty-list,
+      //   so iterating thru parent entities and touching the list property was causing a query 
+      //   returning empty list. 
+      // test: load users with include of user.BooksEdited list. There must be just 2 queries: users, then books
+      //      iterate thru users and touch user.BooksEdited - there must be no extra queries
+      oldSelectCount = GetSelectCount(); 
+      var users = session.EntitySet<IUser>()
+                         .Include(u => u.BooksEdited)            
+                         .ToList();
+      numQueries = GetSelectCount() - oldSelectCount;
+      Assert.AreEqual(2, numQueries, "Expected 2 queries");
+      // iterate
+      oldSelectCount = GetSelectCount(); 
+      foreach(var user in users) {
+        var count = user.BooksEdited.Count; 
+      }
+      numQueries = GetSelectCount() - oldSelectCount;
+      Assert.AreEqual(0, numQueries, "Expected no queries while iterating users.");
     }
 
 

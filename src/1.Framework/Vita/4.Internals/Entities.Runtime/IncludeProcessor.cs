@@ -3,14 +3,10 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
-using System.Reflection;
-using System.Text;
-using System.Threading.Tasks;
-
-using Vita.Entities.Model;
-using Vita.Entities.Utilities;
 using Vita.Data;
 using Vita.Data.Linq;
+using Vita.Entities.Model;
+using Vita.Entities.Utilities;
 
 namespace Vita.Entities.Runtime {
 
@@ -220,14 +216,16 @@ namespace Vita.Entities.Runtime {
         if (childList == null)         
           childList = parent.InitChildEntityList(listMember);
         var grpChildEntities = g.Select(r => r.EntityInstance).ToList();
-        childList.Init(grpChildEntities);
+        childList.SetItems(grpChildEntities);
       }
       // If for some parent records child lists were empty, we need set the list property to empty list, 
       // If it remains null, it will be considered not loaded, and app will attempt to load it again on first touch
       foreach (var parent in records) {
-        var value = parent.ValuesTransient[listMember.ValueIndex];
-        if (value == null)
-          parent.InitChildEntityList(listMember);
+        var list = parent.ValuesTransient[listMember.ValueIndex] as IPropertyBoundList;
+        if (list == null)
+          list = parent.InitChildEntityList(listMember);
+        if (!list.IsLoaded)
+          list.SetAsEmpty();
       }
       return childRecs;
     }
@@ -257,7 +255,7 @@ namespace Vita.Entities.Runtime {
         if(childList == null)
           childList = parent.InitChildEntityList(listMember);
         var groupTuples = g.ToList();
-        childList.Init(groupTuples);
+        childList.SetItems(groupTuples);
       }
       // Init/clear all lists that were NOT loaded
       var emptyTuples = new List<LinkTuple>();
@@ -267,7 +265,7 @@ namespace Vita.Entities.Runtime {
           continue;
         if(childList == null)
           childList = rec.InitChildEntityList(listMember);
-        childList.Init(emptyTuples);
+        childList.SetItems(emptyTuples);
       }
       // collect all target records as function result
       var targetRecords = tuples.Select(t => EntityHelper.GetRecord(t.TargetEntity)).ToList();

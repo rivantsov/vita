@@ -15,9 +15,10 @@ namespace Vita.Entities.Runtime {
   }
 
   public interface IPropertyBoundList {
-    void Notify(BoundListEventType eventType);
     bool IsLoaded { get; }
-    void Init(object data);
+    void Notify(BoundListEventType eventType);
+    void SetItems(object items);
+    void SetAsEmpty();
   }
 
   internal abstract class PropertyBoundListBase<TEntity> : ObservableEntityList<TEntity>, IPropertyBoundList where TEntity: class {
@@ -30,7 +31,7 @@ namespace Vita.Entities.Runtime {
       OwnerMember = ownerMember;
       TargetEntity = ownerMember.ChildListInfo.TargetEntity;
       IsOrdered = OwnerMember.ChildListInfo.PersistentOrderMember != null;
-      // Note: it would be probably better to delay loading, but it is much more convenient in debugging with autoload on create.
+      // Note: we delay loading, but it is convenient in debugging with autoload on create.
       // LoadList();
     }
 
@@ -49,8 +50,9 @@ namespace Vita.Entities.Runtime {
 
     #region IPropertyBoundList Members
     public abstract void Notify(BoundListEventType eventType);
-
-    public abstract void Init(object data);
+    // IsLoaded is inherited
+    public abstract void SetItems(object items);
+    public abstract void SetAsEmpty();
     #endregion
   }
 

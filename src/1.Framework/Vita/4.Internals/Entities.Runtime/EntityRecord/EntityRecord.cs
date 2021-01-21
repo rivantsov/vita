@@ -483,17 +483,14 @@ namespace Vita.Entities.Runtime {
     }
 
     public IPropertyBoundList InitChildEntityList(EntityMemberInfo member) {
-      Util.Check(Session != null, "Failed to create child entity list for member {0}. Record is not attached to session.", member);
       var listInfo = member.ChildListInfo;
-      Util.Check(Session != null, "Failed to create child entity list for member {0}. Record is not attached to session.", member);
       var listType = (listInfo.RelationType == EntityRelationType.ManyToOne) ?
         typeof(PropertyBoundListManyToOne<>) : typeof(PropertyBoundListManyToMany<>);
       var genListType = listType.MakeGenericType(listInfo.TargetEntity.EntityType);
       var list = Activator.CreateInstance(genListType, this, member) as IPropertyBoundList;
-      this.ValuesTransient[member.ValueIndex] = list;
+      this.ValuesTransient[member.ValueIndex] = list; 
       return list;
     }
-
 
     public void RefreshIdentityReferences() {
       foreach(var refM in EntityInfo.RefMembers) {

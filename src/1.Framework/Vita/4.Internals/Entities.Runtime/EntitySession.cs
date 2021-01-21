@@ -334,7 +334,6 @@ namespace Vita.Entities.Runtime {
             oldRecord.CopyOriginalValues(record);
             oldRecord.ClearEntityRefValues();
           }
-
           record.EntityInfo.Events.OnLoaded(oldRecord);
           return oldRecord;
           

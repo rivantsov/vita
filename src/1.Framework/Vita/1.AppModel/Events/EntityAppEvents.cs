@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Threading;
 using Vita.Entities.Logging;
 using Vita.Entities.Model;
 using Vita.Entities.Model.Construction;
@@ -76,7 +77,12 @@ namespace Vita.Entities {
 
   //Events for the entire entity store
   public class EntityAppEvents {
-    EntityApp _app; 
+    EntityApp _app;
+    long _selectCount;
+    long _saveCount;
+
+    public long SelectCount => _selectCount;
+    public long SaveCount => _saveCount; 
 
     public event EventHandler<AppInitEventArgs> Initializing; //fired multiple times
     public event EventHandler<EntityModelConstructEventArgs> ModelConstructing;
@@ -122,12 +128,14 @@ namespace Vita.Entities {
       SavingChanges?.Invoke(session, new EntitySessionEventArgs(session));
     }
     internal void OnSavedChanges(IEntitySession session) {
-        SavedChanges?.Invoke(session, new EntitySessionEventArgs(session));
+      Interlocked.Increment(ref _saveCount);
+      SavedChanges?.Invoke(session, new EntitySessionEventArgs(session));
     }
     internal void OnSaveChangesAborted(IEntitySession session) {
       SaveChangesAborted?.Invoke(session, new EntitySessionEventArgs(session));
     }
     internal void OnExecutedSelect(IEntitySession session, object command) {
+      Interlocked.Increment(ref _selectCount); 
       ExecutedSelect?.Invoke(session, new EntityCommandEventArgs(session, command));
     }
     internal void OnExecutedNonQuery(IEntitySession session, object command) {

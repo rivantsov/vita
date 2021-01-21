@@ -13,6 +13,8 @@ namespace Vita.Entities.Runtime {
   public class LinkTuple {
     public object LinkEntity { get; set; }
     public object TargetEntity { get; set; }
+
+    public static IList<LinkTuple> EmptyList = new LinkTuple[] { }; 
   }
 
 
@@ -47,6 +49,13 @@ namespace Vita.Entities.Runtime {
       }//switch
     }//method
 
+    public override void SetItems(object data) {
+      SetItemsFromTuples((IList<LinkTuple>)data);
+    }
+    public override void SetAsEmpty() {
+      SetItemsFromTuples(LinkTuple.EmptyList);
+    }
+
     public override void LoadList() {
       if(this.OwnerRecord.Session.Kind == EntitySessionKind.ConcurrentReadOnly)
         lock(OwnerRecord)
@@ -55,7 +64,7 @@ namespace Vita.Entities.Runtime {
         LoadListImpl();
     }
 
-    public void LoadListImpl() { 
+    private void LoadListImpl() { 
       Modified = false;
       LinkRecordsLookup.Clear();
       var status = OwnerRecord.Status;
@@ -63,16 +72,15 @@ namespace Vita.Entities.Runtime {
         Entities = new List<IEntityRecordContainer>();
         return;
       }
-
       var session = OwnerRecord.Session;
       var listInfo = OwnerMember.ChildListInfo;
       var cmd = LinqCommandFactory.CreateSelectByKeyForListPropertyManyToMany(session, listInfo, OwnerRecord.PrimaryKey.Values);
       var queryRes = session.ExecuteLinqCommand(cmd);
       var tupleList = (IList<LinkTuple>)queryRes;
-      SetData(tupleList); 
+      SetItemsFromTuples(tupleList); 
     }
 
-    private void SetData(IList<LinkTuple> tupleList) {
+    private void SetItemsFromTuples(IList<LinkTuple> tupleList) {
       LinkRecordsLookup.Clear();
       var listInfo = OwnerMember.ChildListInfo; 
       var entities = new List<IEntityRecordContainer>();
@@ -87,7 +95,7 @@ namespace Vita.Entities.Runtime {
       base.Modified = false; 
     }
 
-    //We do not create/modify link records when app code manipulates the list. Instead, we wait until Session.SaveChanges 
+    // We do not create/modify link records when app code manipulates the list. Instead, we wait until Session.SaveChanges 
     // and then adjust link records for the entire list
     private void UpdateLinkRecords() {
       var persistentOrderMember = OwnerMember.ChildListInfo.PersistentOrderMember;
@@ -121,10 +129,6 @@ namespace Vita.Entities.Runtime {
       linkRec.SetValue(listInfo.ParentRefMember, OwnerRecord.EntityInstance);
       linkRec.SetValue(listInfo.OtherEntityRefMember, targetEntity);
       return linkRec;
-    }
-
-    public override void Init(object data) {
-      SetData((IList<LinkTuple>)data);
     }
 
   }//class

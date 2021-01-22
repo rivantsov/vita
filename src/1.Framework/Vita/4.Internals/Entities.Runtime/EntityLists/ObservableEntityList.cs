@@ -24,13 +24,8 @@ namespace Vita.Entities.Runtime {
     // INotifyCollectionChanged Members
     public event NotifyCollectionChangedEventHandler CollectionChanged;
 
-    #region constructors
     public ObservableEntityList() { 
     }
-    public ObservableEntityList(IList<IEntityRecordContainer> entities) {
-      _entities = entities; 
-    }
-    #endregion
 
     // Entities list might be set to null - this is an indicator that old list was stale, and must be reloaded.
     // Attached lists do not reload immediately when they detect that the list is stale (this happens on session.SaveChanges), to avoid

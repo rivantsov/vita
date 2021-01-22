@@ -138,11 +138,11 @@ namespace Vita.Entities.Runtime {
           var listInfo = refMember.ChildListInfo;
           switch (listInfo.RelationType) {
             case EntityRelationType.ManyToOne:
-              resultRecords = RunIncludeForListManyToOne(records, refMember);
+              resultRecords = RunIncludeForListManyToOne(_session, records, refMember);
               RunIncludeQueries(listInfo.TargetEntity.EntityType, resultRecords);
               return resultRecords; 
             case EntityRelationType.ManyToMany:
-              resultRecords = RunIncludeForListManyToMany(records, refMember);
+              resultRecords = RunIncludeForListManyToMany(_session, records, refMember);
               RunIncludeQueries(listInfo.TargetEntity.EntityType, resultRecords);
               return resultRecords; 
           }//switch rel type
@@ -191,7 +191,7 @@ namespace Vita.Entities.Runtime {
     }
 
     // Example: records: List<IBookOrder>, listMember: bookOrder.Lines; so we load lines for each book order
-    private IList<EntityRecord> RunIncludeForListManyToOne(IList<EntityRecord> records, EntityMemberInfo listMember) {
+    internal static IList<EntityRecord> RunIncludeForListManyToOne(EntitySession session, IList<EntityRecord> records, EntityMemberInfo listMember) {
       var pkInfo = listMember.Entity.PrimaryKey;
       var expMembers = pkInfo.ExpandedKeyMembers; 
       Util.Check(expMembers.Count == 1, "Include expression not supported for entities with composite keys, property: {0}.", listMember);
@@ -201,15 +201,15 @@ namespace Vita.Entities.Runtime {
       var parentRefMember = listInfo.ParentRefMember; //IBookOrderLine.Order
       var fromKey = parentRefMember.ReferenceInfo.FromKey;
       Util.Check(fromKey.ExpandedKeyMembers.Count == 1, "Composite keys are not supported in Include expressions; member: {0}", parentRefMember);
-      var selectCmd = LinqCommandFactory.CreateSelectByKeyArrayForListPropertyManyToOne(_session, listInfo, pkValuesArr);
-      var childEntities = (IList) _session.ExecuteLinqCommand(selectCmd, withIncludes: false); //list of all IBookOrderLine for BookOrder objects in 'records' parameter
+      var selectCmd = LinqCommandFactory.CreateSelectByKeyArrayForListPropertyManyToOne(session, listInfo, pkValuesArr);
+      var childEntities = (IList) session.ExecuteLinqCommand(selectCmd, withIncludes: false); //list of all IBookOrderLine for BookOrder objects in 'records' parameter
       var childRecs = GetRecordList(childEntities); 
       //setup list properties in parent records
       var fk = fromKey.ExpandedKeyMembers[0].Member; //IBookOrderLine.Order_Id
       var groupedRecs = childRecs.GroupBy(rec => rec.GetValueDirect(fk)); //each group is list of order lines for a single book order; group key is BookOrder.Id
       foreach (var g in groupedRecs) {
         var pkValue = new EntityKey(pkInfo, g.Key); // Order_Id -> BookOrder.Id
-        var parent = _session.GetRecord(pkValue); // BookOrder
+        var parent = session.GetRecord(pkValue); // BookOrder
         var childList = parent.ValuesTransient[listMember.ValueIndex] as IPropertyBoundList; //BookOrder.Lines, list object
         if (childList != null && childList.IsLoaded)
           continue; 
@@ -231,7 +231,7 @@ namespace Vita.Entities.Runtime {
     }
 
     // Example: records: List<IBook>, listMember: book.Author; so we load authors list for each book
-    private IList<EntityRecord> RunIncludeForListManyToMany(IList<EntityRecord> records, EntityMemberInfo listMember) {
+    internal static IList<EntityRecord> RunIncludeForListManyToMany(EntitySession session, IList<EntityRecord> records, EntityMemberInfo listMember) {
       var pkInfo = listMember.Entity.PrimaryKey;
       var keyMembers = pkInfo.ExpandedKeyMembers;
       Util.Check(keyMembers.Count == 1, "Include expression not supported for entities with composite keys, property: {0}.", listMember);
@@ -240,15 +240,15 @@ namespace Vita.Entities.Runtime {
       // PK values of records
       var pkValues = GetDistinctMemberValues(records, keyMembers[0].Member);
       //run include query; it will return LinkTuple list
-      var cmd = LinqCommandFactory.CreateSelectByKeyArrayForListPropertyManyToMany(_session, listInfo, pkValues);
-      var tuples = (IList<LinkTuple>) _session.ExecuteLinqCommand(cmd, withIncludes: false);
+      var cmd = LinqCommandFactory.CreateSelectByKeyArrayForListPropertyManyToMany(session, listInfo, pkValues);
+      var tuples = (IList<LinkTuple>) session.ExecuteLinqCommand(cmd, withIncludes: false);
 
       // Group by parent record, and push groups/lists into individual records
       var fkMember = listInfo.ParentRefMember.ReferenceInfo.FromKey.ExpandedKeyMembers[0].Member;
       var tupleGroups = tuples.GroupBy(t => EntityHelper.GetRecord(t.LinkEntity).GetValueDirect(fkMember)).ToList(); 
       foreach(var g in tupleGroups) {
         var pkValue = new EntityKey(pkInfo, g.Key); // Order_Id -> BookOrder.Id
-        var parent = _session.GetRecord(pkValue); // BookOrder
+        var parent = session.GetRecord(pkValue); // BookOrder
         var childList = parent.ValuesTransient[listMember.ValueIndex] as IPropertyBoundList; //BookOrder.Lines, list object
         if(childList != null && childList.IsLoaded)
           continue;

@@ -29,7 +29,7 @@ namespace Vita.Testing.ExtendedTests {
 
 
     [TestMethod]
-    public void TestSmartLoadBasics() {
+    public void TestSmartLoadFacility() {
       Startup.BooksApp.LogTestStart();
 
       var app = Startup.BooksApp; 

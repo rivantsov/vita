@@ -55,6 +55,8 @@ namespace Vita.Entities.Runtime {
     // used internally by batch process for records with identities
     public object CustomTag;
 
+    public static readonly IList<EntityRecord> EmptyList = new EntityRecord[] { }; 
+
     #region Constructor and initialization
 
     //Creates a stub

@@ -1,8 +1,6 @@
-﻿using System;
-using System.Collections;
+﻿using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using Vita.Data.Linq;
 using Vita.Entities.Model;
 
@@ -20,16 +18,10 @@ namespace Vita.Entities.Runtime {
       var fkKey = refMember.ReferenceInfo.FromKey;
       if (fkKey.ExpandedKeyMembers.Count > 1)
         return false; // we can't do it with composite keys
-      var fkMember = fkKey.ExpandedKeyMembers[0].Member;
       var records = GetLoadedSiblings(parent);
       if (records.Count == 0)
         return false;
-      var fkValues = IncludeProcessor.GetDistinctMemberValues(records, fkMember);
-      if (fkValues.Count == 0)
-        return false;
-      var selectCmd = LinqCommandFactory.CreateSelectByKeyValueArray(this, record.EntityInfo.PrimaryKey, null, fkValues);
-      // Once we execute the query, the target stubs will be reloaded; we do not actually need the resulting ent list
-      var entList = this.ExecuteLinqCommand(selectCmd, withIncludes: false);
+      IncludeProcessor.RunIncludeForEntityRef(this, records, refMember);
       return true;
     }
 

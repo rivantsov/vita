@@ -131,7 +131,7 @@ namespace Vita.Entities.Runtime {
       var refMember = ent.Members.First(m => m.ClrMemberInfo == ma.Member); //r.Book
       switch (refMember.Kind) {
         case EntityMemberKind.EntityRef:
-          resultRecords = RunIncludeForEntityRef(records, refMember);
+          resultRecords = RunIncludeForEntityRef(_session, records, refMember);
           RunIncludeQueries(refMember.DataType, resultRecords);
           return resultRecords; 
         case EntityMemberKind.EntityList:
@@ -154,14 +154,14 @@ namespace Vita.Entities.Runtime {
       return _emptyList;
     }
 
-    private IList<EntityRecord> RunIncludeForEntityRef(IList<EntityRecord> records, EntityMemberInfo refMember) {
+    internal static IList<EntityRecord> RunIncludeForEntityRef(EntitySession session, IList<EntityRecord> records, EntityMemberInfo refMember) {
       if (records.Count == 0)
         return _emptyList;
       var targetEntity = refMember.ReferenceInfo.ToKey.Entity;
       var fkMember = refMember.ReferenceInfo.FromKey.ExpandedKeyMembers[0].Member; // r.Book_Id
       var fkValues = GetDistinctMemberValues(records, fkMember);
-      var selectCmd = LinqCommandFactory.CreateSelectByKeyValueArray(_session, targetEntity.PrimaryKey, null, fkValues);
-      var entList = (IList) _session.ExecuteLinqCommand(selectCmd, withIncludes: false);
+      var selectCmd = LinqCommandFactory.CreateSelectByKeyValueArray(session, targetEntity.PrimaryKey, null, fkValues);
+      var entList = (IList) session.ExecuteLinqCommand(selectCmd, withIncludes: false);
       if (entList.Count == 0)
         return _emptyList;
       var recList = GetRecordList(entList);
@@ -173,8 +173,9 @@ namespace Vita.Entities.Runtime {
           parentRec.SetValueDirect(refMember, DBNull.Value);
         } else {
           var pkKey = new EntityKey(targetPk, fkValue);
-          //we lookup in session, instead of searching in results of Include query - all just loaded records are registered in session and lookup is done by key (it is fact dict lookup)
-          var targetRec = _session.GetRecord(pkKey);
+          //we lookup in session, instead of searching in results of Include query - all just loaded records 
+          //  are registered in session and lookup is done by key (it is fact dict lookup)
+          var targetRec = session.GetRecord(pkKey);
           parentRec.SetValueDirect(refMember, targetRec);
         }
       }

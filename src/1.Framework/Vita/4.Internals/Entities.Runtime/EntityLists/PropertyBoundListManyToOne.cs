@@ -37,7 +37,7 @@ namespace Vita.Entities.Runtime {
 
 
     public override void LoadList() {
-      OwnerRecord.Session.LoadListManyToOne(this); 
+      MemberLoadHelper.LoadListManyToOne(this); 
     }
 
     private void AssignPersistentOrder() {

@@ -276,8 +276,8 @@ namespace Vita.Entities.Runtime {
       Util.Check(Session != null, "Cannot reload record {0} - it is not attached to a session. ", EntityInfo);
       // Smart loading - for a stub, load not only this record, but all its siblings 
       // Note that it might not succeed to load all or even this one. The parent record(s) might be GC'd
-      if (_status == EntityStatus.Stub && this.StubParentRef != null && Session.SmartLoadEnabled) {
-        if(Session.TryReloadSiblingPackForRecordStub(this) && _status == EntityStatus.Loaded) //status after call to ReloadSiblings
+      if (_status == EntityStatus.Stub && this.StubParentRef != null && Session.SmartLoadEnabled) {        
+        if (MemberLoadHelper.TryReloadSiblingPackForRecordStub(this) && _status == EntityStatus.Loaded) //status after call to ReloadSiblings
           return; 
       }
       Session.SelectByPrimaryKey(this.EntityInfo, this.PrimaryKey.Values);

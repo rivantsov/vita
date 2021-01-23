@@ -12,7 +12,6 @@ namespace Vita.Entities.Runtime {
 
   internal class IncludeProcessor {
     public static int MaxNestedRunsPerEntityType = 2; //max nested runs per entity type
-    private static IList<EntityRecord> _emptyList = new EntityRecord[] { };
 
     //TODO: test and fix the following: 
     // Includes - when including child list, the list initialized only if it's not empty;
@@ -26,7 +25,7 @@ namespace Vita.Entities.Runtime {
       var allIncludes = session.Context.GetMergedIncludes(command.Includes);
       if(allIncludes == null || allIncludes.Count == 0)
         return;
-      var resultShape = GetResultShape(session.Context.App.Model, mainQueryResult.GetType());
+      var resultShape = MemberLoadHelper.GetResultShape(session.Context.App.Model, mainQueryResult.GetType());
       if(resultShape == QueryResultShape.Object)
         return;
       // Get records from query result
@@ -131,167 +130,27 @@ namespace Vita.Entities.Runtime {
       var refMember = ent.Members.First(m => m.ClrMemberInfo == ma.Member); //r.Book
       switch (refMember.Kind) {
         case EntityMemberKind.EntityRef:
-          resultRecords = RunIncludeForEntityRef(_session, records, refMember);
+          resultRecords = MemberLoadHelper.LoadEntityRefMember(_session, records, refMember);
           RunIncludeQueries(refMember.DataType, resultRecords);
           return resultRecords; 
         case EntityMemberKind.EntityList:
           var listInfo = refMember.ChildListInfo;
           switch (listInfo.RelationType) {
             case EntityRelationType.ManyToOne:
-              resultRecords = RunIncludeForListManyToOne(_session, records, refMember);
+              resultRecords = MemberLoadHelper.LoadListManyToOneMember(_session, records, refMember);
               RunIncludeQueries(listInfo.TargetEntity.EntityType, resultRecords);
               return resultRecords; 
             case EntityRelationType.ManyToMany:
-              resultRecords = RunIncludeForListManyToMany(_session, records, refMember);
+              resultRecords = MemberLoadHelper.LoadListManyToManyMember(_session, records, refMember);
               RunIncludeQueries(listInfo.TargetEntity.EntityType, resultRecords);
               return resultRecords; 
           }//switch rel type
           break;
         default:
           Util.Check(false, "Invalid expression in Include query, member {0}: must be entity reference or entity list.", refMember.MemberName);
-          return _emptyList;
+          return EntityRecord.EmptyList;
       }
-      return _emptyList;
-    }
-
-    internal static IList<EntityRecord> RunIncludeForEntityRef(EntitySession session, IList<EntityRecord> records, EntityMemberInfo refMember) {
-      if (records.Count == 0)
-        return _emptyList;
-      var targetEntity = refMember.ReferenceInfo.ToKey.Entity;
-      var fkMember = refMember.ReferenceInfo.FromKey.ExpandedKeyMembers[0].Member; // r.Book_Id
-      var fkValues = GetDistinctMemberValues(records, fkMember);
-      var selectCmd = LinqCommandFactory.CreateSelectByKeyValueArray(session, targetEntity.PrimaryKey, null, fkValues);
-      var entList = (IList) session.ExecuteLinqCommand(selectCmd, withIncludes: false);
-      if (entList.Count == 0)
-        return _emptyList;
-      var recList = GetRecordList(entList);
-      // Set ref members in parent records
-      var targetPk = refMember.ReferenceInfo.ToKey;
-      foreach (var parentRec in records) {
-        var fkValue = parentRec.GetValueDirect(fkMember);
-        if (fkValue == DBNull.Value) {
-          parentRec.SetValueDirect(refMember, DBNull.Value);
-        } else {
-          var pkKey = new EntityKey(targetPk, fkValue);
-          //we lookup in session, instead of searching in results of Include query - all just loaded records 
-          //  are registered in session and lookup is done by key (it is fact dict lookup)
-          var targetRec = session.GetRecord(pkKey);
-          parentRec.SetValueDirect(refMember, targetRec);
-        }
-      }
-      return recList; 
-    }
-
-    public static IList<EntityRecord> GetRecordList(IList entityList) {
-      var recList = new List<EntityRecord>(); 
-      foreach(var ent in entityList) {
-        var rec = ((IEntityRecordContainer)ent).Record;
-        recList.Add(rec); 
-      }
-      return recList; 
-    }
-
-    // Example: records: List<IBookOrder>, listMember: bookOrder.Lines; so we load lines for each book order
-    internal static IList<EntityRecord> RunIncludeForListManyToOne(EntitySession session, IList<EntityRecord> records, EntityMemberInfo listMember) {
-      var pkInfo = listMember.Entity.PrimaryKey;
-      var expMembers = pkInfo.ExpandedKeyMembers; 
-      Util.Check(expMembers.Count == 1, "Include expression not supported for entities with composite keys, property: {0}.", listMember);
-      var pkMember = expMembers[0].Member; // IBookOrder.Id
-      var pkValuesArr = GetDistinctMemberValues(records, pkMember);
-      var listInfo = listMember.ChildListInfo;
-      var parentRefMember = listInfo.ParentRefMember; //IBookOrderLine.Order
-      var fromKey = parentRefMember.ReferenceInfo.FromKey;
-      Util.Check(fromKey.ExpandedKeyMembers.Count == 1, "Composite keys are not supported in Include expressions; member: {0}", parentRefMember);
-      var selectCmd = LinqCommandFactory.CreateSelectByKeyArrayForListPropertyManyToOne(session, listInfo, pkValuesArr);
-      var childEntities = (IList) session.ExecuteLinqCommand(selectCmd, withIncludes: false); //list of all IBookOrderLine for BookOrder objects in 'records' parameter
-      var childRecs = GetRecordList(childEntities); 
-      //setup list properties in parent records
-      var fk = fromKey.ExpandedKeyMembers[0].Member; //IBookOrderLine.Order_Id
-      var groupedRecs = childRecs.GroupBy(rec => rec.GetValueDirect(fk)); //each group is list of order lines for a single book order; group key is BookOrder.Id
-      foreach (var g in groupedRecs) {
-        var pkValue = new EntityKey(pkInfo, g.Key); // Order_Id -> BookOrder.Id
-        var parent = session.GetRecord(pkValue); // BookOrder
-        var childList = parent.ValuesTransient[listMember.ValueIndex] as IPropertyBoundList; //BookOrder.Lines, list object
-        if (childList != null && childList.IsLoaded)
-          continue; 
-        if (childList == null)         
-          childList = parent.InitChildEntityList(listMember);
-        var grpChildEntities = g.Select(r => r.EntityInstance).ToList();
-        childList.SetItems(grpChildEntities);
-      }
-      // If for some parent records child lists were empty, we need set the list property to empty list, 
-      // If it remains null, it will be considered not loaded, and app will attempt to load it again on first touch
-      foreach (var parent in records) {
-        var list = parent.ValuesTransient[listMember.ValueIndex] as IPropertyBoundList;
-        if (list == null)
-          list = parent.InitChildEntityList(listMember);
-        if (!list.IsLoaded)
-          list.SetAsEmpty();
-      }
-      return childRecs;
-    }
-
-    // Example: records: List<IBook>, listMember: book.Author; so we load authors list for each book
-    internal static IList<EntityRecord> RunIncludeForListManyToMany(EntitySession session, IList<EntityRecord> records, EntityMemberInfo listMember) {
-      var pkInfo = listMember.Entity.PrimaryKey;
-      var keyMembers = pkInfo.ExpandedKeyMembers;
-      Util.Check(keyMembers.Count == 1, "Include expression not supported for entities with composite keys, property: {0}.", listMember);
-      var listInfo = listMember.ChildListInfo;
-
-      // PK values of records
-      var pkValues = GetDistinctMemberValues(records, keyMembers[0].Member);
-      //run include query; it will return LinkTuple list
-      var cmd = LinqCommandFactory.CreateSelectByKeyArrayForListPropertyManyToMany(session, listInfo, pkValues);
-      var tuples = (IList<LinkTuple>) session.ExecuteLinqCommand(cmd, withIncludes: false);
-
-      // Group by parent record, and push groups/lists into individual records
-      var fkMember = listInfo.ParentRefMember.ReferenceInfo.FromKey.ExpandedKeyMembers[0].Member;
-      var tupleGroups = tuples.GroupBy(t => EntityHelper.GetRecord(t.LinkEntity).GetValueDirect(fkMember)).ToList(); 
-      foreach(var g in tupleGroups) {
-        var pkValue = new EntityKey(pkInfo, g.Key); // Order_Id -> BookOrder.Id
-        var parent = session.GetRecord(pkValue); // BookOrder
-        var childList = parent.ValuesTransient[listMember.ValueIndex] as IPropertyBoundList; //BookOrder.Lines, list object
-        if(childList != null && childList.IsLoaded)
-          continue;
-        if(childList == null)
-          childList = parent.InitChildEntityList(listMember);
-        var groupTuples = g.ToList();
-        childList.SetItems(groupTuples);
-      }
-      // Init/clear all lists that were NOT loaded
-      var emptyTuples = new List<LinkTuple>();
-      foreach(var rec in records) {
-        var childList = rec.ValuesTransient[listMember.ValueIndex] as IPropertyBoundList; //BookOrder.Lines, list object
-        if(childList != null && childList.IsLoaded)
-          continue;
-        if(childList == null)
-          childList = rec.InitChildEntityList(listMember);
-        childList.SetItems(emptyTuples);
-      }
-      // collect all target records as function result
-      var targetRecords = tuples.Select(t => EntityHelper.GetRecord(t.TargetEntity)).ToList();
-      return targetRecords; 
-    }
-
-    public static IList GetDistinctMemberValues(IList<EntityRecord> records, EntityMemberInfo member) {
-      // using Distinct with untyped values - might be questionable, but it appears it works, 
-      // including with value types
-      var values = records.Select(r => r.GetValueDirect(member))
-                      .Where(v => v != null && v != DBNull.Value)
-                      .Distinct()
-                      .ToArray();
-      return values;
-    }
-
-    private static QueryResultShape GetResultShape(EntityModel model, Type outType) {
-      if(typeof(EntityBase).IsAssignableFrom(outType))
-        return QueryResultShape.Entity;
-      if(outType.IsGenericType) {
-        var genArg0 = outType.GetGenericArguments()[0];
-        if(typeof(IEnumerable).IsAssignableFrom(outType) && model.IsEntity(genArg0))
-          return QueryResultShape.EntityList;
-      }
-      return QueryResultShape.Object; // don't know and don't care      
+      return EntityRecord.EmptyList;
     }
 
 

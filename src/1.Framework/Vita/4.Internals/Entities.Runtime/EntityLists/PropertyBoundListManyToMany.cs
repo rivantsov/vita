@@ -57,7 +57,7 @@ namespace Vita.Entities.Runtime {
     }
 
     public override void LoadList() {
-      this.OwnerRecord.Session.LoadListManyToMany<TEntity>(this);
+      MemberLoadHelper.LoadListManyToMany<TEntity>(this);
     }
 
     private void SetItemsFromLinkTuples(IList<LinkTuple> linkTuples) {

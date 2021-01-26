@@ -32,9 +32,9 @@ namespace Vita.Entities {
       var query = session.EntitySet<TEntity>();
       if (orderBy != null)
         query = descending ? query.OrderByDescending(orderBy) : query.OrderBy(orderBy);
-      if(skip != null)
+      if (skip != null)
         query = query.Skip(skip.Value);
-      if(take != null)
+      if (take != null)
         query = query.Take(take.Value);
       return query.ToList();
     }
@@ -56,7 +56,7 @@ namespace Vita.Entities {
 
     public static IDisposable WithElevatedRead(this IEntitySession session) {
       var entSession = (EntitySession)session;
-      return entSession.ElevateRead(); 
+      return entSession.ElevateRead();
     }
 
     /// <summary>Enables/disables local log temporarily.</summary>
@@ -72,7 +72,7 @@ namespace Vita.Entities {
     /// <returns>Change count.</returns>
     public static int GetChangeCount(this IEntitySession session) {
       var entSession = (EntitySession)session;
-      return entSession.RecordsChanged.Count; 
+      return entSession.RecordsChanged.Count;
     }
 
     //Helper method that can be used to create composite primary keys
@@ -86,7 +86,7 @@ namespace Vita.Entities {
       Util.CheckParam(values, "values");
       var entInfo = session.Context.App.Model.GetEntityInfo(typeof(TEntity), throwIfNotFound: true);
       var pk = EntityKey.Create(entInfo.PrimaryKey, values);
-      return pk; 
+      return pk;
     }
 
     // TODO: reimplement with offset stored in Claims
@@ -107,10 +107,10 @@ namespace Vita.Entities {
     public static TEntity NewCopyOf<TEntity>(this IEntitySession session, TEntity entity, bool copyPK = false) where TEntity : class {
       var copy = session.NewEntity<TEntity>();
       var entityInfo = EntityHelper.GetRecord(entity).EntityInfo;
-      foreach(var member in entityInfo.Members) {
-        switch(member.Kind) {
+      foreach (var member in entityInfo.Members) {
+        switch (member.Kind) {
           case EntityMemberKind.Column:
-            if(member.Flags.IsSet(EntityMemberFlags.PrimaryKey) && !copyPK)
+            if (member.Flags.IsSet(EntityMemberFlags.PrimaryKey) && !copyPK)
               continue;
             var value = EntityHelper.GetProperty(entity, member.MemberName);
             EntityHelper.SetProperty(copy, member.MemberName, value);
@@ -143,7 +143,7 @@ namespace Vita.Entities {
     /// <returns>True if the tag is defined; otherwise, false.</returns>
     public static bool HasTransactionTag(this IEntitySession session, string tag) {
       var tags = GetTransactionTags(session);
-      return tags.Contains(tag); 
+      return tags.Contains(tag);
     }
 
     /// <summary>Adds a transaction tag. </summary>
@@ -159,7 +159,7 @@ namespace Vita.Entities {
     /// <param name="tag">Tag value.</param>
     public static void RemoveTransactionTag(this IEntitySession session, string tag) {
       var tags = GetTransactionTags(session);
-      if(tags.Contains(tag))
+      if (tags.Contains(tag))
         tags.Remove(tag);
     }
     #endregion 
@@ -175,8 +175,8 @@ namespace Vita.Entities {
       var prm = Expression.Parameter(typeof(INullEntity), "@NullTable");
       var selector = Expression.Lambda<Func<INullEntity, TResult>>(expr.Body, prm);
       var result = ctxEntSet.Select(selector).ToList().First();
-      return result; 
-    } 
+      return result;
+    }
 
     public static long GetSequenceNextValue(this IEntitySession session, SequenceDefinition sequence) {
       return session.Select(() => sequence.NextValue());

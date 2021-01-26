@@ -9,6 +9,7 @@ using Vita.Entities.Model;
 using Vita.Entities.Utilities;
 using Vita.Data.Linq;
 using System.Linq;
+using Vita.Data;
 
 namespace Vita.Entities.Runtime {
 
@@ -37,7 +38,6 @@ namespace Vita.Entities.Runtime {
       return result;
     }
 
-
     public virtual object ExecuteLinqCommand(LinqCommand command, bool withIncludes = true) {
       try {
         var result = _dataSource.ExecuteLinqCommand(this, command);
@@ -45,8 +45,7 @@ namespace Vita.Entities.Runtime {
           case LinqOperation.Select:
             Context.App.AppEvents.OnExecutedSelect(this, command);
             if(withIncludes && (command.Includes?.Count > 0 || Context.HasIncludes()))
-              IncludeProcessor.RunIncludeQueries(command, result);
-              //Util.Throw("Include processor disabled.");
+              this.RunIncludeQueries(command, result);
             break;
           default:
             Context.App.AppEvents.OnExecutedNonQuery(this, command);
@@ -104,6 +103,40 @@ namespace Vita.Entities.Runtime {
         cnt += ScheduledCommandsAtEnd.Count;
       return cnt;
     }
+
+    private void RunIncludeQueries(LinqCommand command, object mainQueryResult) {
+      // initial checks if there's anything to run
+      if (mainQueryResult == null)
+        return;
+      var allIncludes = this.Context.GetMergedIncludes(command.Includes);
+      if (allIncludes == null || allIncludes.Count == 0)
+        return;
+      var resultShape = MemberLoadHelper.GetResultShape(Context.App.Model, mainQueryResult.GetType());
+      if (resultShape == QueryResultShape.Object)
+        return;
+      // Get records from query result
+      var records = new List<EntityRecord>();
+      switch (resultShape) {
+        case QueryResultShape.Entity:
+          records.Add(EntityHelper.GetRecord(mainQueryResult));
+          break;
+        case QueryResultShape.EntityList:
+          var list = mainQueryResult as IList;
+          if (list.Count == 0)
+            return;
+          foreach (var ent in list)
+            records.Add(EntityHelper.GetRecord(ent));
+          break;
+      }//switch;
+      // actually run the includes
+      var entityType = records[0].EntityInfo.EntityType;
+      var helper = new IncludeProcessor(this, allIncludes);
+      this.LogMessage("------- Running include queries   ----------");
+      helper.RunIncludeQueries(entityType, records);
+      this.LogMessage("------- Completed include queries ----------");
+    }
+
+
 
   } //class
 }

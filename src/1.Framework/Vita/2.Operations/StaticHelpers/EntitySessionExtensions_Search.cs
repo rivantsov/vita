@@ -86,6 +86,27 @@ namespace Vita.Entities {
       return newResults;
     }
 
-  
+    /// <summary>Creates default SearchParams object if instance is null. Also sets default value for Take property. </summary>
+    /// <typeparam name="T">Params class type - must derive from SearchParams class.</typeparam>
+    /// <param name="searchParams">Search parameters, must be derived from SearchParams class.</param>
+    /// <param name="take">Default value to set for Take property if it is 0.</param>
+    /// <param name="defaultOrderBy">Default value for order-by parameter.</param>
+    /// <param name="maxRows">Max rows to return, a limit to Take parameter. </param>
+    /// <returns>Existing or new SearchParams-derived object.</returns>
+    /// <remarks>User this method in Search methods in Web API controller for input parameter marked with [FromUri] attribute
+    /// that is a container for multiple parameters in URL.</remarks>
+    public static T DefaultIfNull<T>(this T searchParams, int take = 10, string defaultOrderBy = null, int maxRows = 100)
+            where T : SearchParams, new() {
+      if (searchParams == null)
+        searchParams = new T();
+      if (searchParams.Take == 0)
+        searchParams.Take = take;
+      if (string.IsNullOrEmpty(searchParams.OrderBy))
+        searchParams.OrderBy = defaultOrderBy;
+      if (searchParams.Take > maxRows)
+        searchParams.Take = maxRows;
+      return searchParams;
+    }
+
   }//class
 }

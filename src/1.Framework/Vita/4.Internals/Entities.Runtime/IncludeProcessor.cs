@@ -13,43 +13,6 @@ namespace Vita.Entities.Runtime {
   internal class IncludeProcessor {
     public static int MaxNestedRunsPerEntityType = 2; //max nested runs per entity type
 
-    //TODO: test and fix the following: 
-    // Includes - when including child list, the list initialized only if it's not empty;
-    //    if empty, it remains uninitialized, and on touch fwk fires select query with 0 results
-    // Initially found in some external solution, seemed to be broken, but now maybe working. Needs to be retested! 
-    internal static void RunIncludeQueries(LinqCommand command, object mainQueryResult) {
-      // initial checks if there's anything to run
-      if(mainQueryResult == null)
-        return;
-      var session = command.Session;
-      var allIncludes = session.Context.GetMergedIncludes(command.Includes);
-      if(allIncludes == null || allIncludes.Count == 0)
-        return;
-      var resultShape = MemberLoadHelper.GetResultShape(session.Context.App.Model, mainQueryResult.GetType());
-      if(resultShape == QueryResultShape.Object)
-        return;
-      // Get records from query result
-      var records = new List<EntityRecord>();
-      switch(resultShape) {
-        case QueryResultShape.Entity:
-          records.Add( EntityHelper.GetRecord(mainQueryResult));
-          break;
-        case QueryResultShape.EntityList:
-          var list = mainQueryResult as IList;
-          if (list.Count == 0)
-            return; 
-          foreach (var ent in list)
-            records.Add( EntityHelper.GetRecord(ent));
-          break;
-      }//switch;
-      // actually run the includes
-      var entityType = records[0].EntityInfo.EntityType;
-      var helper = new IncludeProcessor(session, allIncludes);
-      session.LogMessage("------- Running include queries   ----------");
-      helper.RunIncludeQueries(entityType, records);
-      session.LogMessage("------- Completed include queries ----------");
-    }
-
     #region Instance fields, constructor
     EntitySession _session;
     IList<LambdaExpression> _includes;
@@ -72,7 +35,7 @@ namespace Vita.Entities.Runtime {
       return newCount;
     }
 
-    private void RunIncludeQueries(Type entityType, IList<EntityRecord> records) {
+    internal void RunIncludeQueries(Type entityType, IList<EntityRecord> records) {
       if(records.Count == 0)
         return;
       var matchingIncludes = _includes.Where(f => f.Parameters[0].Type == entityType).ToList();

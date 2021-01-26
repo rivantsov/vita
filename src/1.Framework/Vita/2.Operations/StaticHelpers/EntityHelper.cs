@@ -232,13 +232,20 @@ namespace Vita.Entities {
       return -1;
     }
 
-
+    /// <summary>Reloads entity from the database. </summary>
+    /// <param name="entity">The entity to reload.</param>
+    /// <remarks>Does not overwrite modified values. Resets list properties forcing them to reload when touched. </remarks>
     public static void RefreshEntity(object entity) {
       var rec = EntityHelper.GetRecord(entity);
       Util.Check(rec != null, "Object is not an entity ({0}) - failed to retrieve entity record.", entity);
       rec.Reload();
     }
 
+    /// <summary>Returns the underlying list of link entities from the many-to-many list property. </summary>
+    /// <typeparam name="TEntity">Type of list property member.</typeparam>
+    /// <typeparam name="TLinkEntity">Type of list entity.</typeparam>
+    /// <param name="m2mList">The list property value.</param>
+    /// <returns>The list of link entities.</returns>
     public static IList<TLinkEntity> GetLinkEntities<TEntity, TLinkEntity>(IList<TEntity> m2mList)
               where TEntity : class
               where TLinkEntity : class {
@@ -248,5 +255,6 @@ namespace Vita.Entities {
       var linkEntList = linkRecs.Select(rec => rec.EntityInstance as TLinkEntity).ToList();
       return linkEntList;
     }
+
   }//class
 }//ns

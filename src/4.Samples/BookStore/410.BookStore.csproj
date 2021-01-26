@@ -1,0 +1,19 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <Import Project="..\..\Version.proj" />
+
+    <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <AssemblyName>BookStore</AssemblyName>
+    <RootNamespace>BookStore</RootNamespace>
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\1.Framework\Vita\010.Vita.csproj" />
+    <ProjectReference Include="..\..\3.Modules\Vita.Modules.Legacy\350.Vita.Modules.Legacy.csproj" />
+    <ProjectReference Include="..\..\3.Modules\Vita.Modules.Login\310.Vita.Modules.Login.csproj" />
+  </ItemGroup>
+
+</Project>

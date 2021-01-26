@@ -9,10 +9,10 @@ using System.Net.Http;
 using System.Diagnostics;
 
 using Vita.Web;
-using Vita.Samples.BookStore;
+using BookStore;
 using Vita.Entities;
 using Vita.Modules.Login;
-using Vita.Samples.BookStore.Api;
+using BookStore.Api;
 using Vita.Tools.Testing;
 using Arrest;
 using Arrest.Sync;
@@ -226,7 +226,7 @@ namespace Vita.Testing.WebTests {
 
       //============================== Password change =============================================
       // Ferb changes his password; let's first try invalid old password
-      var oldPassword = Samples.BookStore.SampleData.SampleDataGenerator.DefaultPassword;
+      var oldPassword = BookStore.SampleData.SampleDataGenerator.DefaultPassword;
       var newPass = oldPassword + "New";
       var pwdChange = new PasswordChangeInfo() { OldPassword = "bad-old-pass", NewPassword = newPass };
       var cfExc = TestUtil.ExpectClientFault(() => client.Put<PasswordChangeInfo, HttpStatusCode>(pwdChange, "api/mylogin/password"));

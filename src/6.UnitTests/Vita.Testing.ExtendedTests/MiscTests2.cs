@@ -10,7 +10,7 @@ using Vita.Data.Upgrades;
 using Vita.Entities;
 using Vita.Entities.Utilities;
 using Vita.Modules.Login;
-using Vita.Samples.BookStore;
+using BookStore;
 using Vita.Tools.Testing;
 
 namespace Vita.Testing.ExtendedTests {

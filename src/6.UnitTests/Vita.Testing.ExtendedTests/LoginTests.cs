@@ -32,7 +32,7 @@ namespace Vita.Testing.ExtendedTests {
     public async Task TestLoginAdvancedFeatures() {
       Startup.BooksApp.LogTestStart();
 
-      var password = Samples.BookStore.SampleData.SampleDataGenerator.DefaultPassword; 
+      var password = BookStore.SampleData.SampleDataGenerator.DefaultPassword; 
       var app = Startup.BooksApp;
       var loginService = app.GetService<ILoginService>();
       var loginMgr = app.GetService<ILoginManagementService>(); 
@@ -124,7 +124,7 @@ namespace Vita.Testing.ExtendedTests {
     public void TestLoginFailedTrigger() {
       Startup.BooksApp.LogTestStart();
 
-      var password = Samples.BookStore.SampleData.SampleDataGenerator.DefaultPassword;
+      var password = BookStore.SampleData.SampleDataGenerator.DefaultPassword;
       var app = Startup.BooksApp;
       var loginService = app.GetService<ILoginService>();
       if(loginService == null)

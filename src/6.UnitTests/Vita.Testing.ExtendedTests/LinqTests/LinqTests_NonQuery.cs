@@ -9,7 +9,7 @@ using Vita.Data;
 using Vita.Data.Driver;
 using Vita.Modules.Login;
 using Vita.Tools.Testing;
-using Vita.Samples.BookStore;
+using BookStore;
 
 namespace Vita.Testing.ExtendedTests {
 

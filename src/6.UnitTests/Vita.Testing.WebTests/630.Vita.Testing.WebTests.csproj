@@ -33,9 +33,9 @@
     <ProjectReference Include="..\..\3.Modules\Vita.Modules.Logging\330.Vita.Modules.Logging.csproj" />
     <ProjectReference Include="..\..\3.Modules\Vita.Modules.Login.Api\320.Vita.Modules.Login.Api.csproj" />
     <ProjectReference Include="..\..\3.Modules\Vita.Modules.Login\310.Vita.Modules.Login.csproj" />
-    <ProjectReference Include="..\..\4.Samples\Vita.Samples.BookStore.Api\430.Vita.Samples.BookStore.Api.csproj" />
-    <ProjectReference Include="..\..\4.Samples\Vita.Samples.BookStore.SampleData\420.Vita.Samples.BookStore.SampleData.csproj" />
-    <ProjectReference Include="..\..\4.Samples\Vita.Samples.BookStore\410.Vita.Samples.BookStore.csproj" />
+    <ProjectReference Include="..\..\4.Samples\BookStore.Api\430.BookStore.Api.csproj" />
+    <ProjectReference Include="..\..\4.Samples\BookStore.SampleData\420.BookStore.SampleData.csproj" />
+    <ProjectReference Include="..\..\4.Samples\BookStore\410.BookStore.csproj" />
   </ItemGroup>
 
   <ItemGroup>

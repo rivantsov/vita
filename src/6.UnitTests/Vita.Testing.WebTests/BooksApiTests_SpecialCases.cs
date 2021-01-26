@@ -4,8 +4,8 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System.Net;
 
 using Vita.Entities;
-using Vita.Samples.BookStore;
-using Vita.Samples.BookStore.Api;
+using BookStore;
+using BookStore.Api;
 using System.Threading.Tasks;
 using Vita.Tools.Testing;
 using Arrest;

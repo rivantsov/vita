@@ -19,7 +19,7 @@ namespace Vita.Testing.WebTests {
 
     //Helper methods used by othere tests
     private LoginResponse LoginAs(string userName, string password = null, bool assertSuccess = true, string deviceToken = null) {
-      password = password ?? Samples.BookStore.SampleData.SampleDataGenerator.DefaultPassword;
+      password = password ?? BookStore.SampleData.SampleDataGenerator.DefaultPassword;
       var loginRq = new LoginRequest() { UserName = userName, Password = password , DeviceToken = deviceToken};
       var resp = Startup.Client.Post<LoginRequest, LoginResponse>(loginRq, "api/login");
       Assert.IsTrue(resp != null, "Authentication failed.");

@@ -5,7 +5,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 using Vita.Entities;
 using Vita.Tools.Testing;
-using Vita.Samples.BookStore;
+using BookStore;
 
 namespace Vita.Testing.ExtendedTests {
 

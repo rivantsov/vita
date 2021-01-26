@@ -8,7 +8,7 @@ using System.Threading;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 using Vita.Entities;
-using Vita.Samples.BookStore;
+using BookStore;
 using Vita.Modules.Login;
 
 using Vita.Data.Driver;

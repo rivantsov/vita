@@ -1,13 +1,13 @@
 ﻿using System;
 using System.Linq;
+using System.Globalization;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 using Vita.Entities;
-using Vita.Samples.BookStore.Api;
 using Arrest;
 using Arrest.Sync;
-using Vita.Samples.BookStore;
-using System.Globalization;
+using BookStore;
+using BookStore.Api;
 
 namespace Vita.Testing.WebTests {
 

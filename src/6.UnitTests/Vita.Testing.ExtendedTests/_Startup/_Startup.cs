@@ -14,8 +14,8 @@ using Vita.Data;
 using Vita.Data.Driver;
 using Vita.Data.Model;
 
-using Vita.Samples.BookStore;
-using Vita.Samples.BookStore.SampleData;
+using BookStore;
+using BookStore.SampleData;
 using Microsoft.Extensions.Configuration;
 using Vita.Tools;
 using Vita.Entities.DbInfo;

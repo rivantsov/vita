@@ -16,8 +16,8 @@ using Vita.Entities;
 using Vita.Entities.DbInfo;
 using Vita.Modules.Logging.Db;
 using Vita.Modules.Login.Mocks;
-using Vita.Samples.BookStore;
-using Vita.Samples.BookStore.SampleData;
+using BookStore;
+using BookStore.SampleData;
 using Vita.Tools;
 
 namespace Vita.Testing.WebTests {
@@ -107,7 +107,7 @@ namespace Vita.Testing.WebTests {
     public static void StartService(string baseAddress) {
       var hostBuilder = WebHost.CreateDefaultBuilder()
           .ConfigureAppConfiguration((context, config) => { })
-          .UseStartup<Samples.BookStore.Api.BooksApiStartup>()
+          .UseStartup<BookStore.Api.BooksApiStartup>()
           .UseEnvironment("Development") //To return exception details info on ServerError
           .UseUrls(baseAddress)
           ;

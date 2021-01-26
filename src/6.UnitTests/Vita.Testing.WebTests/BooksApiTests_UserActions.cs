@@ -9,8 +9,8 @@ using System.Net.Http;
 using System.Diagnostics;
 
 using Vita.Entities;
-using Vita.Samples.BookStore;
-using Vita.Samples.BookStore.Api;
+using BookStore;
+using BookStore.Api;
 using Vita.Tools.Testing;
 using Arrest.Sync;
 

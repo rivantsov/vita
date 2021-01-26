@@ -1,0 +1,33 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <Import Project="..\..\Version.proj" />
+    <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <AssemblyName>BookStore.SampleData</AssemblyName>
+    <RootNamespace>BookStore.SampleData</RootNamespace>
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+  </PropertyGroup>
+    <ItemGroup>
+      <Compile Remove="Import\GoogleBooksApiClient_disabled.cs" />
+      <Compile Remove="Import\GoogleBooksImport_disabled.cs" />
+    </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="Generate\Images\csBookCover.jpg" />
+    <EmbeddedResource Include="Generate\Images\vbBookCover.jpg" />
+    <EmbeddedResource Include="Generate\Images\winBookCover.jpg" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="Import\GoogleBooksApiClient_disabled.cs" />
+    <None Include="Import\GoogleBooksImport_disabled.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\1.Framework\Vita\010.Vita.csproj" />
+    <ProjectReference Include="..\..\3.Modules\Vita.Modules.Login\310.Vita.Modules.Login.csproj" />
+    <ProjectReference Include="..\BookStore\410.BookStore.csproj" />
+  </ItemGroup>
+
+</Project>

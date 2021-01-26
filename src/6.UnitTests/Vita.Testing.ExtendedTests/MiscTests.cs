@@ -8,7 +8,7 @@ using System.Diagnostics;
 using Vita.Entities;
 using Vita.Modules.Login;
 
-using Vita.Samples.BookStore;
+using BookStore;
 using Vita.Modules.Login.GoogleAuthenticator;
 using Vita.Tools.Testing;
 

@@ -336,7 +336,7 @@ namespace Vita.Data.Linq.Translation {
     }
 
     protected virtual EntityRecordReader CreateEntityReader(TableExpression tableExpression,
-                                                      TranslationContext context) {
+                                                      TranslationContext context) { 
       // Note: we have to create EntityRecordReader each time, because column indexes in output can change from query to query
       var reader = new EntityRecordReader(tableExpression.TableInfo);
       var allColExprs = RegisterAllColumns(tableExpression, context);

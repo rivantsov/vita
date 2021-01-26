@@ -53,7 +53,10 @@ namespace Vita.Testing.ExtendedTests {
       session.LogMessage("!!!! about to read book.Authors property.");
       Assert.IsTrue(2 == csBook.Authors.Count, "Invalid authors count for c# book");
       foreach (var a in csBook.Authors)
-        Assert.IsTrue(!string.IsNullOrWhiteSpace(a.FullName), "Author full name is empty."); 
+        Assert.IsTrue(!string.IsNullOrWhiteSpace(a.FullName), "Author full name is empty.");
+      // getting link entities
+      var links = EntityHelper.GetLinkEntities<IAuthor, IBookAuthor>(csBook.Authors);
+      Assert.AreEqual(2, links.Count, "Expected 2 link IBookAuthor records.");
       //remove one author, save and check if it is removed
       var a1 = csBook.Authors[0];
       csBook.Authors.Remove(a1);

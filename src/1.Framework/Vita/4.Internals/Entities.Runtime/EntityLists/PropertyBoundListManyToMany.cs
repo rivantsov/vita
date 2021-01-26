@@ -18,7 +18,7 @@ namespace Vita.Entities.Runtime {
   }
 
 
-  internal class PropertyBoundListManyToMany<TEntity> : PropertyBoundListBase<TEntity> where TEntity : class {
+  internal class PropertyBoundListManyToMany<TEntity> : PropertyBoundListBase<TEntity>  where TEntity : class {
     //Lookup table for link records. (Entity) => LinkRecord
     public Dictionary<EntityRecord, EntityRecord> LinkRecordsLookup = new Dictionary<EntityRecord, EntityRecord>();
 

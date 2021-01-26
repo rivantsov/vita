@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
@@ -238,5 +239,14 @@ namespace Vita.Entities {
       rec.Reload();
     }
 
+    public static IList<TLinkEntity> GetLinkEntities<TEntity, TLinkEntity>(IList<TEntity> m2mList)
+              where TEntity : class
+              where TLinkEntity : class {
+      var propList = m2mList as PropertyBoundListManyToMany<TEntity>;
+      Util.Check(propList != null, "Invalid argument for GetLinkEntities method - must be many-to-many list property.");
+      var linkRecs = propList.LinkRecordsLookup.Values;
+      var linkEntList = linkRecs.Select(rec => rec.EntityInstance as TLinkEntity).ToList();
+      return linkEntList;
+    }
   }//class
 }//ns

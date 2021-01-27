@@ -1,9 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-
-using Vita.Entities;
-using Vita.Modules;
 
 namespace BookStore {
 

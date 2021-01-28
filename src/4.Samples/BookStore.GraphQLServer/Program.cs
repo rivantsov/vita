@@ -7,7 +7,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace StarWars.HttpServer
+namespace BookStore.GraphQLServer
 {
   public class Program
   {
@@ -20,7 +20,7 @@ namespace StarWars.HttpServer
         Host.CreateDefaultBuilder(args)
             .ConfigureWebHostDefaults(webBuilder =>
             {
-              webBuilder.UseStartup<ServerStartup>();
+              webBuilder.UseStartup<GraphQLAspNetServerStartup>();
             });
   }
 }

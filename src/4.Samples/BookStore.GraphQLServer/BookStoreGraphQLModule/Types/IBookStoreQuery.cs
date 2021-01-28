@@ -1,16 +1,25 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using NGraphQL.CodeFirst;
 
 namespace BookStore.GraphQLServer {
 
   public interface IBookStoreQuery {
-    IList<Publisher> Publishers();
-    Publisher Publisher(Guid id);
+    [GraphQLName("publishers")]
+    IList<Publisher> GetPublishers();
+
+    [GraphQLName("publisher")]
+    Publisher GetPublisher(Guid id);
+
     IList<Book> SearchBooks(BookSearch search, Paging paging);
     IList<Book> SearchAuthors(AuthorSearch search, Paging paging);
-    Book Book(Guid id);
-    Author Author(Guid id); 
+
+    [GraphQLName("book")]
+    Book GetBook(Guid id);
+    
+    [GraphQLName("author")]
+    Author GetAuthor(Guid id);
 
     User GetUser(string name); 
   }

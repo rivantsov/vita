@@ -12,6 +12,9 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\1.Framework\Vita.Tools\090.Vita.Tools.csproj" />
+    <ProjectReference Include="..\..\2.Drivers\Vita.Data.MsSql\210.Vita.Data.MsSql.csproj" />
+    <ProjectReference Include="..\BookStore.SampleData\420.BookStore.SampleData.csproj" />
     <ProjectReference Include="..\BookStore\410.BookStore.csproj" />
   </ItemGroup>
 

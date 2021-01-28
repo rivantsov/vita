@@ -1,4 +1,6 @@
+using System;
 using System.Threading.Tasks;
+using BookStore.SampleData;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
@@ -7,19 +9,22 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using NGraphQL.Server;
 using NGraphQL.Server.AspNetCore;
+using Vita.Data;
+using Vita.Data.MsSql;
+using Vita.Entities.DbInfo;
+using Vita.Tools;
 
 namespace BookStore.GraphQLServer {
 
-  public class ServerStartup
+  public class GraphQLAspNetServerStartup
   {
-    public ServerStartup(IConfiguration configuration)
+    public GraphQLAspNetServerStartup(IConfiguration configuration)
     {
       Configuration = configuration;
     }
 
     public IConfiguration Configuration { get; }
     GraphQLHttpServer _graphQLServer;
-    BooksEntityApp _booksApp;
 
     // This method gets called by the runtime. Use this method to add services to the container.
     public void ConfigureServices(IServiceCollection services) {
@@ -34,7 +39,9 @@ namespace BookStore.GraphQLServer {
       app.UseHttpsRedirection();
       app.UseRouting();
 
-      // create server and configure GraphQL endpoints
+      // create books app connected to database; 
+      CreateBooksEntityApp();
+      // create GraphQL Http server and configure GraphQL endpoints
       _graphQLServer = CreateGraphQLHttpServer(); 
       app.UseEndpoints(endpoints => {
         endpoints.MapPost("graphql", HandleRequest);
@@ -50,15 +57,33 @@ namespace BookStore.GraphQLServer {
     }
 
     private GraphQLHttpServer CreateGraphQLHttpServer() {
-      var app = new StarWarsApp();
-      var server = new NGraphQL.Server.GraphQLServer(app);
+      var server = new NGraphQL.Server.GraphQLServer(BooksEntityApp.Instance);
       server.RegisterModules(new BooksGraphQLModule());
       return new GraphQLHttpServer(server);
     }
 
-    private BooksEntityApp InitBookStoreApp() {
+    private BooksEntityApp CreateBooksEntityApp() {
+      var connStr = Configuration["MsSqlConnectionString"];
+      if (BooksEntityApp.Instance != null)
+        return BooksEntityApp.Instance;
 
+      var booksApp = new BooksEntityApp();
+      booksApp.Init();
+
+      //connect to db
+      var driver = new MsSqlDbDriver();
+      var dbOptions = driver.GetDefaultOptions();
+      var dbSettings = new DbSettings(driver, dbOptions, connStr, upgradeMode: DbUpgradeMode.Always);
+      booksApp.ConnectTo(dbSettings);
+      return booksApp;
     }
+
+    private static void CreateSampleData() {
+      DataUtility.DeleteAllData(BooksEntityApp.Instance, 
+        exceptEntities: new Type[] { typeof(IDbInfo), typeof(IDbModuleInfo) });
+      SampleDataGenerator.CreateUnitTestData(BooksEntityApp.Instance);
+    }
+
 
   }
 }

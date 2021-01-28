@@ -6,18 +6,17 @@ using System.Linq;
 using System.Threading.Tasks;
 using Arrest;
 using Arrest.Xml;
+using BookStore;
+using BookStore.SampleData;
 using Microsoft.AspNetCore;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
-
 using Vita.Data;
 using Vita.Data.MsSql;
 using Vita.Entities;
 using Vita.Entities.DbInfo;
 using Vita.Modules.Logging.Db;
 using Vita.Modules.Login.Mocks;
-using BookStore;
-using BookStore.SampleData;
 using Vita.Tools;
 
 namespace Vita.Testing.WebTests {

@@ -24,7 +24,7 @@ namespace BookStore.GraphQLServer {
   public class AuthorSearch {
     public string LastName;
     public string BookTitle;
-    public BookCategory_? Category;
+    public BookCategory? Category;
     public string Publisher;
   }
 }

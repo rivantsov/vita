@@ -24,7 +24,7 @@ namespace BookStore.GraphQLServer {
     #region Root Query methods
     [ResolvesField("publishers")] //, typeof(IBookStoreQuery))]
     public IList<IPublisher> GetPublishers(IFieldContext context) {
-      return new List<IPublisher>();
+      return _session.EntitySet<IPublisher>().OrderBy(p => p.Name).ToList();
     }
 
     public IPublisher GetPublisher(IFieldContext context, Guid id) {
@@ -51,6 +51,55 @@ namespace BookStore.GraphQLServer {
       throw new NotImplementedException();
     }
     #endregion
+
+    #region Root mutation methods
+    public IBookOrder CreateOrder(IFieldContext context, Guid userId) {
+      throw new NotImplementedException();
+    }
+
+    public IBookOrderLine AddOrderItem(IFieldContext context, Guid orderId, Guid bookId, int count = 1) {
+      throw new NotImplementedException();
+    }
+
+    public bool RemoveOrderItem(IFieldContext context, Guid itemId) {
+      throw new NotImplementedException();
+    }
+
+    public IBookOrder SubmitOrder(IFieldContext context, Guid orderId) {
+      throw new NotImplementedException();
+    }
+
+    public IBookReview AddReview(IFieldContext context, BookReviewInput review) {
+      throw new NotImplementedException();
+    }
+    #endregion
+
+    [ResolvesField("reviews", typeof(Book))]
+    public IList<IBookReview> GetBookReviews(IFieldContext context, IBook book, Paging paging = null) {
+      throw new NotImplementedException();
+    }
+
+    [ResolvesField("coverImageUrl", typeof(Book))]
+    public string GetBookReviews(IFieldContext context, IBook book) {
+      throw new NotImplementedException();
+    }
+
+    [ResolvesField("books", typeof(Publisher))]
+    public IList<IBook> GetPublisherBooks(IFieldContext context, IPublisher publisher, Paging paging = null) {
+      throw new NotImplementedException();
+    }
+
+    [ResolvesField("books", typeof(Author))]
+    public IList<IBook> GetAuthorBooks(IFieldContext context, IAuthor author, Paging paging = null) {
+      throw new NotImplementedException();
+    }
+
+    [ResolvesField("reviews", typeof(User))]
+    public IList<IBookReview> GetUserReviews(IFieldContext context, IUser user, Paging paging = null) {
+      throw new NotImplementedException();
+    }
+
+
 
   }
 }

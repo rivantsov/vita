@@ -21,7 +21,7 @@ namespace BookStore.GraphQLServer {
       MapEntity<IBookOrder>().To<BookOrder>();
       MapEntity<IBookOrderLine>().To<BookOrderLine>();
       MapEntity<IBookReview>().To<BookReview>();
-      MapEntity<IUser>().To<User>(); 
+      MapEntity<IUser>().To<User>(u => new User { UserType = u.Type }); 
     }
 
   } //class

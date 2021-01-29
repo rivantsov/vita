@@ -5,6 +5,7 @@ using System.Text;
 namespace BookStore.GraphQLServer {
 
   public interface IBookStoreMutation {
+    BookOrder CreateOrder(Guid userId);
     BookOrderLine AddOrderItem(Guid orderId, Guid bookId, int count = 1);
     bool RemoveOrderItem(Guid itemId);
     BookOrder SubmitOrder(Guid orderId);

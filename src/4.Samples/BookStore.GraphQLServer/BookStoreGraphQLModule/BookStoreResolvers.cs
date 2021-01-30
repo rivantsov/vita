@@ -13,7 +13,7 @@ namespace BookStore.GraphQLServer {
     public void BeginRequest(IRequestContext request) {
       // _app = BooksEntityApp.Instance; //this works too
       _app = (BooksEntityApp) request.App; //general case
-      _session = _app.OpenSession(); 
+      _session = _app.OpenSession(EntitySessionOptions.EnableSmartLoad); 
     }
 
     public void EndRequest(IRequestContext request) {

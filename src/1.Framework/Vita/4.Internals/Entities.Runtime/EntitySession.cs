@@ -20,14 +20,6 @@ namespace Vita.Entities.Runtime {
     Dummy, // not real session, used for compiling views
   }
 
-  public enum EntitySessionOptions {
-    None = 0,
-    DisableLog = 1,
-    DisableCache = 1 << 1,
-    DisableBatchMode = 1 << 2,
-    EnableSmartLoad = 1 << 4,
-  }
-
 
   /// <summary> Represents a live connection to the database with tracking of loaded and changed/added/deleted entities. </summary>
   /// <remarks>This class provides methods for data access: reading, updating, deleting entitites. </remarks>

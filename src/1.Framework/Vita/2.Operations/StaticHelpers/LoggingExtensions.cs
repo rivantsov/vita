@@ -342,13 +342,22 @@ Parameters:
       else if (type == typeof(byte[])) {
         var bytes = (byte[])value;
         sValue = "'" + bytes.ToLogString() + "'";
-      } else if (typeInfo.IsArray || (typeInfo.IsGenericType && value is IList)) {
-        var list = (IList)value;
-        sValue = "[" + list.ToLogString() + "]";
+      } else if (typeInfo.IsListOrArray()) {
+        var count = GetCount(value as IEnumerable);
+        sValue = $"[count:{count}]";
       } else 
         sValue = value.ToLogString();
       sValue = sValue.TrimMiddle(maxLen);
       return sValue;
+    }
+
+    private static int GetCount(IEnumerable value) {
+      if (value == null)
+        return 0; 
+      int count = 0;
+      foreach (var item in value)
+        count++;
+      return count; 
     }
 
     private static int EnumAsInt(object value) {

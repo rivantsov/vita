@@ -1,4 +1,5 @@
 using System;
+using System.IO;
 using System.Threading.Tasks;
 using BookStore.SampleData;
 using Microsoft.AspNetCore.Builder;
@@ -18,15 +19,15 @@ namespace BookStore.GraphQLServer {
 
   public class GraphQLAspNetServerStartup
   {
+    public IConfiguration Configuration { get; }
+    public static GraphQLHttpServer GraphQLHttpServerInstance;
     public static bool StartGrpaphiql = true; // test project sets this to false
+    public string LogFilePath = "_serverSqlLog.log";
 
     public GraphQLAspNetServerStartup(IConfiguration configuration)
     {
       Configuration = configuration;
     }
-
-    public IConfiguration Configuration { get; }
-    GraphQLHttpServer _graphQLServer;
 
     // This method gets called by the runtime. Use this method to add services to the container.
     public void ConfigureServices(IServiceCollection services) {
@@ -44,7 +45,7 @@ namespace BookStore.GraphQLServer {
       // create books app connected to database; 
       CreateBooksEntityApp();
       // create GraphQL Http server and configure GraphQL endpoints
-      _graphQLServer = CreateGraphQLHttpServer(); 
+      GraphQLHttpServerInstance = CreateGraphQLHttpServer(); 
       app.UseEndpoints(endpoints => {
         endpoints.MapPost("graphql", HandleRequest);
         endpoints.MapGet("graphql", HandleRequest);
@@ -56,7 +57,7 @@ namespace BookStore.GraphQLServer {
     }
 
     private Task HandleRequest(HttpContext context) {
-      return _graphQLServer.HandleGraphQLHttpRequestAsync(context);
+      return GraphQLHttpServerInstance.HandleGraphQLHttpRequestAsync(context);
     }
 
     private GraphQLHttpServer CreateGraphQLHttpServer() {
@@ -70,7 +71,11 @@ namespace BookStore.GraphQLServer {
       if (BooksEntityApp.Instance != null)
         return BooksEntityApp.Instance;
 
+      if (File.Exists(LogFilePath))
+        File.Delete(LogFilePath); 
       var booksApp = new BooksEntityApp();
+      booksApp.LogPath = LogFilePath;
+
       booksApp.Init();
 
       //connect to db

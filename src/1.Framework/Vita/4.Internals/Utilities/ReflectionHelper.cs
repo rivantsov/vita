@@ -167,21 +167,20 @@ namespace Vita.Entities.Utilities {
         return false;
       if (type.IsArray)
         return true;
-      if (!type.IsGenericType) return false;
-      if (typeof(ICollection).IsAssignableFrom(type))
+      if (!type.IsGenericType) 
+        return false;
+      if (IsGenericList(type))
         return true; 
-      var genType = type.GetGenericTypeDefinition();
-      if (genType == typeof(IList<>) || genType == typeof(List<>) || genType == typeof(ICollection<>))
-        return true;
+      // important - Linq engine relies on this check for IEnumerable (not IList)
       if (typeof(IEnumerable).IsAssignableFrom(type))
         return true; 
       return false;
     }
 
-    public static bool IsGenericCollection(this Type type) {
+    public static bool IsGenericList(this Type type) {
       if (!type.GetTypeInfo().IsGenericType) return false;
       var genType = type.GetGenericTypeDefinition();
-      var result = typeof(ICollection<>).IsAssignableFrom(genType);
+      var result = typeof(IList<>).IsAssignableFrom(genType);
       return result; 
     }
     

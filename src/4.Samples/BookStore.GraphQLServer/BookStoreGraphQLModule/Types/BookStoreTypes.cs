@@ -39,6 +39,7 @@ namespace BookStore.GraphQLServer {
     public string FirstName;
     public string LastName;
     public string Bio;
+    public string FullName; 
     public IList<Book> Books;
   }
 

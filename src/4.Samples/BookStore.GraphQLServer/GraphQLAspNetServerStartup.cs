@@ -18,6 +18,8 @@ namespace BookStore.GraphQLServer {
 
   public class GraphQLAspNetServerStartup
   {
+    public static bool StartGrpaphiql = true; // test project sets this to false
+
     public GraphQLAspNetServerStartup(IConfiguration configuration)
     {
       Configuration = configuration;
@@ -49,7 +51,8 @@ namespace BookStore.GraphQLServer {
         endpoints.MapGet("graphql/schema", HandleRequest);
       });
       // Use GraphiQL UI
-      app.UseGraphiQLServer();
+      if (StartGrpaphiql)
+        app.UseGraphiQLServer();
     }
 
     private Task HandleRequest(HttpContext context) {

@@ -23,7 +23,7 @@ namespace Vita.Testing.GraphQLTests {
     [TestMethod]
     public async Task TestBasicQueries() {
       var client = TestEnv.Client;
-      var query = @"query { publishers {  name } } ";
+      var query = @"query { publishers { id  name } } ";
       var resp = await client.PostAsync(query);
       var pubs = resp.GetTopField<Publisher[]>("publishers");
       Assert.IsNotNull(pubs, "expected publishers");

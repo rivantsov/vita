@@ -30,8 +30,7 @@ namespace BookStore.GraphQLServer {
   public class Publisher {
     public Guid Id;
     public string Name;
-    [GraphQLName("books")]
-    public IList<Book> GetPublisherBooks(Paging paging = null) { return default; }
+    public IList<Book> Books;
   }
 
   [DebuggerDisplay("{LastName}, {FirstName}")]
@@ -40,8 +39,7 @@ namespace BookStore.GraphQLServer {
     public string FirstName;
     public string LastName;
     public string Bio;
-    [GraphQLName("books")]
-    public IList<Book> GetBooksByAuthor(Paging paging = null) { return default; }
+    public IList<Book> Books;
   }
 
   [DebuggerDisplay("{Caption}")]

@@ -28,7 +28,7 @@ namespace BookStore.GraphQLServer {
     }
 
     public IPublisher GetPublisher(IFieldContext context, Guid id) {
-      throw new NotImplementedException();
+      return _session.GetEntity<IPublisher>(id); 
     }
 
     public IList<IBook> SearchBooks(IFieldContext context, BookSearch search, Paging paging) {
@@ -40,15 +40,15 @@ namespace BookStore.GraphQLServer {
     }
 
     public IBook GetBook(IFieldContext context, Guid id) {
-      throw new NotImplementedException();
+      return _session.GetEntity<IBook>(id); 
     }
 
     public IAuthor GetAuthor(IFieldContext context, Guid id) {
-      throw new NotImplementedException();
+      return _session.GetEntity<IAuthor>(id);
     }
 
     public IUser GetUser(IFieldContext context, string name) {
-      throw new NotImplementedException();
+      return _session.EntitySet<IUser>().FirstOrDefault(u => u.UserName == name);
     }
     #endregion
 
@@ -80,17 +80,7 @@ namespace BookStore.GraphQLServer {
     }
 
     [ResolvesField("coverImageUrl", typeof(Book))]
-    public string GetBookReviews(IFieldContext context, IBook book) {
-      throw new NotImplementedException();
-    }
-
-    [ResolvesField("books", typeof(Publisher))]
-    public IList<IBook> GetPublisherBooks(IFieldContext context, IPublisher publisher, Paging paging = null) {
-      throw new NotImplementedException();
-    }
-
-    [ResolvesField("books", typeof(Author))]
-    public IList<IBook> GetAuthorBooks(IFieldContext context, IAuthor author, Paging paging = null) {
+    public string GetCoverImageUrl(IFieldContext context, IBook book) {
       throw new NotImplementedException();
     }
 
@@ -98,6 +88,18 @@ namespace BookStore.GraphQLServer {
     public IList<IBookReview> GetUserReviews(IFieldContext context, IUser user, Paging paging = null) {
       throw new NotImplementedException();
     }
+
+    /*
+    [ResolvesField("books", typeof(Author))]
+    public IList<IBook> GetAuthorBooks(IFieldContext context, IAuthor author, Paging paging = null) {
+      return author.Books;
+    }
+    [ResolvesField("books", typeof(Publisher))]
+    public IList<IBook> GetPublisherBooks(IFieldContext context, IPublisher publisher, Paging paging = null) {
+      return publisher.Books;
+    }
+
+    */
 
 
 

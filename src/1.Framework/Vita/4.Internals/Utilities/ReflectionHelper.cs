@@ -159,6 +159,7 @@ namespace Vita.Entities.Utilities {
          typeof(Int64), typeof(UInt64)};
 
     public static bool IsInt(this Type type) {
+      type = Nullable.GetUnderlyingType(type) ?? type; 
       return AllIntTypes.Contains(type); 
     }
 

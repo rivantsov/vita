@@ -31,7 +31,8 @@ namespace BookStore.GraphQLServer {
       return _session.GetEntity<IPublisher>(id); 
     }
 
-    public IList<IBook> SearchBooks(IFieldContext context, BookSearchInput search, Paging paging) {
+    /*
+    private IList<IBook> SearchBooks_Disabled(IFieldContext context, BookSearchInput search, Paging paging) {
       // We use session.SearchBooks extension method defined in BookStore app. 
       // We need to convert our 'search' and 'paging' args to BookSearch object used by this method 
       // (BookSearch combines search values with paging params)
@@ -44,6 +45,31 @@ namespace BookStore.GraphQLServer {
       var searchResults = _session.SearchBooks(bookSearch);
       return searchResults.Results; 
     }
+    */
+
+    public IList<IBook> SearchBooks(IFieldContext context, BookSearchInput search, Paging paging) {
+      // We could use session.SearchBooks extension method defined in BookStore app, but it does not quite fit;
+      // we do not use explicit Include's here in pulling related entities, we rely on SmartLoad functionality. 
+
+      var where = _session.NewPredicate<IBook>()
+        .AndIfNotEmpty(search.Title, b => b.Title.StartsWith(search.Title))
+        .AndIfNotEmpty(search.MaxPrice, b => b.Price <= (Decimal)search.MaxPrice.Value)
+        .AndIf(search.Categories != null && search.Categories.Length > 0, b => search.Categories.Contains(b.Category))
+        .AndIfNotEmpty(search.Editions, b => (b.Editions & search.Editions) != 0)  //should be search.Editions.Value, but this works too
+        .AndIfNotEmpty(search.Publisher, b => b.Publisher.Name.StartsWith(search.Publisher))
+        .AndIfNotEmpty(search.PublishedAfter, b => b.PublishedOn.Value >= search.PublishedAfter.Value)
+        .AndIfNotEmpty(search.PublishedBefore, b => b.PublishedOn.Value <= search.PublishedBefore.Value);
+      // A bit more complex clause for Author - it is many2many, results in subquery
+      if (!string.IsNullOrEmpty(search.AuthorLastName)) {
+        var qAuthBookIds = _session.EntitySet<IBookAuthor>()
+          .Where(ba => ba.Author.LastName.StartsWith(search.AuthorLastName))
+          .Select(ba => ba.Book.Id);
+        where = where.And(b => qAuthBookIds.Contains(b.Id));
+      }
+      var searchResults = _session.ExecuteSearch(where, paging.ToSearchParams());
+      return searchResults.Results;
+    }
+
 
     public IList<IBook> SearchAuthors(IFieldContext context, AuthorSearchInput search, Paging paging) {
       throw new NotImplementedException();

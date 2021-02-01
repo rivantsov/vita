@@ -60,6 +60,10 @@ namespace Vita.Testing.GraphQLTests {
       _webHost.StopAsync().Wait();
     }
 
+    public static void FlushLogs() {
+      BooksEntityApp.Instance.Flush(); 
+    }
+
     public static long GetSqlQueryCount() {
       return BooksEntityApp.Instance.AppEvents.SelectCount;
     }
@@ -90,7 +94,7 @@ Testing: {descr}
       } else
         reqText = "POST, payload: " + Environment.NewLine + response.Request.Body;
       // for better readability, unescape \r\n
-      // reqText = reqText.Replace("\\r\\n", " ");
+      reqText = reqText.Replace("\\r\\n", Environment.NewLine);
       var jsonResponse = JsonConvert.SerializeObject(response.TopFields, Formatting.Indented);
       var text = $@"
 Request: 

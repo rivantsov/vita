@@ -104,6 +104,16 @@ namespace Vita.Testing.ExtendedTests {
       var eBooksList = eBooks.ToList();
       Assert.IsTrue(eBooksList.Count == 1, "Invalid number of e-books");
 
+      // Bug fix for bitwise ops: if operand is enum? variable, it failed 
+      BookEdition? edEbook = BookEdition.EBook;
+      books = session.EntitySet<IBook>();
+      eBooks = from b in books
+                   where (b.Editions & edEbook) != 0
+                   select b;
+      eBooksList = eBooks.ToList();
+      Assert.IsTrue(eBooksList.Count == 1, "Invalid number of e-books (nullable enum var).");
+
+
       // Using == for entity objects in queries
       var progCat = BookCategory.Programming;
       var msPub = session.EntitySet<IPublisher>().Single(p => p.Name == "MS Books");

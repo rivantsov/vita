@@ -13,7 +13,8 @@ namespace BookStore.GraphQLServer {
   public class BookSearchInput {
     /// <summary>Title start substring to search for.</summary>
     public string Title;
-    public BookCategory[] Categories; 
+    public BookCategory[] Categories;
+    public BookEdition? Editions; 
     public double? MaxPrice;
     public string Publisher;
     public DateTime? PublishedAfter;

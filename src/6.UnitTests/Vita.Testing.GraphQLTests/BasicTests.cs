@@ -19,6 +19,11 @@ namespace Vita.Testing.GraphQLTests {
       TestEnv.Init(); 
     }
 
+    [TestCleanup]
+    public void TestCleanup() {
+      TestEnv.FlushLogs(); 
+    }
+
     [TestMethod]
     public async Task TestBasicQueries() {
       TestEnv.LogTestMethodStart(); 
@@ -36,12 +41,13 @@ namespace Vita.Testing.GraphQLTests {
     }
 
     [TestMethod]
-    public async Task TestTopQueries() {
+    public async Task TestSearchQueries() {
       TestEnv.LogTestMethodStart();
       var client = TestEnv.Client;
       TestEnv.LogTestDescr("Search query, Search books");
       var bkSearch = new BookSearchInput() {
-        Title = "c", AuthorLastName = "Sharp", Categories = new [] {BookCategory.Programming},
+        Title = "c", AuthorLastName = "Sharp", Editions = BookEdition.Hardcover | BookEdition.Paperback, 
+        Categories = new [] {BookCategory.Programming},
         MaxPrice = 100.0d, Publisher = "MS Books", PublishedAfter = new DateTime(2000, 1, 1) 
       };
       var paging = new Paging() { OrderBy = "publishedOn-desc", Skip = 0, Take = 5 };
@@ -51,7 +57,13 @@ namespace Vita.Testing.GraphQLTests {
       var query = @"
 query ($search: BookSearchInput, $paging: paging) { 
     books: searchBooks(search: $search, paging: $paging) {
-        id  title 
+        id  
+        title
+        publishedOn
+        publisher {name}
+        authors { fullName}
+        editions 
+        editor { userName }
     } 
 } ";
       var resp = await client.PostAsync(query, vars);

@@ -1,23 +1,22 @@
-using System; 
+using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Threading.Tasks;
+using BookStore;
 using BookStore.GraphQLServer;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using NGraphQL.Client;
 
+
 namespace Vita.Testing.GraphQLTests {
-  
+  using TVars = Dictionary<string, object>;
+
   [TestClass]
   public class BasicTests {
 
     [TestInitialize]
     public void TestInit() {
       TestEnv.Init(); 
-    }
-
-    [TestCleanup]
-    public void TestCleanup() {
-      TestEnv.ShutDown();
     }
 
     [TestMethod]
@@ -34,6 +33,34 @@ namespace Vita.Testing.GraphQLTests {
       TestEnv.LogText("     (use Run command, not Debug in Test Explorer)");
       resp = await client.PostAsync(query);
       resp = await client.PostAsync(query);
+    }
+
+    [TestMethod]
+    public async Task TestTopQueries() {
+      TestEnv.LogTestMethodStart();
+      var client = TestEnv.Client;
+      TestEnv.LogTestDescr("Search query, Search books");
+      var bkSearch = new BookSearchInput() {
+        Title = "c", AuthorLastName = "Sharp", Categories = new [] {BookCategory.Programming},
+        MaxPrice = 100.0d, Publisher = "MS Books", PublishedAfter = new DateTime(2000, 1, 1) 
+      };
+      var paging = new Paging() { OrderBy = "publishedOn-desc", Skip = 0, Take = 5 };
+      var vars = new TVars() {
+        ["search"] = bkSearch, ["paging"] = paging
+      };
+      var query = @"
+query ($search: BookSearchInput, $paging: paging) { 
+    books: searchBooks(search: $search, paging: $paging) {
+        id  title 
+    } 
+} ";
+      var resp = await client.PostAsync(query, vars);
+      resp.EnsureNoErrors(); 
+      var books = resp.GetTopField<Book[]>("books");
+      Assert.AreEqual(1, books.Length, "Expected 1 book");
+      TestEnv.LogTestDescr(" Same query, 2 more times to check timing with paths warmed up");
+      resp = await client.PostAsync(query, vars);
+      resp = await client.PostAsync(query, vars);
     }
 
     [TestMethod]

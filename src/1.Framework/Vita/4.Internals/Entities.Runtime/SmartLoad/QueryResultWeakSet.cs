@@ -8,10 +8,6 @@ using Vita.Entities.Utilities;
 
 namespace Vita.Entities.Runtime {
 
-  partial class EntitySession {
-
-  }
-
   public class QueryResultsWeakSet {
     public IList<WeakReference> RecordRefs = new List<WeakReference>();
   }

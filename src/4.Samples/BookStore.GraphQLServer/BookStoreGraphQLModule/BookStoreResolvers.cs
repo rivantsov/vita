@@ -31,11 +31,21 @@ namespace BookStore.GraphQLServer {
       return _session.GetEntity<IPublisher>(id); 
     }
 
-    public IList<IBook> SearchBooks(IFieldContext context, BookSearch search, Paging paging) {
-      throw new NotImplementedException();
+    public IList<IBook> SearchBooks(IFieldContext context, BookSearchInput search, Paging paging) {
+      // We use session.SearchBooks extension method defined in BookStore app. 
+      // We need to convert our 'search' and 'paging' args to BookSearch object used by this method 
+      // (BookSearch combines search values with paging params)
+      var categoriesString = search.Categories == null ? null : string.Join(",", search.Categories);
+      var bookSearch = new BookSearch() {
+        Title = search.Title, AuthorLastName = search.AuthorLastName, Categories = categoriesString,
+        MaxPrice = search.MaxPrice, PublishedAfter = search.PublishedAfter, Publisher = search.Publisher,
+        OrderBy = paging.OrderBy, Skip = paging.Skip, Take = paging.Take
+      };
+      var searchResults = _session.SearchBooks(bookSearch);
+      return searchResults.Results; 
     }
 
-    public IList<IBook> SearchAuthors(IFieldContext context, AuthorSearch search, Paging paging) {
+    public IList<IBook> SearchAuthors(IFieldContext context, AuthorSearchInput search, Paging paging) {
       throw new NotImplementedException();
     }
 

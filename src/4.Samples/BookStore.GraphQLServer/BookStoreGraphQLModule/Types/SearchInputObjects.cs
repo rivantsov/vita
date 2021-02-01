@@ -10,10 +10,10 @@ namespace BookStore.GraphQLServer {
     public int Take;
   }
 
-  public class BookSearch {
+  public class BookSearchInput {
     /// <summary>Title start substring to search for.</summary>
     public string Title;
-    public string Categories; //comma-delimited string of values
+    public BookCategory[] Categories; 
     public double? MaxPrice;
     public string Publisher;
     public DateTime? PublishedAfter;
@@ -21,7 +21,7 @@ namespace BookStore.GraphQLServer {
     public string AuthorLastName;
   }
 
-  public class AuthorSearch {
+  public class AuthorSearchInput {
     public string LastName;
     public string BookTitle;
     public BookCategory? Category;

@@ -23,7 +23,7 @@ namespace BookStore.GraphQLServer {
 
     /// <summary>Books reviews </summary>
     [GraphQLName("reviews")]
-    public List<BookReview> GetBookReviews(Paging paging = null) { return default; } 
+    public List<BookReview> GetBookReviews([Null]Paging paging = null) { return default; } 
   }
 
   [DebuggerDisplay("{Name}")]
@@ -94,24 +94,22 @@ namespace BookStore.GraphQLServer {
     public List<BookReview> GetUserReviews(Paging paging = null) { return default; }
   }
 
-  /* Not used yet
-  [DebuggerDisplay("{UserName}")]
-  public class UserSignup {
-    public string UserName;
-    public string DisplayName;
-    public string Password;
+  public class Paging {
+    public string OrderBy;
+    public int Skip;
+    public int Take;
   }
 
-  [DebuggerDisplay("{UserName}")]
-  public class UserLogin {
-    public string UserName;
-    public string Password;
+  public class BookSearchInput {
+    /// <summary>Title start substring to search for.</summary>
+    public string Title;
+    public BookCategory[] Categories;
+    public BookEdition? Editions;
+    public double? MaxPrice;
+    public string Publisher;
+    public DateTime? PublishedAfter;
+    public DateTime? PublishedBefore;
+    public string AuthorLastName;
   }
 
-  [DebuggerDisplay("{UserName}")]
-  public class LoginResponse {
-    public string Token;
-    public User User;
-  }
-  */
 }

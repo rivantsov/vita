@@ -38,10 +38,12 @@ namespace Vita.Testing.GraphQLTests {
       TestEnv.LogText("     (use Run command, not Debug in Test Explorer)");
       resp = await client.PostAsync(query);
       resp = await client.PostAsync(query);
+
+
     }
 
     [TestMethod]
-    public async Task TestSearchQueries() {
+    public async Task TestBooksSearch() {
       TestEnv.LogTestMethodStart();
       var client = TestEnv.Client;
       TestEnv.LogTestDescr("Search query, Search books");
@@ -66,13 +68,14 @@ query ($search: BookSearchInput, $paging: paging) {
         editor { userName }
     } 
 } ";
+      var oldQueryCount = TestEnv.GetSqlQueryCount();
       var resp = await client.PostAsync(query, vars);
       resp.EnsureNoErrors(); 
       var books = resp.GetTopField<Book[]>("books");
       Assert.AreEqual(1, books.Length, "Expected 1 book");
-      TestEnv.LogTestDescr(" Same query, 2 more times to check timing with paths warmed up");
-      resp = await client.PostAsync(query, vars);
-      resp = await client.PostAsync(query, vars);
+      var qryCount = TestEnv.GetSqlQueryCount() - oldQueryCount;
+      // queries: books (main search), publisher, authors, users (for editor)
+      Assert.AreEqual(4, qryCount, "Expected 4 DB queries.");
     }
 
     [TestMethod]
@@ -83,25 +86,33 @@ query ($search: BookSearchInput, $paging: paging) {
       var oldQueryCount = TestEnv.GetSqlQueryCount(); 
       var query = @"
 query myquery { 
-	publishers {
+  publishers {
     id 
     name
     books {
       id 
       title 
-      authors { firstName lastName}
+      authors { fullName}
       editions 
       editor { userName }
+      reviews {
+        createdOn
+        user {userName}
+        rating
+        caption
+      }
     } 
   }  
 }";
       var resp = await client.PostAsync(query);
+      resp.EnsureNoErrors();
       var qryCount = TestEnv.GetSqlQueryCount() - oldQueryCount; 
       var pubs = resp.GetTopField<Publisher[]>("publishers");
       Assert.IsNotNull(pubs, "expected publishers");
       Assert.IsTrue(pubs.Length > 1);
-      Assert.AreEqual(4, qryCount, "Expected 4 queries: publishers, books, authors, editors");
-
+      // batched queries: 
+      // 6 queries: publishers, books, authors, editors (users), reviews, reviewers (users) 
+      Assert.AreEqual(6, qryCount, "Expected 6 queries");
     }
 
 

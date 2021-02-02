@@ -13,7 +13,6 @@ namespace BookStore.GraphQLServer {
     Publisher GetPublisher(Guid id);
 
     IList<Book> SearchBooks(BookSearchInput search, Paging paging);
-    IList<Book> SearchAuthors(AuthorSearchInput search, Paging paging);
 
     [GraphQLName("book")]
     Book GetBook(Guid id);

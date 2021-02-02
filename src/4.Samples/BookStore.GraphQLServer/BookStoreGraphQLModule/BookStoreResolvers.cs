@@ -31,31 +31,14 @@ namespace BookStore.GraphQLServer {
       return _session.GetEntity<IPublisher>(id); 
     }
 
-    /*
-    private IList<IBook> SearchBooks_Disabled(IFieldContext context, BookSearchInput search, Paging paging) {
-      // We use session.SearchBooks extension method defined in BookStore app. 
-      // We need to convert our 'search' and 'paging' args to BookSearch object used by this method 
-      // (BookSearch combines search values with paging params)
-      var categoriesString = search.Categories == null ? null : string.Join(",", search.Categories);
-      var bookSearch = new BookSearch() {
-        Title = search.Title, AuthorLastName = search.AuthorLastName, Categories = categoriesString,
-        MaxPrice = search.MaxPrice, PublishedAfter = search.PublishedAfter, Publisher = search.Publisher,
-        OrderBy = paging.OrderBy, Skip = paging.Skip, Take = paging.Take
-      };
-      var searchResults = _session.SearchBooks(bookSearch);
-      return searchResults.Results; 
-    }
-    */
-
     public IList<IBook> SearchBooks(IFieldContext context, BookSearchInput search, Paging paging) {
-      // We could use session.SearchBooks extension method defined in BookStore app, but it does not quite fit;
-      // we do not use explicit Include's here in pulling related entities, we rely on SmartLoad functionality. 
-
+      // We do not use session.SearchBooks extension method defined in BookStore app, it does not quite fit;
+      // we do not use explicit Include's here in pulling related entities, we rely on SmartLoad functionality.
       var where = _session.NewPredicate<IBook>()
         .AndIfNotEmpty(search.Title, b => b.Title.StartsWith(search.Title))
         .AndIfNotEmpty(search.MaxPrice, b => b.Price <= (Decimal)search.MaxPrice.Value)
         .AndIf(search.Categories != null && search.Categories.Length > 0, b => search.Categories.Contains(b.Category))
-        .AndIfNotEmpty(search.Editions, b => (b.Editions & search.Editions) != 0)  //should be search.Editions.Value, but this works too
+        .AndIfNotEmpty(search.Editions, b => (b.Editions & search.Editions) != 0)  //should be search.Editions.Value, but this works too; just checking bug fix
         .AndIfNotEmpty(search.Publisher, b => b.Publisher.Name.StartsWith(search.Publisher))
         .AndIfNotEmpty(search.PublishedAfter, b => b.PublishedOn.Value >= search.PublishedAfter.Value)
         .AndIfNotEmpty(search.PublishedBefore, b => b.PublishedOn.Value <= search.PublishedBefore.Value);
@@ -68,11 +51,6 @@ namespace BookStore.GraphQLServer {
       }
       var searchResults = _session.ExecuteSearch(where, paging.ToSearchParams());
       return searchResults.Results;
-    }
-
-
-    public IList<IBook> SearchAuthors(IFieldContext context, AuthorSearchInput search, Paging paging) {
-      throw new NotImplementedException();
     }
 
     public IBook GetBook(IFieldContext context, Guid id) {
@@ -112,7 +90,20 @@ namespace BookStore.GraphQLServer {
 
     [ResolvesField("reviews", typeof(Book))]
     public IList<IBookReview> GetBookReviews(IFieldContext context, IBook book, Paging paging = null) {
-      throw new NotImplementedException();
+      paging ??= new Paging() { OrderBy = "Rating", Take = 5 };
+      // We use explicit batching here
+      var allParentBookIds = context.GetAllParentEntities<IBook>().Select(b => b.Id).ToList();
+      var selectedReviewsByBook = SelectTopNReviewsForBooks(allParentBookIds, paging);
+      var groupedReviewsByBook = selectedReviewsByBook.GroupBy(br => br.Book).ToList();
+      // we have query results, list of reviews, n top for each book.
+      // group them by bookId; then convert to dictionary
+      // Wreviews grouped by Book_Id; to post the results into the context, 
+      //  we need a dict<IBook, List<IBookReview>>
+      var reviewsByBookDict = groupedReviewsByBook.ToDictionary(
+        g => g.Key, g => g.ToList()
+      );
+      context.SetBatchedResults<IBook, List<IBookReview>>(reviewsByBookDict, valueForMissingEntry: new List<IBookReview>());
+      return null; 
     }
 
     [ResolvesField("coverImageUrl", typeof(Book))]
@@ -125,18 +116,40 @@ namespace BookStore.GraphQLServer {
       throw new NotImplementedException();
     }
 
-    /*
-    [ResolvesField("books", typeof(Author))]
-    public IList<IBook> GetAuthorBooks(IFieldContext context, IAuthor author, Paging paging = null) {
-      return author.Books;
-    }
-    [ResolvesField("books", typeof(Publisher))]
-    public IList<IBook> GetPublisherBooks(IFieldContext context, IPublisher publisher, Paging paging = null) {
-      return publisher.Books;
-    }
+    #region Reviews per book selection method
+    // Selecting N reviews per book for a set of books, with specified ORDER
+    /* OK, this is tricky; it can be probably done better with window function or CROSS-APPLY or smth.
+    We do it with sub-select: 
+    
+SELECT br.[Id], br.[CreatedOn], br.[Rating], br.[Caption], br.[Review], br.[Book_Id], br.[User_Id]
+  FROM [VitaBooks].[books].[BookReview] br
+  WHERE br.Id in (
+	SELECT TOP (2) [Id]
+	  FROM [VitaBooks].[books].[BookReview]
+	  WHERE Book_Id = br.Book_Id
+	  Order by CreatedOn DESC  
+  )
+  ORDER BY CreatedOn DESC
 
+-- Replace 'CreatedOn' in order-by with actual OrderBy list specified in Paging object. 
+  Later we group the returned records by Book_id on c# side
     */
-
+    private IList<IBookReview> SelectTopNReviewsForBooks(IList<Guid> bookIds, Paging paging) {
+      var reviews = _session.EntitySet<IBookReview>();
+      var reviews2 = _session.EntitySet<IBookReview>();
+      var reviewQuery = reviews.Where(br =>
+           bookIds.Contains(br.Book.Id) &&
+           reviews2.Where(br2 => br2.Book == br.Book)
+                   //.OrderBy(paging.OrderBy, null)
+                   .OrderByDescending(br => br.Rating)
+                   .Skip(paging.Skip).Take(paging.Take)
+                   .Select(br2 => br2.Id)
+                   .Contains(br.Id)
+                   ); //where
+      var allReviews = reviewQuery.ToList();
+      return allReviews;
+    }
+    #endregion 
 
 
   }

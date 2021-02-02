@@ -10,7 +10,7 @@ namespace BookStore.GraphQLServer {
       base.EnumTypes.Add(typeof(BookEdition), typeof(BookCategory), typeof(OrderStatus), typeof(UserType));
       base.ObjectTypes.Add(typeof(Book), typeof(Publisher), typeof(Author), typeof(BookReview), 
                   typeof(BookOrder), typeof(BookOrderLine), typeof(User));
-      base.InputTypes.Add(typeof(BookReviewInput), typeof(Paging), typeof(BookSearchInput), typeof(AuthorSearchInput));
+      base.InputTypes.Add(typeof(BookReviewInput), typeof(Paging), typeof(BookSearchInput));
       base.QueryType = typeof(IBookStoreQuery);
       base.MutationType = typeof(IBookStoreMutation);
       base.ResolverTypes.Add(typeof(BookStoreResolvers));

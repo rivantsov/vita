@@ -123,6 +123,7 @@ query pubQuery {
 query userQuery { 
   users (paging: {orderBy: ""userName"", skip: 0, take: 10}) {
     id 
+    userType
     userName
     reviews {
       createdOn
@@ -151,6 +152,10 @@ query userQuery {
       qryCount = TestEnv.GetSqlQueryCount() - oldQueryCount;
       var users = resp.GetTopField<User[]>("users");
       Assert.IsTrue(users.Length > 1);
+
+      resp = await client.PostAsync(query);
+      resp = await client.PostAsync(query);
+
       // batched queries: 
       // 7 queries: users, reviews, reviewed books, orders, order lines, books, authors 
       Assert.AreEqual(7, qryCount, "Expected 7 queries");

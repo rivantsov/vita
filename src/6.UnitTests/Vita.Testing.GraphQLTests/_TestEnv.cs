@@ -42,7 +42,6 @@ namespace Vita.Testing.GraphQLTests {
     }
 
     public static void StartService() {
-      GraphQLAspNetServerStartup.RebuildSampleData = true; 
       GraphQLAspNetServerStartup.StartGrpaphiql = false; // do not start Graphiql UI, we do not need it in tests
       var hostBuilder = WebHost.CreateDefaultBuilder()
           .ConfigureAppConfiguration((context, config) => { })
@@ -76,9 +75,9 @@ namespace Vita.Testing.GraphQLTests {
 ");
     }
 
-    public static void LogTestDescr(string descr) {
+    public static void LogComment(string descr) {
       LogText($@"
-Testing: {descr}
+// Comment: {descr}
 ");
     }
 
@@ -86,7 +85,7 @@ Testing: {descr}
       LogCompletedRequest(e.Response);
     }
 
-    public static void LogCompletedRequest(ServerResponse response) {
+    private static void LogCompletedRequest(ServerResponse response) {
       string reqText;
       var req = response.Request;
       if (req.HttpMethod == "GET") {

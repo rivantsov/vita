@@ -78,7 +78,7 @@ namespace BookStore.GraphQLServer {
       var book = _session.GetEntity<IBook>(review.BookId);
       var user = _session.GetEntity<IUser>(review.UserId); 
       context.AddErrorIf(book == null, "Invalid book Id, book not found.");
-      context.AddErrorIf(user == null, "Invalid user Id");
+      context.AddErrorIf(user == null, "Invalid user Id, user not found.");
       context.AddErrorIf(string.IsNullOrWhiteSpace(review.Caption), "Caption may not be empty");
       context.AddErrorIf(string.IsNullOrWhiteSpace(review.Review), "Review text may not be empty");
       context.AddErrorIf(review.Caption != null && review.Caption.Length > 100, 

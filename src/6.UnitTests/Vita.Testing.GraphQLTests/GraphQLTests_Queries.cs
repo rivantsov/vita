@@ -34,7 +34,7 @@ namespace Vita.Testing.GraphQLTests {
       Assert.IsNotNull(pubs, "expected publishers");
       Assert.IsTrue(pubs.Length > 1);
 
-      TestEnv.LogTestDescr("Repeating the same query 2 more times, to check request timing after the execution path is warmed up.");
+      TestEnv.LogComment("Repeating the same query 2 more times, to check request timing after the execution path is warmed up.");
       TestEnv.LogText("     (use Run command, not Debug in Test Explorer)");
       resp = await client.PostAsync(query);
       resp = await client.PostAsync(query);
@@ -46,7 +46,7 @@ namespace Vita.Testing.GraphQLTests {
     public async Task TestBooksSearch() {
       TestEnv.LogTestMethodStart();
       var client = TestEnv.Client;
-      TestEnv.LogTestDescr("Search query, Search books");
+      TestEnv.LogComment("Search query, Search books");
       var bkSearch = new BookSearchInput() {
         Title = "c", AuthorLastName = "Sharp", Editions = BookEdition.Hardcover | BookEdition.Paperback, 
         Categories = new [] {BookCategory.Programming},
@@ -82,9 +82,9 @@ query ($search: BookSearchInput, $paging: paging) {
     public async Task TestSmartLoad() {
       var client = TestEnv.Client;
       TestEnv.LogTestMethodStart();
-      TestEnv.LogTestDescr(" VITA's smart load feature, child lists are loaded automatically in bulk for all parents; solves N+1 problem for GraphQL");
+      TestEnv.LogComment(" VITA's smart load feature, child lists are loaded automatically in bulk for all parents; solves N+1 problem for GraphQL");
 
-      TestEnv.LogTestDescr("   loading publishers with books, authors, reviews etc");
+      TestEnv.LogComment("   loading publishers with books, authors, reviews etc");
       var oldQueryCount = TestEnv.GetSqlQueryCount(); 
       var query = @"
 query pubQuery { 
@@ -117,7 +117,7 @@ query pubQuery {
       Assert.AreEqual(6, qryCount, "Expected 6 queries");
 
 
-      TestEnv.LogTestDescr("   loading all users with orders, books, authors etc");
+      TestEnv.LogComment("   loading all users with orders, books, authors etc");
       oldQueryCount = TestEnv.GetSqlQueryCount();
       query = @"
 query userQuery { 

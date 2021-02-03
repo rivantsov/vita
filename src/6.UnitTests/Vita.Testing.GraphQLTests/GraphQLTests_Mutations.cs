@@ -15,28 +15,33 @@ namespace Vita.Testing.GraphQLTests {
   public partial class GraphQLTests {
 
     [TestMethod]
-    public async Task TestAddReview() {
+    public async Task TestMutations() {
+      TestEnv.LogTestMethodStart();
       var client = TestEnv.Client;
 
-      // 1. Find IronMan book and a user
-      var bk = await FindBook("iron");
+      // 1. Find a book and a user
+      TestEnv.LogComment("Loading user and book objects.");
+      var bk = await FindBook("three"); //three little pigs book
       var user = await FindUser("cartman");
 
       // 2. create mutation request, variables dict
       var mutAddReview = @"
 mutation ($rv: BookReviewInput!) {
-  review: addReview(review: $rv) { id }
+  review: addReview(review: $rv) { id, caption, rating }
 }";
       var vars = new TVars();
 
       // 3. First try invalid input objects - expect validation errors 
       //  3.1 - clean obj expect 2 errors, fields Caption and Review may not be null
       //   it won't make it to resolver
+      TestEnv.LogComment("Submitting invalid BookReviewInput object. Variable validator rejects it.");
       var badReviewInp = new BookReviewInput();
       vars["rv"] = badReviewInp;
       var resp = await client.PostAsync(mutAddReview, vars);
       Assert.AreEqual(2, resp.Errors.Count, "Expected 2 errors");
-      //  3.2 - init Caption and Review to non-null; it will get to resolver but it will reject it
+
+      //  3.2 - init Caption and Review to non-null; it will get to resolver but it will reject it, multiple problems
+      TestEnv.LogComment("Submitting another invalid BookReviewInput object; input validation in resolver rejects it with multiple errors.");
       badReviewInp = new BookReviewInput() { 
         Review = "   ",  // whitespace not allowed 
         Caption = new string('x', 101) // too long
@@ -46,6 +51,7 @@ mutation ($rv: BookReviewInput!) {
       Assert.AreEqual(5, resp.Errors.Count, "Expected 2 errors");
 
       // 4. Submit valid object, get back Id of new review
+      TestEnv.LogComment("Submitting valid BookReviewInput object; review will be added.");
       var reviewInp = new BookReviewInput() {
         BookId = bk.Id, UserId = user.Id, Caption = "Boring", Rating = 1,
         Review = "Really really boring book."
@@ -55,8 +61,9 @@ mutation ($rv: BookReviewInput!) {
       resp.EnsureNoErrors();
       var newReview = resp.GetTopField<BookReview>("review");
       Assert.IsNotNull(newReview, "Expected review returned");
-      
+
       // 5. Delete the new review
+      TestEnv.LogComment("Delete the review that we just created");
       var mutDelReview = @"
 mutation ($reviewId: Uuid!) {
   deleteReview(reviewId: $reviewId)

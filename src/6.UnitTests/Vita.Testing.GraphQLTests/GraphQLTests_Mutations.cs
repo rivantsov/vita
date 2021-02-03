@@ -53,8 +53,18 @@ mutation ($rv: BookReviewInput!) {
       vars["rv"] = reviewInp;
       resp = await client.PostAsync(mutAddReview, vars);
       resp.EnsureNoErrors();
-      var review = resp.GetTopField<BookReview>("review");
-      Assert.IsNotNull(review, "Expected review returned");
+      var newReview = resp.GetTopField<BookReview>("review");
+      Assert.IsNotNull(newReview, "Expected review returned");
+      
+      // 5. Delete the new review
+      var mutDelReview = @"
+mutation ($reviewId: Uuid!) {
+  deleteReview(reviewId: $reviewId)
+}";
+      vars = new TVars() { ["reviewId"] = newReview.Id };
+      resp = await client.PostAsync(mutDelReview, vars);
+      resp.EnsureNoErrors();
+
     } //method
 
     // helper methods

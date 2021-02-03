@@ -43,7 +43,7 @@ namespace BookStore.GraphQLServer {
     public IList<Book> Books;
   }
 
-  [DebuggerDisplay("{Caption}")]
+  [DebuggerDisplay("{Caption??Id}")]
   public class BookReview {
     public Guid Id;
     public DateTime CreatedOn;

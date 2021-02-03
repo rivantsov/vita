@@ -42,6 +42,7 @@ namespace Vita.Testing.GraphQLTests {
     }
 
     public static void StartService() {
+      GraphQLAspNetServerStartup.RebuildSampleData = true; 
       GraphQLAspNetServerStartup.StartGrpaphiql = false; // do not start Graphiql UI, we do not need it in tests
       var hostBuilder = WebHost.CreateDefaultBuilder()
           .ConfigureAppConfiguration((context, config) => { })

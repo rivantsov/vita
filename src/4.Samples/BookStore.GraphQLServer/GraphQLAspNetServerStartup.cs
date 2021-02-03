@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
 using BookStore.SampleData;
 using Microsoft.AspNetCore.Builder;
@@ -12,6 +13,7 @@ using NGraphQL.Server;
 using NGraphQL.Server.AspNetCore;
 using Vita.Data;
 using Vita.Data.MsSql;
+using Vita.Entities;
 using Vita.Entities.DbInfo;
 using Vita.Tools;
 
@@ -23,6 +25,7 @@ namespace BookStore.GraphQLServer {
     public static GraphQLHttpServer GraphQLHttpServerInstance;
     public static bool StartGrpaphiql = true; // test project sets this to false
     public string LogFilePath = "_serverSqlLog.log";
+    public static bool RebuildSampleData;
 
     public GraphQLAspNetServerStartup(IConfiguration configuration)
     {
@@ -83,10 +86,18 @@ namespace BookStore.GraphQLServer {
       var dbOptions = driver.GetDefaultOptions();
       var dbSettings = new DbSettings(driver, dbOptions, connStr, upgradeMode: DbUpgradeMode.Always);
       booksApp.ConnectTo(dbSettings);
+      if (RebuildSampleData || DbIsEmpty())
+        ReCreateSampleData(); 
       return booksApp;
     }
 
-    private static void CreateSampleData() {
+    private static bool DbIsEmpty() {
+      var session = BooksEntityApp.Instance.OpenSession();
+      var pubCount = session.EntitySet<IPublisher>().Count();
+      return pubCount == 0;
+    }
+
+    private static void ReCreateSampleData() {
       DataUtility.DeleteAllData(BooksEntityApp.Instance, 
         exceptEntities: new Type[] { typeof(IDbInfo), typeof(IDbModuleInfo) });
       SampleDataGenerator.CreateUnitTestData(BooksEntityApp.Instance);

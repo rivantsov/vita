@@ -12,7 +12,7 @@ namespace Vita.Testing.GraphQLTests {
   using TVars = Dictionary<string, object>;
 
   [TestClass]
-  public class BasicTests {
+  public partial class GraphQLTests {
 
     [TestInitialize]
     public void TestInit() {
@@ -153,10 +153,6 @@ query userQuery {
       var users = resp.GetTopField<User[]>("users");
       Assert.IsTrue(users.Length > 1);
 
-      resp = await client.PostAsync(query);
-      resp = await client.PostAsync(query);
-
-      // batched queries: 
       // 7 queries: users, reviews, reviewed books, orders, order lines, books, authors 
       Assert.AreEqual(7, qryCount, "Expected 7 queries");
     }

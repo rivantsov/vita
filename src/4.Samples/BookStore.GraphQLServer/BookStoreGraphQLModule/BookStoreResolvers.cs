@@ -6,6 +6,7 @@ using NGraphQL.CodeFirst;
 using Vita.Entities;
 
 namespace BookStore.GraphQLServer {
+
   public class BookStoreResolvers: IResolverClass {
     BooksEntityApp _app;
     IEntitySession _session; 
@@ -49,7 +50,7 @@ namespace BookStore.GraphQLServer {
           .Select(ba => ba.Book.Id);
         where = where.And(b => qAuthBookIds.Contains(b.Id));
       }
-      var searchResults = _session.ExecuteSearch(where, paging.ToSearchParams());
+      var searchResults = _session.ExecuteSearch(where, paging.ToSearchParams("Title"));
       return searchResults.Results;
     }
 
@@ -66,13 +67,38 @@ namespace BookStore.GraphQLServer {
     }
 
     public IList<IUser> GetUsers(IFieldContext context, Paging paging = null) {
-      paging ??= new Paging() { OrderBy = "UserName", Take = 10 };
-      return _session.EntitySet<IUser>().OrderBy(paging.OrderBy).Skip(paging.Skip).Take(paging.Take).ToList();
+      var prms = paging.ToSearchParams("UserName");
+      return _session.EntitySet<IUser>().OrderBy(paging.OrderBy)
+                          .Skip(prms.Skip).Take(prms.Take).ToList();
     }
     #endregion
 
     #region Root mutation methods
-    public IBookOrder CreateOrder(IFieldContext context, Guid userId) {
+    public IBookReview AddReview(IFieldContext context, BookReviewInput review) {
+      var book = _session.GetEntity<IBook>(review.BookId);
+      var user = _session.GetEntity<IUser>(review.UserId); 
+      context.AddErrorIf(book == null, "Invalid book Id, book not found.");
+      context.AddErrorIf(user == null, "Invalid user Id");
+      context.AddErrorIf(string.IsNullOrWhiteSpace(review.Caption), "Caption may not be empty");
+      context.AddErrorIf(string.IsNullOrWhiteSpace(review.Review), "Review text may not be empty");
+      context.AddErrorIf(review.Caption != null && review.Caption.Length > 100, 
+                     "Caption is too long, must be less than 100 chars.");
+      context.AddErrorIf(review.Rating < 1 || review.Rating > 5,
+                    $"Invalid rating value ({review.Rating}), must be between 1 and 5");
+      context.AbortIfErrors();
+      var reviewEnt = _session.NewReview(user, book, review.Rating, review.Caption, review.Review);
+      // changes will be saved when request completes (see EndRequest method)
+      return reviewEnt; 
+    }
+
+    public bool DeleteReview(IFieldContext context, Guid reviewId) {
+      var review = _session.GetEntity<IBookReview>(reviewId);
+      context.AbortIf(review == null, "Invalid review ID, review not found.");
+      _session.DeleteEntity(review);
+      return true; 
+    }
+
+    public IBookOrder GetCart(IFieldContext context, Guid userId) {
       throw new NotImplementedException();
     }
 
@@ -88,9 +114,6 @@ namespace BookStore.GraphQLServer {
       throw new NotImplementedException();
     }
 
-    public IBookReview AddReview(IFieldContext context, BookReviewInput review) {
-      throw new NotImplementedException();
-    }
     #endregion
 
     [ResolvesField("reviews", typeof(Book))]
@@ -168,9 +191,10 @@ SELECT br.[Id], br.[CreatedOn], br.[Rating], br.[Caption], br.[Review], br.[Book
 
     private IList<IBookReview> SelectReviewsByBookPaged(IList<Guid> allBookIds, Paging paging) {
       var reviewsBaseQuery = _session.EntitySet<IBookReview>().Where(br => allBookIds.Contains(br.Book.Id));
+      var page = paging.ToSearchParams("createdOn-desc"); 
       // Limitation, to be fixed; this OrderBy is special method OrderBy defined in VITA, and it should be executed directly
       //  we cannot put this inside main query. 
-      var subQuery = _session.EntitySet<IBookReview>().OrderBy(paging.OrderBy, null).Skip(paging.Skip).Take(paging.Take); 
+      var subQuery = _session.EntitySet<IBookReview>().OrderBy(paging.OrderBy, null).Skip(page.Skip).Take(page.Take); 
       var query = reviewsBaseQuery.Where(br =>
                subQuery.Where(br2 => br2.Book == br.Book).Contains(br)); 
       var allReviews = query.ToList();
@@ -178,8 +202,9 @@ SELECT br.[Id], br.[CreatedOn], br.[Rating], br.[Caption], br.[Review], br.[Book
     }
 
     private IList<IBookReview> SelectReviewsByUserPaged(IList<Guid> userIds, Paging paging) {
+      var page = paging.ToSearchParams("createdOn-desc"); 
       var reviewsBaseQuery = _session.EntitySet<IBookReview>().Where(br => userIds.Contains(br.User.Id));
-      var subQuery = _session.EntitySet<IBookReview>().OrderBy(paging.OrderBy, null).Skip(paging.Skip).Take(paging.Take);
+      var subQuery = _session.EntitySet<IBookReview>().OrderBy(page.OrderBy, null).Skip(page.Skip).Take(page.Take);
       var query = reviewsBaseQuery.Where(br =>
                subQuery.Where(br2 => br2.User == br.User).Contains(br)); 
       var reviews = query.ToList();
@@ -187,8 +212,9 @@ SELECT br.[Id], br.[CreatedOn], br.[Rating], br.[Caption], br.[Review], br.[Book
     }
 
     private IList<IBookOrder> SelectOrdersByUserPaged(IList<Guid> userIds, Paging paging) {
+      var page = paging.ToSearchParams("createdOn-desc");
       var ordersBaseQuery = _session.EntitySet<IBookOrder>().Where(ord => userIds.Contains(ord.User.Id));
-      var subQuery = _session.EntitySet<IBookOrder>().OrderBy(paging.OrderBy, null).Skip(paging.Skip).Take(paging.Take);
+      var subQuery = _session.EntitySet<IBookOrder>().OrderBy(page.OrderBy, null).Skip(page.Skip).Take(page.Take);
       var query = ordersBaseQuery.Where(ord =>
                subQuery.Where(ord2 => ord2.User == ord.User).Contains(ord)); 
       var orders = query.ToList();

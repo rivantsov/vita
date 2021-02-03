@@ -64,6 +64,11 @@ namespace BookStore.GraphQLServer {
     public IUser GetUser(IFieldContext context, string name) {
       return _session.EntitySet<IUser>().FirstOrDefault(u => u.UserName == name);
     }
+
+    public IList<IUser> GetUsers(IFieldContext context, Paging paging = null) {
+      paging ??= new Paging() { OrderBy = "UserName", Take = 10 };
+      return _session.EntitySet<IUser>().OrderBy(paging.OrderBy).Skip(paging.Skip).Take(paging.Take).ToList();
+    }
     #endregion
 
     #region Root mutation methods
@@ -90,64 +95,104 @@ namespace BookStore.GraphQLServer {
 
     [ResolvesField("reviews", typeof(Book))]
     public IList<IBookReview> GetBookReviews(IFieldContext context, IBook book, Paging paging = null) {
-      paging ??= new Paging() { OrderBy = "Rating", Take = 5 };
+      // The method is called to return reviews for a single book. To avoid N+1 problem, we retrieve reviews for ALL books in this call -
+      // for books that are returned at the parent level, and for which we expect to be called again.
+      // We get the list of all these books, produce the list of their Ids, query the database to get their reviews,
+      //  make a dictionary <bookId, reviews> and then post this dict into the field context. 
+      // The engine will not invoke this resolver again. 
+      paging ??= new Paging() { OrderBy = "createdOn-desc", Take = 5 };
       // We use explicit batching here
-      var allParentBookIds = context.GetAllParentEntities<IBook>().Select(b => b.Id).ToList();
-      var selectedReviewsByBook = SelectTopNReviewsForBooks(allParentBookIds, paging);
+      var allBookIds = context.GetAllParentEntities<IBook>().Select(b => b.Id).ToList();
+      // call helper method that does some magic query
+      var selectedReviewsByBook = SelectReviewsByBookPaged(allBookIds, paging);
       var groupedReviewsByBook = selectedReviewsByBook.GroupBy(br => br.Book).ToList();
-      // we have query results, list of reviews, n top for each book.
-      // group them by bookId; then convert to dictionary
-      // Wreviews grouped by Book_Id; to post the results into the context, 
-      //  we need a dict<IBook, List<IBookReview>>
-      var reviewsByBookDict = groupedReviewsByBook.ToDictionary(
-        g => g.Key, g => g.ToList()
-      );
-      context.SetBatchedResults<IBook, List<IBookReview>>(reviewsByBookDict, valueForMissingEntry: new List<IBookReview>());
-      return null; 
+      // we have query results, list of reviews, n for each book according to paging parameter.
+      // Put them into dictionary and post into context.  
+      var reviewsByBookDict = groupedReviewsByBook.ToDictionary(g => g.Key, g => g.ToList());
+      // valueForMissingKeys is a value to use when bookId is not in a dictionary. Note that dict contains only entries for books
+      // that have reviews. 
+      context.SetBatchedResults<IBook, List<IBookReview>>(reviewsByBookDict, valueForMissingKeys: new List<IBookReview>());
+      return null; // engine will use the posted dictionary to get this value. 
     }
+
+    // for comments see similar GetBookReviews method above
+    [ResolvesField("reviews", typeof(User))]
+    public IList<IBookReview> GetUserReviews(IFieldContext context, IUser user, Paging paging = null) {
+      paging ??= new Paging() { OrderBy = "createdOn-desc", Take = 5 };
+      var allUserIds = context.GetAllParentEntities<IUser>().Select(u => u.Id).ToList();
+      // call helper method that does some magic query
+      var selectedReviewsByUser = SelectReviewsByUserPaged(allUserIds, paging);
+      var groupedReviewsByUser = selectedReviewsByUser.GroupBy(br => br.User).ToList();
+      var reviewsByUserDict = groupedReviewsByUser.ToDictionary(g => g.Key, g => g.ToList());
+      context.SetBatchedResults<IUser, List<IBookReview>>(reviewsByUserDict, valueForMissingKeys: new List<IBookReview>());
+      return null; // engine will use the posted dictionary to get this value. 
+    }
+
+    [ResolvesField("orders", typeof(User))]
+    public List<IBookOrder> GetUserOrders(IFieldContext context, IUser user, Paging paging = null) {
+      paging ??= new Paging() { OrderBy = "createdOn-desc", Take = 5 };
+      var allUserIds = context.GetAllParentEntities<IUser>().Select(u => u.Id).ToList();
+      // call helper method that does some magic query
+      var selectedOrdersByUser = SelectOrdersByUserPaged(allUserIds, paging);
+      var groupedOrdersByUser = selectedOrdersByUser.GroupBy(br => br.User).ToList();
+      var ordersByUserDict = groupedOrdersByUser.ToDictionary(g => g.Key, g => g.ToList());
+      context.SetBatchedResults<IUser, List<IBookOrder>>(ordersByUserDict, valueForMissingKeys: new List<IBookOrder>());
+      return null; // engine will use the posted dictionary to get this value. 
+    }
+
 
     [ResolvesField("coverImageUrl", typeof(Book))]
     public string GetCoverImageUrl(IFieldContext context, IBook book) {
       throw new NotImplementedException();
     }
 
-    [ResolvesField("reviews", typeof(User))]
-    public IList<IBookReview> GetUserReviews(IFieldContext context, IUser user, Paging paging = null) {
-      throw new NotImplementedException();
-    }
 
     #region Reviews per book selection method
-    // Selecting N reviews per book for a set of books, with specified ORDER
+    // Selecting N reviews per book for a set of books, with specified ORDER, skip, take
     /* OK, this is tricky; it can be probably done better with window function or CROSS-APPLY or smth.
     We do it with sub-select: 
     
 SELECT br.[Id], br.[CreatedOn], br.[Rating], br.[Caption], br.[Review], br.[Book_Id], br.[User_Id]
-  FROM [VitaBooks].[books].[BookReview] br
-  WHERE br.Id in (
-	SELECT TOP (2) [Id]
-	  FROM [VitaBooks].[books].[BookReview]
-	  WHERE Book_Id = br.Book_Id
-	  Order by CreatedOn DESC  
-  )
+  FROM [books].[BookReview] br
+  WHERE br.[Id] IN ( <book id list> ) AND br.Id in (
+	  SELECT [Id]
+	    FROM [books].[BookReview]
+	    WHERE Book_Id = br.Book_Id
+	    ORDER by CreatedOn DESC 
+      OFFSET 0 ROWS FETCH NEXT 5 ROWS ONLY
+    )
   ORDER BY CreatedOn DESC
 
--- Replace 'CreatedOn' in order-by with actual OrderBy list specified in Paging object. 
   Later we group the returned records by Book_id on c# side
     */
-    private IList<IBookReview> SelectTopNReviewsForBooks(IList<Guid> bookIds, Paging paging) {
-      var reviews = _session.EntitySet<IBookReview>();
-      var reviews2 = _session.EntitySet<IBookReview>();
-      var reviewQuery = reviews.Where(br =>
-           bookIds.Contains(br.Book.Id) &&
-           reviews2.Where(br2 => br2.Book == br.Book)
-                   //.OrderBy(paging.OrderBy, null)
-                   .OrderByDescending(br => br.Rating)
-                   .Skip(paging.Skip).Take(paging.Take)
-                   .Select(br2 => br2.Id)
-                   .Contains(br.Id)
-                   ); //where
-      var allReviews = reviewQuery.ToList();
+
+    private IList<IBookReview> SelectReviewsByBookPaged(IList<Guid> allBookIds, Paging paging) {
+      var reviewsBaseQuery = _session.EntitySet<IBookReview>().Where(br => allBookIds.Contains(br.Book.Id));
+      // Limitation, to be fixed; this OrderBy is special method OrderBy defined in VITA, and it should be executed directly
+      //  we cannot put this inside main query. 
+      var subQuery = _session.EntitySet<IBookReview>().OrderBy(paging.OrderBy, null).Skip(paging.Skip).Take(paging.Take); 
+      var query = reviewsBaseQuery.Where(br =>
+               subQuery.Where(br2 => br2.Book == br.Book).Contains(br)); 
+      var allReviews = query.ToList();
       return allReviews;
+    }
+
+    private IList<IBookReview> SelectReviewsByUserPaged(IList<Guid> userIds, Paging paging) {
+      var reviewsBaseQuery = _session.EntitySet<IBookReview>().Where(br => userIds.Contains(br.User.Id));
+      var subQuery = _session.EntitySet<IBookReview>().OrderBy(paging.OrderBy, null).Skip(paging.Skip).Take(paging.Take);
+      var query = reviewsBaseQuery.Where(br =>
+               subQuery.Where(br2 => br2.User == br.User).Contains(br)); 
+      var reviews = query.ToList();
+      return reviews;
+    }
+
+    private IList<IBookOrder> SelectOrdersByUserPaged(IList<Guid> userIds, Paging paging) {
+      var ordersBaseQuery = _session.EntitySet<IBookOrder>().Where(ord => userIds.Contains(ord.User.Id));
+      var subQuery = _session.EntitySet<IBookOrder>().OrderBy(paging.OrderBy, null).Skip(paging.Skip).Take(paging.Take);
+      var query = ordersBaseQuery.Where(ord =>
+               subQuery.Where(ord2 => ord2.User == ord.User).Contains(ord)); 
+      var orders = query.ToList();
+      return orders;
     }
     #endregion 
 

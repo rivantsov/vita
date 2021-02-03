@@ -20,6 +20,10 @@ namespace BookStore.GraphQLServer {
     [GraphQLName("author")]
     Author GetAuthor(Guid id);
 
-    User GetUser(string name); 
+    [GraphQLName("user")]
+    User GetUser(string name);
+
+    [GraphQLName("users")]
+    IList<User> GetUsers(Paging paging);
   }
 }

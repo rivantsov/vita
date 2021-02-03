@@ -92,6 +92,8 @@ namespace BookStore.GraphQLServer {
     /// <summary>Books reviews </summary>
     [GraphQLName("reviews")]
     public List<BookReview> GetUserReviews(Paging paging = null) { return default; }
+    [GraphQLName("orders")]
+    public List<BookOrder> GetUserOrders(Paging paging = null) { return default; }
   }
 
   public class Paging {

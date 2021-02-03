@@ -80,12 +80,14 @@ query ($search: BookSearchInput, $paging: paging) {
 
     [TestMethod]
     public async Task TestSmartLoad() {
-      TestEnv.LogTestMethodStart();
-      TestEnv.LogTestDescr(" VITA's smart load feature, child lists are loaded automatically for ALL parent records in one call.");
       var client = TestEnv.Client;
+      TestEnv.LogTestMethodStart();
+      TestEnv.LogTestDescr(" VITA's smart load feature, child lists are loaded automatically in bulk for all parents; solves N+1 problem for GraphQL");
+
+      TestEnv.LogTestDescr("   loading publishers with books, authors, reviews etc");
       var oldQueryCount = TestEnv.GetSqlQueryCount(); 
       var query = @"
-query myquery { 
+query pubQuery { 
   publishers {
     id 
     name
@@ -113,6 +115,45 @@ query myquery {
       // batched queries: 
       // 6 queries: publishers, books, authors, editors (users), reviews, reviewers (users) 
       Assert.AreEqual(6, qryCount, "Expected 6 queries");
+
+
+      TestEnv.LogTestDescr("   loading all users with orders, books, authors etc");
+      oldQueryCount = TestEnv.GetSqlQueryCount();
+      query = @"
+query userQuery { 
+  users (paging: {orderBy: ""userName"", skip: 0, take: 10}) {
+    id 
+    userName
+    reviews {
+      createdOn
+      rating
+      caption
+      review
+      book {title}
+    }
+    orders {
+      id 
+      createdOn
+      total
+      status
+      lines {
+        quantity
+        book {
+          title
+          authors { fullName}
+        }
+      }
+    } 
+  }  
+}";
+      resp = await client.PostAsync(query);
+      resp.EnsureNoErrors();
+      qryCount = TestEnv.GetSqlQueryCount() - oldQueryCount;
+      var users = resp.GetTopField<User[]>("users");
+      Assert.IsTrue(users.Length > 1);
+      // batched queries: 
+      // 7 queries: users, reviews, reviewed books, orders, order lines, books, authors 
+      Assert.AreEqual(7, qryCount, "Expected 7 queries");
     }
 
 

@@ -41,6 +41,7 @@ namespace Vita.Entities {
       string propRef;
       bool isDesc;
       var segments = orderBySpec.SplitNames();
+      var resultQuery = query; 
       foreach(var segm in segments) {
         if(string.IsNullOrWhiteSpace(segm))
           continue;
@@ -66,9 +67,9 @@ namespace Vita.Entities {
         var lambda = Expression.Lambda<Func<T, object>>(memberGet, prm);
         // Note: we might need to use ThenBy and ThenByDescending here for all clauses after first.
         // But it looks like it works OK, at least in SQL, the ORDER BY clause is correct
-        query = isDesc ? query.OrderByDescending(lambda) : query.OrderBy(lambda);
+        resultQuery = isDesc ? resultQuery.OrderByDescending(lambda) : resultQuery.OrderBy(lambda);
       }
-      return query;
+      return resultQuery;
     }//method
 
     internal static MethodInfo WithOptionsMethod;
@@ -127,6 +128,11 @@ namespace Vita.Entities {
       return query.Provider.CreateQuery<TEntity>(Expression.Call(genMethod, query.Expression, Expression.Constant(include)));
     }
 
+    public static IEntitySession GetSession<T>(this IQueryable<T> query) {
+      var qProv = query.Provider as EntityQueryProvider;
+      Util.Check(qProv != null, "Invalid argument 'query', expected entity query.");
+      return qProv.Session; 
+    }
 
   }//class
 }

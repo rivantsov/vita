@@ -142,13 +142,19 @@ namespace Vita.Data.Linq.Translation {
     }
 
     protected virtual Expression AnalyzeQueryExtensionsCall(MethodInfo method, IList<Expression> parameters, TranslationContext context) {
-      // Ignore the method, analyze the source 'object'
-      return Analyze(parameters[0], context);
+      switch(method.Name) {
+        case nameof(EntityQueryExtensions.OrderBy):
+          throw new Exception($"Method EntityQueryExtensions.OrderBy may not be used inside query expression(s). Apply method to EntitySet<T> first " +
+                               "and then use the resulting query inside the parent query expression.");
+        default:
+          // Ignore the method, analyze the source 'object'
+          return Analyze(parameters[0], context);
+      }
     }
 
     private Expression AnalyzeQueryableCall(MethodInfo method, IList<Expression> parameters, TranslationContext context) {
       var dt = method.DeclaringType;
-      //Check for ICollection is to cover entity lists in members (like book.Authors.Contains(a))
+      //Check for IEnumerable is to cover entity lists in members (like book.Authors.Contains(a))
       if(!(IsQueryable(dt) || dt == typeof(Enumerable)))
         return null;
       // all methods to handle are listed here:

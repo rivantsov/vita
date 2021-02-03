@@ -29,11 +29,21 @@ mutation ($rv: BookReviewInput!) {
 }";
       var vars = new TVars();
 
-      // 3. First try invalid input object - expect validation errors 
+      // 3. First try invalid input objects - expect validation errors 
+      //  3.1 - clean obj expect 2 errors, fields Caption and Review may not be null
+      //   it won't make it to resolver
       var badReviewInp = new BookReviewInput();
       vars["rv"] = badReviewInp;
       var resp = await client.PostAsync(mutAddReview, vars);
-      Assert.IsTrue(resp.Errors.Count > 0, "Expected errors");
+      Assert.AreEqual(2, resp.Errors.Count, "Expected 2 errors");
+      //  3.2 - init Caption and Review to non-null; it will get to resolver but it will reject it
+      badReviewInp = new BookReviewInput() { 
+        Review = "   ",  // whitespace not allowed 
+        Caption = new string('x', 101) // too long
+      };
+      vars["rv"] = badReviewInp;
+      resp = await client.PostAsync(mutAddReview, vars);
+      Assert.AreEqual(5, resp.Errors.Count, "Expected 2 errors");
 
       // 4. Submit valid object, get back Id of new review
       var reviewInp = new BookReviewInput() {
@@ -45,7 +55,6 @@ mutation ($rv: BookReviewInput!) {
       resp.EnsureNoErrors();
       var review = resp.GetTopField<BookReview>("review");
       Assert.IsNotNull(review, "Expected review returned");
-
     } //method
 
     // helper methods

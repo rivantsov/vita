@@ -9,6 +9,9 @@ namespace BookStore.GraphQLServer {
     [GraphQLName("publishers")]
     IList<Publisher> GetPublishers();
 
+    /// <summary>Returns publisher specified by Id.</summary>
+    /// <param name="id">Publisher id.</param>
+    /// <returns></returns>
     [GraphQLName("publisher")]
     Publisher GetPublisher(Guid id);
 

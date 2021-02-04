@@ -23,7 +23,7 @@ namespace BookStore.GraphQLServer {
     }
 
     #region Root Query methods
-    [ResolvesField("publishers")] //, typeof(IBookStoreQuery))]
+    [ResolvesField("publishers", typeof(IBookStoreQuery))] // you can skip the type here
     public IList<IPublisher> GetPublishers(IFieldContext context) {
       return _session.EntitySet<IPublisher>().OrderBy(p => p.Name).ToList();
     }

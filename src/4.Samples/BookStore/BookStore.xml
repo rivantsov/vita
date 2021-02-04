@@ -1,0 +1,19 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>BookStore</name>
+    </assembly>
+    <members>
+        <member name="T:BookStore.AllLowCaseNamingPolicy">
+            <summary>Sample naming policy. Changes all column and table names to lower-case with underscores. 
+            This might be handy in Postgres, in this case low/upper letters do not matter in custom SQLs. 
+            see discussion here: https://github.com/rivantsov/vita/issues/38
+            Note: custom naming does not work for view columns, some compilcations with SQL translation.
+            Try defining view entity with desired low-case member names
+            </summary>
+        </member>
+        <member name="P:BookStore.BookSearch.Title">
+            <summary>Title start substring to search for.</summary>
+        </member>
+    </members>
+</doc>

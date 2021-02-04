@@ -1,0 +1,22 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>450.BookStore.GraphQLServer</name>
+    </assembly>
+    <members>
+        <member name="M:BookStore.GraphQLServer.Book.GetBookReviews(BookStore.GraphQLServer.Paging)">
+            <summary>Books reviews </summary>
+        </member>
+        <member name="M:BookStore.GraphQLServer.User.GetUserReviews(BookStore.GraphQLServer.Paging)">
+            <summary>Books reviews </summary>
+        </member>
+        <member name="F:BookStore.GraphQLServer.BookSearchInput.Title">
+            <summary>Title start substring to search for.</summary>
+        </member>
+        <member name="M:BookStore.GraphQLServer.IBookStoreQuery.GetPublisher(System.Guid)">
+            <summary>Returns publisher specified by Id.</summary>
+            <param name="id">Publisher id.</param>
+            <returns></returns>
+        </member>
+    </members>
+</doc>

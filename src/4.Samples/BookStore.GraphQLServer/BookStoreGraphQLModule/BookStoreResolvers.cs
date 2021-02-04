@@ -97,23 +97,6 @@ namespace BookStore.GraphQLServer {
       _session.DeleteEntity(review);
       return true; 
     }
-
-    public IBookOrder GetCart(IFieldContext context, Guid userId) {
-      throw new NotImplementedException();
-    }
-
-    public IBookOrderLine AddOrderItem(IFieldContext context, Guid orderId, Guid bookId, int count = 1) {
-      throw new NotImplementedException();
-    }
-
-    public bool RemoveOrderItem(IFieldContext context, Guid itemId) {
-      throw new NotImplementedException();
-    }
-
-    public IBookOrder SubmitOrder(IFieldContext context, Guid orderId) {
-      throw new NotImplementedException();
-    }
-
     #endregion
 
     [ResolvesField("reviews", typeof(Book))]
@@ -164,12 +147,6 @@ namespace BookStore.GraphQLServer {
     }
 
 
-    [ResolvesField("coverImageUrl", typeof(Book))]
-    public string GetCoverImageUrl(IFieldContext context, IBook book) {
-      throw new NotImplementedException();
-    }
-
-
     #region Reviews per book selection method
     // Selecting N reviews per book for a set of books, with specified ORDER, skip, take
     /* OK, this is tricky; it can be probably done better with window function or CROSS-APPLY or smth.
@@ -186,14 +163,15 @@ SELECT br.[Id], br.[CreatedOn], br.[Rating], br.[Caption], br.[Review], br.[Book
     )
   ORDER BY CreatedOn DESC
 
-  Later we group the returned records by Book_id on c# side
+  Later we group the returned records by Book_id on c# side;
+  The following code builds LINQ expressions that result in SQL above
     */
 
     private IList<IBookReview> SelectReviewsByBookPaged(IList<Guid> allBookIds, Paging paging) {
       var reviewsBaseQuery = _session.EntitySet<IBookReview>().Where(br => allBookIds.Contains(br.Book.Id));
       var page = paging.ToSearchParams("createdOn-desc"); 
-      // Limitation, to be fixed; this OrderBy is special method OrderBy defined in VITA, and it should be executed directly
-      //  we cannot put this inside main query. 
+      // Limitation, to be fixed; this OrderBy(string) is a special method defined in VITA, 
+      // and it should be executed directly against entity set, not inside bigger expression as subquery.
       var subQuery = _session.EntitySet<IBookReview>().OrderBy(paging.OrderBy, null).Skip(page.Skip).Take(page.Take); 
       var query = reviewsBaseQuery.Where(br =>
                subQuery.Where(br2 => br2.Book == br.Book).Contains(br)); 

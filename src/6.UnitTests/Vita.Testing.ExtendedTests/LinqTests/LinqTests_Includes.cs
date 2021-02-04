@@ -31,7 +31,7 @@ namespace Vita.Testing.ExtendedTests {
     }
 
     private long GetSelectCount() {
-      return Startup.BooksApp.AppEvents.SelectCount;
+      return Startup.BooksApp.AppEvents.SelectQueryCounter;
     }
 
     private void TestLinqIncludeImpl() {

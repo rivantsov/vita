@@ -38,7 +38,8 @@ namespace Vita.Testing.GraphQLTests {
       StartService();
       EndPointUrl = ServiceUrl + "/graphql";
       Client = new GraphQLClient(EndPointUrl);
-      Client.RequestCompleted += Client_RequestCompleted;
+      // if you want to listen/log request/response
+      // Client.RequestCompleted += Client_RequestCompleted;
     }
 
     public static void StartService() {
@@ -51,7 +52,7 @@ namespace Vita.Testing.GraphQLTests {
           ;
       _webHost = hostBuilder.Build();
 
-      _webHost.Start(); 
+      _webHost.Start();
       Thread.Sleep(10000);
       Debug.WriteLine("The service is running on URL: " + ServiceUrl);
     }
@@ -61,11 +62,22 @@ namespace Vita.Testing.GraphQLTests {
     }
 
     public static void FlushLogs() {
-      BooksEntityApp.Instance.Flush(); 
+      BooksEntityApp.Instance.Flush();
     }
 
-    public static long GetSqlQueryCount() {
-      return BooksEntityApp.Instance.AppEvents.SelectCount;
+    public static long SqlQueryCountForLastRequest; 
+
+    public static async Task<ServerResponse> PostAsync(string query, IDictionary<string, object> variables = null, 
+                     string operationName = null, CancellationToken cancellationToken = default) {
+      var prevCounter = GetSqlCounter(); 
+      var response = await Client.PostAsync(query, variables, operationName, cancellationToken);
+      SqlQueryCountForLastRequest = GetSqlCounter() - prevCounter;
+      LogCompletedResponse(response);
+      return response; 
+    }
+    
+    public static long GetSqlCounter() {
+      return BooksEntityApp.Instance.AppEvents.SelectQueryCounter;
     }
 
     public static void LogTestMethodStart([CallerMemberName] string testName = null) {
@@ -81,11 +93,7 @@ namespace Vita.Testing.GraphQLTests {
 ");
     }
 
-    private static void Client_RequestCompleted(object sender, RequestCompletedEventArgs e) {
-      LogCompletedRequest(e.Response);
-    }
-
-    private static void LogCompletedRequest(ServerResponse response) {
+    private static void LogCompletedResponse(ServerResponse response) {
       string reqText;
       var req = response.Request;
       if (req.HttpMethod == "GET") {
@@ -103,8 +111,7 @@ Request:
 Response:
 {jsonResponse}
 
-//  time: {response.DurationMs} ms
------------------------------------------------------------------------------------------------------------------------------------ 
+//  time: {response.DurationMs} ms; Select SQL count: {SqlQueryCountForLastRequest}   ------------------------------------------ 
 
 ";
       LogText(text);

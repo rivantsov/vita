@@ -81,7 +81,7 @@ namespace Vita.Entities {
     long _selectCount;
     long _saveCount;
 
-    public long SelectCount => _selectCount;
+    public long SelectQueryCounter => _selectCount;
     public long SaveCount => _saveCount; 
 
     public event EventHandler<AppInitEventArgs> Initializing; //fired multiple times

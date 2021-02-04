@@ -45,7 +45,6 @@ namespace Vita.Testing.GraphQLTests {
     [TestMethod]
     public async Task TestBooksSearch() {
       TestEnv.LogTestMethodStart();
-      var client = TestEnv.Client;
       TestEnv.LogComment("Search query, Search books");
       var bkSearch = new BookSearchInput() {
         Title = "c", AuthorLastName = "Sharp", Editions = BookEdition.Hardcover | BookEdition.Paperback, 
@@ -68,24 +67,21 @@ query ($search: BookSearchInput, $paging: paging) {
         editor { userName }
     } 
 } ";
-      var oldQueryCount = TestEnv.GetSqlQueryCount();
-      var resp = await client.PostAsync(query, vars);
+      var resp = await TestEnv.PostAsync(query, vars);
       resp.EnsureNoErrors(); 
       var books = resp.GetTopField<Book[]>("books");
       Assert.AreEqual(1, books.Length, "Expected 1 book");
-      var qryCount = TestEnv.GetSqlQueryCount() - oldQueryCount;
+      var qryCount = TestEnv.SqlQueryCountForLastRequest;
       // queries: books (main search), publisher, authors, users (for editor)
       Assert.AreEqual(4, qryCount, "Expected 4 DB queries.");
     }
 
     [TestMethod]
     public async Task TestSmartLoad() {
-      var client = TestEnv.Client;
       TestEnv.LogTestMethodStart();
       TestEnv.LogComment(" VITA's smart load feature, child lists are loaded automatically in bulk for all parents; solves N+1 problem for GraphQL");
 
       TestEnv.LogComment("   loading publishers with books, authors, reviews etc");
-      var oldQueryCount = TestEnv.GetSqlQueryCount(); 
       var query = @"
 query pubQuery { 
   publishers {
@@ -106,9 +102,9 @@ query pubQuery {
     } 
   }  
 }";
-      var resp = await client.PostAsync(query);
+      var resp = await TestEnv.PostAsync(query);
       resp.EnsureNoErrors();
-      var qryCount = TestEnv.GetSqlQueryCount() - oldQueryCount; 
+      var qryCount = TestEnv.SqlQueryCountForLastRequest; 
       var pubs = resp.GetTopField<Publisher[]>("publishers");
       Assert.IsNotNull(pubs, "expected publishers");
       Assert.IsTrue(pubs.Length > 1);
@@ -116,9 +112,7 @@ query pubQuery {
       // 6 queries: publishers, books, authors, editors (users), reviews, reviewers (users) 
       Assert.AreEqual(6, qryCount, "Expected 6 queries");
 
-
       TestEnv.LogComment("   loading all users with orders, books, authors etc");
-      oldQueryCount = TestEnv.GetSqlQueryCount();
       query = @"
 query userQuery { 
   users (paging: {orderBy: ""userName"", skip: 0, take: 10}) {
@@ -147,14 +141,14 @@ query userQuery {
     } 
   }  
 }";
-      resp = await client.PostAsync(query);
+      resp = await TestEnv.PostAsync(query);
       resp.EnsureNoErrors();
-      qryCount = TestEnv.GetSqlQueryCount() - oldQueryCount;
+      qryCount = TestEnv.SqlQueryCountForLastRequest;
       var users = resp.GetTopField<User[]>("users");
       Assert.IsTrue(users.Length > 1);
 
       // 7 queries: users, reviews, reviewed books, orders, order lines, books, authors 
-      Assert.AreEqual(7, qryCount, "Expected 7 queries");
+      Assert.AreEqual(7, qryCount, "Expected 7 queries"); // this currently fails, multiple Authors queries
     }
 
 

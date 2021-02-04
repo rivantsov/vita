@@ -10,16 +10,14 @@ namespace BookStore.GraphQLServer {
     public Guid Id;
     public Publisher Publisher;
     public string Title;
+    [Null] public string Description;
+    [Null] public string Abstract;
     public IList<Author> Authors;
     public DateTime? PublishedOn;
     public BookCategory Category;
     public BookEdition Editions;
     public Decimal Price;
-    [Null] public string CoverImageUrl;
     [Null] public User Editor; 
-    //Details
-    [Null] public string Description;
-    [Null] public string Abstract;
 
     /// <summary>Books reviews </summary>
     [GraphQLName("reviews")]

@@ -45,6 +45,7 @@ namespace Vita.Entities.Runtime {
     public DateTime? LastTransactionDateTime { get; private set; }
     public int LastTransactionDuration;
     public int LastTransactionRecordCount { get; private set; }
+    public bool SmartLoadEnabled => Options.IsSet(EntitySessionOptions.EnableSmartLoad);
 
     private ITimeService _timeService;
     private EntityAppEvents _appEvents;

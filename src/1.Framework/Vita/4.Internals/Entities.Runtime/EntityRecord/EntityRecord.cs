@@ -19,6 +19,7 @@ namespace Vita.Entities.Runtime {
     public EntitySession Session;
     public EntityInfo EntityInfo;
     public WeakReference WeakSelfRef;
+    public EntityMemberInfo StubParentMember;
 
     //If true, the record is registered in Session.RecordsLoaded set.
     public bool IsAttached;
@@ -40,10 +41,6 @@ namespace Vita.Entities.Runtime {
         return _maskMembersChanged;
       }
     } EntityMemberMask _maskMembersChanged;
-
-    //Authorization info
-    public object UserPermissions; 
-    public object ByRefUserPermissions; //delegated permissions
 
     //special secondary index for sorting records that are in non-trivial topological groups
     internal int SortSubIndex; 

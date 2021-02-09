@@ -19,8 +19,6 @@ namespace Vita.Data.Runtime {
 
     public object ProcessResult(DataCommand command) {
       var session = command.Connection.Session;
-      if (session.SmartLoadEnabled)
-        session.CurrentQueryResultsWeakSet = new QueryResultsWeakSet(); 
       var reader = command.Result as IDataReader;
       var resultList = RowListCreator(); 
       while(reader.Read()) {
@@ -31,7 +29,6 @@ namespace Vita.Data.Runtime {
       }
       reader.Close();
       command.RowCount = resultList.Count;
-      session.CurrentQueryResultsWeakSet = null; 
       if(RowListProcessor == null)
         return resultList; 
       else 

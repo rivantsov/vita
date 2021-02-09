@@ -671,8 +671,6 @@ namespace Vita.Entities {
       }
       var targetRec = ent.Record; 
       record.SetValueDirect(member, targetRec);
-      if(targetRec.ByRefUserPermissions == null)
-        targetRec.ByRefUserPermissions = member.ByRefPermissions;
       return targetRec.EntityInstance;
     }
 

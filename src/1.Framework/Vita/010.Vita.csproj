@@ -12,14 +12,6 @@
         <Copyright>Roman Ivantsov</Copyright>
         <Description>VITA ORM Core Functionality. </Description>
     </PropertyGroup>
-
-    <ItemGroup>
-      <Compile Remove="4.Internals\Entities.Runtime\SmartLoad\EntityAccessTracking_disabled.cs" />
-    </ItemGroup>
-
-    <ItemGroup>
-      <None Include="4.Internals\Entities.Runtime\SmartLoad\EntityAccessTracking_disabled.cs" />
-    </ItemGroup>
     
     <ItemGroup>
         <PackageReference Include="Proxemity" Version="2.0.1" />

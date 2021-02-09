@@ -78,8 +78,7 @@ query ($search: BookSearchInput, $paging: paging) {
 
     [TestMethod]
     public async Task TestSmartLoad() {
-      // Important for debugging, disable display string function for entities, it causes automatic reload
-      //  of entity if it's not loaded, and this messes up the debugging, if you want to track normal load process
+      // Just for debugging, to disable auto entity load by Display attr. 
       DisplayAttribute.Disabled = true; 
 
       TestEnv.LogTestMethodStart();

@@ -100,11 +100,11 @@ namespace Vita.Entities.Runtime {
           var listInfo = refMember.ChildListInfo;
           switch (listInfo.RelationType) {
             case EntityRelationType.ManyToOne:
-              resultRecords = MemberLoadHelper.LoadListManyToOneMember(_session, records, refMember);
+              resultRecords = MemberLoadHelper.LoadListManyToOneMultipleRecords(_session, records, refMember);
               RunIncludeQueries(listInfo.TargetEntity.EntityType, resultRecords);
               return resultRecords; 
             case EntityRelationType.ManyToMany:
-              resultRecords = MemberLoadHelper.LoadListManyToManyMember(_session, records, refMember);
+              resultRecords = MemberLoadHelper.LoadListManyToManyMultipleRecords(_session, records, refMember);
               RunIncludeQueries(listInfo.TargetEntity.EntityType, resultRecords);
               return resultRecords; 
           }//switch rel type

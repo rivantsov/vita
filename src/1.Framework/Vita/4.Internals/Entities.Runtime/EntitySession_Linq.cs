@@ -111,7 +111,7 @@ namespace Vita.Entities.Runtime {
       var allIncludes = this.Context.GetMergedIncludes(command.Includes);
       if (allIncludes == null || allIncludes.Count == 0)
         return;
-      var resultShape = MemberLoadHelper.GetResultShape(Context.App.Model, mainQueryResult.GetType());
+      var resultShape = GetResultShape(mainQueryResult.GetType());
       if (resultShape == QueryResultShape.Object)
         return;
       // Get records from query result
@@ -136,6 +136,18 @@ namespace Vita.Entities.Runtime {
       this.LogMessage("------- Completed include queries ----------");
     }
 
+
+    internal QueryResultShape GetResultShape(Type outType) {
+      if (typeof(EntityBase).IsAssignableFrom(outType))
+        return QueryResultShape.Entity;
+      if (outType.IsGenericType) {
+        var model = this.Context.App.Model; 
+        var genArg0 = outType.GetGenericArguments()[0];
+        if (typeof(IEnumerable).IsAssignableFrom(outType) && model.IsEntity(genArg0))
+          return QueryResultShape.EntityList;
+      }
+      return QueryResultShape.Object; // don't know and don't care      
+    }
 
 
   } //class

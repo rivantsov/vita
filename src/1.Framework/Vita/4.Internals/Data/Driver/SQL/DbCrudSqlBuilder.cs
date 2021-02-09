@@ -128,7 +128,7 @@ namespace Vita.Data.Driver {
       var pkCol = table.PrimaryKey.KeyColumns[0].Column;
       var idArray = Array.CreateInstance(pkCol.Member.DataType, records.Count);
       for(int i = 0; i < records.Count; i++)
-        idArray.SetValue(records[i].GetValueDirect(pkCol.Member), i);
+        idArray.SetValue(records[i].GetRawValue(pkCol.Member), i);
       return idArray;
     }
 

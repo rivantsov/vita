@@ -77,7 +77,7 @@ namespace BookStore {
       return order.CreatedOn.ToString("s") + " " + order.User.DisplayName + ", Total: " + order.Total.ToString("###.##");
     }
     public static string GetOrderDisplay(IBookOrder order) {
-      return string.Format("{0}, {1} items.", order.User.DisplayName, order.Lines.Count);
+      return string.Format("Order by {0}, {1} items.", order.User.DisplayName, order.Lines.Count);
     }
 
     // Static method validating Book entity

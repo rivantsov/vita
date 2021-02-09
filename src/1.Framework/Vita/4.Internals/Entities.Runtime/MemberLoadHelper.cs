@@ -10,7 +10,7 @@ using Vita.Entities.Utilities;
 
 namespace Vita.Entities.Runtime {
 
-  internal static class MemberLoadHelper {
+  internal static partial class MemberLoadHelper {
 
     internal static IList<EntityRecord> GetRecordList(IList entityList) {
       var recList = new List<EntityRecord>();
@@ -21,64 +21,29 @@ namespace Vita.Entities.Runtime {
       return recList;
     }
 
-    // Returns records loaded in the same query as the given record
-    internal static IList<EntityRecord> GetLoadedSiblings(EntityRecord rec) {
-      var srcResultSet = rec?.SourceQueryResultSet;
-      if (srcResultSet == null)
-        return EntityRecord.EmptyList;
-      var entInfo = rec.EntityInfo;
-      var records = srcResultSet.RecordRefs.Select(r => (EntityRecord)r.Target)
-         .Where(rec => rec != null && rec.EntityInfo == entInfo)
-         .ToList();
-      return records;
-    }
-
-    internal static bool TryReloadSiblingPackForRecordStub(EntityRecord record) {
-      var parent = (EntityRecord)record.StubParentRef?.Target;
-      var refMember = record.StubParentMember;
-      if (parent == null || refMember == null)
-        return false;
+    internal static bool TryLoadEntityRefMemberForAllRecords(this EntitySession session, EntityMemberInfo refMember) {
       var fkKey = refMember.ReferenceInfo.FromKey;
       if (fkKey.ExpandedKeyMembers.Count > 1)
         return false; // we can't do it with composite keys
-      var records = GetLoadedSiblings(parent);
+      var records = session.GetRecordsWithUnloadedRefMember(refMember);
       if (records.Count == 0)
         return false;
-      LoadEntityRefMember(record.Session, records, refMember);
+      LoadEntityRefMember(session, records, refMember);
       return true;
     }
 
-    internal static void LoadListManyToMany<T>(PropertyBoundListManyToMany<T> list) where T : class {
+    internal static void LoadListManyToOne<T>(PropertyBoundListManyToOne<T> list) where T : class {
       var ownerRec = list.OwnerRecord;
       var session = ownerRec.Session;
-      if (session.SmartLoadEnabled && ownerRec.SourceQueryResultSet != null) {
-        LoadListManyToManyForSourceQuerySiblings(ownerRec, list.OwnerMember);
-        if (list.IsLoaded)
-          return;
-      }
       list.Modified = false;
-      list.LinkRecordsLookup.Clear();
       if (ownerRec.Status == EntityStatus.Fantom || ownerRec.Status == EntityStatus.New) {
         list.SetAsEmpty();
         return;
       }
-      var listInfo = list.OwnerMember.ChildListInfo;
-      var cmd = LinqCommandFactory.CreateSelectByKeyForListPropertyManyToMany(session, listInfo, ownerRec.PrimaryKey.Values);
-      var queryRes = session.ExecuteLinqCommand(cmd);
-      var tupleList = (IList<LinkTuple>)queryRes;
-      list.SetItems(tupleList);
-    }
-
-    internal static void LoadListManyToOne<T>(PropertyBoundListManyToOne<T> list) where T : class {
-      var session = list.OwnerRecord.Session;
-      list.Modified = false;
-      var ownerRec = list.OwnerRecord;
-      if (ownerRec.Status == EntityStatus.Fantom || ownerRec.Status == EntityStatus.New) {
-        list.SetAsEmpty();
-        return;
-      }
-      if (session.SmartLoadEnabled && ownerRec.SourceQueryResultSet != null) {
-        LoadListManyToOneForSourceQuerySiblings(ownerRec, list.OwnerMember);
+      var listMember = list.OwnerMember;
+      if (session.SmartLoadEnabled) {
+        var siblingRecs = session.GetRecordsWithUnloadedListMember(listMember);
+        session.LoadListManyToOneMultipleRecords(siblingRecs, listMember);
         if (list.IsLoaded)
           return;
       }
@@ -94,20 +59,28 @@ namespace Vita.Entities.Runtime {
       list.SetItems(recContList);
     }
 
-    internal static void LoadListManyToOneForSourceQuerySiblings(EntityRecord record, EntityMemberInfo listMember) {
-      var allRecs = GetLoadedSiblings(record);
-      if (allRecs.Count == 0)
+    internal static void LoadListManyToMany<T>(PropertyBoundListManyToMany<T> list) where T : class {
+      var ownerRec = list.OwnerRecord;
+      if (ownerRec.Status == EntityStatus.Fantom || ownerRec.Status == EntityStatus.New) {
+        list.SetAsEmpty();
         return;
-      LoadListManyToOneMember(record.Session, allRecs, listMember);
+      }
+      var listMember = list.OwnerMember;
+      var session = list.OwnerRecord.Session;
+      if (session.SmartLoadEnabled) {
+        var siblingRecs = session.GetRecordsWithUnloadedListMember(listMember);
+        session.LoadListManyToManyMultipleRecords(siblingRecs, listMember);
+        if (list.IsLoaded)
+          return;
+      }
+      list.Modified = false;
+      list.LinkRecordsLookup.Clear();
+      var listInfo = list.OwnerMember.ChildListInfo;
+      var cmd = LinqCommandFactory.CreateSelectByKeyForListPropertyManyToMany(session, listInfo, ownerRec.PrimaryKey.Values);
+      var queryRes = session.ExecuteLinqCommand(cmd);
+      var tupleList = (IList<LinkTuple>)queryRes;
+      list.SetItems(tupleList);
     }
-
-    internal static void LoadListManyToManyForSourceQuerySiblings(EntityRecord record, EntityMemberInfo listMember) {
-      var allRecs = GetLoadedSiblings(record);
-      if (allRecs.Count == 0)
-        return;
-      LoadListManyToManyMember(record.Session, allRecs, listMember);
-    }
-
 
     internal static IList<EntityRecord> LoadEntityRefMember(EntitySession session, IList<EntityRecord> records, EntityMemberInfo refMember) {
       if (records.Count == 0)
@@ -123,7 +96,7 @@ namespace Vita.Entities.Runtime {
       // Set ref members in parent records
       var targetPk = refMember.ReferenceInfo.ToKey;
       foreach (var parentRec in records) {
-        var fkValue = parentRec.GetValueDirect(fkMember);
+        var fkValue = parentRec.GetRawValue(fkMember);
         if (fkValue == DBNull.Value) {
           parentRec.SetValueDirect(refMember, DBNull.Value);
         } else {
@@ -138,7 +111,7 @@ namespace Vita.Entities.Runtime {
     }
 
     // Example: records: List<IBookOrder>, listMember: bookOrder.Lines; so we load lines for each book order
-    internal static IList<EntityRecord> LoadListManyToOneMember(EntitySession session, IList<EntityRecord> records, EntityMemberInfo listMember) {
+    internal static IList<EntityRecord> LoadListManyToOneMultipleRecords(this EntitySession session, IList<EntityRecord> records, EntityMemberInfo listMember) {
       var pkInfo = listMember.Entity.PrimaryKey;
       var expMembers = pkInfo.ExpandedKeyMembers;
       Util.Check(expMembers.Count == 1, "Include expression not supported for entities with composite keys, property: {0}.", listMember);
@@ -153,7 +126,7 @@ namespace Vita.Entities.Runtime {
       var childRecs = GetRecordList(childEntities);
       //setup list properties in parent records
       var fk = fromKey.ExpandedKeyMembers[0].Member; //IBookOrderLine.Order_Id
-      var groupedRecs = childRecs.GroupBy(rec => rec.GetValueDirect(fk)); //each group is list of order lines for a single book order; group key is BookOrder.Id
+      var groupedRecs = childRecs.GroupBy(rec => rec.GetRawValue(fk)); //each group is list of order lines for a single book order; group key is BookOrder.Id
       foreach (var g in groupedRecs) {
         var pkValue = new EntityKey(pkInfo, g.Key); // Order_Id -> BookOrder.Id
         var parent = session.GetRecord(pkValue); // BookOrder
@@ -178,7 +151,7 @@ namespace Vita.Entities.Runtime {
     }
 
     // Example: records: List<IBook>, listMember: book.Author; so we load authors list for each book
-    internal static IList<EntityRecord> LoadListManyToManyMember(EntitySession session, IList<EntityRecord> records, EntityMemberInfo listMember) {
+    internal static IList<EntityRecord> LoadListManyToManyMultipleRecords(this EntitySession session, IList<EntityRecord> records, EntityMemberInfo listMember) {
       var pkInfo = listMember.Entity.PrimaryKey;
       var keyMembers = pkInfo.ExpandedKeyMembers;
       Util.Check(keyMembers.Count == 1, "Include expression not supported for entities with composite keys, property: {0}.", listMember);
@@ -192,7 +165,7 @@ namespace Vita.Entities.Runtime {
 
       // Group by parent record, and push groups/lists into individual records
       var fkMember = listInfo.ParentRefMember.ReferenceInfo.FromKey.ExpandedKeyMembers[0].Member;
-      var tupleGroups = tuples.GroupBy(t => EntityHelper.GetRecord(t.LinkEntity).GetValueDirect(fkMember)).ToList();
+      var tupleGroups = tuples.GroupBy(t => EntityHelper.GetRecord(t.LinkEntity).GetRawValue(fkMember)).ToList();
       foreach (var g in tupleGroups) {
         var pkValue = new EntityKey(pkInfo, g.Key); // Order_Id -> BookOrder.Id
         var parent = session.GetRecord(pkValue); // BookOrder
@@ -222,25 +195,12 @@ namespace Vita.Entities.Runtime {
     internal static IList GetDistinctMemberValues(IList<EntityRecord> records, EntityMemberInfo member) {
       // using Distinct with untyped values - might be questionable, but it appears it works, 
       // including with value types
-      var values = records.Select(r => r.GetValueDirect(member))
+      var values = records.Select(r => r.GetRawValue(member))
                       .Where(v => v != null && v != DBNull.Value)
                       .Distinct()
                       .ToArray();
       return values;
     }
-
-    internal static QueryResultShape GetResultShape(EntityModel model, Type outType) {
-      if (typeof(EntityBase).IsAssignableFrom(outType))
-        return QueryResultShape.Entity;
-      if (outType.IsGenericType) {
-        var genArg0 = outType.GetGenericArguments()[0];
-        if (typeof(IEnumerable).IsAssignableFrom(outType) && model.IsEntity(genArg0))
-          return QueryResultShape.EntityList;
-      }
-      return QueryResultShape.Object; // don't know and don't care      
-    }
-
-
 
   }
 }

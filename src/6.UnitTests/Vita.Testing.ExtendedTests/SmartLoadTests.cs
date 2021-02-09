@@ -31,6 +31,8 @@ namespace Vita.Testing.ExtendedTests {
 
     [TestMethod]
     public void TestSmartLoadFacility() {
+      DisplayAttribute.Disabled = true; 
+
       Startup.BooksApp.LogTestStart();
       var app = Startup.BooksApp;
 
@@ -69,6 +71,7 @@ namespace Vita.Testing.ExtendedTests {
       var numQueries = GetSelectCount() - oldCount;
       Assert.AreEqual(4, numQueries, "Expected 4 queries");
 
+      DisplayAttribute.Disabled = false;
     }//method
 
   }//class

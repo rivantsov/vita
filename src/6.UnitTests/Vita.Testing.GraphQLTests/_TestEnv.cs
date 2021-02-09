@@ -53,7 +53,6 @@ namespace Vita.Testing.GraphQLTests {
       _webHost = hostBuilder.Build();
 
       _webHost.Start();
-      Thread.Sleep(10000);
       Debug.WriteLine("The service is running on URL: " + ServiceUrl);
     }
 

@@ -106,6 +106,8 @@ namespace Vita.Data.Model {
       return sessionRec;
     }
 
+
+
     private bool PrimaryKeyIsNull(IDataRecord record) {
       //for-i loop is more efficient than foreach
       for (int i = 0; i < _primaryKeyColumns.Count; i++) {

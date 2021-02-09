@@ -28,7 +28,7 @@ namespace Vita.Entities.Runtime {
 
     public void CopyValues(EntityRecord fromRecord) {
       for (int i = 0; i < Values.Length; i++)
-        Values[i] = fromRecord.GetValueDirect(KeyInfo.ExpandedKeyMembers[i].Member);
+        Values[i] = fromRecord.GetRawValue(KeyInfo.ExpandedKeyMembers[i].Member);
       _hashCode = 0;
       _asString = null; 
     }

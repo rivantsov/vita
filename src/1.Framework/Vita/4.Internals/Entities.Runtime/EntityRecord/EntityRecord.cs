@@ -192,7 +192,7 @@ namespace Vita.Entities.Runtime {
       }
     }
 
-    public object GetValueDirect(EntityMemberInfo member) {
+    public object GetRawValue(EntityMemberInfo member) {
       MaskMembersRead.Set(member);
       var valueIndex = member.ValueIndex;
       if(member.Kind == EntityMemberKind.Column)
@@ -219,7 +219,7 @@ namespace Vita.Entities.Runtime {
     }
 
     public bool HasValue(EntityMemberInfo member) {
-      var value = GetValueDirect(member);
+      var value = GetRawValue(member);
       return value != null;
     }
     #endregion
@@ -276,10 +276,11 @@ namespace Vita.Entities.Runtime {
       Util.Check(Session != null, "Cannot reload record {0} - it is not attached to a session. ", EntityInfo);
       // Smart loading - for a stub, load not only this record, but all its siblings 
       // Note that it might not succeed to load all or even this one. The parent record(s) might be GC'd
-      if (_status == EntityStatus.Stub && this.StubParentRef != null && Session.SmartLoadEnabled) {        
-        if (MemberLoadHelper.TryReloadSiblingPackForRecordStub(this) && _status == EntityStatus.Loaded) //status after call to ReloadSiblings
+      if (_status == EntityStatus.Stub && Session.SmartLoadEnabled && this.StubParentMember != null) {        
+        if (this.Session.TryLoadEntityRefMemberForAllRecords(StubParentMember) && _status == EntityStatus.Loaded) //status after call to ReloadSiblings
           return; 
       }
+      // regular way, load single record
       Session.SelectByPrimaryKey(this.EntityInfo, this.PrimaryKey.Values);
       ClearTransientValues();
     }
@@ -499,14 +500,14 @@ namespace Vita.Entities.Runtime {
         var targetEntInfo = refM.ReferenceInfo.ToKey.Entity;
         if(!targetEntInfo.Flags.IsSet(EntityFlags.HasIdentity))
           continue;
-        var target = this.GetValueDirect(refM);
+        var target = this.GetRawValue(refM);
         if(target == null || target == DBNull.Value)
           continue;
         var targetRec = EntityHelper.GetRecord(target);
         if(targetRec.Status != EntityStatus.New)
           continue;
         var idMember = targetRec.EntityInfo.IdentityMember;
-        var idValue = targetRec.GetValueDirect(idMember);
+        var idValue = targetRec.GetRawValue(idMember);
         var fkMember = refM.ReferenceInfo.FromKey.ExpandedKeyMembers[0].Member;
         this.SetValue(fkMember, idValue); 
       }

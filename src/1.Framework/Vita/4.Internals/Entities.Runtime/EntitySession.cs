@@ -225,6 +225,21 @@ namespace Vita.Entities.Runtime {
     #endregion 
 
     #region Record manipulation methods
+
+    public EntityRecord LookupRecord(EntityInfo entityInfo, object primaryKeyValue) {
+      try {
+        Util.Check(primaryKeyValue != null, "Session.LookupRecord: primary key may not be null.");
+        //Check if it is an entity key object; if not, it is a "value" (or values) of the key
+        var pkType = primaryKeyValue.GetType();
+        EntityKey pk = entityInfo.CreatePrimaryKeyInstance(primaryKeyValue);
+        var rec = GetRecord(pk, LoadFlags.Stub);
+        return rec;
+      } catch (Exception ex) {
+        this._appEvents.OnError(this.Context, ex);
+        throw;
+      }
+    }
+
     public virtual EntityRecord GetRecord(EntityKey primaryKey, LoadFlags flags = LoadFlags.Default) {
       if (primaryKey == null || primaryKey.IsNull())
         return null; 
@@ -311,9 +326,6 @@ namespace Vita.Entities.Runtime {
           oldRecord = RecordsLoaded.Add(record); //might return existing record
           if (oldRecord == record) {
             // loaded record is not yet known in session
-            // SmartLoad: register in SourceQueryResultSet
-            record.SourceQueryResultSet = this.CurrentQueryResultsWeakSet;
-            record.SourceQueryResultSet?.RecordRefs.Add(record.WeakSelfRef);
           } else { 
             // it is copy of already existing record
             oldRecord.CopyOriginalValues(record);

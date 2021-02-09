@@ -144,7 +144,7 @@ namespace Vita.Data.Runtime {
       // If it is output, it must be parameters
       if (cph.ParamDirection != ParameterDirection.Input) {
         if(cph.ParamDirection == ParameterDirection.InputOutput) //do we need initial value
-          memberValue = rec.GetValueDirect(cph.Column.Member);
+          memberValue = rec.GetRawValue(cph.Column.Member);
         else
           memberValue = cph.Column.Member.DefaultValue; //this is important to setup prm.DbType for output parameter
         colValue = cph.Column.Converter.PropertyToColumn(memberValue); 
@@ -154,7 +154,7 @@ namespace Vita.Data.Runtime {
       if(_batchMode && CheckReferencesNewIdentity(rec, cph, out string prmName))
           return prmName;
       // get value and check if we can use literal 
-      memberValue = rec.GetValueDirect(cph.Column.Member);
+      memberValue = rec.GetRawValue(cph.Column.Member);
       colValue = cph.Column.Converter.PropertyToColumn(memberValue);
       if(ShouldUseLiteral(memberValue, cph.Column))
         return FormatAsLiteral(cph, colValue);
@@ -247,7 +247,7 @@ namespace Vita.Data.Runtime {
         return false;
       if(!fkCol.Flags.IsSet(DbColumnFlags.IdentityForeignKey))
         return false;
-      var targetRef = rec.GetValueDirect(fkCol.Member.ForeignKeyOwner);
+      var targetRef = rec.GetRawValue(fkCol.Member.ForeignKeyOwner);
       if(targetRef == null || targetRef == DBNull.Value)
         return false;
       var targetRec = (EntityRecord)targetRef;

@@ -464,13 +464,12 @@ namespace Vita.Entities {
       HostEntity.DisplayMethod = GetDisplayString;
     }
 
-    // we might have secure session, so elevate read to allow access
     private string InvokeCustomDisplay(EntityRecord record) {
+      if (record.Status == EntityStatus.Stub)
+        return $"{record.EntityInfo.Name}/Unloaded";
       if(Disabled)
         return "(DisplayDisabled)";
-      using(record.Session.WithElevatedRead()) {
-        return (string)_customMethodInfo.Invoke(null, new object[] { record.EntityInstance });
-      }
+      return (string)_customMethodInfo.Invoke(null, new object[] { record.EntityInstance });
     }
 
     private string GetDisplayString(EntityRecord record) {
@@ -657,7 +656,7 @@ namespace Vita.Entities {
     }//method
 
     object GetValue(EntityRecord record, EntityMemberInfo member) {
-      var v = record.GetValueDirect(member);
+      var v = record.GetRawValue(member);
       if(v != null) {
         if(v == DBNull.Value)
           return null;

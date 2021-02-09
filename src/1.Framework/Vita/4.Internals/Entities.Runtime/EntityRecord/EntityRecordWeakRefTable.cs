@@ -28,6 +28,8 @@ namespace Vita.Entities.Runtime {
         _table = new Dictionary<EntityKey, WeakReference>();
     }
 
+    public IDictionary<EntityKey, WeakReference> Table => _table; 
+
     public int Count {
       get {return _table.Count;}
     }

@@ -64,10 +64,10 @@ namespace Vita.Entities.Model.Construction {
 
     #region Get/Set column value - plain persistent in database table
     public static object GetSimpleValue(EntityRecord record, EntityMemberInfo member) {
-      var value = record.GetValueDirect(member);
+      var value = record.GetRawValue(member);
       if (value == null && record.Status != EntityStatus.New) {
         record.Reload();
-        value = record.GetValueDirect(member);
+        value = record.GetRawValue(member);
       }
       if (value == DBNull.Value)
         return null;
@@ -77,7 +77,7 @@ namespace Vita.Entities.Model.Construction {
     public static void SetSimpleValue(EntityRecord record, EntityMemberInfo member, object value) {
       if (value == null)
         value = DBNull.Value;
-      var oldValue = record.GetValueDirect(member);
+      var oldValue = record.GetRawValue(member);
       if (member.AreValuesEqual(oldValue, value))
         return;
       record.SetValueDirect(member, value);
@@ -212,10 +212,9 @@ namespace Vita.Entities.Model.Construction {
         targetRec = record.Session.GetRecord(pkValue, LoadFlags.Stub); //either already loaded or a stub
       else
         targetRec = new EntityRecord(pkValue); //create detached stub
-      // For stubs, set link to parent; it will be used with SmartLoad, to reload all sibling entities,
+      // For stubs, set link to parent member; it will be used with SmartLoad, to reload all sibling entities,
       //   when 'this' stub is reloaded
       if (targetRec.Status == EntityStatus.Stub) {
-        targetRec.StubParentRef = record.WeakSelfRef;
         targetRec.StubParentMember = member;
       }
       return targetRec;
@@ -235,7 +234,7 @@ namespace Vita.Entities.Model.Construction {
       var pkMembers = refInfo.ToKey.ExpandedKeyMembers;
       for (int i = 0; i < pkMembers.Count; i++) {
         //copy value from PK to FK member
-        var value = refTarget.GetValueDirect(pkMembers[i].Member); 
+        var value = refTarget.GetRawValue(pkMembers[i].Member); 
         record.SetValueDirect(fkMembers[i].Member, value); 
       }
     }//method

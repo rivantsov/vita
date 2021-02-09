@@ -132,7 +132,7 @@ namespace Vita.Testing.ExtendedTests {
       var dora = session.EntitySet<IUser>().First(u => u.UserName == "Dora");
       var doraOrder1 = session.EntitySet<IBookOrder>().Where(o => o.User == dora).OrderBy(o => o.CreatedOn).First();
       //Order.ToString() is implemented using custom method referenced in Display attribute
-      var expected = string.Format("Dora, {0} items.", doraOrder1.Lines.Count);
+      var expected = $"Order by Dora, {doraOrder1.Lines.Count} items.";
       Assert.AreEqual(expected, doraOrder1.ToString());
 
       // Book's Display attribute includes reference to 'Publisher.Name' - testing this dotted reference

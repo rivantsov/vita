@@ -45,7 +45,7 @@ namespace Vita.Entities.Runtime {
       var list = Entities;
       for (int i = 0; i < list.Count; i++) {
         var rec =  EntityHelper.GetRecord(list[i]);
-        var oldValue = rec.GetValueDirect(persMember);
+        var oldValue = rec.GetRawValue(persMember);
 
         object incValue = (i.GetType() == persMember.DataType) ? i + 1 :
             incValue = Convert.ChangeType(i + 1, persMember.DataType);

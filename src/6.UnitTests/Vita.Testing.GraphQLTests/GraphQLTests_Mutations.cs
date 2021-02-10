@@ -31,7 +31,7 @@ mutation ($rv: BookReviewInput!) {
       var vars = new TVars();
 
       // 3. First try invalid input objects - expect validation errors 
-      //  3.1 - clean obj expect 2 errors, fields Caption and Review may not be null
+      //  3.1 - empty obj, expect 2 errors, fields Caption and Review may not be null
       //   it won't make it to resolver
       TestEnv.LogComment("Submitting invalid BookReviewInput object. Variable validator rejects it.");
       var badReviewInp = new BookReviewInput();
@@ -47,7 +47,7 @@ mutation ($rv: BookReviewInput!) {
       };
       vars["rv"] = badReviewInp;
       resp = await TestEnv.PostAsync(mutAddReview, vars);
-      Assert.AreEqual(5, resp.Errors.Count, "Expected 2 errors");
+      Assert.AreEqual(5, resp.Errors.Count, "Expected 5 errors");
 
       // 4. Submit valid object, get back Id of new review
       TestEnv.LogComment("Submitting valid BookReviewInput object; review will be added.");

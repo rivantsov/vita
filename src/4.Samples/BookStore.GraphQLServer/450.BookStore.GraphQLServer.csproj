@@ -11,12 +11,10 @@
 
   <ItemGroup>
     <PackageReference Include="GraphQL.Server.Ui.GraphiQL" Version="4.4.0" />
+    <PackageReference Include="NGraphQL.Server.AspNetCore" Version="1.1.0" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\..\..\NGraphQL\src\NGraphQL.Server.AspNetCore\NGraphQL.Server.AspNetCore.csproj" />
-    <ProjectReference Include="..\..\..\..\NGraphQL\src\NGraphQL.Server\NGraphQL.Server.csproj" />
-    <ProjectReference Include="..\..\..\..\NGraphQL\src\NGraphQL\NGraphQL.csproj" />
     <ProjectReference Include="..\..\1.Framework\Vita.Tools\090.Vita.Tools.csproj" />
     <ProjectReference Include="..\..\2.Drivers\Vita.Data.MsSql\210.Vita.Data.MsSql.csproj" />
     <ProjectReference Include="..\BookStore.SampleData\420.BookStore.SampleData.csproj" />

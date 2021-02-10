@@ -27,10 +27,10 @@
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="16.5.0" />
     <PackageReference Include="MSTest.TestAdapter" Version="2.1.0" />
     <PackageReference Include="MSTest.TestFramework" Version="2.1.0" />
+    <PackageReference Include="NGraphQL.Client" Version="1.1.0" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\..\..\NGraphQL\src\NGraphQL.Client\NGraphQL.Client.csproj" />
     <ProjectReference Include="..\..\4.Samples\BookStore.GraphQLServer\450.BookStore.GraphQLServer.csproj" />
   </ItemGroup>
 

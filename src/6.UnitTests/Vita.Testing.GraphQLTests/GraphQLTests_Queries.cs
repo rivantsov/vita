@@ -122,13 +122,6 @@ query userQuery {
     id 
     userType
     userName
-    reviews {
-      createdOn
-      rating
-      caption
-      review
-      # book {title}
-    }
     orders {
       id 
       createdOn
@@ -142,6 +135,13 @@ query userQuery {
         }
       }
     } 
+    reviews {
+      book {title}
+      createdOn
+      rating
+      caption
+      review
+    }
   }  
 }";
       var resp2 = await TestEnv.PostAsync(query2);
@@ -150,7 +150,7 @@ query userQuery {
       var users = resp2.GetTopField<User[]>("users");
       Assert.IsTrue(users.Length > 1);
 
-      // 6 queries: users, reviews, orders, order lines, books, authors
+      // 6 queries: users, orders, order lines, books, authors, reviews
       // In general, there might be 2 queries for books: one from reviews, another from orders/orderLines 
       //  we are just lucky here, after first query all books for second query are loaded. 
       Assert.AreEqual(6, qryCount2, "Expected 6 queries"); 

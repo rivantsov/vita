@@ -147,8 +147,9 @@ namespace Vita.Entities.Model.Construction {
         return true; 
       // Query output is auto type; check that its properties match properties of view entity
       var entProps = view.EntityType.GetAllProperties();
+      var outObjProps = outObjType.GetAllProperties(); 
       foreach(var entProp in entProps) {
-        var outProp = outObjType.GetProperty(entProp.Name);
+        var outProp = outObjProps.FirstOrDefault(p => p.Name == entProp.Name);
         if (outProp == null) {
           Log.LogError($"View definition error ({view.EntityType}): view property '{entProp.Name}' not returned by the query.");
           ok = false;

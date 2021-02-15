@@ -4,9 +4,12 @@
     <TargetFramework>netcoreapp3.1</TargetFramework>
   </PropertyGroup>
 
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+  <PropertyGroup>
     <WarningLevel>5</WarningLevel>
-    <DocumentationFile>C:\MyProjects\VitaDev\src\4.Samples\BookStore.GraphQLServer\450.BookStore.GraphQLServer.xml</DocumentationFile>
+    <DocumentationFile>bin\BookStore.GraphQLServer.xml</DocumentationFile>
+    <NoWarn>1701;1702;1591</NoWarn>
+    <AssemblyName>BookStore.GraphQLServer</AssemblyName>
+    <RootNamespace>BookStore.GraphQLServer</RootNamespace>
   </PropertyGroup>
 
   <ItemGroup>

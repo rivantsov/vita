@@ -8,17 +8,21 @@ using Vita.Modules.EncryptedData;
 
 namespace BookStore {
 
-  //Entities for Books module
-  [Entity, OrderBy("Title"), Validate(typeof(BooksModule), nameof(BooksModule.ValidateBook))]
-  [ClusteredIndex("CreatedOn,Id")]
-  [Display("{Title}, {Editions}, {Publisher.Name}")]
-  public interface IBook {
-
+  // Using base interface just to test using base interfaces
+  public interface IBookBase {
     [PrimaryKey, Auto]
     Guid Id { get; set; }
 
     [Utc, Auto(AutoType.CreatedOn)]
     DateTime CreatedOn { get; }
+
+  }
+
+  //Entities for Books module
+  [Entity, OrderBy("Title"), Validate(typeof(BooksModule), nameof(BooksModule.ValidateBook))]
+  [ClusteredIndex("CreatedOn,Id")]
+  [Display("{Title}, {Editions}, {Publisher.Name}")]
+  public interface IBook: IBookBase {
 
     IPublisher Publisher { get; set; }
 

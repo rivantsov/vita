@@ -9,7 +9,10 @@ namespace BookStore.GraphQLServer {
   public class Book {
     public Guid Id;
     public Publisher Publisher;
+
+    /// <summary>Book title.</summary>
     public string Title;
+    
     [Null] public string Description;
     [Null] public string Abstract;
     public IList<Author> Authors;

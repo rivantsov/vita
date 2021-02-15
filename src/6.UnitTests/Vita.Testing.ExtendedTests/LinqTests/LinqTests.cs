@@ -11,6 +11,7 @@ using Vita.Data.Driver;
 using Vita.Modules.Login;
 using Vita.Tools.Testing;
 using Vita.Data.Sql;
+using Vita.Entities.Runtime;
 
 namespace Vita.Testing.ExtendedTests {
 
@@ -32,7 +33,7 @@ namespace Vita.Testing.ExtendedTests {
       //Debug.WriteLine("---------------------------------------------------------------------------------------");
       var command = session.GetLastCommand();
       //if(command != null)
-        // Debug.WriteLine("SQL:" + command.CommandText);
+      // Debug.WriteLine("SQL:" + command.CommandText);
     }
 
     #region Helper objects for LINQ test
@@ -108,8 +109,8 @@ namespace Vita.Testing.ExtendedTests {
       BookEdition? edEbook = BookEdition.EBook;
       books = session.EntitySet<IBook>();
       eBooks = from b in books
-                   where (b.Editions & edEbook) != 0
-                   select b;
+               where (b.Editions & edEbook) != 0
+               select b;
       eBooksList = eBooks.ToList();
       Assert.IsTrue(eBooksList.Count == 1, "Invalid number of e-books (nullable enum var).");
 
@@ -414,7 +415,7 @@ namespace Vita.Testing.ExtendedTests {
       //  SQL contains a single join to User table, not 2
       var qBooksWithEditors = books.Where(b => b.Editor != null)
           .Select(b => new { Title = b.Title, Editor = b.Editor.UserName, EditorDisplayName = b.Editor.DisplayName });
-      var booksWithEditors = qBooksWithEditors.ToList(); 
+      var booksWithEditors = qBooksWithEditors.ToList();
       var sql = session.GetLastCommand().CommandText;
       // simple way to count 'LEFT JOIN' strings
       var segments = sql.Split("LEFT JOIN");
@@ -510,7 +511,7 @@ namespace Vita.Testing.ExtendedTests {
       Assert.AreEqual(2, cmd.Parameters.Count, "Invalid param count for page query.");
       // We used Skip/Take; this requires specifying OrderBy in MsSql, Postgres. 
       // Linq engine should be adding fake order-by clause: ORDER BY (SELECT 1)
-      if(Startup.ServerType == DbServerType.MsSql || Startup.ServerType == DbServerType.Postgres) {
+      if (Startup.ServerType == DbServerType.MsSql || Startup.ServerType == DbServerType.Postgres) {
         var sql = cmd.CommandText.ToUpperInvariant();
         Assert.IsTrue(sql.IndexOf("ORDER BY (SELECT 1)") > 0, "Expected fake OrderBy clause");
       }
@@ -545,7 +546,7 @@ namespace Vita.Testing.ExtendedTests {
                       select b;
 
       var lkpCount0 = SqlCache.LookupCount;
-      var missCount = SqlCache.MissCount; 
+      var missCount = SqlCache.MissCount;
       var kidBooksList = kidBooksQ.ToList();
       Assert.IsTrue(kidBooksList.Count > 0, "kid books not found.");
       Assert.AreEqual(lkpCount0 + 1, SqlCache.LookupCount, "Expected one failed sql cache lookup");
@@ -569,7 +570,7 @@ namespace Vita.Testing.ExtendedTests {
       Assert.IsTrue(kidBooksListDesc.Count > 0, "Query with disabled query cache failed: multiple-author books not found.");
       kidBooksListDesc = kidBooksQ.ToList();
 
-      SqlCacheLogHelper.FlushSqlCacheLog(); 
+      SqlCacheLogHelper.FlushSqlCacheLog();
     }
 
     [TestMethod]
@@ -586,7 +587,7 @@ namespace Vita.Testing.ExtendedTests {
       // Join/Distinct/Count combinations. Encountered error: The column 'Id' was specified multiple times for 'X'. 
       // does not work for Oracle - the produced SQL has GroupBy with all output columns; book.Abstract is blob text, a
       // and Oracle does not allow such columns in GroupBy
-      if(Startup.ServerType != DbServerType.Oracle) {
+      if (Startup.ServerType != DbServerType.Oracle) {
         var qJoin = from b in books.WithOptions(QueryOptions.ForceIgnoreCase)
                     join p in pubs on b.Publisher equals p
                     where p.Name == "MS Books"
@@ -660,7 +661,7 @@ namespace Vita.Testing.ExtendedTests {
       // Test ForceIgnoreCase option
       // does not work for Oracle, no way to force case-insensitive on query level - 
       // only by explicitly using Title.ToUpper() in linq query
-      if(Startup.ServerType != DbServerType.Oracle) {
+      if (Startup.ServerType != DbServerType.Oracle) {
         session = app.OpenSession();
         var q = session.EntitySet<IBook>().Where(b => b.Title == "vb pRogramming" && b.Title.StartsWith("vb"))
           .WithOptions(QueryOptions.ForceIgnoreCase);
@@ -728,8 +729,8 @@ namespace Vita.Testing.ExtendedTests {
       // One-to-many relationship. Use publisher.Books member in LINQ query - this should result in sub-query against Book table
       // Find publisher with at least one book priced above $10
       var qPubsWExpBooks = from p in session.EntitySet<IPublisher>()
-                            where p.Books.Any(b => b.Price > 10)
-                            select p;
+                           where p.Books.Any(b => b.Price > 10)
+                           select p;
       var lstPubsWExpBooks = qPubsWExpBooks.ToList();
       LogLastQuery(session);
       // print out query and command
@@ -873,6 +874,17 @@ namespace Vita.Testing.ExtendedTests {
     }
     */
 
+    [TestMethod]
+    public void _TestSelectMany() {
+
+      var app = Startup.BooksApp;
+      //Init
+      var session = app.OpenSession();
+      var pubs = session.EntitySet<IPublisher>().ToList();
+
+      var allBooks = pubs.SelectMany(p => p.Books).ToList(); 
+
+    }
   }//class
 
 }

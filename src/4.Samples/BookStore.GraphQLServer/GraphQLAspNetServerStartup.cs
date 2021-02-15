@@ -59,7 +59,7 @@ namespace BookStore.GraphQLServer {
         app.UseGraphiQLServer();
     }
 
-    private Task HandleRequest(HttpContext context) {
+    private Task HandleRequest(HttpContext context) { 
       return GraphQLHttpServerInstance.HandleGraphQLHttpRequestAsync(context);
     }
 

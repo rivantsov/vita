@@ -712,6 +712,12 @@ namespace Vita.Testing.ExtendedTests {
       var app = Startup.BooksApp;
       var session = app.OpenSession();
 
+      // bug fix #164
+      var pubs = session.EntitySet<IPublisher>().ToList();
+      var allBooks = pubs.SelectMany(p => p.Books).ToList();
+      var hasNulls = allBooks.Any(b => b == null);
+      Assert.IsFalse(hasNulls, "unexpected nulls from SelectMany");
+
       // bug fix #114: Enumerable ops over ent lists fail with 'array len' error
       var pubMs = session.EntitySet<IPublisher>().Where(p => p.Name.StartsWith("MS")).First();
       // Many to one list: pub.Books
@@ -817,74 +823,5 @@ namespace Vita.Testing.ExtendedTests {
       Assert.IsTrue(doraOrders.Count > 0, "Failed to find Dora's orders.");
     }
 
-
-    /*
-    //[TestMethod]
-    public void TestLinqWithEntityCache() {
-      if(!Startup.CacheEnabled)
-        return;
-      Startup.InvalidateCache(waitForReload: true); //make sure cache is reloaded and fresh
-      // Some queries (ex: involving many-to-many relations) are not supported by Linq2Sql, 
-      // but run OK against full entity cache. 
-      // Entity cache is returning clones of entities in cache, and these clones must be attached to the caller session.
-      // We test that results of queries are attaced to current session.
-      var app = Startup.BooksApp;
-
-      // Many-to-many relations is NOT supported currently, only queries in cache can handle this. It is on TODO list to support m2m. 
-      // We check CloneEntities interceptor injected at the top level, for the final results of the query
-      var session = app.OpenSession();
-      var qMultiAuthorBooks = from b in session.EntitySet<IBook>()
-                              where b.Authors.Count > 1
-                              orderby b.Title descending
-                              select b;
-      var multiAuthorBooks = qMultiAuthorBooks.ToList();
-      Assert.IsTrue(multiAuthorBooks.Count > 0, "No multi-author books found.");
-      Assert.IsTrue(IsAttachedTo(multiAuthorBooks[0], session), "Entities are not attached to current session!");
-
-      // Query returning anon object with entity (Publisher) inside
-      // CloneEntity call is injected into an argument of anon object constructor
-      session = app.OpenSession();
-      var bkInfos = from b in session.EntitySet<IBook>()
-                    select new { Title = b.Title, Publisher = b.Publisher };
-      var lstBkInfos = bkInfos.ToList();
-      Assert.IsTrue(lstBkInfos.Count > 0, "Bk info query failed.");
-      Assert.IsTrue(IsAttachedTo(lstBkInfos[0].Publisher, session), "BookInfo.Publisher entity is not attached to current session.");
-
-      // Query returning list of lists in many-to-many; not supported in DB queries, only in entity cache
-      // CloneEntities call is injected into lambda parameter of 'Select' method.
-      session = app.OpenSession();
-      var authQuery = from b in session.EntitySet<IBook>()
-                      where b.Category == BookCategory.Programming
-                      select b.Authors;
-      var authListOfLists = authQuery.ToList();
-      Assert.IsTrue(authListOfLists.Count > 0, "Failed to retrieve list-of-lists.");
-      Assert.IsTrue(IsAttachedTo(authListOfLists[0][0], session), "Entities in list-of-lists queries are not attached to current session!");
-      var authListOfLists2 = authQuery.ToList(); //to check cached query definition
-
-      // checking perf, do it a few more times and look at the log; 
-      // The first run of LINQ query in cache - the compilation takes most of the time; the query is compiled and saved in cache,
-      // so it should be much faster next run(s)
-      var temp1 = qMultiAuthorBooks.ToList();
-      temp1 = qMultiAuthorBooks.ToList();
-      temp1 = qMultiAuthorBooks.ToList();
-      var temp2 = bkInfos.ToList();
-      temp2 = bkInfos.ToList();
-      temp2 = bkInfos.ToList();
-      // yes, it is faster - all queries run with 0ms reported.
-    }
-    */
-
-    [TestMethod]
-    public void _TestSelectMany() {
-
-      var app = Startup.BooksApp;
-      //Init
-      var session = app.OpenSession();
-      var pubs = session.EntitySet<IPublisher>().ToList();
-
-      var allBooks = pubs.SelectMany(p => p.Books).ToList(); 
-
-    }
   }//class
-
 }

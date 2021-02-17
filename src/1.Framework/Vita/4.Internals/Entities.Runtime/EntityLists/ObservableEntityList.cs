@@ -84,10 +84,9 @@ namespace Vita.Entities.Runtime {
     }
 
     public virtual void CopyTo(TEntity[] array, int arrayIndex) {
-      // Bug fix #114
       var ents = this.Entities;
-      for(int i = arrayIndex; i < ents.Count; i++)
-        array[i - arrayIndex] = (TEntity) ents[i];
+      for (int i = 0; i < ents.Count; i++)
+        array[arrayIndex + i] = (TEntity)ents[i];
     }
 
     public int Count {

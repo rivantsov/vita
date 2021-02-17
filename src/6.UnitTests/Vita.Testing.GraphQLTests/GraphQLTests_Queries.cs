@@ -152,8 +152,8 @@ query userQuery {
 
       // 6 queries: users, orders, order lines, books, authors, reviews
       // In general, there might be 2 queries for books: one from reviews, another from orders/orderLines 
-      //  we are just lucky here, after first query all books for second query are loaded. 
-      Assert.AreEqual(6, qryCount2, "Expected 6 queries"); 
+      // so it can be 6 or 7 queries 
+      Assert.IsTrue(qryCount2 == 6 || qryCount2 == 7, "Expected 6 or 7 queries"); 
     }
 
   }

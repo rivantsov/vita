@@ -16,6 +16,10 @@ namespace Vita.Web {
   }
 
   public class VitaJwtTokenHandler : IAuthenticationTokenHandler {
+    // Keys for storing JwtTokenContext and Principal in OperationContext.Values
+    public const string ValueKeyWebPrincipal = "WEB_PRINCIPAL";
+    public const string ValueKeyWebTokenContext = "WEB_TOKEN_CONTEXT";
+
     EntityApp _entityApp;
     SymmetricSecurityKey _jwtKey; 
 
@@ -45,14 +49,17 @@ namespace Vita.Web {
       });
     }
 
-    public Task OnJwtTokenValidated(TokenValidatedContext context) {
-      var webCtx = context.HttpContext.GetWebCallContext();
-      SetUserFromClaims(webCtx.OperationContext, context.Principal.Claims);
+    public Task OnJwtTokenValidated(TokenValidatedContext tokenContext) {
+      var webCtx = tokenContext.HttpContext.GetWebCallContext();
+      var opCtx = webCtx.OperationContext; 
+      SetUserFromClaims(opCtx, tokenContext.Principal.Claims);
+      // Save token itself and principal
+      opCtx.Values[ValueKeyWebTokenContext] = tokenContext;
+      opCtx.Values[ValueKeyWebPrincipal] = tokenContext.Principal;
       return Task.CompletedTask;
     }
 
-
-  public string CreateToken(IList<Claim> claims, DateTime expires) {
+    public string CreateToken(IList<Claim> claims, DateTime expires) {
       var tokenDescriptor = new SecurityTokenDescriptor {
         Subject = new ClaimsIdentity(claims),
         Expires = expires,

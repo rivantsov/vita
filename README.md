@@ -19,5 +19,5 @@ The source code contains a sample BookStore application. The test projects conta
 Binaries are distributed as Nuget packages. 
 
 ## System Requirements
-* .NET Standard 2.0, Visual Studio 2019; .NET Core 3.1 for test and sample= projects 
+* .NET Standard 2.0, Visual Studio 2019; .NET Core 3.1 for test and sample projects 
 * MS SQL Server 2012+; MySql, PostgreSQL, Oracle, SQLite

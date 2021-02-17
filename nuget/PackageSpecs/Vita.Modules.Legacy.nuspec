@@ -22,9 +22,9 @@
     </dependencies>
   </metadata>
   <files>
-	 <file src="..\..\3.Modules\Vita.Modules.Legacy\bin\Release\netstandard2.0\Vita.Modules.Legacy.dll" target="lib\netstandard2.0" />
-	 <file src="..\..\3.Modules\Vita.Modules.Legacy\bin\Release\netstandard2.0\Vita.Modules.Legacy.pdb" target="lib\netstandard2.0" />
-	 <file src="..\..\3.Modules\Vita.Modules.Legacy\bin\Release\netstandard2.0\Vita.Modules.Legacy.xml" target="lib\netstandard2.0" />
-	 <file src="..\..\3.Modules\Vita.Modules.Legacy\**\*.cs" target="src\3.Modules\Vita.Modules.Legacy" />
+	 <file src="..\..\src\3.Modules\Vita.Modules.Legacy\bin\Release\netstandard2.0\Vita.Modules.Legacy.dll" target="lib\netstandard2.0" />
+	 <file src="..\..\src\3.Modules\Vita.Modules.Legacy\bin\Release\netstandard2.0\Vita.Modules.Legacy.pdb" target="lib\netstandard2.0" />
+	 <file src="..\..\src\3.Modules\Vita.Modules.Legacy\bin\Release\netstandard2.0\Vita.Modules.Legacy.xml" target="lib\netstandard2.0" />
+	 <file src="..\..\src\3.Modules\Vita.Modules.Legacy\**\*.cs" target="src\3.Modules\Vita.Modules.Legacy" />
   </files>
 </package>

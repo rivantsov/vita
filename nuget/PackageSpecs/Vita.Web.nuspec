@@ -26,9 +26,9 @@
   </metadata>
   
   <files>
-	 <file src="..\..\1.Framework\Vita.Web\bin\Release\netstandard2.0\Vita.Web.dll" target="lib\netstandard2.0" />
-	 <file src="..\..\1.Framework\Vita.Web\bin\Release\netstandard2.0\Vita.Web.pdb" target="lib\netstandard2.0" />
-	 <file src="..\..\1.Framework\Vita.Web\bin\Release\netstandard2.0\Vita.Web.xml" target="lib\netstandard2.0" />
-	 <file src="..\..\1.Framework\Vita.Web\**\*.cs" target="src\1.Framework\Vita.Web" />
+	 <file src="..\..\src\1.Framework\Vita.Web\bin\Release\netstandard2.0\Vita.Web.dll" target="lib\netstandard2.0" />
+	 <file src="..\..\src\1.Framework\Vita.Web\bin\Release\netstandard2.0\Vita.Web.pdb" target="lib\netstandard2.0" />
+	 <file src="..\..\src\1.Framework\Vita.Web\bin\Release\netstandard2.0\Vita.Web.xml" target="lib\netstandard2.0" />
+	 <file src="..\..\src\1.Framework\Vita.Web\**\*.cs" target="src\1.Framework\Vita.Web" />
   </files>
 </package>

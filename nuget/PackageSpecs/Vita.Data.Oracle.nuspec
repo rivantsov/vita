@@ -22,9 +22,9 @@
     </dependencies>
   </metadata>
     <files>
-	  <file src="..\..\2.Drivers\Vita.Data.Oracle\bin\Release\netstandard2.0\Vita.Data.Oracle.dll" target="lib\netstandard2.0" />
-	  <file src="..\..\2.Drivers\Vita.Data.Oracle\bin\Release\netstandard2.0\Vita.Data.Oracle.pdb" target="lib\netstandard2.0" />
-	  <file src="..\..\2.Drivers\Vita.Data.Oracle\bin\Release\netstandard2.0\Vita.Data.Oracle.xml" target="lib\netstandard2.0" />
-	  <file src="..\..\2.Drivers\Vita.Data.Oracle\**\*.cs" target="src\2.Drivers\Vita.Data.Oracle" />
+	  <file src="..\..\src\2.Drivers\Vita.Data.Oracle\bin\Release\netstandard2.0\Vita.Data.Oracle.dll" target="lib\netstandard2.0" />
+	  <file src="..\..\src\2.Drivers\Vita.Data.Oracle\bin\Release\netstandard2.0\Vita.Data.Oracle.pdb" target="lib\netstandard2.0" />
+	  <file src="..\..\src\2.Drivers\Vita.Data.Oracle\bin\Release\netstandard2.0\Vita.Data.Oracle.xml" target="lib\netstandard2.0" />
+	  <file src="..\..\src\2.Drivers\Vita.Data.Oracle\**\*.cs" target="src\2.Drivers\Vita.Data.Oracle" />
     </files>
 </package>

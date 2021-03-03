@@ -204,9 +204,12 @@ namespace Vita.Data.Runtime {
       foreach (var rec in records) {
         var ent = rec.EntityInfo;
         foreach (var refMember in ent.RefMembers) {
+          //If rec is modified (not inserted/deleted) but reference is not changed then skip it
+          if (rec.Status == EntityStatus.Modified && !rec.IsValueChanged(refMember))
+            continue; 
           var targetEnt = rec.GetValue(refMember);
-          //If reference is not modified or not set, then nothing to do
-          if (targetEnt == null)
+          //If target is null, nothing to do
+          if ( targetEnt == null)
             continue;
           var targetRec = EntityHelper.GetRecord(targetEnt);
           // we are interested only in case when both records are inserted, or both are deleted.

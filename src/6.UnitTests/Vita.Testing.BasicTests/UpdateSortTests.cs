@@ -100,6 +100,13 @@ namespace Vita.Testing.BasicTests.UpdateSort {
       var depIT = session.NewDepartment("IT", emily);
       var linda = session.NewEmployee("Linda", "Support engineer", emily, depIT);
       DataUtility.RandomizeRecordOrder(session); 
+      session.SaveChanges();
+
+      // test for bug https://github.com/rivantsov/vita/issues/165
+      // two recs reference each other; we update some fields in both, but do not touch references
+      // this should succeed. Entities: Steve is employee and manager of Exec department
+      steve.JobTitle = "COO";
+      steve.Department.Name = "Executives";
       session.SaveChanges(); 
 
       // The following does not work - we create Dep and Empl referencing each other. For SQL Server there's no way to find proper order in this case

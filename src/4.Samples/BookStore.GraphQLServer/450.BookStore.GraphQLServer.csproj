@@ -14,11 +14,13 @@
 
   <ItemGroup>
     <PackageReference Include="GraphQL.Server.Ui.GraphiQL" Version="4.4.0" />
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.NewtonsoftJson" Version="3.1.14" />
     <PackageReference Include="NGraphQL.Server.AspNetCore" Version="1.1.1" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\..\1.Framework\Vita.Tools\090.Vita.Tools.csproj" />
+    <ProjectReference Include="..\..\1.Framework\Vita.Web\030.Vita.Web.csproj" />
     <ProjectReference Include="..\..\2.Drivers\Vita.Data.MsSql\210.Vita.Data.MsSql.csproj" />
     <ProjectReference Include="..\BookStore.SampleData\420.BookStore.SampleData.csproj" />
     <ProjectReference Include="..\BookStore\410.BookStore.csproj" />

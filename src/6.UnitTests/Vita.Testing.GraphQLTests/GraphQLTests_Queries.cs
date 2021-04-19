@@ -38,8 +38,6 @@ namespace Vita.Testing.GraphQLTests {
       TestEnv.LogText("     (use Run command, not Debug in Test Explorer)");
       resp = await client.PostAsync(query);
       resp = await client.PostAsync(query);
-
-
     }
 
     [TestMethod]
@@ -155,6 +153,22 @@ query userQuery {
       // so it can be 6 or 7 queries 
       Assert.IsTrue(qryCount2 == 6 || qryCount2 == 7, "Expected 6 or 7 queries"); 
     }
+
+    [TestMethod]
+    public async Task TestGetImage_Rest() {
+      TestEnv.LogTestMethodStart();
+      var restClient = TestEnv.RestClient;
+
+      //Get c# book
+      var imageUrl = TestEnv.ServiceUrl + "/api/images/" + Guid.NewGuid().ToString();
+      var bytes = await restClient.GetBinaryAsync(imageUrl, null, acceptMediaType: "image/jpeg");
+      Assert.IsNotNull(bytes, "Expected image bytes");
+      //Jpeg starts with 0xFFD8
+      Assert.AreEqual(0xFF, bytes[0], "Expected FF byte.");
+      Assert.AreEqual(0xD8, bytes[1], "Expected D8 byte.");
+    }
+
+
 
   }
 }

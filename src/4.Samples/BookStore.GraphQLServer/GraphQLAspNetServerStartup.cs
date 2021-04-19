@@ -6,6 +6,7 @@ using BookStore.SampleData;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc.ApplicationParts;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -16,6 +17,7 @@ using Vita.Data.MsSql;
 using Vita.Entities;
 using Vita.Entities.DbInfo;
 using Vita.Tools;
+using Vita.Web;
 
 namespace BookStore.GraphQLServer {
 
@@ -34,6 +36,21 @@ namespace BookStore.GraphQLServer {
 
     // This method gets called by the runtime. Use this method to add services to the container.
     public void ConfigureServices(IServiceCollection services) {
+      // create books app connected to database; 
+      CreateBooksEntityApp();
+
+      var jwtSecret = "VitaJwtSecret"; // for real app - replace with real secret from config
+      var jwtTokenHandler = new VitaJwtTokenHandler(BooksEntityApp.Instance, services, jwtSecret);
+      services.Add(new ServiceDescriptor(typeof(IAuthenticationTokenHandler), jwtTokenHandler));
+
+      services.AddControllers()
+        // Note: by default System.Text.Json ns/serializer is used by AspNetCore 3.1; this serializer is no good -
+        // - does not serialize fields, does not handle dictionaries, etc. So we put back Newtonsoft serializer.
+        .AddNewtonsoftJson()
+        // If your REST controllers reside in separate assembly, specify the assembly explicitly like that to make sure
+        //  ASP.NET router finds these controllers
+        //.PartManager.ApplicationParts.Add(new AssemblyPart(typeof(MyRestController).Assembly));
+        ;
     }
 
     // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -45,15 +62,18 @@ namespace BookStore.GraphQLServer {
       app.UseHttpsRedirection();
       app.UseRouting();
 
-      // create books app connected to database; 
-      CreateBooksEntityApp();
+      // Add Vita middleware 
+      app.UseMiddleware<VitaWebMiddleware>(BooksEntityApp.Instance);
+
       // create GraphQL Http server and configure GraphQL endpoints
-      GraphQLHttpServerInstance = CreateGraphQLHttpServer(); 
+      GraphQLHttpServerInstance = CreateGraphQLHttpServer();
       app.UseEndpoints(endpoints => {
         endpoints.MapPost("graphql", HandleRequest);
         endpoints.MapGet("graphql", HandleRequest);
         endpoints.MapGet("graphql/schema", HandleRequest);
+        endpoints.MapControllers(); //for RESTful endpoints
       });
+
       // Use GraphiQL UI
       if (StartGrpaphiql)
         app.UseGraphiQLServer();

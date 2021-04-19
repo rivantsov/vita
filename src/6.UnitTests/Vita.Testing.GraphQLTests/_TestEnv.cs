@@ -6,6 +6,7 @@ using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Arrest;
 using BookStore;
 using BookStore.GraphQLServer;
 using Microsoft.AspNetCore;
@@ -23,6 +24,7 @@ namespace Vita.Testing.GraphQLTests {
     public static string ServiceUrl;
     public static string EndPointUrl;
     public static GraphQLClient Client;
+    public static RestClient RestClient;
     static IWebHost _webHost;
 
 
@@ -38,6 +40,7 @@ namespace Vita.Testing.GraphQLTests {
       StartService();
       EndPointUrl = ServiceUrl + "/graphql";
       Client = new GraphQLClient(EndPointUrl);
+      RestClient = new RestClient(ServiceUrl, badRequestContentType: typeof(List<Vita.Entities.ClientFault>)); 
       // if you want to listen/log request/response
       // Client.RequestCompleted += Client_RequestCompleted;
     }

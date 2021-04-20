@@ -9,8 +9,8 @@ namespace BookStore.GraphQLServer {
     public BooksGraphQLModule() {
       base.EnumTypes.Add(typeof(BookEdition), typeof(BookCategory), typeof(OrderStatus), typeof(UserType));
       base.ObjectTypes.Add(typeof(Book), typeof(Publisher), typeof(Author), typeof(BookReview), 
-                  typeof(BookOrder), typeof(BookOrderLine), typeof(User));
-      base.InputTypes.Add(typeof(BookReviewInput), typeof(Paging), typeof(BookSearchInput));
+                  typeof(BookOrder), typeof(BookOrderLine), typeof(User), typeof(LoginResponse));
+      base.InputTypes.Add(typeof(BookReviewInput), typeof(Paging), typeof(BookSearchInput), typeof(LoginInput));
       base.QueryType = typeof(IBookStoreQuery);
       base.MutationType = typeof(IBookStoreMutation);
       base.ResolverTypes.Add(typeof(BookStoreResolvers));

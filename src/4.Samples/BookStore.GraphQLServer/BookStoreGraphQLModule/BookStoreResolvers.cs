@@ -7,14 +7,20 @@ using Vita.Entities;
 
 namespace BookStore.GraphQLServer {
 
-  public class BookStoreResolvers: IResolverClass {
+  public partial class BookStoreResolvers: IResolverClass {
     BooksEntityApp _app;
     IEntitySession _session; 
 
     public void BeginRequest(IRequestContext request) {
       // _app = BooksEntityApp.Instance; //this works too
       _app = (BooksEntityApp) request.App; //general case
-      _session = _app.OpenSession(EntitySessionOptions.EnableSmartLoad); 
+      _session = _app.OpenSession(EntitySessionOptions.EnableSmartLoad);
+      // set logged in user info into VITA operation context from claims.
+      // Request.User is principal set by VitaJwtTokenHandler from incoming Jwt token and contains userId, userName etc
+      var ident = request.User.Identity;
+      var claims = request.User.Claims.ToList(); 
+      if (claims.Count > 0)
+        _session.Context.SetUserFromClaims(request.User.Claims); 
     }
 
     public void EndRequest(IRequestContext request) {
@@ -73,31 +79,11 @@ namespace BookStore.GraphQLServer {
     }
     #endregion
 
-    #region Root mutation methods
-    public IBookReview AddReview(IFieldContext context, BookReviewInput review) {
-      var book = _session.GetEntity<IBook>(review.BookId);
-      var user = _session.GetEntity<IUser>(review.UserId); 
-      context.AddErrorIf(book == null, "Invalid book Id, book not found.");
-      context.AddErrorIf(user == null, "Invalid user Id, user not found.");
-      context.AddErrorIf(string.IsNullOrWhiteSpace(review.Caption), "Caption may not be empty");
-      context.AddErrorIf(string.IsNullOrWhiteSpace(review.Review), "Review text may not be empty");
-      context.AddErrorIf(review.Caption != null && review.Caption.Length > 100, 
-                     "Caption is too long, must be less than 100 chars.");
-      context.AddErrorIf(review.Rating < 1 || review.Rating > 5,
-                    $"Invalid rating value ({review.Rating}), must be between 1 and 5");
-      context.AbortIfErrors();
-      var reviewEnt = _session.NewReview(user, book, review.Rating, review.Caption, review.Review);
-      // changes will be saved when request completes (see EndRequest method)
-      return reviewEnt; 
+    // Misc query methods
+    [ResolvesField("coverImageId", typeof(Book))]
+    public Guid? GetBookCoverImageId(IFieldContext context, IBook book) {
+      return book.CoverImage?.Id; 
     }
-
-    public bool DeleteReview(IFieldContext context, Guid reviewId) {
-      var review = _session.GetEntity<IBookReview>(reviewId);
-      context.AbortIf(review == null, "Invalid review ID, review not found.");
-      _session.DeleteEntity(review);
-      return true; 
-    }
-    #endregion
 
     [ResolvesField("reviews", typeof(Book))]
     public IList<IBookReview> GetBookReviews(IFieldContext context, IBook book, Paging paging = null) {
@@ -199,7 +185,5 @@ SELECT br.[Id], br.[CreatedOn], br.[Rating], br.[Caption], br.[Review], br.[Book
       return orders;
     }
     #endregion 
-
-
   }
 }

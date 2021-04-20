@@ -159,16 +159,18 @@ query userQuery {
       TestEnv.LogTestMethodStart();
       var restClient = TestEnv.RestClient;
 
+      // We are testing using REST endpoint along with GraphQL service. GraphQL does not provide a way to return binary data 
+      //  like images. So for a book, to get the CoverImage we need to use a separate RESTful endpoint running on the same server. 
+      //  The images endpoint is implemented by the ImageController in our sample GraphQL server
       //Get c# book
-      var imageUrl = TestEnv.ServiceUrl + "/api/images/" + Guid.NewGuid().ToString();
+      var csBook = await FindBook("c#"); // get Book using GraphQL api
+      var imageUrl = TestEnv.ServiceUrl + "/api/images/" + csBook.CoverImageId;
       var bytes = await restClient.GetBinaryAsync(imageUrl, null, acceptMediaType: "image/jpeg");
       Assert.IsNotNull(bytes, "Expected image bytes");
       //Jpeg starts with 0xFFD8
       Assert.AreEqual(0xFF, bytes[0], "Expected FF byte.");
       Assert.AreEqual(0xD8, bytes[1], "Expected D8 byte.");
     }
-
-
 
   }
 }

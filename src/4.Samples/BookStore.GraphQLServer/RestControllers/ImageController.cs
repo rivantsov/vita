@@ -16,15 +16,14 @@ using Microsoft.AspNetCore.Http;
 
 namespace BookStore.GraphQLServer.Rest {
 
-  // REST controller for serving images; GraphQL by default does not have facility to return binary data
+  // REST controller for serving images; GraphQL by default does not have facility to return binary data like pics
   [Route("api")]
   public class ImageController : BaseApiController {
 
-    //An example of returning binary stream from API controller. This end-point serves images for URLs directly
+    // An example of returning binary stream from API controller. This end-point serves images for URLs directly
     // embedded into 'img' HTML tag. It is used for showing book cover pics
     [HttpGet, Route("images/{id}")]
     public Stream GetImage(Guid id) {
-      //Do not log body
       OpContext.WebContext.Flags |= WebCallFlags.NoLogResponseBody; //if you end up logging it for some reason, do not log body (image itself)
       var session = OpenSession();
       session.EnableLog(false); 

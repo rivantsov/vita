@@ -20,7 +20,8 @@ namespace BookStore.GraphQLServer {
     public BookCategory Category;
     public BookEdition Editions;
     public Decimal Price;
-    [Null] public User Editor; 
+    [Null] public User Editor;
+    public Guid? CoverImageId; 
 
     /// <summary>Books reviews </summary>
     [GraphQLName("reviews")]
@@ -57,8 +58,8 @@ namespace BookStore.GraphQLServer {
 
   [DebuggerDisplay("{Caption}")]
   public class BookReviewInput {
+    // UserId is currently logged in user
     public Guid BookId;
-    public Guid UserId;
     public int Rating;
     public string Caption;
     public string Review;
@@ -115,4 +116,14 @@ namespace BookStore.GraphQLServer {
     [Null] public string AuthorLastName;
   }
 
+  public class LoginInput {
+    public string UserName;
+    public string Password; 
+  }
+
+  public class LoginResponse {
+    public string Token;
+    public Guid? UserId;
+    [Null] public string UserName;
+  }
 }

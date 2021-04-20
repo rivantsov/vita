@@ -12,6 +12,7 @@ using BookStore.GraphQLServer;
 using Microsoft.AspNetCore;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
+using Microsoft.IdentityModel.Logging;
 using Newtonsoft.Json;
 using NGraphQL.Client;
 using NGraphQL.Server;
@@ -46,6 +47,8 @@ namespace Vita.Testing.GraphQLTests {
     }
 
     public static void StartService() {
+      IdentityModelEventSource.ShowPII = true;
+
       GraphQLAspNetServerStartup.StartGrpaphiql = false; // do not start Graphiql UI, we do not need it in tests
       var hostBuilder = WebHost.CreateDefaultBuilder()
           .ConfigureAppConfiguration((context, config) => { })

@@ -27,7 +27,7 @@ namespace BookStore.GraphQLServer {
     public static GraphQLHttpServer GraphQLHttpServerInstance;
     public static bool StartGrpaphiql = true; // test project sets this to false
     public string LogFilePath = "_serverSqlLog.log";
-    public static bool RebuildSampleData;
+    public static bool RebuildSampleData = true;
 
     public GraphQLAspNetServerStartup(IConfiguration configuration)
     {
@@ -39,7 +39,7 @@ namespace BookStore.GraphQLServer {
       // create books app connected to database; 
       CreateBooksEntityApp();
 
-      var jwtSecret = "VitaJwtSecret"; // for real app - replace with real secret from config
+      var jwtSecret = "VitaBooksJwtSecret"; // Note: this cannot be too short, at least 16 chars
       var jwtTokenHandler = new VitaJwtTokenHandler(BooksEntityApp.Instance, services, jwtSecret);
       services.Add(new ServiceDescriptor(typeof(IAuthenticationTokenHandler), jwtTokenHandler));
 
@@ -59,11 +59,12 @@ namespace BookStore.GraphQLServer {
       {
         app.UseDeveloperExceptionPage();
       }
-      app.UseHttpsRedirection();
-      app.UseRouting();
-
       // Add Vita middleware 
       app.UseMiddleware<VitaWebMiddleware>(BooksEntityApp.Instance);
+
+      app.UseHttpsRedirection();
+      app.UseRouting();
+      app.UseAuthentication();
 
       // create GraphQL Http server and configure GraphQL endpoints
       GraphQLHttpServerInstance = CreateGraphQLHttpServer();

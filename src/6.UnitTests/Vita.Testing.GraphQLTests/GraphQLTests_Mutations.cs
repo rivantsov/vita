@@ -73,7 +73,7 @@ mutation ($reviewId: Uuid!) {
       resp = await TestEnv.PostAsync(mutDelReview, vars);
       resp.EnsureNoErrors();
 
-      Logout(); 
+      await Logout(); 
     } //method
 
   }

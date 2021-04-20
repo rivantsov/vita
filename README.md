@@ -1,4 +1,4 @@
-# VITA Application Framework  
+# VITA ORM Framework  
 
 VITA is a full-featured .NET [ORM Framework](http://en.wikipedia.org/wiki/Object-relational_mapping).
 

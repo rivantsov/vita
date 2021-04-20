@@ -26,7 +26,7 @@ namespace BookStore.GraphQLServer {
     public IConfiguration Configuration { get; }
     public static GraphQLHttpServer GraphQLHttpServerInstance;
     public static bool StartGrpaphiql = true; // test project sets this to false
-    public string LogFilePath = "_serverSqlLog.log";
+    public string LogFilePath = "bin\\_serverSqlLog.log";
     public static bool RebuildSampleData = true;
 
     public GraphQLAspNetServerStartup(IConfiguration configuration)

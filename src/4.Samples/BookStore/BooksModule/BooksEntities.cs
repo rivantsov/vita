@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.ComponentModel;
 
@@ -107,7 +108,7 @@ namespace BookStore {
     
     [ManyToMany(typeof(IBookAuthor)), OrderBy("PublishedOn:DESC")]
     IList<IBook> Books { get; }
-    
+
     [Nullable]
     IUser User { get; set; } //author might be a user
 
@@ -115,9 +116,12 @@ namespace BookStore {
     string FullName { get;} 
   }
 
-  // Note: we set CascadeDelete on reference to Book, but not Author. 
+  // Note: for IBookAuthor, we set CascadeDelete on reference to Book, but not Author. 
   // We can always delete a book, and the link to the author will be deleted automatically.
   // But we cannot delete an Author if there are any books in the system by this author. 
+
+  /*
+  // Version with composite PK
   [Entity,  PrimaryKey("Book, Author", Clustered=true)] //intentionally with space, to ensure it is handled OK
   [Display("{Book}-{Author}")]
   public interface IBookAuthor {
@@ -125,6 +129,18 @@ namespace BookStore {
     IBook Book { get; set; }
     IAuthor Author { get; set; }
   }
+  */
+
+  // Version with extra separate PK field
+  [Entity, Display("{Book}-{Author}")]
+  public interface IBookAuthor {
+    [PrimaryKey, Auto]
+    Guid Id { get; set; }
+    [CascadeDelete]
+    IBook Book { get; set; }
+    IAuthor Author { get; set; }
+  }
+
 
   [Entity, OrderBy("UserName")]
   [Display("{DisplayName}")]

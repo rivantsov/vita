@@ -21,7 +21,8 @@ namespace Vita.Entities {
     internal EntityArea(EntityApp app, string name) {
       App = app;
       Util.CheckNotEmpty(name, "SchemaName may not be empty.");
-      Name = name.Trim().ToLowerInvariant();
+      // Fix, 2021-05, do NOT convert schema to lower invariant
+      Name = name.Trim(); //.ToLowerInvariant();
     }
 
     /// <summary>Returns string representation of the object. </summary>

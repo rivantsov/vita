@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics;
+using System.IO;
 
 namespace Vita.Entities.Logging {
 
@@ -31,11 +32,9 @@ namespace Vita.Entities.Logging {
       }
 
       Trace.WriteLine(text);
-
-      using (EventLog eventLog = new EventLog(EventLogName)) {
-        eventLog.Source = EventLogName; // Event source and log name are the same for Application log. 
-        eventLog.WriteEntry(text, EventLogEntryType.Error, FatalEventId);
-      }
+      try {
+        File.AppendAllText("_errors.log", text); 
+      } catch { }
     }
 
   }

@@ -15,7 +15,6 @@
     
     <ItemGroup>
         <PackageReference Include="Proxemity" Version="2.0.1" />
-        <PackageReference Include="System.Diagnostics.EventLog" Version="4.7.0" />
     </ItemGroup>
 
     <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">

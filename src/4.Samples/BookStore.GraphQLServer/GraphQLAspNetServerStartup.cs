@@ -77,7 +77,7 @@ namespace BookStore.GraphQLServer {
 
       // Use GraphiQL UI
       if (StartGrpaphiql)
-        app.UseGraphiQLServer();
+        app.UseGraphQLGraphiQL();
     }
 
     private Task HandleRequest(HttpContext context) { 

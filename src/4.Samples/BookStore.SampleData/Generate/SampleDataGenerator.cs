@@ -73,7 +73,8 @@ Highly recommended for beginners and experts.
 Covers c# 4.0.";
       csBook.CoverImage = LoadImageFromResource(session, "csBookCover.jpg");
       csBook.Authors.Add(authorJohn); //this is many-to-many
-      csBook.Authors.Add(authorJack);
+      // let's do it differently for other author, add book to author, not author to book  
+      authorJack.Books.Add(csBook);
       csBook.Editor = session.EntitySet<IUser>().First(u => u.UserName == "Linda");
       var vbBook = session.NewBook(BookEdition.Paperback | BookEdition.Hardcover, BookCategory.Programming,
                           "VB Programming", "Expert programming in VB", msPub, pubDate, 25.0m);
@@ -85,8 +86,8 @@ Covers c# 4.0.";
            "Three little pigs", "Folk tale", kidPub, pubDate, 10.0m);
       var winBook = session.NewBook(BookEdition.Hardcover, BookCategory.Programming,
            "Windows Programming", "Introduction to Windows Programming", msPub, pubDate.AddYears(-10), 30.0m);
-      winBook.Authors.Add(authorJohn);
       winBook.CoverImage = LoadImageFromResource(session, "winBookCover.jpg");
+      winBook.Authors.Add(authorJohn);
       var comicBook = session.NewBook(BookEdition.Paperback, BookCategory.Fiction, "IronMan", null, kidPub, null, 3);
 
       //Coupons

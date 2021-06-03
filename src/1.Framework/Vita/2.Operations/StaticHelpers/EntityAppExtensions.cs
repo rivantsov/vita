@@ -17,8 +17,8 @@ namespace Vita.Entities {
       return new EntitySession(context, options: options);
     }
 
-    public static IEntitySession OpenSession(this OperationContext context) {
-      return new EntitySession(context);
+    public static IEntitySession OpenSession(this OperationContext context, EntitySessionOptions options = EntitySessionOptions.None) {
+      return new EntitySession(context, options: options);
     }
 
     public static IEntitySession OpenSystemSession(this OperationContext context) {

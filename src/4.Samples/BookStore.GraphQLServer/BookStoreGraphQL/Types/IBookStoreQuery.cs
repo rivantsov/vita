@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using NGraphQL.CodeFirst;
 
-namespace BookStore.GraphQLServer {
+namespace BookStore.GraphQL {
 
   public interface IBookStoreQuery {
     [GraphQLName("publishers")]

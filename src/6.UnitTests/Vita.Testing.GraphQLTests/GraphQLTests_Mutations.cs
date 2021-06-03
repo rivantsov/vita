@@ -4,7 +4,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 using BookStore;
-using BookStore.GraphQLServer;
+using BookStore.GraphQL;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using NGraphQL.Client;
 

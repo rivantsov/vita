@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace BookStore.GraphQLServer {
+namespace BookStore.GraphQL {
 
   public interface IBookStoreMutation {
     LoginResponse LoginUser(LoginInput login);

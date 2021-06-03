@@ -4,7 +4,7 @@ using System.Security.Claims;
 using System.Text;
 using Vita.Entities;
 
-namespace BookStore.GraphQLServer {
+namespace BookStore.GraphQL {
   public static class BookStoreGraphQLExtensions {
 
     // Converts Paging object we define in GraphQL bookStore project to SearchParams used in Vita

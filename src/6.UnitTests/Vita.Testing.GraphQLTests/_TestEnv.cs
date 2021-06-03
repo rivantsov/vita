@@ -8,7 +8,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Arrest;
 using BookStore;
-using BookStore.GraphQLServer;
+using BookStore.GraphQL;
 using Microsoft.AspNetCore;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;

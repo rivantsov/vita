@@ -5,22 +5,20 @@ using System.Threading.Tasks;
 using NGraphQL.CodeFirst;
 using Vita.Entities;
 
-namespace BookStore.GraphQLServer {
+namespace BookStore.GraphQL {
 
   public partial class BookStoreResolvers: IResolverClass {
+    OperationContext _operationContext;
     BooksEntityApp _app;
     IEntitySession _session; 
 
     public void BeginRequest(IRequestContext request) {
-      // _app = BooksEntityApp.Instance; //this works too
-      _app = (BooksEntityApp) request.App; //general case
-      _session = _app.OpenSession(EntitySessionOptions.EnableSmartLoad);
-      // set logged in user info into VITA operation context from claims.
-      // Request.User is principal set by VitaJwtTokenHandler from incoming Jwt token and contains userId, userName etc
-      var ident = request.User.Identity;
-      var claims = request.User.Claims.ToList(); 
-      if (claims.Count > 0)
-        _session.Context.SetUserFromClaims(request.User.Claims); 
+      // OpContext is created by VitaWebMiddleware and saved in httpContext.Items[] dict. 
+      // It is copied from this dict into GraphQL requestContext.VitaOperationContext by GraphQLHttpServer
+      _operationContext = (OperationContext) request.VitaOperationContext; 
+      _app = (BooksEntityApp) _operationContext.App; //general case
+      _session = _operationContext.OpenSession(EntitySessionOptions.EnableSmartLoad);
+      // _operationContext already has User info assigned.
     }
 
     public void EndRequest(IRequestContext request) {

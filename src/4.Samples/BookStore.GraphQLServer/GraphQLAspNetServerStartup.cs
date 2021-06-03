@@ -19,7 +19,7 @@ using Vita.Entities.DbInfo;
 using Vita.Tools;
 using Vita.Web;
 
-namespace BookStore.GraphQLServer {
+namespace BookStore.GraphQL {
 
   public class GraphQLAspNetServerStartup
   {
@@ -67,7 +67,8 @@ namespace BookStore.GraphQLServer {
       app.UseAuthentication();
 
       // create GraphQL Http server and configure GraphQL endpoints
-      GraphQLHttpServerInstance = CreateGraphQLHttpServer();
+      var bookStoreServer = new BookStoreGraphQLServer(BooksEntityApp.Instance);
+      GraphQLHttpServerInstance = new GraphQLHttpServer(bookStoreServer); 
       app.UseEndpoints(endpoints => {
         endpoints.MapPost("graphql", HandleRequest);
         endpoints.MapGet("graphql", HandleRequest);
@@ -82,12 +83,6 @@ namespace BookStore.GraphQLServer {
 
     private Task HandleRequest(HttpContext context) { 
       return GraphQLHttpServerInstance.HandleGraphQLHttpRequestAsync(context);
-    }
-
-    private GraphQLHttpServer CreateGraphQLHttpServer() {
-      var server = new NGraphQL.Server.GraphQLServer(BooksEntityApp.Instance);
-      server.RegisterModules(new BooksGraphQLModule());
-      return new GraphQLHttpServer(server);
     }
 
     private BooksEntityApp CreateBooksEntityApp() {

@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Threading.Tasks;
 using BookStore;
-using BookStore.GraphQLServer;
+using BookStore.GraphQL;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using NGraphQL.Client;
 using Vita.Entities;

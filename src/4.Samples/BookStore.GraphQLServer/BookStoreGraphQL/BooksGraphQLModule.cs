@@ -1,8 +1,8 @@
 ﻿using System;
-using BookStore.GraphQLServer;
+using BookStore.GraphQL;
 using NGraphQL.CodeFirst;
 
-namespace BookStore.GraphQLServer {
+namespace BookStore.GraphQL {
 
   public class BooksGraphQLModule: GraphQLModule {
 

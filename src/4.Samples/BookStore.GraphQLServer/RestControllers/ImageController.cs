@@ -14,7 +14,7 @@ using Microsoft.AspNetCore.Mvc;
 using Vita.Web;
 using Microsoft.AspNetCore.Http;
 
-namespace BookStore.GraphQLServer.Rest {
+namespace BookStore.GraphQL.Rest {
 
   // REST controller for serving images; GraphQL by default does not have facility to return binary data like pics
   [Route("api")]

@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using NGraphQL.CodeFirst;
 
-namespace BookStore.GraphQLServer {
+namespace BookStore.GraphQL {
 
   [DebuggerDisplay("{Title}")]
   public class Book {

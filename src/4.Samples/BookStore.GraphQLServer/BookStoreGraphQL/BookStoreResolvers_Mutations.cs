@@ -8,7 +8,7 @@ using Vita.Modules.Login;
 using Vita.Web;
 using NGraphQL.CodeFirst;
 
-namespace BookStore.GraphQLServer {
+namespace BookStore.GraphQL {
 
   public partial class BookStoreResolvers {
 

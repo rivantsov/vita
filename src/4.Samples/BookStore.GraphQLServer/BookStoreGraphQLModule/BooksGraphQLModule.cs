@@ -13,7 +13,7 @@ namespace BookStore.GraphQLServer {
       base.InputTypes.Add(typeof(BookReviewInput), typeof(Paging), typeof(BookSearchInput), typeof(LoginInput));
       base.QueryType = typeof(IBookStoreQuery);
       base.MutationType = typeof(IBookStoreMutation);
-      base.ResolverTypes.Add(typeof(BookStoreResolvers));
+      base.ResolverClasses.Add(typeof(BookStoreResolvers));
 
       MapEntity<IPublisher>().To<Publisher>();
       MapEntity<IBook>().To<Book>();

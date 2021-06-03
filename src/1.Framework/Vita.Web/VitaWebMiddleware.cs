@@ -68,6 +68,7 @@ namespace Vita.Web {
       var webContext = opCtx.WebContext = new WebCallContext(opCtx, reqInfo);
       opCtx.Log = new BufferedLog(opCtx.LogContext, logService: App.LogService);
 
+      httpContext.Items[WebCallContext.OperationContextKey] = opCtx; 
       httpContext.Items[WebCallContext.WebCallContextKey] = webContext;
       OnWebCallStarting(webContext);
       return webContext;

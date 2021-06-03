@@ -10,6 +10,7 @@ namespace Vita.Entities {
 
     /// <summary>Opens an entity session for an anonymous user. </summary>
     /// <param name="app">Entity app instance.</param>
+    /// <param name="options">Session options.</param>
     /// <returns>An entity session.</returns>
     public static IEntitySession OpenSession(this EntityApp app, EntitySessionOptions options = EntitySessionOptions.None) {
       var context = new OperationContext(app, UserInfo.Anonymous);

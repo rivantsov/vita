@@ -10,7 +10,7 @@ namespace Vita.Entities {
   /// Use a derived class as a parameter for search methods in controllers.</summary>
   /// <remarks>
   /// <para>The <c>"IEntitySession.ExecuteSearch"</c> expects an instance of SearchParams sub-class.  </para>
-  /// <para> Use the <see cref="EntityQueryExtensions.DefaultIfNull"/> extension method at the beginning 
+  /// <para> Use the <see cref="EntitySessionExtensions.DefaultIfNull"/> extension method at the beginning 
   /// of the API controller search method to create a default instance if no URL criteria were provided in Search API call,
   /// and/or to enforce (limit) maximum Take value. </para>
   /// <para>Important: Use properties in the derived class, not fields - fields do not work with Web Api [FromUri] attribute.</para>

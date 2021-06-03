@@ -8,6 +8,8 @@
     <AssemblyName>Vita.Testing.GraphQLTests</AssemblyName>
 
     <RootNamespace>Vita.Testing.GraphQLTests</RootNamespace>
+
+    <StartupObject>Vita.Testing.GraphQLTests.Program</StartupObject>
   </PropertyGroup>
 
   <ItemGroup>

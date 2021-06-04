@@ -16,6 +16,7 @@ namespace BookStore.GraphQL {
     [Null] public string Description;
     [Null] public string Abstract;
     public IList<Author> Authors;
+    [Scalar("Date")]
     public DateTime? PublishedOn;
     public BookCategory Category;
     public BookEdition Editions;

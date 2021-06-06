@@ -30,7 +30,7 @@ namespace Vita.Data.Runtime {
       _connection.Abort();
     }
 
-    public void BeginTransaction(bool commitOnSave = true, IsolationLevel isolationLevel = IsolationLevel.Serializable) {
+    public void BeginTransaction(bool commitOnSave = true, IsolationLevel isolationLevel = IsolationLevel.Unspecified) {
       _connection.BeginTransaction(commitOnSave, isolationLevel);
     }
 

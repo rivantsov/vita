@@ -1,14 +1,8 @@
 ﻿using System;
-using System.Text;
-using System.Collections.Generic;
-using System.ComponentModel;
 using System.Linq;
-using System.Threading;
-using System.Diagnostics;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 using Vita.Entities;
-using Vita.Data.Driver;
 
 namespace Vita.Testing.BasicTests.LinqBasic {
 

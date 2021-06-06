@@ -135,6 +135,10 @@ namespace Vita.Data.MySql {
         var start = tagPos + constrNameTag.Length;
         var end = message.IndexOf("'", start);
         var indexName = message.Substring(start, end - start).Trim();
+        // MySql 8 includes schema into the message; we need to remove it
+        var dotPos = indexName.IndexOf(".");
+        if (dotPos > 0)
+          indexName = indexName.Substring(dotPos + 1);
         return indexName;
       } catch (Exception ex) {
         return "(failed to identify index in message: " + ex.Message + ")"; //

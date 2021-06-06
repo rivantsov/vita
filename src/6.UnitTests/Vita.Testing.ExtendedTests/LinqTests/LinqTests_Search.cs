@@ -22,7 +22,7 @@ namespace Vita.Testing.ExtendedTests {
 
       // SQLite sometimes fails this test (fails to find a book), but only when running ALL tests in extended project, 
       // for no apparent reason; trying to fix it
-      if(Startup.ServerType == DbServerType.SQLite) {
+      if (Startup.ServerType == DbServerType.SQLite) {
         System.Threading.Thread.Sleep(100);
         System.Threading.Thread.Sleep(100);
       }
@@ -34,9 +34,9 @@ namespace Vita.Testing.ExtendedTests {
       //Use search helper method with all possible search terms. Let's find c# book
       var searchParams = new BookSearch() {
         Title = "c#", Categories = "Programming,Fiction", MaxPrice = 100.0, Publisher = "MS",
-          PublishedAfter = new DateTime(2000, 1, 1), PublishedBefore = DateTime.Now, 
-          AuthorLastName = "Sharp", OrderBy = "Price-desc,pubname,PublishedOn-desc",
-          Skip = 0, Take = 5
+        PublishedAfter = new DateTime(2000, 1, 1), PublishedBefore = DateTime.Now,
+        AuthorLastName = "Sharp", OrderBy = "Price-desc,pubname,PublishedOn-desc",
+        Skip = 0, Take = 5
       };
       var bookResults = session.SearchBooks(searchParams);
       //PrintLastSql(session);
@@ -62,18 +62,44 @@ OFFSET @P4 ROWS FETCH NEXT @P5 ROWS ONLY;
        */
 
       // run with empty terms, 'get-any-top-10' 
-      searchParams = new BookSearch() {Take = 10};
+      searchParams = new BookSearch() { Take = 10 };
       bookResults = session.SearchBooks(searchParams);
       Assert.IsTrue(bookResults.Results.Count > 3, "Must return all books");
 
       // bug, issue #74 - when Skip is large value > Count(entities), then search returns total count == skip value 
-      var totalCount = session.EntitySet<IBook>().Count(); 
+      var totalCount = session.EntitySet<IBook>().Count();
       searchParams = new BookSearch() { Skip = 200, Take = 10 };
       bookResults = session.SearchBooks(searchParams);
       Assert.AreEqual(totalCount, bookResults.TotalCount, "Total count mismatch for larget Skip value");
-
-
     }
 
+
+    [TestMethod]
+    public void TestLinq_Search_ListProps() {
+      Startup.BooksApp.LogTestStart();
+
+      // SQLite sometimes fails this test (fails to find a book), but only when running ALL tests in extended project, 
+      // for no apparent reason; trying to fix it
+      if (Startup.ServerType == DbServerType.SQLite) {
+        System.Threading.Thread.Sleep(100);
+        System.Threading.Thread.Sleep(100);
+      }
+
+      var app = Startup.BooksApp;
+      var session = app.OpenSession();
+
+      session.LogMessage("----------- testing LINQ with sub-query on list props, one to many  -------------------------");
+      var csPubs = session.EntitySet<IPublisher>()
+          .Where(p => p.Books.Any(b => b.Title == "c# Programming"))
+          .ToList();
+      Assert.AreEqual(1, csPubs.Count, "expected 1 pub for c# book");
+
+      session.LogMessage("----------- testing LINQ with sub-query on list props, many to many  -------------------------");
+      var booksByJack = session.EntitySet<IBook>()
+          .Where(b => b.Authors.Any(a => a.FirstName == "Jack"))
+          .ToList();
+      Assert.AreEqual(2, booksByJack.Count, "expected 2 books by Jack");
+
+    }
   }
 }

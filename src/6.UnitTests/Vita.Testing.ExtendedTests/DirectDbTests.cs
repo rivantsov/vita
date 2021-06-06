@@ -7,6 +7,7 @@ using Vita.Entities;
 using Vita.Data.Driver;
 using Vita.Tools.Testing;
 using BookStore;
+using System.Data;
 
 namespace Vita.Testing.ExtendedTests {
 
@@ -39,7 +40,10 @@ namespace Vita.Testing.ExtendedTests {
       directDb.OpenConnection(); 
       //From this moment, the connection remains open and associated with the entity session
       // let's open transaction
-      directDb.BeginTransaction(); 
+      // Note: smth broken with c# compiler here. The default value for isolationLevel parameter 
+      //  is Unspecified, but if you skip param value here, it comes up inside the target BeginTransaction
+      //  as Serializable. This somehow breaks Oracle. 
+      directDb.BeginTransaction( isolationLevel: IsolationLevel.Unspecified); 
 
       // get cs book and remember its price 
       var csBook = session.EntitySet<IBook>().First(b => b.Title.StartsWith("c#"));

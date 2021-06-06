@@ -120,27 +120,32 @@ namespace BookStore {
   // We can always delete a book, and the link to the author will be deleted automatically.
   // But we cannot delete an Author if there are any books in the system by this author. 
 
-  /*
+
   // Version with composite PK
-  [Entity,  PrimaryKey("Book, Author", Clustered=true)] //intentionally with space, to ensure it is handled OK
+  [Entity, PrimaryKey("Book, Author")] //intentionally with space, to ensure it is handled OK
   [Display("{Book}-{Author}")]
   public interface IBookAuthor {
     [CascadeDelete]
+    //[Nullable] //experiment, testing LINQ with nullable, suspected bug
     IBook Book { get; set; }
+
+    //[Nullable] //experiment, testing LINQ with nullable, suspected bug
     IAuthor Author { get; set; }
   }
-  */
-
+  /*
   // Version with extra separate PK field
   [Entity, Display("{Book}-{Author}")]
   public interface IBookAuthor {
     [PrimaryKey, Auto]
     Guid Id { get; set; }
     [CascadeDelete]
+    [Nullable] //experiment, testing LINQ with nullable, suspected bug
     IBook Book { get; set; }
+    [Nullable] //experiment, testing LINQ with nullable, suspected bug
     IAuthor Author { get; set; }
   }
 
+  */
 
   [Entity, OrderBy("UserName")]
   [Display("{DisplayName}")]

@@ -93,14 +93,11 @@ namespace Vita.Testing.ExtendedTests {
         //Now connect the main app
         BooksApp.ConnectTo(DbSettings);
 
-
-        //if we have logging app as a separate app - we need to connect it too. 
-        // NOTE: good pracice to connect LoggingApp before we connect the main app, so it can log main database update scripts
-        // but it should work anyway.
-        //var logDbSettings = new DbSettings(Driver, DbSettings.ModelConfig.Options, LogConnectionString);
-        //BooksApp.LoggingApp.ConnectTo(logDbSettings);
-
         CreateSampleData();
+        // delete sample data log
+        BooksApp.Flush(); 
+        if (File.Exists(LogFilePath))
+          File.Delete(LogFilePath);
 
       } catch (ClientFaultException cfx) {
         Debug.WriteLine("Validation errors: \r\n" + cfx.ToString());

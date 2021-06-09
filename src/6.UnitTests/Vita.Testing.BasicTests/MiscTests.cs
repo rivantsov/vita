@@ -13,107 +13,12 @@ using Vita.Tools.Testing;
 using System.Runtime.InteropServices;
 
 namespace Vita.Testing.BasicTests.Misc {
-
   //Description attr is defined in 2 places, resolving ambiguity. The other def in in Microsoft.VisualStudio.TestTools
-  using DescriptionAttribute = System.ComponentModel.DescriptionAttribute; 
+  using DescriptionAttribute = System.ComponentModel.DescriptionAttribute;
 
-  [Entity, OrderBy("Model")]
-  [Description("Represents vehicle entity.")] 
-  public interface IVehicle {
-    [PrimaryKey, Auto]
-    Guid Id { get; set; }
-
-    [Size(30)]
-    //we test that these attributes will be passed to the object's property
-    [Description("Model of the vehicle.")] 
-    [Browsable(true), DisplayName("Vehicle model"), System.ComponentModel.CategoryAttribute("Miscellaneous")]
-    string Model { get; set; }
-
-    int Year { get; set; }
-
-    [PropagateUpdatedOn]
-    IDriver Owner { get; set; }
-    [Nullable]
-    IDriver Driver { get; set; }
-    // Bug fix test - declaring FK column explicitly
-    // Guid Owner_Id { get; set; }
-  }
-
-  [Entity]
-  public interface IDriver {
-    [PrimaryKey, Auto]
-    Guid Id { get; set; }
-    [Utc, Auto(AutoType.UpdatedOn)]
-    DateTime UpdatedOn { get; }
-
-    [Size(30), Unique(Alias = "LicenseNumber")]
-    string LicenseNumber { get; set; }
-
-    [Size(Sizes.Name)]
-    string FirstName { get; set; }
-    [Size(Sizes.Name)]
-    string LastName { get; set; }
-
-    [OneToMany("Owner")]
-    IList<IVehicle> Vehicles { get; set; }
-
-    [OneToMany("Driver")]
-    IList<IVehicle> DrivesVehicles { get; set; }
-
-    //DependsOn is optional, used for auto PropertyChanged firing
-    [Computed(typeof(MiscTestsExtensions), "GetFullName"), DependsOn("FirstName,LastName")] 
-    string FullName { get; }
-    // another computer prop - test for a reported bug
-    [Computed(typeof(MiscTestsExtensions), "GetLastFirst"), DependsOn("FirstName,LastName")]
-    string LastFirst { get; }
-
-    //Persistent computed property
-    [Computed(typeof(MiscTestsExtensions), "GetLicenseHash", Persist=true), DependsOn("LicenseNumber")]
-    int LicenseHash { get; }
-
-    [Nullable] //test for fix
-    IDriver Instructor { get; set; }
-  }
-
-  // We skip defining custom entity module and use base EntityModule class
-  public class MiscTestsEntityApp : EntityApp {
-    public MiscTestsEntityApp() {
-      var area = AddArea("misc");
-      var mainModule = new EntityModule(area, "MainModule");
-      mainModule.RegisterEntities(typeof(IVehicle), typeof(IDriver));
-    }
-  }//class
-
-  public static class MiscTestsExtensions {
-    public static IVehicle NewVehicle(this IEntitySession session, string model, int year, IDriver owner, IDriver driver = null) {
-      var veh = session.NewEntity<IVehicle>();
-      veh.Model = model;
-      veh.Year = year;
-      veh.Owner = owner;
-      veh.Driver = driver;
-      return veh;
-    }
-    public static IDriver NewDriver(this IEntitySession session, string licenseNumber, string firstName, string lastName) {
-      var driver = session.NewEntity<IDriver>();
-      driver.LicenseNumber = licenseNumber;
-      driver.FirstName = firstName;
-      driver.LastName = lastName;
-      return driver; 
-    }
-    public static string GetFullName(IDriver driver) {
-      return driver.FirstName + " " + driver.LastName; 
-    }
-    public static string GetLastFirst(IDriver driver) {
-      return driver.LastName + ", " + driver.FirstName;
-    }
-    public static int GetLicenseHash(IDriver driver) {
-      return driver.LicenseNumber.GetHashCode();
-    }
-
-  }
 
   [TestClass]
-  public class MiscTests {
+  public partial class MiscTests {
     EntityApp _app;
 
     public void DeleteAll() {
@@ -122,7 +27,7 @@ namespace Vita.Testing.BasicTests.Misc {
 
     [TestInitialize]
     public void Init() {
-      if(_app == null) {
+      if (_app == null) {
         _app = new MiscTestsEntityApp();
         Startup.ActivateApp(_app);
       }
@@ -130,7 +35,7 @@ namespace Vita.Testing.BasicTests.Misc {
 
     [TestCleanup]
     public void TestCleanup() {
-      if(_app != null)
+      if (_app != null)
         _app.Flush();
     }
 
@@ -195,7 +100,7 @@ namespace Vita.Testing.BasicTests.Misc {
 
       //Check that entity reference is returned initially as record stub
       session = _app.OpenSession();
-      if(Startup.ServerType == DbServerType.MySql) {
+      if (Startup.ServerType == DbServerType.MySql) {
         // MySQL fails without this wait. Looks like we need to give some time to DB engine to settle the update. any ideas?!  
         Thread.Sleep(200);
         Thread.Sleep(200);
@@ -276,7 +181,7 @@ namespace Vita.Testing.BasicTests.Misc {
 
       var start = timeService.ElapsedMilliseconds;
       //writes
-      for(int i = 0; i < Count; i++) {
+      for (int i = 0; i < Count; i++) {
         session = _app.OpenSession();
         jack = session.GetEntity<IDriver>(johnId);
         jack.FirstName = "John_" + i;
@@ -285,7 +190,7 @@ namespace Vita.Testing.BasicTests.Misc {
       var timeMs = timeService.ElapsedMilliseconds - start; // Expected: MS SQL - 1600ms, SQL CE - 450 ms
 
       int Timeout = 5000; //5 sec for my laptop is OK
-      switch(Startup.ServerType) {
+      switch (Startup.ServerType) {
         case DbServerType.SQLite:
           Timeout = 10000; //10 sec, SQLite runs a bit slower
           break;
@@ -311,7 +216,7 @@ namespace Vita.Testing.BasicTests.Misc {
 
       dex = TestUtil.ExpectDataAccessException(() => { session.SaveChanges(); });
       Assert.AreEqual(DataAccessException.SubTypeUniqueIndexViolation, dex.SubType);
-      switch(servType) {
+      switch (servType) {
         case DbServerType.SQLite:
           //SQLite is a special case; we setup the flag to attach schema to tablename (misc_XXX)
           var columnNames = dex.Data[DataAccessException.KeyDbColumnNames];
@@ -332,7 +237,7 @@ namespace Vita.Testing.BasicTests.Misc {
       var dr4 = session.NewDriver("M001", "Molly", "Sands");
       dex = TestUtil.ExpectDataAccessException(() => { session.SaveChanges(); });
       Assert.AreEqual(DataAccessException.SubTypeUniqueIndexViolation, dex.SubType);
-      switch(servType) {
+      switch (servType) {
         case DbServerType.SQLite:
           //SQLite is a special case
           var columnNames = dex.Data[DataAccessException.KeyDbColumnNames];
@@ -393,21 +298,21 @@ namespace Vita.Testing.BasicTests.Misc {
 
       // create 10 drivers with the same license in one update
       session = _app.OpenSession();
-      var drivers = new List<IDriver>(); 
-      for(int i = 0; i < 10; i++) {
+      var drivers = new List<IDriver>();
+      for (int i = 0; i < 10; i++) {
         drivers.Add(session.NewDriver("L" + i, "F" + i, "L" + i));
       }
       session.SaveChanges();
       // Using parameter
       // now delete all - should be one command
-      foreach(var dr in drivers)
+      foreach (var dr in drivers)
         session.DeleteEntity(dr);
-      session.SaveChanges(); 
+      session.SaveChanges();
       var cmd = session.GetLastCommand();
       // make sure it is delete-many, in one statement
       if (Startup.ServerType == DbServerType.Postgres)
         Assert.IsTrue(cmd.CommandText.Contains(" ANY("), "Expected delete command with IN clause");
-      else 
+      else
         Assert.IsTrue(cmd.CommandText.Contains(" IN "), "Expected delete command with IN clause");
     }
 
@@ -429,11 +334,35 @@ namespace Vita.Testing.BasicTests.Misc {
       var qry = session2.EntitySet<IVehicle>().Where(v => v.Owner.FirstName == "Jane" && v.Driver.FirstName == "John");
       var ford = qry.FirstOrDefault();
       var cmd = session2.GetLastCommand();
-      Debug.WriteLine(cmd.CommandText); 
+      Debug.WriteLine(cmd.CommandText);
       Assert.AreEqual("Jane", ford.Owner.FirstName, "2-ref test: owner name does not match");
       Assert.AreEqual("John", ford.Driver.FirstName, "2-ref test: driver name does not match");
     }
 
 
+    [TestMethod]
+    public void TestMisc_CustomSqlFunctions() {
+      // test for a bug - matching properties of 2 references to the same table (v.Owner and v.Driver); 
+      DeleteAll();
+      var session = _app.OpenSession();
+      var john = session.NewDriver("D001", "John", "Dow");
+      var jane = session.NewDriver("D002", "Jane", "Crane");
+      session.SaveChanges();
+      // get drivers with lic numbers and exp dates; DbAddYears is implemented as SQL;
+      // the c# function DbAddYears is registered with the module (it's class thru module.RegisterSqlFunctions)
+      //  s
+      var qry = session.EntitySet<IDriver>()
+                      .Select(d => new {
+                        Name = d.FirstName,
+                        LicNum = d.LicenseNumber,
+                        LicExp = d.LicenseIssuedOn.DbAddYears(5)
+                      });
+      var drivers = qry.ToList();
+      Assert.AreEqual(2, drivers.Count, "Expected 2 drivers.");
+      var nowPlus4 = DateTime.Now.AddYears(4);
+      var allInFuture = drivers.All(d => d.LicExp > nowPlus4);
+      Assert.IsTrue(allInFuture, "Expected all lic expire in 5 y.");
+
+    }
   }//class
 }

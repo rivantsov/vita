@@ -31,6 +31,8 @@ namespace Vita.Entities {
     /// <summary>Gets current module version.</summary>
     public readonly Version Version;
 
+    internal HashSet<Type> CustomSqlFunctionContainers = new HashSet<Type>(); 
+
     private HashSet<Type> _dependencies = new HashSet<Type>();
 
     /// <summary>Constructs a new instance of the <c>EntityModule</c> class. </summary>
@@ -101,6 +103,9 @@ namespace Vita.Entities {
       Sequences.Add(sequence);
     }
 
+    public void RegisterSqlFunctions(Type container) {
+      CustomSqlFunctionContainers.Add(container); 
+    }
 
     /// <summary>Called by the system notifying that the entity app is being initialized. 
     /// All services are registered by this moment, so module code can retrieve the services it uses

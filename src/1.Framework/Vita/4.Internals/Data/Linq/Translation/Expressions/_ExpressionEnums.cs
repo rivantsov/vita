@@ -17,12 +17,14 @@ namespace Vita.Data.Linq.Translation.Expressions {
     ExternalValue, // Query parameter or value derived from it
     OrderBy,
     Group,
+    Aggregate,
     Alias, 
     NonQueryCommand, // for update statements
     TableFilter, //List filter
     SqlFunction, //SQL function or operator
-    Aggregate,
+    CustomSqlSnippet, // user-defined sql
   }
+
   /// <summary>SQL specific custom expression types. </summary>
   public enum SqlFunctionType {
     IsNull = 100,
@@ -74,6 +76,7 @@ namespace Vita.Data.Linq.Translation.Expressions {
     NewGuid,
 
     SequenceNextValue,
+
   }
 
   public enum AggregateType {

@@ -10,6 +10,7 @@ using Vita.Entities.Model;
 using Vita.Data.Driver;
 using Vita.Data.Linq;
 using Vita.Data.Sql;
+using System.Reflection;
 
 namespace Vita.Data.Model {
 
@@ -25,7 +26,8 @@ namespace Vita.Data.Model {
     IList<DbTableInfo> _tables = new List<DbTableInfo>();
     IDictionary<string, DbTableInfo> _tablesByName = new Dictionary<string, DbTableInfo>(StringComparer.InvariantCultureIgnoreCase);
     IList<DbSequenceInfo> _sequences = new List<DbSequenceInfo>();
-    IList<DbCustomTypeInfo> _customDbTypes = new List<DbCustomTypeInfo>(); 
+    IList<DbCustomTypeInfo> _customDbTypes = new List<DbCustomTypeInfo>();
+    public Dictionary<MethodInfo, CustomSqlSnippet> CustomSqlSnippets = new Dictionary<MethodInfo, CustomSqlSnippet>();
 
     //Table of all Db objects; accessed by entity-model object as key 
     private Dictionary<object, DbModelObjectBase> _allObjects = new Dictionary<object, DbModelObjectBase>();

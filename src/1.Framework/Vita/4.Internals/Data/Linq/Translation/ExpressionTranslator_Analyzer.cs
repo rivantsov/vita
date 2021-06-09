@@ -138,6 +138,8 @@ namespace Vita.Data.Linq.Translation {
         return AnalyzeMathCall(expression.Method, newParameters, context);
       if(dt == typeof(NativeSqlFunctionStubs))
         return AnalyzeNativeDbFunction(expression, newParameters, context);
+      if (IsCustomSqlSnippet(expression.Method, out var sqlSnippet))
+        return AnalyzeCustomSqlSnippet(sqlSnippet, newParameters, context);
       return AnalyzeUnknownCall(expression, newParameters, context);
     }
 
@@ -1593,6 +1595,20 @@ namespace Vita.Data.Linq.Translation {
       selectToModify.ChainedSet = new MultiSetChainLink() { ChainedSelect = newContext.CurrentSelect, MultiSetType = multiSetType };
 
       return firstSet;
+    }
+
+    protected bool IsCustomSqlSnippet(MethodInfo method, out CustomSqlSnippet snippet) {
+      snippet = null;
+      if (!method.IsStatic)
+        return false;
+      if (_dbModel.CustomSqlSnippets.TryGetValue(method, out snippet))
+        return true;
+      return false; 
+    }
+    protected CustomSqlExpression AnalyzeCustomSqlSnippet(CustomSqlSnippet sqlSnippet,
+                                            IList<Expression> parameters, TranslationContext context) {
+      var visitedParams = parameters.Select(p => Analyze(p, context)).ToArray();
+      return new CustomSqlExpression(sqlSnippet, visitedParams);
     }
 
 

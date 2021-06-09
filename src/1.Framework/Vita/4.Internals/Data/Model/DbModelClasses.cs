@@ -12,6 +12,7 @@ using Vita.Data.Driver;
 using Vita.Entities.Runtime;
 using Vita.Data.Sql;
 using Vita.Data.Driver.TypeSystem;
+using System.Reflection;
 
 namespace Vita.Data.Model {
 
@@ -337,6 +338,21 @@ namespace Vita.Data.Model {
       FullName = model.FormatFullName(Schema, Name);
       model.AddCustomType(this); 
     }
+  }
+
+  public class CustomSqlSnippet  {
+    public MethodInfo Method; 
+    public DbServerType ServerType;
+    public SqlTemplate Template;
+    public int[] ParamsReorder; 
+
+    public CustomSqlSnippet(MethodInfo method, DbServerType serverType, SqlTemplate template, int[] paramsReorder) {
+      Method = method;
+      ServerType = serverType;
+      Template = template;
+      ParamsReorder = paramsReorder;
+    }
+    public override string ToString() => Template.Template;
   }
 
   public static class DbModelExtensions {

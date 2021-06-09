@@ -200,6 +200,8 @@ namespace Vita.Data.Driver {
           var selectSql = BuildSelectSql((SelectExpression)expr);
           return CompositeSqlFragment.Parenthesize(selectSql);
 
+        case SqlExpressionType.CustomSqlSnippet:
+          return BuildCustomSqlFromSnippet( (CustomSqlExpression)expr);
 
         case SqlExpressionType.DerivedTable:
           // Looks like we never come here
@@ -213,6 +215,20 @@ namespace Vita.Data.Driver {
       }//switch
       
     }//method
+
+
+    private SqlFragment BuildCustomSqlFromSnippet(CustomSqlExpression custSqlExpr) {
+      var prmsOrder = custSqlExpr.Snippet.ParamsReorder;
+      var orderedArgs = new List<Expression>();
+      for (int i = 0; i < custSqlExpr.Operands.Count; i++) {
+        orderedArgs.Add(custSqlExpr.Operands[prmsOrder[i]]);
+      }
+      var argSqls = BuildSqls(orderedArgs);
+      var sqlTempl = custSqlExpr.Snippet.Template;
+      var sqlFragm = sqlTempl.Format(argSqls);
+      return sqlFragm;
+
+    }
 
     public virtual SqlFragment BuildOrderByMember(OrderByExpression obExpr) {
       var colPart = BuildLinqExpressionSql(obExpr.ColumnExpression);

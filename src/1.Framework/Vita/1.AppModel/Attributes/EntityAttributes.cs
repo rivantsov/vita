@@ -4,6 +4,7 @@ using System.Data;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Text;
+using Vita.Data.Driver;
 using Vita.Entities.Model;
 using Vita.Entities.Model.Construction;
 
@@ -549,6 +550,18 @@ namespace Vita.Entities {
   [AttributeUsage(AttributeTargets.Property)]
   public partial class AsIsAttribute: EntityModelAttributeBase {
   }
+
+  /// <summary>Specifies SQL expression that implements the function SQL.</summary>
+  [AttributeUsage(AttributeTargets.Method, AllowMultiple = true)]
+  public partial class SqlExpressionAttribute : EntityModelAttributeBase {
+    public DbServerType ServerType; 
+    public string Expression; 
+    public SqlExpressionAttribute(DbServerType serverType, string expression) {
+      ServerType = serverType;
+      Expression = expression; 
+    }
+  }
+
 
   /// <summary>Instructs the system to bypass authorization checks on an entity.</summary>
   [AttributeUsage(AttributeTargets.Interface)]

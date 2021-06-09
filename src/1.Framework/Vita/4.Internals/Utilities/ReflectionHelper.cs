@@ -24,6 +24,14 @@ namespace Vita.Entities.Utilities {
         return true;
       return false; 
     }
+
+    public static int GetParamIndex(this ParameterInfo[] prms, string name) {
+      for (int i = 0; i < prms.Length; i++)
+        if (prms[i].Name == name)
+          return i;
+      return -1;
+    }
+
     /*
     public static Type GetLoadedType(string fullName, bool throwIfNotFound = true) {
       var type = Type.GetType(fullName);

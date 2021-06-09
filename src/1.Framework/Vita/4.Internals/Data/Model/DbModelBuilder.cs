@@ -48,6 +48,7 @@ namespace Vita.Data.Model {
       CompleteTablesSetup(); 
       CompileViews();
       BuildSequences();
+      BuildCustomSqlFunctions(_dbModel); 
       _driver.OnDbModelConstructed(_dbModel);
       CheckErrors();
       return _dbModel;
@@ -420,6 +421,44 @@ namespace Vita.Data.Model {
         tname = entity.Area.Name + "_" + tname;
       return tname;
     }//method
+
+    internal void BuildCustomSqlFunctions(DbModel dbModel) {
+      var entModel = dbModel.EntityModel;
+      foreach (var m in dbModel.EntityModel.App.Modules)
+        foreach (var cont in m.CustomSqlFunctionContainers)
+          AddCustomSqlFunctions(cont); 
+    }//method
+
+    internal void AddCustomSqlFunctions(Type funcContainer) {
+      var methods = funcContainer.GetMethods(BindingFlags.Static | BindingFlags.Public);
+      foreach(var meth in methods) {
+        var sqlFuncAttrs = meth.GetCustomAttributes<SqlExpressionAttribute>()
+            .Where(a => a.ServerType == _dbModel.Driver.ServerType).ToList(); // there are multiples
+        foreach(var attr in sqlFuncAttrs) {
+          var stringTempl = StringTemplate.Parse(attr.Expression);
+          var template = new SqlTemplate(stringTempl.StandardForm);
+          var reorder = GetParamsOrder(meth, stringTempl); 
+          var snippet = new CustomSqlSnippet(meth, _dbModel.Driver.ServerType, template, reorder);
+          _dbModel.CustomSqlSnippets[meth] = snippet;
+        }
+      } //foreach meth
+    }
+
+    internal int[] GetParamsOrder(MethodInfo method, StringTemplate template) {
+      if (template.ArgNames.Length == 0)
+        return new int[] { }; 
+      var prms = method.GetParameters();
+      var newOrder = new List<int>();
+      foreach(var argName in template.ArgNames) {
+        var prmIndex = prms.GetParamIndex(argName); 
+        if (prmIndex < 0) {
+          _log.LogError($"Error in Sql Expression method '{method.Name}' template: no matching parameter for template arg '{argName}'.");
+          continue; 
+        }
+        newOrder.Add(prmIndex);  
+      }
+      return newOrder.ToArray(); 
+    }
 
 
   }//class

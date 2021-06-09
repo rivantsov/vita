@@ -716,8 +716,6 @@ namespace Vita.Testing.ExtendedTests {
                             .Where(bol => bol.Book.Authors.Any(a => a.FirstName == "Jack"))
                             .ToList();
       Assert.IsTrue(orderLinesBooksByJack.Count > 0, "Expected book order lines by Jack");
-      if (true)
-        return; 
 
       // bug fix #164
       var pubs = session.EntitySet<IPublisher>().ToList();

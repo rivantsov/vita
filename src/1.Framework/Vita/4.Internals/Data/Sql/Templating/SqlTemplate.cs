@@ -41,7 +41,7 @@ namespace Vita.Data.Sql {
         fl.AddFormatted(strings, placeHolderArgs);
     }
 
-    public void Parse(string template) {
+    internal void Parse(string template) {
       Util.CheckParam(template, nameof(template));
       var currPos = 0; 
       while(currPos < template.Length) {

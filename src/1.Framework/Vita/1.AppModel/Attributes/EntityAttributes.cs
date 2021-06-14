@@ -432,7 +432,8 @@ namespace Vita.Entities {
   [AttributeUsage(AttributeTargets.Property)]
   public partial class NullableAttribute : EntityModelAttributeBase { }
 
-  /// <summary> Marks property as computable from other properties. </summary>
+  /// <summary> Marks property as computable from other properties. The computation is performed on the client (c# method), 
+  /// database is not involved. </summary>
   /// <remarks>Must refer to a static function accepting a single parameter of the "entity" type. 
   /// For example: 
   /// <code>
@@ -440,17 +441,24 @@ namespace Vita.Entities {
   ///     return person.FirstName + " " + person.LastName; 
   ///   }
   /// </code>
-  /// c# does not allow specifying method references as attribute parameters. As a workaround, we 
-  /// denote method using (Type, Method name) pair.
+  /// The static function must be defined either in the entity module that defines the entity,
+  /// or in a class that is registered using module.RegisterFunctions method. 
   /// </remarks>
   [AttributeUsage(AttributeTargets.Property)]
   public partial class ComputedAttribute : EntityModelAttributeBase {
     public Type MethodClass;
     public string MethodName;
     public bool Persist; 
+
+    [Obsolete("This constructor is obsolete, use another constructor")]
     public ComputedAttribute(Type methodClass, string methodName) {
       MethodClass = methodClass;
       MethodName = methodName; 
+    }
+
+    public ComputedAttribute(string methodName, Type methodClass = null) {
+      MethodClass = methodClass;
+      MethodName = methodName;
     }
   }
 
@@ -562,6 +570,22 @@ namespace Vita.Entities {
     }
   }
 
+  /// <summary> Marks property as computable by a SQL expression. </summary>
+  /// <remarks> The entity property marked with this attribute has no matching column
+  /// in the database table. Property must be readonly, its value is produced by a SQL 
+  /// expression in the SELECT statement. 
+  /// The attribute must point to a static method decorated with [SqlExpression] attribute(s). 
+  /// </remarks>
+  [AttributeUsage(AttributeTargets.Property)]
+  public partial class DbComputedAttribute : EntityModelAttributeBase {
+    public readonly string MethodName;
+    public Type MethodClass;
+
+    public DbComputedAttribute(string methodName, Type methodClass = null) {
+      MethodClass = methodClass;
+      MethodName = methodName;
+    }
+  }
 
   /// <summary>Instructs the system to bypass authorization checks on an entity.</summary>
   [AttributeUsage(AttributeTargets.Interface)]

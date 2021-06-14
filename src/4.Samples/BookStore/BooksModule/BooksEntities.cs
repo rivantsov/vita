@@ -112,7 +112,7 @@ namespace BookStore {
     [Nullable]
     IUser User { get; set; } //author might be a user
 
-    [Computed(typeof(BooksModule), "GetFullName"), DependsOn("FirstName,LastName")] //DependsOn is optional, used for auto PropertyChanged firing
+    [Computed("GetFullName"), DependsOn("FirstName,LastName")] //DependsOn is optional, used for auto PropertyChanged firing
     string FullName { get;} 
   }
 
@@ -197,7 +197,7 @@ namespace BookStore {
     IList<IBookOrderLine> Lines { get; }
 
     //DependsOn is optional, used for auto PropertyChanged firing
-    [Computed(typeof(BooksModule), "GetOrderSummary"), DependsOn("User,Total,CreatedOn")] 
+    [Computed("GetOrderSummary"), DependsOn("User,Total,CreatedOn")] 
     string Summary { get; }
 
   }

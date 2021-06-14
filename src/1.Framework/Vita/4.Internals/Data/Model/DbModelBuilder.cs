@@ -40,6 +40,7 @@ namespace Vita.Data.Model {
       // create model
       _dbModel = new DbModel(_entityModel.App, _dbModelConfig);
       _driver.OnDbModelConstructing(_dbModel);
+      BuildCustomSqlFunctions(_dbModel); //funcs used in DbComputed fields, so build them first
       BuildTables();
       CreateTableKeys();
       //ref constraints are created in a separate loop, after creating PKs
@@ -48,7 +49,6 @@ namespace Vita.Data.Model {
       CompleteTablesSetup(); 
       CompileViews();
       BuildSequences();
-      BuildCustomSqlFunctions(_dbModel); 
       _driver.OnDbModelConstructed(_dbModel);
       CheckErrors();
       return _dbModel;
@@ -124,7 +124,7 @@ namespace Vita.Data.Model {
         //create Value columns 
         foreach (var member in entity.Members)
           if (member.Kind == EntityMemberKind.Column)
-            CreateDbColumn(table, member);
+            AddDbColumn(table, member);
         //reorder DbColumns, make PK appear first
         var pkColumns = table.Columns.Where(c => c.Member.Flags.IsSet(EntityMemberFlags.PrimaryKey)).ToList();
         foreach (var pkCol in pkColumns) {
@@ -146,37 +146,44 @@ namespace Vita.Data.Model {
       }
     }
 
-    private DbColumnInfo CreateDbColumn(DbTableInfo table, EntityMemberInfo member) {
+    private void AddDbColumn(DbTableInfo table, EntityMemberInfo member) {
       var colName = member.ColumnName;
-      string colDefault = member.ColumnDefault; //comes from attribute
-      if(colDefault != null && member.DataType == typeof(string) && !colDefault.StartsWith("'"))
-        colDefault = colDefault.Quote();
-
-      var dbTypeInfo = GetDBTypeMapping(member);
+      var dbTypeInfo = GetDBTypeInfo(member);
       if(dbTypeInfo == null)
-        return null;
+        return;
       var dbColumn = new DbColumnInfo(member, table, colName, dbTypeInfo);
       dbColumn.Converter = _driver.TypeRegistry.GetDbValueConverter(dbTypeInfo, member); 
       if (dbColumn.Converter == null) {
         _log.LogError($"Member {member}, type {member.DataType}: failed to find DbConverter to db type {dbTypeInfo.DbTypeSpec}");
-        return null; 
+        return; 
       }
-      if(!string.IsNullOrEmpty(colDefault))
+      // column default
+      string colDefault = member.ColumnDefault; //comes from attribute
+      if (colDefault != null && member.DataType == typeof(string) && !colDefault.StartsWith("'"))
+        colDefault = colDefault.Quote();
+      if (!string.IsNullOrEmpty(colDefault))
         dbColumn.DefaultExpression = colDefault;
-      if(member.AutoValueType == AutoType.Identity)
-        dbColumn.Flags |= DbColumnFlags.Identity | DbColumnFlags.NoUpdate | DbColumnFlags.NoInsert;
-      if(member.Flags.IsSet(EntityMemberFlags.RowVersion))
-        dbColumn.Flags |= DbColumnFlags.RowVersion | DbColumnFlags.NoUpdate | DbColumnFlags.NoInsert;
-      if (member.Flags.IsSet(EntityMemberFlags.Secret))
-        dbColumn.Flags |= DbColumnFlags.NoUpdate; //updated only thru custom update method
-      if (member.Flags.IsSet(EntityMemberFlags.NoDbInsert))
-        dbColumn.Flags |= DbColumnFlags.NoInsert;
-      if(member.Flags.IsSet(EntityMemberFlags.NoDbUpdate))
-        dbColumn.Flags |= DbColumnFlags.NoUpdate;
-      return dbColumn;
+      if (member.Flags.IsSet(EntityMemberFlags.DbComputedExpression))
+        SetupDbComputedExprColumn(dbColumn);
+
     }//method
 
-    private DbTypeInfo GetDBTypeMapping(EntityMemberInfo member) {
+    private void SetupDbComputedExprColumn(DbColumnInfo column) {
+      var dbCompAttr = column.Member.Attributes.OfType<DbComputedAttribute>().FirstOrDefault(); 
+      if (dbCompAttr == null) {
+        _log.LogError($"Failed to find DbComputed attribute on member '{column.Member.MemberName}'");
+        return; 
+      }
+      var implMethod = dbCompAttr.ImplementorMethod;
+      if (!_dbModel.CustomSqlSnippets.TryGetValue(implMethod, out var snippet)) {
+        _log.LogError($"SQL snipped for Db-computed member '{column.Member.MemberName}' not defined " + 
+          $"for server type {_dbModel.Driver.ServerType}.");
+        return;
+      }
+      column.SqlSnippet = snippet; 
+    }
+
+    private DbTypeInfo GetDBTypeInfo(EntityMemberInfo member) {
       DbTypeInfo typeInfo; 
       try {
         if(string.IsNullOrEmpty(member.ExplicitDbTypeSpec))
@@ -425,7 +432,7 @@ namespace Vita.Data.Model {
     internal void BuildCustomSqlFunctions(DbModel dbModel) {
       var entModel = dbModel.EntityModel;
       foreach (var m in dbModel.EntityModel.App.Modules)
-        foreach (var cont in m.CustomSqlFunctionContainers)
+        foreach (var cont in m.CustomFunctionContainers)
           AddCustomSqlFunctions(cont); 
     }//method
 

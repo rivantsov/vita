@@ -187,7 +187,8 @@ namespace Vita.Data.Driver {
     }//method
 
     public virtual void BuildTableAddSql(DbObjectChange change, DbTableInfo table) {
-      var colSpecList = table.Columns.Select(c => GetColumnSpec(c, DbScriptOptions.NewColumn));
+      var realColumns = GetTableColumns(table); 
+      var colSpecList = realColumns.Select(c => GetColumnSpec(c, DbScriptOptions.NewColumn));
       var columnSpecs = string.Join("," + Environment.NewLine, colSpecList);
       var script =
 $@"CREATE TABLE {table.FullName} (
@@ -195,6 +196,10 @@ $@"CREATE TABLE {table.FullName} (
 ); ";
       change.AddScript(DbScriptType.TableAdd, script);
     }//method
+
+    public virtual IList<DbColumnInfo> GetTableColumns(DbTableInfo table) {
+      return table.Columns.Where(c => !c.Flags.IsSet(DbColumnFlags.DbComputedExpr)).ToList(); 
+    }
 
     // All columns are added as nullable, to allow for existing rows be filled with nulls
     // Then extra step sets default values for types (zeros), and then column is modified to NOT NULL

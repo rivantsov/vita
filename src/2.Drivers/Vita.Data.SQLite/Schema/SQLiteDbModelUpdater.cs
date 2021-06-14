@@ -80,7 +80,8 @@ namespace Vita.Data.SQLite {
     }
 
     public override void BuildTableAddSql(DbObjectChange change, DbTableInfo table) {
-      var specs = table.Columns.Select(c => GetColumnSpec(c)).ToList();
+      var realColumns = GetTableColumns(table); 
+      var specs = realColumns.Select(c => GetColumnSpec(c)).ToList();
       //Until now it was the same as default impl method in base class. Now we need to add Primary key and Foreign key constraints
       //Primary Key
       var pk = table.PrimaryKey;

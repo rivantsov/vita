@@ -143,9 +143,12 @@ namespace Vita.Data.Model {
     RowVersion = 1 << 5,
     IdentityForeignKey = 1 << 6,
 
-    NoUpdate = 1 << 8,  // columns with auto-values
-    NoInsert = 1 << 9,
-    UseParamForLongValues = 1 << 10, //string or byte[], Binary data type with size parameter
+    DbComputedExpr = 1 << 7, //not real column but expr in selects
+    DbComputedColumn = 1 << 8,
+
+    NoUpdate = 1 << 10,  // columns with auto-values
+    NoInsert = 1 << 11,
+    UseParamForLongValues = 1 << 12, //string or byte[], Binary data type with size parameter
 
 
     IsChanging = 1 << 16, //set in loaded model, signals that in new version it changes 
@@ -169,6 +172,8 @@ namespace Vita.Data.Model {
     public string DefaultExpression;
     public string DefaultConstraintName;
 
+    public CustomSqlSnippet SqlSnippet; 
+
     //Schema update
     //Used in analyzing changes. In old model, points to the object in new model, and vice versa
     public DbColumnInfo Peer;
@@ -182,15 +187,25 @@ namespace Vita.Data.Model {
       Table.Columns.Add(this);
       if (member.Flags.IsSet(EntityMemberFlags.Nullable))
         Flags |= DbColumnFlags.Nullable;
-      if (member.Flags.IsSet(EntityMemberFlags.Identity))
-        Flags |= DbColumnFlags.Identity;
+      if (member.AutoValueType == AutoType.Identity)
+        Flags |= DbColumnFlags.Identity | DbColumnFlags.NoUpdate | DbColumnFlags.NoInsert;
       if (member.Flags.IsSet(EntityMemberFlags.ForeignKey)) {
         Flags |= DbColumnFlags.ForeignKey;
         if (member.ForeignKeyOwner.ReferenceInfo.ToKey.Entity.Flags.IsSet(EntityFlags.HasIdentity))
           Flags |= DbColumnFlags.IdentityForeignKey;
       }
-      if(_sizableTypes.Contains(member.DataType))
+      if (member.Flags.IsSet(EntityMemberFlags.RowVersion))
+        Flags |= DbColumnFlags.RowVersion | DbColumnFlags.NoUpdate | DbColumnFlags.NoInsert;
+      if (member.Flags.IsSet(EntityMemberFlags.NoDbInsert))
+        Flags |= DbColumnFlags.NoInsert;
+      if (member.Flags.IsSet(EntityMemberFlags.NoDbUpdate))
+        Flags |= DbColumnFlags.NoUpdate;
+      if (member.Flags.IsSet(EntityMemberFlags.DbComputedExpression))
+        Flags |= DbColumnFlags.DbComputedExpr;
+      if (_sizableTypes.Contains(member.DataType))
         Flags |= DbColumnFlags.UseParamForLongValues;
+      if (member.Flags.IsSet(EntityMemberFlags.Secret))
+        Flags |= DbColumnFlags.NoUpdate; //updated only thru custom update method
     }
     static Type[] _sizableTypes = new Type[] { typeof(string), typeof(byte[]), typeof(Binary) };
 

@@ -31,7 +31,7 @@ namespace Vita.Entities {
     /// <summary>Gets current module version.</summary>
     public readonly Version Version;
 
-    internal HashSet<Type> CustomSqlFunctionContainers = new HashSet<Type>(); 
+    internal HashSet<Type> CustomFunctionContainers = new HashSet<Type>(); 
 
     private HashSet<Type> _dependencies = new HashSet<Type>();
 
@@ -103,8 +103,9 @@ namespace Vita.Entities {
       Sequences.Add(sequence);
     }
 
-    public void RegisterSqlFunctions(Type container) {
-      CustomSqlFunctionContainers.Add(container); 
+    public void RegisterFunctions(params Type[] containers) {
+      foreach(var type in containers)
+        CustomFunctionContainers.Add(type); 
     }
 
     /// <summary>Called by the system notifying that the entity app is being initialized. 

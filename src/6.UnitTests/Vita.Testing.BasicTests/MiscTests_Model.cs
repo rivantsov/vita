@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Runtime.CompilerServices;
 using System.Text;
 using Vita.Data.Driver;
 using Vita.Entities;
@@ -55,18 +56,23 @@ namespace Vita.Testing.BasicTests.Misc {
     IList<IVehicle> DrivesVehicles { get; set; }
 
     //DependsOn is optional, used for auto PropertyChanged firing
-    [Computed(typeof(MiscTestsExtensions), "GetFullName"), DependsOn("FirstName,LastName")]
+    // the second paramter for Computed attr is optional
+    [Computed("GetFullName", typeof(MiscModelExtensions)), DependsOn("FirstName,LastName")]
     string FullName { get; }
     // another computer prop - test for a reported bug
-    [Computed(typeof(MiscTestsExtensions), "GetLastFirst"), DependsOn("FirstName,LastName")]
+    [Computed("GetLastFirst"), DependsOn("FirstName,LastName")]
     string LastFirst { get; }
 
     //Persistent computed property
-    [Computed(typeof(MiscTestsExtensions), "GetLicenseHash", Persist = true), DependsOn("LicenseNumber")]
+    [Computed("GetLicenseHash", Persist = true), DependsOn("LicenseNumber")]
     int LicenseHash { get; }
 
     [Nullable] //test for fix
     IDriver Instructor { get; set; }
+
+    // computed dynamically in SQL expression; there is no DbColumn in the table
+    [DateOnly, DbComputed(nameof(MiscModelExtensions.GetLicenseExpiresOn))]
+    DateTime LicenseExpiresOn { get; }
   }
 
   // We skip defining custom entity module and use base EntityModule class
@@ -74,12 +80,12 @@ namespace Vita.Testing.BasicTests.Misc {
     public MiscTestsEntityApp() {
       var area = AddArea("misc");
       var mainModule = new EntityModule(area, "MainModule");
-      mainModule.RegisterSqlFunctions(typeof(CustomSqlFunctions));
       mainModule.RegisterEntities(typeof(IVehicle), typeof(IDriver));
+      mainModule.RegisterFunctions(typeof(MiscModelExtensions));
     }
   }//class
 
-  public static class MiscTestsExtensions {
+  public static class MiscModelExtensions {
     public static IVehicle NewVehicle(this IEntitySession session, string model, int year, IDriver owner, IDriver driver = null) {
       var veh = session.NewEntity<IVehicle>();
       veh.Model = model;
@@ -96,6 +102,10 @@ namespace Vita.Testing.BasicTests.Misc {
       driver.LastName = lastName;
       return driver;
     }
+
+    // Computed columns -------------------------------------------
+    // the GetFullName, GetLastFirst and GetLicenseHash support corresponding IDriver entity members
+    //  that are CLR-only; the property is modeled only on c#/client side and no DB/SQL is involved
     public static string GetFullName(IDriver driver) {
       return driver.FirstName + " " + driver.LastName;
     }
@@ -106,21 +116,35 @@ namespace Vita.Testing.BasicTests.Misc {
       return driver.LicenseNumber.GetHashCode();
     }
 
-  }
-
-  // The class should be registered with entity module using RegisterSqlFunctions
-  public static class CustomSqlFunctions {
-
+    // A function can be used in LINQ expressions, it results in SQL expression added to SQL select,
+    //  to calculate the value on DB server side. We must provide a separate SQL template for each server type.
+    //  SQL template can use placeholders like {dt} matching the names of the CLR function parameters.
     [SqlExpression(DbServerType.MsSql, "DATEADD(YEAR, {years}, {dt})")]
     [SqlExpression(DbServerType.MySql, "DATE_ADD({dt}, INTERVAL {years} YEAR)")]
     [SqlExpression(DbServerType.Postgres, "({dt} + {years} * INTERVAL '1 year')")]
     [SqlExpression(DbServerType.Oracle, "ADD_MONTHS({dt}, 12 * {years})")]
     [SqlExpression(DbServerType.SQLite, "DATE({dt}, '{years} years')")]
     public static DateTime DbAddYears(this DateTime dt, int years) {
-      throw new NotImplementedException("AddYears should not be called directly, only in SQL LINQ expressions.");
+      CannotCallDirectly();
+      return default;
     }
 
-  }
+    // This function supports IDriver.LicenseExpiresOn member that is implemented as 
+    //  dynamic SQL expression added to Select SQL for the entity; there is no Db column behind. 
+    [SqlExpression(DbServerType.MsSql, "DATEADD(YEAR, 5, {driver}.\"LicenseIssuedOn\")")]
+    [SqlExpression(DbServerType.MySql, "DATE_ADD({driver}.\"LicenseIssuedOn\", INTERVAL 5 YEAR)")]
+    [SqlExpression(DbServerType.Postgres, "({driver}.\"LicenseIssuedOn\" + 5 * INTERVAL '1 year')")]
+    [SqlExpression(DbServerType.Oracle, "ADD_MONTHS({driver}.\"LicenseIssuedOn\", 12 * 5)")]
+    [SqlExpression(DbServerType.SQLite, "DATE({driver}.\"LicenseIssuedOn\", '5 years')")]
+    public static DateTime GetLicenseExpiresOn(IDriver driver) {
+      CannotCallDirectly();
+      return default; 
+    }
 
+    private static void CannotCallDirectly([CallerMemberName] string methodName = null) {
+      throw new NotImplementedException(
+        $"Function '{methodName}' may not be called directly, only in LINQ expressions.");
+    }
+  }
 
 }

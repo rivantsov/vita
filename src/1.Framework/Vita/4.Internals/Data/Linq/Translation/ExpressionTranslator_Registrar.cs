@@ -287,12 +287,6 @@ namespace Vita.Data.Linq.Translation {
         RegisterWhere(Analyze(parameters[extraParameterIndex], table, context), context);
     }
 
-    /// <summary>
-    /// Registers all columns of a table.
-    /// </summary>
-    /// <param name="tableExpression"></param>
-    /// <param name="context"></param>
-    /// <returns></returns>
     public virtual IList<ColumnExpression> RegisterAllColumns(TableExpression tableExpression, TranslationContext context) {
       var result = new List<ColumnExpression>();
       foreach(var colInfo in tableExpression.TableInfo.Columns) {
@@ -314,7 +308,7 @@ namespace Vita.Data.Linq.Translation {
     public virtual int RegisterOutputValue(Expression expression, TranslationContext context) {
       var scope = context.CurrentSelect;
       //check if expression is already registered
-      var operands = scope.Operands.ToList();
+      var operands = scope.Operands; 
       var index = operands.IndexOf(expression);
       if(index >= 0)
         return index;

@@ -4,6 +4,7 @@ using System.Linq;
 
 using Vita.Entities.Utilities;
 using Vita.Entities.Logging;
+using System.Reflection;
 
 namespace Vita.Entities.Model.Construction {
 
@@ -149,6 +150,26 @@ namespace Vita.Entities.Model.Construction {
         attr.ApplyOnEntity(builder);
       else
         attr.ApplyOnMember(builder); 
+    }
+
+    public static MethodInfo FindFunction(this EntityModule module, string functionName, Type containerType = null) {
+      if (containerType != null) {
+        return FindStaticMethod(containerType, functionName);
+      }
+      foreach(var type in module.CustomFunctionContainers) {
+        var method = FindStaticMethod(type, functionName);
+        if (method != null)
+          return method; 
+      }
+      // try in module itself
+      return FindStaticMethod(module.GetType(), functionName); 
+
+    }
+
+    private static MethodInfo FindStaticMethod(Type type, string methodName) {
+      var bFlags = BindingFlags.Instance | BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic;
+      var method = type.GetMethod(methodName, bFlags);
+      return method; 
     }
 
   } //class

@@ -43,8 +43,7 @@ namespace Vita.Entities {
       if(!this.Persist)
         HostMember.Kind = EntityMemberKind.Transient;
       HostMember.Flags |= EntityMemberFlags.Computed;
-      var bFlags = BindingFlags.Instance | BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic;
-      _method = this.MethodClass.GetMethod(this.MethodName, bFlags);
+      _method = this.HostEntity.Module.FindFunction(this.MethodName, this.MethodClass);
       if(_method == null) {
         builder.Log.LogError($"Method {MethodName} for computed column {HostMember.MemberName} not found in type {this.MethodClass}");
         return;
@@ -63,6 +62,31 @@ namespace Vita.Entities {
     }
 
   }// class
+
+  public partial class DbComputedAttribute {
+    public MethodInfo ImplementorMethod;
+
+    public override void Validate(ILog log) {
+      base.Validate(log); 
+      if (HostMember.ClrMemberInfo.HasSetter())
+        log.LogError($"DbComputed member {HostEntity.Name}.{HostMember.MemberName} may not have a setter, it is readonly.");
+    }
+
+    public override void ApplyOnMember(EntityModelBuilder builder) {
+      HostMember.Kind = EntityMemberKind.Column;
+      HostMember.Flags |= EntityMemberFlags.DbComputedExpression | EntityMemberFlags.NoDbInsert | EntityMemberFlags.NoDbUpdate;
+      ImplementorMethod = this.HostEntity.Module.FindFunction(this.MethodName, this.MethodClass);
+      if (ImplementorMethod == null) {
+        builder.Log.LogError($"Method {MethodName} for db-computed column {HostMember.MemberName} not found.");
+        return;
+      }
+      HostMember.GetValueRef = MemberValueGettersSetters.GetSimpleValue;
+      HostMember.SetValueRef = MemberValueGettersSetters.DummySetValue;
+    }
+
+  }// class
+
+
 
   public partial class PersistOrderInAttribute {
     public override void Validate(ILog log) {

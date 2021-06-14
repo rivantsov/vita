@@ -348,6 +348,15 @@ namespace Vita.Testing.BasicTests.Misc {
       var john = session.NewDriver("D001", "John", "Dow");
       var jane = session.NewDriver("D002", "Jane", "Crane");
       session.SaveChanges();
+
+      session = _app.OpenSession();
+      var allDrivers = session.EntitySet<IDriver>().ToList();
+      // check lic expires prop
+      var future4y = DateTime.Now.AddYears(4); 
+      foreach(var d in allDrivers) {
+        Assert.IsTrue(d.LicenseExpiresOn > future4y);
+      }
+
       // get drivers with lic numbers and exp dates; DbAddYears is implemented as SQL;
       // the c# function DbAddYears is registered with the module (it's class thru module.RegisterSqlFunctions)
       //  s
@@ -355,13 +364,13 @@ namespace Vita.Testing.BasicTests.Misc {
                       .Select(d => new {
                         Name = d.FirstName,
                         LicNum = d.LicenseNumber,
-                        LicExp = d.LicenseIssuedOn.DbAddYears(5)
+                        LicDatePlus3 = d.LicenseIssuedOn.DbAddYears(3)
                       });
       var drivers = qry.ToList();
       Assert.AreEqual(2, drivers.Count, "Expected 2 drivers.");
-      var nowPlus4 = DateTime.Now.AddYears(4);
-      var allInFuture = drivers.All(d => d.LicExp > nowPlus4);
-      Assert.IsTrue(allInFuture, "Expected all lic expire in 5 y.");
+      var nowPlus2 = DateTime.Now.AddYears(2);
+      var allAfter2y = drivers.All(d => d.LicDatePlus3 > nowPlus2);
+      Assert.IsTrue(allAfter2y, "Expected all dates in the future.");
 
     }
   }//class

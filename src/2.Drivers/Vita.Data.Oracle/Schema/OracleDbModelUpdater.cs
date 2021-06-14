@@ -58,7 +58,8 @@ DROP USER {qsch} CASCADE;
     }
 
     public override void BuildTableAddSql(DbObjectChange change, DbTableInfo table) {
-      var colSpecList = table.Columns.Select(c => GetColumnSpec(c, DbScriptOptions.NewColumn));
+      var realColumns = base.GetTableColumns(table); 
+      var colSpecList = realColumns.Select(c => GetColumnSpec(c, DbScriptOptions.NewColumn));
       var columnSpecs = string.Join(", " + Environment.NewLine, colSpecList);
       var script =
 $@"CREATE TABLE {table.FullName} (

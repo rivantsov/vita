@@ -68,7 +68,7 @@ namespace Vita.Entities.Model{
     Utc = 1 << 13,
     UnlimitedSize = 1 << 14,
     AutoTrim = 1 << 15,
-    DbComputed = 1 << 16,
+    DbComputedExpression = 1 << 16,
     RowVersion = 1 << 17,
 
     //System-set value, bypass authorization check
@@ -77,6 +77,7 @@ namespace Vita.Entities.Model{
     AsIs = 1 << 19,
 
     FromOneToOneRef = 1 << 20,
+
   }
 
   public enum EntityMemberKind {

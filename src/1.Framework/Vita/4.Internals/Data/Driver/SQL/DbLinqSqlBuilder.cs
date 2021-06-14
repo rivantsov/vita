@@ -285,17 +285,33 @@ namespace Vita.Data.Driver {
     }
 
     public virtual SqlFragment GetColumnRefSql(ColumnExpression column, bool forOutput) {
-      var colPart = new TextSqlFragment(column.ColumnInfo.ColumnNameQuoted);
-      var tbl = column.Table;
-      SqlFragment result = colPart; 
-      // finish this with col alias
-      if(tbl.HasAlias())
-        result = new CompositeSqlFragment(tbl.GetAliasSql(), SqlTerms.Dot, colPart);
+      var isDbComputedExpr = column.ColumnInfo.Flags.IsSet(DbColumnFlags.DbComputedExpr);
+      SqlFragment result;
+      if(isDbComputedExpr) {
+        result = GetDbComputedExprSql(column);
+      } else {
+        result = new TextSqlFragment(column.ColumnInfo.ColumnNameQuoted);
+        if (column.Table.HasAlias())
+          result = new CompositeSqlFragment(column.Table.GetAliasSql(), SqlTerms.Dot, result);
+      }
       if(forOutput && column.HasAlias()) {
         var colAlias = new TextSqlFragment(column.Alias);
         result = new CompositeSqlFragment(result, colAlias);
       }
       return result;
+    }
+
+    public virtual SqlFragment GetDbComputedExprSql(ColumnExpression colExpr) {
+      // check column alias; if empty - add it
+      if (colExpr.Alias == null)
+        colExpr.Alias = colExpr.ColumnInfo.ColumnName;
+      var tblAlias = colExpr.Table.HasAlias() ?
+        colExpr.Table.GetAliasSql() : 
+        colExpr.Table.TableInfo.SqlFullName;
+      var templArgs = new[] { tblAlias }; 
+      var sqlTempl = colExpr.ColumnInfo.SqlSnippet.Template;
+      var sqlFragm = sqlTempl.Format(templArgs);
+      return sqlFragm;
     }
 
     public virtual SqlFragment GetConstantLiteral(object value, Type type) {

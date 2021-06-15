@@ -66,8 +66,15 @@ ORDER BY TABLE_SCHEMA, TABLE_NAME, INDEX_NAME, COLUMN_ORDINAL_POSITION
 
     public override void OnModelLoaded() {
       base.OnModelLoaded();
-      LoadIdentityColumnsInfo();
-      //FixGuidColumnsTypeDefs();
+      LoadIdentityColumnsInfo(); 
+    }
+
+    public override void OnColumnLoaded(DbColumnInfo column, InfoRow columnRow) {
+      base.OnColumnLoaded(column, columnRow);
+      // TODO:move identity stuff here, add generated cols info
+      // For generated columns, expression is in GENERATION_EXPRESSION;
+      //    Extra contains: STORED GENERATED or VIRTUAL GENERATED
+      //     
     }
 
     private void LoadIdentityColumnsInfo() {

@@ -163,7 +163,7 @@ namespace Vita.Data.Model {
         colDefault = colDefault.Quote();
       if (!string.IsNullOrEmpty(colDefault))
         dbColumn.DefaultExpression = colDefault;
-      if (member.Flags.IsSet(EntityMemberFlags.DbComputedExpression))
+      if (member.Flags.IsSet(EntityMemberFlags.DbComputed))
         SetupDbComputedExprColumn(dbColumn);
 
     }//method
@@ -174,13 +174,29 @@ namespace Vita.Data.Model {
         _log.LogError($"Failed to find DbComputed attribute on member '{column.Member.MemberName}'");
         return; 
       }
-      var implMethod = dbCompAttr.ImplementorMethod;
-      if (!_dbModel.CustomSqlSnippets.TryGetValue(implMethod, out var snippet)) {
-        _log.LogError($"SQL snipped for Db-computed member '{column.Member.MemberName}' not defined " + 
-          $"for server type {_dbModel.Driver.ServerType}.");
-        return;
+      column.ComputedAttribute = dbCompAttr;
+      column.SqlSnippet = GetSqlSnippetFromSqlExpressionAttr(column.Member.ClrMemberInfo, require: true);
+      if (column.SqlSnippet == null)
+        return; // it is error
+      // validate
+      var parsedExpr = column.SqlSnippet.ParsedSql;
+      bool valid; 
+      switch(dbCompAttr.Kind) {
+
+        case DbComputedKind.Expression:
+          valid = parsedExpr.ArgNames.Length == 1 && parsedExpr.ArgNames[0] == "table";
+          if (!valid)
+            _log.LogError($"Invalid SQL expression for member {column.Member.FullName}: " +
+              $" must have a single placeholder {{table}}.");
+          break;
+
+        case DbComputedKind.Column:
+          if(parsedExpr.ArgNames.Length > 0) {
+            _log.LogError($"Invalid SQL expression for member {column.Member.FullName}: " +
+              $" must not contain placeholders.");
+          }
+          break; 
       }
-      column.SqlSnippet = snippet; 
     }
 
     private DbTypeInfo GetDBTypeInfo(EntityMemberInfo member) {
@@ -438,17 +454,42 @@ namespace Vita.Data.Model {
 
     internal void AddCustomSqlFunctions(Type funcContainer) {
       var methods = funcContainer.GetMethods(BindingFlags.Static | BindingFlags.Public);
-      foreach(var meth in methods) {
-        var sqlFuncAttrs = meth.GetCustomAttributes<SqlExpressionAttribute>()
-            .Where(a => a.ServerType == _dbModel.Driver.ServerType).ToList(); // there are multiples
-        foreach(var attr in sqlFuncAttrs) {
-          var stringTempl = StringTemplate.Parse(attr.Expression);
-          var template = new SqlTemplate(stringTempl.StandardForm);
-          var reorder = GetParamsOrder(meth, stringTempl); 
-          var snippet = new CustomSqlSnippet(meth, _dbModel.Driver.ServerType, template, reorder);
+      var serverType = _dbModel.Driver.ServerType;
+      foreach (var meth in methods) {
+        var snippet = GetSqlSnippetFromSqlExpressionAttr(meth, require: false);
+        if (snippet != null)        
           _dbModel.CustomSqlSnippets[meth] = snippet;
-        }
       } //foreach meth
+    }
+
+    static int[] _emptyInts = new int[] { }; 
+
+    private CustomSqlSnippet GetSqlSnippetFromSqlExpressionAttr(MemberInfo clrMember, bool require) {
+      var fullName = clrMember.GetFullName(); 
+      var serverType = _dbModel.Driver.ServerType;
+      var sqlExprAttrs = clrMember.GetCustomAttributes<SqlExpressionAttribute>()
+          .Where(a => a.ServerType == serverType).ToList();
+      switch (sqlExprAttrs.Count) {
+        case 0:
+          if (require)
+            _log.LogError($"SQL expression for function/member '{fullName}' not defined " +
+               $"for server type {_dbModel.Driver.ServerType}.");
+          return null; //foreach meth
+        case 1: break;
+        default: // > 1
+          _log.LogError($"Multiple {nameof(SqlExpressionAttribute)} attributes on function/member '{fullName}'" +
+            $" for server {serverType}.");
+          return null;
+      }
+      var attr = sqlExprAttrs[0];
+      var parsedExpr = StringTemplate.Parse(attr.Expression);
+      var sqlTemplate = new SqlTemplate(parsedExpr.StandardForm);
+
+      int[] reorder = _emptyInts; 
+      if (clrMember is MethodInfo meth)
+        reorder = GetParamsOrder(meth, parsedExpr);
+      var snippet = new CustomSqlSnippet(clrMember, _dbModel.Driver.ServerType, parsedExpr, sqlTemplate, reorder);
+      return snippet; 
     }
 
     internal int[] GetParamsOrder(MethodInfo method, StringTemplate template) {

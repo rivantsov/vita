@@ -68,7 +68,7 @@ namespace Vita.Entities.Model{
     Utc = 1 << 13,
     UnlimitedSize = 1 << 14,
     AutoTrim = 1 << 15,
-    DbComputedExpression = 1 << 16,
+    DbComputed = 1 << 16,
     RowVersion = 1 << 17,
 
     //System-set value, bypass authorization check

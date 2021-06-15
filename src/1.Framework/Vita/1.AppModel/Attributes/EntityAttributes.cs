@@ -560,7 +560,7 @@ namespace Vita.Entities {
   }
 
   /// <summary>Specifies SQL expression that implements the function SQL.</summary>
-  [AttributeUsage(AttributeTargets.Method, AllowMultiple = true)]
+  [AttributeUsage(AttributeTargets.Method | AttributeTargets.Property, AllowMultiple = true)]
   public partial class SqlExpressionAttribute : EntityModelAttributeBase {
     public DbServerType ServerType; 
     public string Expression; 
@@ -570,20 +570,19 @@ namespace Vita.Entities {
     }
   }
 
-  /// <summary> Marks property as computable by a SQL expression. </summary>
-  /// <remarks> The entity property marked with this attribute has no matching column
-  /// in the database table. Property must be readonly, its value is produced by a SQL 
-  /// expression in the SELECT statement. 
-  /// The attribute must point to a static method decorated with [SqlExpression] attribute(s). 
+  /// <summary> Marks property as DB-computed: dynamic expression or column with expression. </summary>
+  /// <remarks> For Kind=Expression there is no matching column, the value is produced by SQL expression
+  /// in SELECT statements. For other kinds there is a column in the database. 
+  /// The property must be readonly.
   /// </remarks>
   [AttributeUsage(AttributeTargets.Property)]
   public partial class DbComputedAttribute : EntityModelAttributeBase {
-    public readonly string MethodName;
-    public Type MethodClass;
+    public DbComputedKind Kind;
+    public bool ColumnPersisted;
 
-    public DbComputedAttribute(string methodName, Type methodClass = null) {
-      MethodClass = methodClass;
-      MethodName = methodName;
+    public DbComputedAttribute(DbComputedKind kind = DbComputedKind.Expression, bool columnPersisted = false) {
+      Kind = kind;
+      ColumnPersisted = columnPersisted;
     }
   }
 

@@ -27,7 +27,7 @@ namespace Vita.Data.Model {
     IDictionary<string, DbTableInfo> _tablesByName = new Dictionary<string, DbTableInfo>(StringComparer.InvariantCultureIgnoreCase);
     IList<DbSequenceInfo> _sequences = new List<DbSequenceInfo>();
     IList<DbCustomTypeInfo> _customDbTypes = new List<DbCustomTypeInfo>();
-    public Dictionary<MethodInfo, CustomSqlSnippet> CustomSqlSnippets = new Dictionary<MethodInfo, CustomSqlSnippet>();
+    public Dictionary<MemberInfo, CustomSqlSnippet> CustomSqlSnippets = new Dictionary<MemberInfo, CustomSqlSnippet>();
 
     //Table of all Db objects; accessed by entity-model object as key 
     private Dictionary<object, DbModelObjectBase> _allObjects = new Dictionary<object, DbModelObjectBase>();

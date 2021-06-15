@@ -35,6 +35,7 @@ namespace Vita.Data.Postgres {
       // So we retrieve basic column info from raw pg tables/views; 
       // we also join information_schema.columns to be able to get some additional attributes (numeric scale, precision)
       // that are hard (impossible) to find in raw tables
+      // note: is_generated is varchar field
       var filter = GetSchemaFilter("n.nspname");
       var sql = string.Format(@"
 SELECT n.nspname AS table_schema, t.relname AS table_name,  a.attname AS column_name,
@@ -46,7 +47,9 @@ SELECT n.nspname AS table_schema, t.relname AS table_name,  a.attname AS column_
   cl.column_default as column_default,
   cl.is_nullable as is_nullable,
   cl.numeric_precision as numeric_precision,
-  cl.numeric_scale as numeric_scale
+  cl.numeric_scale as numeric_scale,
+  cl.is_generated as is_generated,
+  cl.generation_expression
 FROM pg_class t
      JOIN pg_attribute a ON a.attrelid = t.oid
      JOIN pg_type tp ON a.atttypid = tp.oid

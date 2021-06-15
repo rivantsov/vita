@@ -172,6 +172,7 @@ namespace Vita.Data.Model {
     public string DefaultExpression;
     public string DefaultConstraintName;
 
+    public DbComputedAttribute ComputedAttribute; 
     public CustomSqlSnippet SqlSnippet; 
 
     //Schema update
@@ -200,7 +201,7 @@ namespace Vita.Data.Model {
         Flags |= DbColumnFlags.NoInsert;
       if (member.Flags.IsSet(EntityMemberFlags.NoDbUpdate))
         Flags |= DbColumnFlags.NoUpdate;
-      if (member.Flags.IsSet(EntityMemberFlags.DbComputedExpression))
+      if (member.Flags.IsSet(EntityMemberFlags.DbComputed))
         Flags |= DbColumnFlags.DbComputedExpr;
       if (_sizableTypes.Contains(member.DataType))
         Flags |= DbColumnFlags.UseParamForLongValues;
@@ -356,18 +357,23 @@ namespace Vita.Data.Model {
   }
 
   public class CustomSqlSnippet  {
-    public MethodInfo Method; 
+    public MemberInfo Owner;
+    public Type DataType; 
     public DbServerType ServerType;
-    public SqlTemplate Template;
+    public StringTemplate ParsedSql; 
+    public SqlTemplate SqlTemplate;
     public int[] ParamsReorder; 
 
-    public CustomSqlSnippet(MethodInfo method, DbServerType serverType, SqlTemplate template, int[] paramsReorder) {
-      Method = method;
+    public CustomSqlSnippet(MemberInfo owner, DbServerType serverType, StringTemplate parsedSql,
+           SqlTemplate sqlTemplate, int[] paramsReorder) {
+      Owner = owner;
       ServerType = serverType;
-      Template = template;
+      ParsedSql = parsedSql;
+      SqlTemplate = sqlTemplate;
       ParamsReorder = paramsReorder;
+      DataType = owner.GetMemberReturnType(); 
     }
-    public override string ToString() => Template.Template;
+    public override string ToString() => SqlTemplate.Template;
   }
 
   public static class DbModelExtensions {

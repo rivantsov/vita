@@ -15,7 +15,9 @@ namespace Vita.Entities.Utilities {
     private static Dictionary<string, Type> _typesCache = new Dictionary<string, Type>();
     private static object _lockObject = new object();
 
-
+    public static string GetFullName(this MemberInfo member) {
+      return $"{member.DeclaringType}.{member.Name}";
+    }
 
     public static bool CanAssignWithConvert(this Type type, Type fromType) {
       if(type.IsAssignableFrom(fromType))

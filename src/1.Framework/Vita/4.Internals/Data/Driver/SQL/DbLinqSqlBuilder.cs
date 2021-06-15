@@ -224,7 +224,7 @@ namespace Vita.Data.Driver {
         orderedArgs.Add(custSqlExpr.Operands[prmsOrder[i]]);
       }
       var argSqls = BuildSqls(orderedArgs);
-      var sqlTempl = custSqlExpr.Snippet.Template;
+      var sqlTempl = custSqlExpr.Snippet.SqlTemplate;
       var sqlFragm = sqlTempl.Format(argSqls);
       return sqlFragm;
 
@@ -309,7 +309,7 @@ namespace Vita.Data.Driver {
         colExpr.Table.GetAliasSql() : 
         colExpr.Table.TableInfo.SqlFullName;
       var templArgs = new[] { tblAlias }; 
-      var sqlTempl = colExpr.ColumnInfo.SqlSnippet.Template;
+      var sqlTempl = colExpr.ColumnInfo.SqlSnippet.SqlTemplate;
       var sqlFragm = sqlTempl.Format(templArgs);
       return sqlFragm;
     }

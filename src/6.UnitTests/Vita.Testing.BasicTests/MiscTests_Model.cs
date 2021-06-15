@@ -34,7 +34,7 @@ namespace Vita.Testing.BasicTests.Misc {
   }
 
   [Entity]
-  public interface IDriver {
+  public interface IDriver: IDriverComputedColumns {
     [PrimaryKey, Auto]
     Guid Id { get; set; }
     [Utc, Auto(AutoType.UpdatedOn)]
@@ -70,9 +70,18 @@ namespace Vita.Testing.BasicTests.Misc {
     [Nullable] //test for fix
     IDriver Instructor { get; set; }
 
+  }
+
+  public interface IDriverComputedColumns {
     // computed dynamically in SQL expression; there is no DbColumn in the table
-    [DateOnly, DbComputed(nameof(MiscModelExtensions.GetLicenseExpiresOn))]
+    [DateOnly, DbComputed(kind: DbComputedKind.Expression)]
+    [SqlExpression(DbServerType.MsSql, "DATEADD(YEAR, 5, {table}.LicenseIssuedOn)")]
+    [SqlExpression(DbServerType.MySql, "DATE_ADD({table}.\"LicenseIssuedOn\", INTERVAL 5 YEAR)")]
+    [SqlExpression(DbServerType.Postgres, "({table}.\"LicenseIssuedOn\" + 5 * INTERVAL '1 year')")]
+    [SqlExpression(DbServerType.Oracle, "ADD_MONTHS({table}.\"LicenseIssuedOn\", 12 * 5)")]
+    [SqlExpression(DbServerType.SQLite, "DATE({table}.\"LicenseIssuedOn\", '5 years')")]
     DateTime LicenseExpiresOn { get; }
+
   }
 
   // We skip defining custom entity module and use base EntityModule class
@@ -127,18 +136,6 @@ namespace Vita.Testing.BasicTests.Misc {
     public static DateTime DbAddYears(this DateTime dt, int years) {
       CannotCallDirectly();
       return default;
-    }
-
-    // This function supports IDriver.LicenseExpiresOn member that is implemented as 
-    //  dynamic SQL expression added to Select SQL for the entity; there is no Db column behind. 
-    [SqlExpression(DbServerType.MsSql, "DATEADD(YEAR, 5, {driver}.\"LicenseIssuedOn\")")]
-    [SqlExpression(DbServerType.MySql, "DATE_ADD({driver}.\"LicenseIssuedOn\", INTERVAL 5 YEAR)")]
-    [SqlExpression(DbServerType.Postgres, "({driver}.\"LicenseIssuedOn\" + 5 * INTERVAL '1 year')")]
-    [SqlExpression(DbServerType.Oracle, "ADD_MONTHS({driver}.\"LicenseIssuedOn\", 12 * 5)")]
-    [SqlExpression(DbServerType.SQLite, "DATE({driver}.\"LicenseIssuedOn\", '5 years')")]
-    public static DateTime GetLicenseExpiresOn(IDriver driver) {
-      CannotCallDirectly();
-      return default; 
     }
 
     private static void CannotCallDirectly([CallerMemberName] string methodName = null) {

@@ -13,7 +13,7 @@ namespace Vita.Data.Linq.Translation.Expressions {
       public readonly CustomSqlSnippet Snippet;
 
       public CustomSqlExpression(CustomSqlSnippet snippet, IList<Expression> operands)
-          :base(SqlExpressionType.CustomSqlSnippet, snippet.Method.ReturnType, operands)
+          :base(SqlExpressionType.CustomSqlSnippet, snippet.DataType, operands)
       {
           this.Snippet = snippet;   
       }

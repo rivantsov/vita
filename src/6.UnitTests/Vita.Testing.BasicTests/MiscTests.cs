@@ -341,7 +341,7 @@ namespace Vita.Testing.BasicTests.Misc {
 
 
     [TestMethod]
-    public void TestMisc_CustomSqlFunctions() {
+    public void TestMisc_DbComputedMembers() {
       // test for a bug - matching properties of 2 references to the same table (v.Owner and v.Driver); 
       DeleteAll();
       var session = _app.OpenSession();
@@ -354,7 +354,7 @@ namespace Vita.Testing.BasicTests.Misc {
       // check lic expires prop
       var future4y = DateTime.Now.AddYears(4); 
       foreach(var d in allDrivers) {
-        Assert.IsTrue(d.LicenseExpiresOn > future4y);
+        Assert.IsTrue(d.LicenseExpiresOn_NoCol > future4y);
       }
 
       // get drivers with lic numbers and exp dates; DbAddYears is implemented as SQL;

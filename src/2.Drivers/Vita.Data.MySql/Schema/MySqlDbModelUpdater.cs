@@ -59,6 +59,10 @@ namespace Vita.Data.MySql {
     }
 
     protected override string GetColumnSpec(DbColumnInfo column, DbScriptOptions options) {
+      bool isComputed = column.ComputedKind != DbComputedKindExt.None;
+      if (isComputed)
+        return GetComputedColumnSpec(column, options);
+
       var typeStr = column.TypeInfo.DbTypeSpec;
       var nullable = options.IsSet(DbScriptOptions.ForceNull) || column.Flags.IsSet(DbColumnFlags.Nullable);
       var nullStr = nullable ? "NULL" : "NOT NULL";
@@ -76,6 +80,17 @@ namespace Vita.Data.MySql {
       var spec = $" {column.ColumnNameQuoted} {typeStr} {nullStr} {strAutoInc}"; 
       return spec;
     }
+
+    private string GetComputedColumnSpec(DbColumnInfo column, DbScriptOptions options) {
+      var typeStr = column.TypeInfo.DbTypeSpec;
+      var nullable = options.IsSet(DbScriptOptions.ForceNull) || column.Flags.IsSet(DbColumnFlags.Nullable);
+      var nullStr = nullable ? "NULL" : "NOT NULL";
+      var virtStored = column.ComputedKind == DbComputedKindExt.Column ? "VIRTUAL" : "STORED";
+      var spec = 
+        $"{column.ColumnName} {typeStr} GENERATED ALWAYS AS ({column.ComputedAsExpression}) {virtStored} {nullStr}";
+      return spec;
+    }
+
 
   }//class
 }

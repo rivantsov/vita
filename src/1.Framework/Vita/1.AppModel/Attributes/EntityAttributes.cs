@@ -578,11 +578,9 @@ namespace Vita.Entities {
   [AttributeUsage(AttributeTargets.Property)]
   public partial class DbComputedAttribute : EntityModelAttributeBase {
     public DbComputedKind Kind;
-    public bool ColumnPersisted;
 
-    public DbComputedAttribute(DbComputedKind kind = DbComputedKind.Expression, bool columnPersisted = false) {
+    public DbComputedAttribute(DbComputedKind kind = DbComputedKind.NoColumn) {
       Kind = kind;
-      ColumnPersisted = columnPersisted;
     }
   }
 

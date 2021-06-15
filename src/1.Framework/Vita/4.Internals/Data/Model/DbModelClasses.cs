@@ -143,9 +143,6 @@ namespace Vita.Data.Model {
     RowVersion = 1 << 5,
     IdentityForeignKey = 1 << 6,
 
-    DbComputedExpr = 1 << 7, //not real column but expr in selects
-    DbComputedColumn = 1 << 8,
-
     NoUpdate = 1 << 10,  // columns with auto-values
     NoInsert = 1 << 11,
     UseParamForLongValues = 1 << 12, //string or byte[], Binary data type with size parameter
@@ -166,14 +163,14 @@ namespace Vita.Data.Model {
 
     public DbColumnFlags Flags;
 
-    //public DbColumnTypeInfo TypeInfo;
     public DbTypeInfo TypeInfo;
     public DbValueConverter Converter;
     public string DefaultExpression;
     public string DefaultConstraintName;
 
-    public DbComputedAttribute ComputedAttribute; 
-    public CustomSqlSnippet SqlSnippet; 
+    public DbComputedKindExt ComputedKind;
+    public string ComputedAsExpression;
+    public CustomSqlSnippet ComputedAsExprSnippet;
 
     //Schema update
     //Used in analyzing changes. In old model, points to the object in new model, and vice versa
@@ -185,6 +182,7 @@ namespace Vita.Data.Model {
       Table = table;
       SetName(columnName); 
       TypeInfo = typeInfo;
+      ComputedKind = member.ComputedKind;
       Table.Columns.Add(this);
       if (member.Flags.IsSet(EntityMemberFlags.Nullable))
         Flags |= DbColumnFlags.Nullable;
@@ -201,8 +199,6 @@ namespace Vita.Data.Model {
         Flags |= DbColumnFlags.NoInsert;
       if (member.Flags.IsSet(EntityMemberFlags.NoDbUpdate))
         Flags |= DbColumnFlags.NoUpdate;
-      if (member.Flags.IsSet(EntityMemberFlags.DbComputed))
-        Flags |= DbColumnFlags.DbComputedExpr;
       if (_sizableTypes.Contains(member.DataType))
         Flags |= DbColumnFlags.UseParamForLongValues;
       if (member.Flags.IsSet(EntityMemberFlags.Secret))
@@ -233,6 +229,12 @@ namespace Vita.Data.Model {
 
     public override string ToString() {
       return Table.TableName + "." + ColumnName + ":" + TypeInfo;
+    }
+
+    public bool IsRealDbColumn() {
+      if (ComputedKind == DbComputedKindExt.NoColumn)
+        return false;
+      return true; 
     }
 
   }//class

@@ -141,6 +141,10 @@ CREATE {unique} {clustered} INDEX {qKeyName}
     }
 
     protected override string GetColumnSpec(DbColumnInfo column, DbScriptOptions options = DbScriptOptions.None) {
+      bool isComputed = column.ComputedKind != DbComputedKindExt.None;
+      if(isComputed)
+        return GetComputedColumnSpec(column);
+
       var typeStr = column.TypeInfo.DbTypeSpec;
       var nullable = options.IsSet(DbScriptOptions.ForceNull) || column.Flags.IsSet(DbColumnFlags.Nullable);
       var nullStr = nullable ? "NULL" : "NOT NULL";
@@ -154,6 +158,13 @@ CREATE {unique} {clustered} INDEX {qKeyName}
         defaultStr = "DEFAULT " + column.DefaultExpression;
       var spec = $" {column.ColumnNameQuoted} {typeStr} {idStr} {defaultStr} {nullStr}"; 
       return spec;
+    }
+
+    private string GetComputedColumnSpec(DbColumnInfo column) {
+      var spec = $"{column.ColumnName} AS ({column.ComputedAsExpression})";
+      if (column.ComputedKind == DbComputedKindExt.StoredColumn)
+        spec += " PERSISTED";
+      return spec; 
     }
 
     private string GetClusteredExpression(DbKeyInfo key) {

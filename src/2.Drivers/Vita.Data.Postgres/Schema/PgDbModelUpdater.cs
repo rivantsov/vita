@@ -86,7 +86,11 @@ $@"CREATE {matz} VIEW {view.FullName}  AS
     }//method
 
     protected override string GetColumnSpec(DbColumnInfo column, DbScriptOptions options) {
-      if(column.Flags.IsSet(DbColumnFlags.Identity)) {
+      bool isComputed = column.ComputedKind != DbComputedKindExt.None;
+      if (isComputed)
+        return GetComputedColumnSpec(column, options);
+
+      if (column.Flags.IsSet(DbColumnFlags.Identity)) {
         if(column.TypeInfo.DbTypeSpec == "bigint")
           return $"{column.ColumnNameQuoted} BIGSERIAL ";
         else
@@ -94,6 +98,16 @@ $@"CREATE {matz} VIEW {view.FullName}  AS
       }
       return base.GetColumnSpec(column, options);
     }
-  
+
+    private string GetComputedColumnSpec(DbColumnInfo column, DbScriptOptions options) {
+      var typeStr = column.TypeInfo.DbTypeSpec;
+      // Postgres supports only STORED cols, so we force it here - all computed cols are STORED
+      var virtStored = "STORED";
+      var spec =
+        $"{column.ColumnNameQuoted} {typeStr} GENERATED ALWAYS AS ({column.ComputedAsExpression}) {virtStored}";
+      return spec;
+    }
+
+
   }
 }

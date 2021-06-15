@@ -11,6 +11,7 @@ using Vita.Data.Model;
 using Vita.Data.Sql;
 using Vita.Entities;
 using Vita.Entities.Locking;
+using Vita.Entities.Model;
 using Vita.Entities.Utilities;
 
 namespace Vita.Data.Driver {
@@ -285,7 +286,7 @@ namespace Vita.Data.Driver {
     }
 
     public virtual SqlFragment GetColumnRefSql(ColumnExpression column, bool forOutput) {
-      var isDbComputedExpr = column.ColumnInfo.Flags.IsSet(DbColumnFlags.DbComputedExpr);
+      var isDbComputedExpr = column.ColumnInfo.ComputedKind == DbComputedKindExt.NoColumn;
       SqlFragment result;
       if(isDbComputedExpr) {
         result = GetDbComputedExprSql(column);
@@ -309,7 +310,7 @@ namespace Vita.Data.Driver {
         colExpr.Table.GetAliasSql() : 
         colExpr.Table.TableInfo.SqlFullName;
       var templArgs = new[] { tblAlias }; 
-      var sqlTempl = colExpr.ColumnInfo.SqlSnippet.SqlTemplate;
+      var sqlTempl = colExpr.ColumnInfo.ComputedAsExprSnippet.SqlTemplate;
       var sqlFragm = sqlTempl.Format(templArgs);
       return sqlFragm;
     }

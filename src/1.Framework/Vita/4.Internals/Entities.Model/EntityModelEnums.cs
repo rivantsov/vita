@@ -77,7 +77,14 @@ namespace Vita.Entities.Model{
     AsIs = 1 << 19,
 
     FromOneToOneRef = 1 << 20,
+  }
 
+  // extended version of DbComputedKind
+  public enum DbComputedKindExt {
+    None = 0,
+    NoColumn = 1,
+    Column = 2,
+    StoredColumn = 3,
   }
 
   public enum EntityMemberKind {

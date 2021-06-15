@@ -229,7 +229,8 @@ namespace Vita.Entities.Model {
     public byte Precision;
     public byte Scale; 
 
-    public EntityMemberKind Kind; 
+    public EntityMemberKind Kind;
+    public DbComputedKindExt ComputedKind; 
     public int Index; //index in Entity.Members list
     public int ValueIndex; // value index in either OriginalValues/ModifiedValues or MemoryOnlyValues
     public AutoType AutoValueType;

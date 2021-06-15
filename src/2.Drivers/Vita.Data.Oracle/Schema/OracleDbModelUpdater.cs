@@ -113,6 +113,10 @@ CREATE {unique} INDEX {qSch}.{qKeyName}
 
     // Oracle when changing column, expects Null/NotNull only if it is changing (otherwise, if it is the same, throws stupid error)
     protected override string GetColumnSpec(DbColumnInfo column, DbScriptOptions options = DbScriptOptions.None) {
+      bool isComputed = column.ComputedKind != DbComputedKindExt.None;
+      if (isComputed)
+        return GetComputedColumnSpec(column, options);
+
       var typeStr = column.TypeInfo.DbTypeSpec;
       var idStr = string.Empty;
       bool isNew = options.IsSet(DbScriptOptions.NewColumn);
@@ -131,6 +135,16 @@ CREATE {unique} INDEX {qSch}.{qKeyName}
       var spec = $" {column.ColumnNameQuoted} {typeStr} {idStr} {defaultStr} {nullStr}";
       return spec;
     }
+
+    private string GetComputedColumnSpec(DbColumnInfo column, DbScriptOptions options) {
+      var typeStr = column.TypeInfo.DbTypeSpec;
+      var virtStored = column.ComputedKind == DbComputedKindExt.Column ? "VIRTUAL" : "STORED";
+      var spec =
+        $"{column.ColumnNameQuoted} {typeStr} GENERATED ALWAYS AS ({column.ComputedAsExpression}) {virtStored}";
+      return spec;
+    }
+
+
 
     public override void BuildColumnRenameSql(DbObjectChange change, DbColumnInfo oldColumn, DbColumnInfo newColumn) {
       var tn = newColumn.Table.FullName;

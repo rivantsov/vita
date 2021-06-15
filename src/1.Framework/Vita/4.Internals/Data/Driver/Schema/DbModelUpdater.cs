@@ -198,7 +198,7 @@ $@"CREATE TABLE {table.FullName} (
     }//method
 
     public virtual IList<DbColumnInfo> GetTableColumns(DbTableInfo table) {
-      return table.Columns.Where(c => !c.Flags.IsSet(DbColumnFlags.DbComputedExpr)).ToList(); 
+      return table.Columns.Where(c => c.IsRealDbColumn()).ToList(); 
     }
 
     // All columns are added as nullable, to allow for existing rows be filled with nulls
@@ -390,10 +390,12 @@ $@"CREATE VIEW {view.FullName} AS
       var nullable = options.IsSet(DbScriptOptions.ForceNull) || column.Flags.IsSet(DbColumnFlags.Nullable);
       var nullStr = nullable ? "NULL" : "NOT NULL";
       string defaultStr = null;
+
+
       if(!string.IsNullOrWhiteSpace(column.DefaultExpression))
         defaultStr = "DEFAULT " + column.DefaultExpression;
       var spec = $" {column.ColumnNameQuoted} {typeStr} {defaultStr} {nullStr}";
-      return spec;
+      return spec.Trim();
     }
 
     protected void CheckDefaultConstraintName(DbColumnInfo column) {

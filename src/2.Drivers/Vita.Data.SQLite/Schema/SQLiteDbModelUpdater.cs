@@ -118,12 +118,24 @@ namespace Vita.Data.SQLite {
     }
 
     protected override string GetColumnSpec(DbColumnInfo column, DbScriptOptions options = DbScriptOptions.None) {
+      bool isComputed = column.ComputedKind != DbComputedKindExt.None;
+      if (isComputed)
+        return GetComputedColumnSpec(column, options);
+
       // See https://www.sqlite.org/autoinc.html
       // auto-inc columns is always INT64, but s
-      if(column.Flags.IsSet(DbColumnFlags.Identity))
+      if (column.Flags.IsSet(DbColumnFlags.Identity))
         return column.ColumnNameQuoted + " INTEGER PRIMARY KEY AUTOINCREMENT  NOT NULL"; //
       else 
        return base.GetColumnSpec(column, options);
+    }
+
+    private string GetComputedColumnSpec(DbColumnInfo column, DbScriptOptions options) {
+      var typeStr = column.TypeInfo.DbTypeSpec;
+      var virtStored = column.ComputedKind == DbComputedKindExt.Column ? "VIRTUAL" : "STORED";
+      var spec =
+        $"{column.ColumnNameQuoted} {typeStr} GENERATED ALWAYS AS ({column.ComputedAsExpression}) {virtStored}";
+      return spec;
     }
 
   }

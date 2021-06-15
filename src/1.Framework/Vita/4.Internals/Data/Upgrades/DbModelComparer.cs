@@ -308,7 +308,7 @@ namespace Vita.Data.Upgrades {
             } //foreach col
             //new columns
             foreach (var newCol in newTable.Columns) {
-              if (newCol.Flags.IsSet(DbColumnFlags.DbComputedExpr))
+              if (!newCol.IsRealDbColumn())
                 continue; // ignore db computed cols
               if (newCol.Peer == null) //if not null - it is already taken care of
                 tableChangeGrp.AddChange(null, newCol);

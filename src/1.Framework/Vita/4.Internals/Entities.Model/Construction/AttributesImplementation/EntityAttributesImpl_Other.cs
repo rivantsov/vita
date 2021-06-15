@@ -72,6 +72,7 @@ namespace Vita.Entities {
     }
 
     public override void ApplyOnMember(EntityModelBuilder builder) {
+      HostMember.ComputedKind = (DbComputedKindExt)(int)Kind;  
       HostMember.Flags |= EntityMemberFlags.DbComputed | EntityMemberFlags.NoDbInsert | EntityMemberFlags.NoDbUpdate;
     }
 

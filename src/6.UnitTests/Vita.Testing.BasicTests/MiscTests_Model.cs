@@ -74,14 +74,21 @@ namespace Vita.Testing.BasicTests.Misc {
 
   public interface IDriverComputedColumns {
     // computed dynamically in SQL expression; there is no DbColumn in the table
-    [DateOnly, DbComputed(kind: DbComputedKind.Expression)]
+    [DateOnly, DbComputed(kind: DbComputedKind.NoColumn)]
     [SqlExpression(DbServerType.MsSql, "DATEADD(YEAR, 5, {table}.LicenseIssuedOn)")]
     [SqlExpression(DbServerType.MySql, "DATE_ADD({table}.\"LicenseIssuedOn\", INTERVAL 5 YEAR)")]
     [SqlExpression(DbServerType.Postgres, "({table}.\"LicenseIssuedOn\" + 5 * INTERVAL '1 year')")]
     [SqlExpression(DbServerType.Oracle, "ADD_MONTHS({table}.\"LicenseIssuedOn\", 12 * 5)")]
     [SqlExpression(DbServerType.SQLite, "DATE({table}.\"LicenseIssuedOn\", '5 years')")]
-    DateTime LicenseExpiresOn { get; }
+    DateTime LicenseExpiresOn_NoCol { get; }
 
+    [DateOnly, DbComputed(kind: DbComputedKind.Column)]
+    [SqlExpression(DbServerType.MsSql, "DATEADD(YEAR, 5, LicenseIssuedOn)")]
+    [SqlExpression(DbServerType.MySql, "DATE_ADD(LicenseIssuedOn, INTERVAL 5 YEAR)")]
+    [SqlExpression(DbServerType.Postgres, "(\"LicenseIssuedOn\" + 5 * INTERVAL '1 year')")]
+    [SqlExpression(DbServerType.Oracle, "ADD_MONTHS(\"LicenseIssuedOn\", 12 * 5)")]
+    [SqlExpression(DbServerType.SQLite, "DATE(LicenseIssuedOn, '5 years')")]
+    DateTime LicenseExpiresOn_Col { get; }
   }
 
   // We skip defining custom entity module and use base EntityModule class

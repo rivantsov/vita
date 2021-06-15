@@ -174,27 +174,29 @@ namespace Vita.Data.Model {
         _log.LogError($"Failed to find DbComputed attribute on member '{column.Member.MemberName}'");
         return; 
       }
-      column.ComputedAttribute = dbCompAttr;
-      column.SqlSnippet = GetSqlSnippetFromSqlExpressionAttr(column.Member.ClrMemberInfo, require: true);
-      if (column.SqlSnippet == null)
+      column.ComputedKind = column.Member.ComputedKind;
+      column.ComputedAsExprSnippet = GetSqlSnippetFromSqlExpressionAttr(column.Member.ClrMemberInfo, require: true);
+      if (column.ComputedAsExprSnippet == null)
         return; // it is error
       // validate
-      var parsedExpr = column.SqlSnippet.ParsedSql;
-      bool valid; 
-      switch(dbCompAttr.Kind) {
+      var parsedExpr = column.ComputedAsExprSnippet.ParsedSql;
+      switch(column.ComputedKind) {
 
-        case DbComputedKind.Expression:
-          valid = parsedExpr.ArgNames.Length == 1 && parsedExpr.ArgNames[0] == "table";
+        case DbComputedKindExt.NoColumn:
+          var valid = parsedExpr.ArgNames.Length == 1 && parsedExpr.ArgNames[0] == "table";
           if (!valid)
             _log.LogError($"Invalid SQL expression for member {column.Member.FullName}: " +
               $" must have a single placeholder {{table}}.");
           break;
 
-        case DbComputedKind.Column:
+        case DbComputedKindExt.Column:
+        case DbComputedKindExt.StoredColumn:
           if(parsedExpr.ArgNames.Length > 0) {
             _log.LogError($"Invalid SQL expression for member {column.Member.FullName}: " +
               $" must not contain placeholders.");
+            return; 
           }
+          column.ComputedAsExpression = parsedExpr.OriginalTemplate; //no placeholders here
           break; 
       }
     }

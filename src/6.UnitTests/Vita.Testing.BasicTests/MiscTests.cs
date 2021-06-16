@@ -18,18 +18,19 @@ namespace Vita.Testing.BasicTests.Misc {
 
 
   [TestClass]
-  public partial class MiscTests {
-    EntityApp _app;
-
-    public void DeleteAll() {
-      Startup.DeleteAll(_app);
-    }
+  public class MiscTests {
+    // making _app static so it's initialized once for all tests;
+    //  for console run with multiple servers, remember ServerType for the app, so we create new
+    //  when server type changes
+    static EntityApp _app;
+    static DbServerType _appServerType; 
 
     [TestInitialize]
     public void Init() {
-      if (_app == null) {
+      if (_app == null || _appServerType != Startup.ServerType) {
         _app = new MiscTestsEntityApp();
         Startup.ActivateApp(_app);
+        _appServerType = Startup.ServerType;
       }
     }
 
@@ -39,7 +40,9 @@ namespace Vita.Testing.BasicTests.Misc {
         _app.Flush();
     }
 
-
+    public void DeleteAll() {
+      Startup.DeleteAll(_app);
+    }
 
     [TestMethod]
     public void TestMisc_EntityReferences() {
@@ -311,7 +314,7 @@ namespace Vita.Testing.BasicTests.Misc {
       var cmd = session.GetLastCommand();
       // make sure it is delete-many, in one statement
       if (Startup.ServerType == DbServerType.Postgres)
-        Assert.IsTrue(cmd.CommandText.Contains(" ANY("), "Expected delete command with IN clause");
+        Assert.IsTrue(cmd.CommandText.Contains(" ANY("), "Expected delete command with Any(...) clause");
       else
         Assert.IsTrue(cmd.CommandText.Contains(" IN "), "Expected delete command with IN clause");
     }
@@ -333,8 +336,8 @@ namespace Vita.Testing.BasicTests.Misc {
       var session2 = _app.OpenSession();
       var qry = session2.EntitySet<IVehicle>().Where(v => v.Owner.FirstName == "Jane" && v.Driver.FirstName == "John");
       var ford = qry.FirstOrDefault();
-      var cmd = session2.GetLastCommand();
-      Debug.WriteLine(cmd.CommandText);
+      // var cmd = session2.GetLastCommand();
+      // Debug.WriteLine(cmd.CommandText);
       Assert.AreEqual("Jane", ford.Owner.FirstName, "2-ref test: owner name does not match");
       Assert.AreEqual("John", ford.Driver.FirstName, "2-ref test: driver name does not match");
     }

@@ -125,7 +125,7 @@ SELECT SOME NONSENSE
       mask.Set(114, true);
       mask.Set(115, true);
       var hex = mask.ToHex();
-      Debug.Write($"Bit mask hex: {hex} ");
+      // Debug.Write($"Bit mask hex: {hex} ");
       var expected = "0008 4210 0000 0000 0000 0001 000F 0000".Replace(" ", string.Empty);
       Assert.AreEqual(expected, hex, "Hex value of mask does not match expected.");
     }

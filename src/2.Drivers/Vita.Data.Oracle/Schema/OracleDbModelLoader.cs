@@ -296,24 +296,44 @@ SELECT
 
     #endregion
 
+    public override void OnModelLoaded() {
+      base.OnModelLoaded();
+      LoadComputedColumnsInfo();
+    }
+
     const string _getComputedColumns = @"
-select owner as table_schema,
-       table_name,
-       column_name,
-       data_type,
-       data_default as generation_expression
-from sys.all_tab_cols
-where virtual_column != 'NO'
-      and owner not in ('ANONYMOUS','CTXSYS','DBSNMP','EXFSYS', 'LBACSYS', 
-      'MDSYS','MGMT_VIEW','OLAPSYS','OWBSYS','ORDPLUGINS','ORDSYS','OUTLN', 
-      'SI_INFORMTN_SCHEMA','SYS','SYSMAN','SYSTEM','TSMSYS','WK_TEST',
-      'WKSYS','WKPROXY','WMSYS','XDB','APEX_040000','APEX_PUBLIC_USER',
-      'DIP','FLOWS_30000','FLOWS_FILES','MDDATA','ORACLE_OCM','XS$NULL',
-      'SPATIAL_CSW_ADMIN_USR', 'SPATIAL_WFS_ADMIN_USR', 'PUBLIC')
-      and data_default is not null
-order by table_schema,
-         table_name,
-         column_name;
+  select owner as table_schema,
+         table_name,  
+         column_name,
+         data_default as expr,
+         virtual_column
+  from sys.all_tab_cols
+  where {0} and (virtual_column <> 'NO')
 ";
+
+    private void LoadComputedColumnsInfo() {
+      var filter = GetSchemaFilter("owner");
+      var sql = string.Format(_getComputedColumns, filter);
+      var data = ExecuteSelect(sql);
+      foreach (InfoRow row in data.Rows) {
+        var schema = row.GetAsString("table_schema");
+        var tableName = row.GetAsString("table_name");
+        var colName = row.GetAsString("column_name");
+        var table = Model.GetTable(schema, tableName);
+        if (table == null) continue;
+        var column = table.Columns.FirstOrDefault(c => c.ColumnName == colName);
+        if (column == null) continue;
+        column.ComputedAsExpression = row.GetAsString("expr");
+        // Oracle has no stored columns
+        column.ComputedKind = DbComputedKindExt.Column;
+      }// foreach
+    }
+
+    // override to ignore ComputeKind, Oracle does not have Stored columns
+    public override bool ColumnsMatchComputed(DbColumnInfo oldColumn, DbColumnInfo newColumn, out string description) {
+      description = null;
+      return oldColumn.ComputedAsExpression.Trim() == newColumn.ComputedAsExpression.Trim();
+    }
+
   } //class
 }

@@ -79,14 +79,15 @@ CREATE {unique} {clustered} INDEX {qKeyName}
     }
 
     //ALTER TABLE employees DROP COLUMN "employee_num";
-    public override void BuildColumnDropSql(DbObjectChange change, DbColumnInfo column) {
+    public override void BuildColumnDropSql(DbObjectChange change, DbColumnInfo column,
+                       DbScriptType scriptType = DbScriptType.ColumnDrop) {
       if(!string.IsNullOrEmpty(column.DefaultExpression)) {
         var cn = QuoteName(column.DefaultConstraintName); 
         change.AddScript(DbScriptType.ColumnModify, $"ALTER TABLE {column.Table.FullName} DROP CONSTRAINT {cn};");
       }
       //Note: the column drop comes after table-rename, so it might be table is already renamed, and we have to get its new name
       var tableName = column.Table.Peer.FullName; //new name if renamed
-      change.AddScript(DbScriptType.ColumnDrop, $"ALTER TABLE {tableName} DROP COLUMN {column.ColumnNameQuoted};");
+      change.AddScript(scriptType, $"ALTER TABLE {tableName} DROP COLUMN {column.ColumnNameQuoted};");
     }
 
     public override void BuildColumnRenameSql(DbObjectChange change, DbColumnInfo oldColumn, DbColumnInfo newColumn) {

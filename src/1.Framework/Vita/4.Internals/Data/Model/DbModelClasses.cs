@@ -237,6 +237,9 @@ namespace Vita.Data.Model {
       return true; 
     }
 
+    public bool IsDbComputed() {
+      return ComputedKind != DbComputedKindExt.None;
+    }
   }//class
 
   public class DbTableFilter {

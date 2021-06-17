@@ -92,6 +92,11 @@ namespace Vita.Data.Driver {
             case DbObjectChangeType.Modify:
               var newCol = (DbColumnInfo)change.NewObject;
               var oldCol = (DbColumnInfo)change.OldObject;
+              if (newCol.IsDbComputed()) {
+                BuildColumnDropSql(change, oldCol, DbScriptType.ColumnDropEarly);
+                BuildColumnAddSql(change, newCol, DbScriptOptions.NewColumn);
+                break;
+              }
               bool changesToNonNull = oldCol.Flags.IsSet(DbColumnFlags.Nullable) && !newCol.Flags.IsSet(DbColumnFlags.Nullable);
               if (changesToNonNull) {
                 var oldSpec = GetColumnSpec(oldCol);
@@ -297,10 +302,11 @@ $@"CREATE VIEW {view.FullName} AS
 
 
     //ALTER TABLE employees DROP COLUMN [employee_pwd];
-    public virtual void BuildColumnDropSql(DbObjectChange change, DbColumnInfo column) {
+    public virtual void BuildColumnDropSql(DbObjectChange change, DbColumnInfo column, 
+                                           DbScriptType scriptType = DbScriptType.ColumnDrop) {
       //Note: the column drop comes after table-rename, so it might be table is already renamed, and we have to get its new name
       var tableName = column.Table.Peer.FullName; //new name if renamed
-      change.AddScript(DbScriptType.ColumnDrop, $"ALTER TABLE {tableName} DROP COLUMN {column.ColumnNameQuoted}");
+      change.AddScript(scriptType, $"ALTER TABLE {tableName} DROP COLUMN {column.ColumnNameQuoted}");
     }
 
     public virtual void BuildColumnRenameSql(DbObjectChange change, DbColumnInfo oldColumn, DbColumnInfo newColumn) {

@@ -83,8 +83,12 @@ namespace Vita.Testing.BasicTests.Misc {
     DateTime LicenseExpiresOn_NoCol { get; }
 
     [DateOnly, DbComputed(kind: DbComputedKind.Column)]
-    [SqlExpression(DbServerType.MsSql, "DATEADD(YEAR, 5, LicenseIssuedOn)")]
-    [SqlExpression(DbServerType.MySql, "DATE_ADD(LicenseIssuedOn, INTERVAL 5 YEAR)")]
+    // Servers parse and reformat expression when storing it with Db column.
+    // To let schema comparison work, we normally change to normalized expr looked up in db AFTER first schema update
+    //  for your convenience VITA prints out normalized expr when there's mismatch to Debug.WriteLine
+    //  (see it in Output window)
+    [SqlExpression(DbServerType.MsSql, "DATEADD(YEAR, 5, LicenseIssuedOn)")] 
+    [SqlExpression(DbServerType.MySql, "DATE_ADD(LicenseIssuedOn, INTERVAL 5 YEAR)")] 
     [SqlExpression(DbServerType.Postgres, "(\"LicenseIssuedOn\" + 5 * INTERVAL '1 year')")]
     [SqlExpression(DbServerType.Oracle, "ADD_MONTHS(\"LicenseIssuedOn\", 12 * 5)")]
     [SqlExpression(DbServerType.SQLite, "DATE(LicenseIssuedOn, '5 years')")]

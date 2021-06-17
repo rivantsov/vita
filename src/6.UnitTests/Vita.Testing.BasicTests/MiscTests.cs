@@ -104,10 +104,10 @@ namespace Vita.Testing.BasicTests.Misc {
       //Check that entity reference is returned initially as record stub
       session = _app.OpenSession();
       if (Startup.ServerType == DbServerType.MySql) {
-        // MySQL fails without this wait. Looks like we need to give some time to DB engine to settle the update. any ideas?!  
-        Thread.Sleep(200);
-        Thread.Sleep(200);
-        Thread.Sleep(200);
+        // MySQL fails without this wait. Looks like we need to give some time to DB engine to settle the update.
+        // any ideas?!  
+        Thread.Sleep(100);
+        Thread.Yield(); 
         veh1 = session.GetEntity<IVehicle>(car1Id);
         // without pause above, it loads NULL into FK driver_id
         var drId = EntityHelper.GetProperty(veh1, "Driver_Id");

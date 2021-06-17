@@ -151,6 +151,8 @@ namespace Vita.Data.Driver {
         }
         var column = new DbColumnInfo(currTblInfo, colName, typeInfo, isNullable);
         column.DefaultExpression = row.GetAsString("COLUMN_DEFAULT");
+        if (column.DefaultExpression != null)
+          ;
         // Let schema manager add any provider-specific info
         OnColumnLoaded(column, row);
       }//foreach

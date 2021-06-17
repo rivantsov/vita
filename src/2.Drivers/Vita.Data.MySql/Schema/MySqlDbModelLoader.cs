@@ -64,37 +64,24 @@ ORDER BY TABLE_SCHEMA, TABLE_NAME, INDEX_NAME, COLUMN_ORDINAL_POSITION
       return dbTypeInfo; 
     }
 
-    public override void OnModelLoaded() {
-      base.OnModelLoaded();
-      LoadIdentityColumnsInfo(); 
-    }
-
-    public override void OnColumnLoaded(DbColumnInfo column, InfoRow columnRow) {
-      base.OnColumnLoaded(column, columnRow);
-      // TODO:move identity stuff here, add generated cols info
-      // For generated columns, expression is in GENERATION_EXPRESSION;
-      //    Extra contains: STORED GENERATED or VIRTUAL GENERATED
-      //     
-    }
-
-    private void LoadIdentityColumnsInfo() {
-      var filter = GetSchemaFilter("TABLE_SCHEMA");
-      var sql = string.Format(@"
-SELECT table_schema, table_name, column_name
-  FROM INFORMATION_SCHEMA.Columns 
-  WHERE EXTRA = 'auto_increment' AND {0};", filter);
-      var data = ExecuteSelect(sql);
-      foreach(InfoRow row in data.Rows) {
-        var schema = row.GetAsString("TABLE_SCHEMA");
-        if(!base.IncludeSchema(schema))
-          continue;
-        var tableName = row.GetAsString("TABLE_NAME");
-        var colName = row.GetAsString("COLUMN_NAME");
-        var table = Model.GetTable(schema, tableName);
-        if(table == null) continue;
-        var colInfo = table.Columns.FirstOrDefault(c => c.ColumnName == colName);
-        if(colInfo != null)
-          colInfo.Flags |= DbColumnFlags.Identity | DbColumnFlags.NoUpdate | DbColumnFlags.NoInsert;
+    public override void OnColumnLoaded(DbColumnInfo column, InfoRow row) {
+      base.OnColumnLoaded(column, row);
+      var extra = row.GetAsString("EXTRA");
+      if (string.IsNullOrWhiteSpace(extra))
+        return;
+      var expr = row.GetAsString("GENERATION_EXPRESSION");
+      switch (extra.ToLowerInvariant()) {
+        case "auto_increment":
+          column.Flags |= DbColumnFlags.Identity | DbColumnFlags.NoUpdate | DbColumnFlags.NoInsert;
+          break;
+        case "virtual generated":
+          column.ComputedAsExpression = expr;
+          column.ComputedKind = DbComputedKindExt.Column;
+          break;
+        case "stored generated":
+          column.ComputedAsExpression = expr;
+          column.ComputedKind = DbComputedKindExt.StoredColumn;
+          break;
       }
     }
 

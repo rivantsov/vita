@@ -66,6 +66,7 @@ namespace Vita.Data.Upgrades {
     ColumnRename,
     TableAdd,
 
+    ColumnDropEarly,
     ColumnAdd,
     ColumnCopyValues,  // used in renaming by [add new + copy values + delete old] 
     ColumnModify,

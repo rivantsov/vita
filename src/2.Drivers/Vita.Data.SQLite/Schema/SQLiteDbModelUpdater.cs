@@ -51,11 +51,12 @@ namespace Vita.Data.SQLite {
     }
 
     //not supported; all we can do is nullify it; so if it is a FK it no longer holds target refs
-    public override void BuildColumnDropSql(DbObjectChange change, DbColumnInfo column) {
+    public override void BuildColumnDropSql(DbObjectChange change, DbColumnInfo column,
+                   DbScriptType scriptType = DbScriptType.ColumnDrop) {
       //Note: the column drop comes after table-rename, so it might be table is already renamed, and we have to get its new name
       var tableName = column.Table.Peer.FullName; //new name if renamed
       if (column.Flags.IsSet(DbColumnFlags.Nullable) && column.Flags.IsSet(DbColumnFlags.ForeignKey)) {
-        change.AddScript(DbScriptType.ColumnInit, $"UPDATE {tableName} SET {column.ColumnNameQuoted} = NULL;");
+        change.AddScript(scriptType, $"UPDATE {tableName} SET {column.ColumnNameQuoted} = NULL;");
       }
     }
 

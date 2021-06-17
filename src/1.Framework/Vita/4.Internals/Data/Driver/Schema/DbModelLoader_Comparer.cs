@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using Vita.Data.Model;
@@ -13,6 +14,21 @@ namespace Vita.Data.Driver {
   partial class DbModelLoader : IDbObjectComparer {
 
     public virtual bool ColumnsMatch(DbColumnInfo oldColumn, DbColumnInfo newColumn, out string description) {
+      
+      if (newColumn.IsDbComputed()) {
+        var match = ColumnsMatchComputed(oldColumn, newColumn, out description);
+        if (!match) //printout for convenience
+          Debug.WriteLine($@"
+Computed column '{newColumn.ColumnName}' definition mismatch. 
+   Expr in DB column:          '{oldColumn.ComputedAsExpression}'
+   Expr in Entity attr: '{newColumn.ComputedAsExpression}'
+");
+        return match; 
+      } else
+        return ColumnsMatchRegular(oldColumn, newColumn, out description);
+    }
+
+    public virtual bool ColumnsMatchRegular(DbColumnInfo oldColumn, DbColumnInfo newColumn, out string description) {
       description = null;
       if(newColumn.Member.Flags.IsSet(EntityMemberFlags.AsIs))
         return true;
@@ -32,7 +48,12 @@ namespace Vita.Data.Driver {
       }
       return result;
       //TODO: add check of default/init expression
+    }
 
+    public virtual bool ColumnsMatchComputed(DbColumnInfo oldColumn, DbColumnInfo newColumn, out string description) {
+      description = null;
+      return oldColumn.ComputedAsExpression == newColumn.ComputedAsExpression &&
+             oldColumn.ComputedKind == newColumn.ComputedKind; // stored/not stored 
     }
 
     public virtual bool KeysMatch(DbKeyInfo oldKey, DbKeyInfo newKey) {

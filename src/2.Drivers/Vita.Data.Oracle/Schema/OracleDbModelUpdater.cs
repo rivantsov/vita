@@ -138,13 +138,10 @@ CREATE {unique} INDEX {qSch}.{qKeyName}
 
     private string GetComputedColumnSpec(DbColumnInfo column, DbScriptOptions options) {
       var typeStr = column.TypeInfo.DbTypeSpec;
-      var virtStored = column.ComputedKind == DbComputedKindExt.Column ? "VIRTUAL" : "STORED";
       var spec =
-        $"{column.ColumnNameQuoted} {typeStr} GENERATED ALWAYS AS ({column.ComputedAsExpression}) {virtStored}";
+        $"{column.ColumnNameQuoted} {typeStr} GENERATED ALWAYS AS ({column.ComputedAsExpression}) VIRTUAL";
       return spec;
     }
-
-
 
     public override void BuildColumnRenameSql(DbObjectChange change, DbColumnInfo oldColumn, DbColumnInfo newColumn) {
       var tn = newColumn.Table.FullName;

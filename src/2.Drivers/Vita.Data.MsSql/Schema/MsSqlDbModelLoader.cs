@@ -133,6 +133,7 @@ ORDER BY table_schema, table_name, index_name, column_ordinal_position; ", filte
     public override void OnModelLoaded() {
       LoadIdentityColumnsInfo();
       LoadDefaultConstraintNames();
+      LoadComputedColumnsInfo(); 
     }
 
     private void LoadIdentityColumnsInfo() {
@@ -190,16 +191,36 @@ WHERE {0};
       }
     }//method
 
-    const string GetComputedColumns = @"
+    private void LoadComputedColumnsInfo() {
+      const string _getComputedColumns = @"
 SELECT SCHEMA_NAME(o.schema_id) AS schema_name, 
     c.name AS column_name, 
     OBJECT_NAME(c.object_id) AS table_name, 
     TYPE_NAME(user_type_id) AS data_type, 
-    definition
+    definition AS expression,
+  	c.is_persisted -- 0/1
 FROM sys.computed_columns c
   JOIN sys.objects o ON o.object_id = c.object_id
+WHERE {0}
 ORDER BY schema_name, table_name;
 ";
+      var filter = GetSchemaFilter("SCHEMA_NAME(o.schema_id)");
+      var sql = string.Format(_getComputedColumns, filter);
+      var data = ExecuteSelect(sql);
+      foreach (InfoRow row in data.Rows) {
+        var schema = row.GetAsString("schema_name");
+        var tableName = row.GetAsString("table_name");
+        var colName = row.GetAsString("column_name");
+        var table = Model.GetTable(schema, tableName);
+        if (table == null) continue;
+        var colInfo = table.Columns.FirstOrDefault(c => c.ColumnName == colName);
+        if (colInfo == null) continue;
+        // Warning: this is quite reformatted expr! see TestSchemaUpdate test, comments on computed column
+        colInfo.ComputedAsExpression = row.GetAsString("expression");
+        var isPersisted = row.GetAsInt("is_persisted");
+        colInfo.ComputedKind = isPersisted == 0 ? DbComputedKindExt.Column : DbComputedKindExt.StoredColumn;          
+      }// foreach
+    }
 
   }//class  
 }

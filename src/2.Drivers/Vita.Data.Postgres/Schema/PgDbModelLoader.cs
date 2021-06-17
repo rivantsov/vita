@@ -68,6 +68,16 @@ ORDER BY table_schema, table_name, ordinal_position;
       return colData; 
     }
 
+    public override void OnColumnLoaded(DbColumnInfo column, InfoRow columnRow) {
+      base.OnColumnLoaded(column, columnRow);
+      var isGen = columnRow.GetAsString("is_generated");
+      if (isGen != "ALWAYS")
+        return;
+      column.ComputedKind = DbComputedKindExt.StoredColumn; // pg does not have virtual cols, only STORED
+      column.ComputedAsExpression = columnRow.GetAsString("generation_expression");
+    }
+
+
     // Postgres does not save original view definition. The SQL returned in View_definition column 
     // in information_schema.views is very much modified and refactored version of original script,
     // so it is pretty much useless for comparison (to detect if view needs to be upgraded)
@@ -154,30 +164,6 @@ ORDER BY table_schema, table_name, index_name, column_ordinal_position
       return colData;
     }
 
-
-    /* No longer used, found a way to get asc/desc value 
-    class IndexColumn {
-      public string ColumnName;
-      public bool IsDescending;
-    }
-    // sample index def: 
-    // CREATE INDEX "IX_LastNameFirstName" ON books."Author" USING btree ("FirstName" DESC, "LastName")
-    private List<IndexColumn> ParseIndexDef(string indexDef) { 
-      var list = new List<IndexColumn>();
-      var p1 = indexDef.IndexOf('(');
-      var p2 = indexDef.IndexOf(')');
-      var colsStr = indexDef.Substring(p1 + 1, p2 - p1 - 1);
-      var cols = colsStr.Split(',');
-      foreach(var col in cols) {
-        var colParts = col.Trim().Split(' ');
-        var colName = colParts[0];
-        var colNameNoQuoute = colName.Substring(1, colName.Length - 2);
-        bool isDesc = colParts.Length > 1 && colParts[1].ToLowerInvariant() == "desc";
-        list.Add(new IndexColumn() { ColumnName = colNameNoQuoute, IsDescending = isDesc });
-      }
-      return list;
-    }
-    */
 
     /* The following query will bring index columns, but there are 2 problems. 1 - column order in index has to be derived from indKey field 
      * (list of numbers which point to attnum values). 2 - it does not bring ASC/DESC info for columns, and I could not find a way to get it. 

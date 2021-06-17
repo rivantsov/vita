@@ -26,7 +26,7 @@ namespace Vita.Testing.BasicTests.SchemaUpdates {
     //Original model consisting of 2 tables
     public class EntityModuleV1 : EntityModule {
       [Entity, Index("IntProp,StringProp")]
-      public interface IParentEntity {
+      public interface IParentEntity: IParentEntityComputed {
         [PrimaryKey, Auto]
         Guid Id { get; set; }
         [Size(40)]
@@ -93,7 +93,7 @@ namespace Vita.Testing.BasicTests.SchemaUpdates {
     public class EntityModuleV2 : EntityModule {
       [Entity, Index("IntProp:desc,StringProp:asc")]
       [ClusteredIndex("StringProp,Id")]
-      public interface IParentEntity {
+      public interface IParentEntity: IParentEntityComputed {
         [PrimaryKey, Auto]
         Guid Id { get; }
         [Size(50)] //change size; clustered index changes as well
@@ -174,6 +174,23 @@ namespace Vita.Testing.BasicTests.SchemaUpdates {
         var dbInfo = new DbInfoModule(area);
       }
     }
+
+    // computed field for ParentEntity
+    public interface IParentEntityComputed {
+      DateTime SomeDt { get; set; }
+
+      [DbComputed(DbComputedKind.StoredColumn)]
+      //  Servers reformat the expr internally (stupid! - keep the original somewhere!)
+      //  so in order for schema upgrade work properly, you need to put here expr formatted exactly
+      //  like server stores it. VITA prints out expr values where there's mismatch - see Output window
+      //  replace original expr with the one already in database so that schema comparison works
+      [SqlExpression(DbServerType.MsSql, "(dateadd(year,(5),[SomeDt]))")] // "DATEADD(YEAR, 5, SomeDt)")] - original
+      [SqlExpression(DbServerType.MySql, "(`SomeDt` + interval 5 year)")] // "DATE_ADD(SomeDt, INTERVAL 5 YEAR)")]
+      [SqlExpression(DbServerType.Postgres, "(\"SomeDt\" + ((5)::double precision * '1 year'::interval))")] // "(\"SomeDt\" + 5 * INTERVAL '1 year')")]
+      [SqlExpression(DbServerType.Oracle, "ADD_MONTHS(\"SomeDt\", 12 * 5)")]
+      [SqlExpression(DbServerType.SQLite, "DATE(SomeDt, '5 years')")]
+      DateTime SomeDtPlus5 { get; }
+    }
     #endregion
 
     [TestMethod]
@@ -211,7 +228,7 @@ namespace Vita.Testing.BasicTests.SchemaUpdates {
         var dbModel = Startup.LoadDbModel(app);
         Assert.AreEqual(6, dbModel.Tables.Count, "Expected 6 tables."); //2 tables in DbInfo + 4 tables in our module
         var parTable = FindTable(dbModel, SchemaName, "ParentEntity");
-        Assert.AreEqual(8, parTable.Columns.Count, "Invalid number of columns in parent table.");
+        Assert.AreEqual(10, parTable.Columns.Count, "Invalid number of columns in parent table.");
         var keyCount = CountKeys(parTable);
         //Keys: PK, FK to IEntityToDelete, index on FK to IEntityToDelete, index on IntProp,StringProp 
         Assert.AreEqual(4, keyCount, "Invalid # of keys in parent table.");
@@ -262,7 +279,7 @@ namespace Vita.Testing.BasicTests.SchemaUpdates {
         // 2 tables in DbInfo module, 4 tables in test app
         Assert.AreEqual(6, dbModel.Tables.Count, "Expected 6 tables after update.");
         var parTable = FindTable(dbModel, SchemaName, "ParentEntity");
-        Assert.AreEqual(7, parTable.Columns.Count, "Invalid number of columns in parent table after schema update.");
+        Assert.AreEqual(9, parTable.Columns.Count, "Invalid number of columns in parent table after schema update.");
         Assert.AreEqual(3, parTable.Keys.Count, //PK, Clustered index, index on IntProp,StringProp
            "Invalid # of keys in parent table after update.");
         if (supportsClustIndex) {

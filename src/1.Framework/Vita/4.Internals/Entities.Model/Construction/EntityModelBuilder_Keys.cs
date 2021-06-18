@@ -10,6 +10,7 @@ namespace Vita.Entities.Model.Construction {
   public partial class EntityModelBuilder {
     private List<EntityKeyInfo> _keysInExpansion;
 
+
     // Some keys may contain members that are entity references;
     private void ExpandEntityKeyMembers() {
       _keysInExpansion = new List<EntityKeyInfo>(); 

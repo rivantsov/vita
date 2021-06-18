@@ -168,10 +168,15 @@ namespace Vita.Data.SQLite {
     }
 
     // Methods of IDbObjectComparer
-    public override bool ColumnsMatch(DbColumnInfo oldColumn, DbColumnInfo newColumn, out string description) {
+    public override bool ColumnsMatchRegular(DbColumnInfo oldColumn, DbColumnInfo newColumn, out string description) {
       // no types in SQLite, so columns match if their names match; this method is called only when names match
       description = null; 
       return true; 
+    }
+
+    public override bool ColumnsMatchComputed(DbColumnInfo oldColumn, DbColumnInfo newColumn, out string description) {
+      description = null;
+      return true; // we do not upgrade columns
     }
   }//class
 

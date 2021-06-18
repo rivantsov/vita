@@ -18,7 +18,7 @@ using Vita.Entities.Logging;
 using Oracle.ManagedDataAccess.Client;
 
 namespace Vita.Data.Oracle {
-  public class OracleDbDriver : DbDriver {
+  public partial class OracleDbDriver : DbDriver {
     public const DbFeatures OracleFeatures = 
         DbFeatures.Schemas |  DbFeatures.OutputParameters | DbFeatures.DefaultParameterValues
         | DbFeatures.ReferentialConstraints
@@ -170,6 +170,7 @@ namespace Vita.Data.Oracle {
       base.OnDbModelConstructing(dbModel);
     }
 
+    /*
     // Probing async methods
     private async Task<object> ExecuteReaderAsync(CancellationToken token) {
       var sqlCmd = new OracleCommand();
@@ -179,6 +180,7 @@ namespace Vita.Data.Oracle {
       }
       return new object();
     }
+    */
 
   }
 }

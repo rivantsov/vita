@@ -360,14 +360,14 @@ namespace Vita.Testing.BasicTests.Misc {
         Assert.IsTrue(d.LicenseExpiresOn_NoCol > future4y);
       }
 
-      // get drivers with lic numbers and exp dates; DbAddYears is implemented as SQL;
-      // the c# function DbAddYears is registered with the module (it's class thru module.RegisterSqlFunctions)
+      // Test extension functions implemented as SQL expressions and usable in LINQ queries
+      // the c# function DbAddYears is registered with the module (it's class thru module.RegisterFunctions)
       //  s
       var qry = session.EntitySet<IDriver>()
                       .Select(d => new {
                         Name = d.FirstName,
                         LicNum = d.LicenseNumber,
-                        LicDatePlus3 = d.LicenseIssuedOn.DbAddYears(3)
+                        LicDatePlus3 = d.LicenseIssuedOn.DbAddYears(3) 
                       });
       var drivers = qry.ToList();
       Assert.AreEqual(2, drivers.Count, "Expected 2 drivers.");

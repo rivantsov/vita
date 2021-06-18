@@ -133,9 +133,8 @@ namespace Vita.Data.SQLite {
 
     private string GetComputedColumnSpec(DbColumnInfo column, DbScriptOptions options) {
       var typeStr = column.TypeInfo.DbTypeSpec;
-      var virtStored = column.ComputedKind == DbComputedKindExt.Column ? "VIRTUAL" : "STORED";
       var spec =
-        $"{column.ColumnNameQuoted} {typeStr} GENERATED ALWAYS AS ({column.ComputedAsExpression}) {virtStored}";
+        $"{column.ColumnNameQuoted} {typeStr} GENERATED ALWAYS AS ({column.ComputedAsExpression}) VIRTUAL";
       return spec;
     }
 

@@ -55,7 +55,7 @@ namespace Vita.Entities.Model.Construction {
       if(Log.ErrorCount > 0) 
         return; 
 
-      VerifyPrimaryKeys();
+      VerifyPrimaryKeyAttributes();
 
       Model.ModelState = EntityModelState.Draft; 
       _app.AppEvents.OnModelConstructing(this);
@@ -165,7 +165,7 @@ namespace Vita.Entities.Model.Construction {
     }
 
     // Verify that entities referenced in properties are registered.
-    private void VerifyPrimaryKeys() {
+    private void VerifyPrimaryKeyAttributes() {
       foreach(var entInfo in Model.Entities) {
         if(entInfo.Kind == EntityKind.View)
           continue; 
@@ -305,6 +305,19 @@ namespace Vita.Entities.Model.Construction {
 
     private void ValidateKeys() {
       foreach (var entity in Model.Entities) {
+        if (entity.Kind == EntityKind.Table) {
+          var pk = entity.PrimaryKey;
+          if (pk == null) {
+            Log.LogError($"Entity '{entity.Name}': primary key not defined.");
+            continue;
+          }
+          //check no nullable members
+          var hasNullMembers = pk.KeyMembers.Select(km => km.Member)
+                                 .Any(m => m.Flags.IsSet(EntityMemberFlags.Nullable));
+          if (hasNullMembers)
+            Log.LogError($"Entity {entity.Name}: primary key may not contain nullable members.");
+        }
+
         //Clustered indexes
         var ciKeys = entity.Keys.FindAll(k => k.KeyType.IsSet(KeyType.Clustered));
         switch (ciKeys.Count) {

@@ -305,7 +305,7 @@ SELECT
   select owner as table_schema,
          table_name,  
          column_name,
-         data_default as expr,
+         -- data_default, -- this cannot be read from the reader, it is LONG
          virtual_column
   from sys.all_tab_cols
   where {0} and (virtual_column <> 'NO')
@@ -323,7 +323,7 @@ SELECT
         if (table == null) continue;
         var column = table.Columns.FirstOrDefault(c => c.ColumnName == colName);
         if (column == null) continue;
-        column.ComputedAsExpression = row.GetAsString("expr");
+        // column.ComputedAsExpression = row.GetAsString("data_default"); // never works
         // Oracle has no stored columns
         column.ComputedKind = DbComputedKindExt.Column;
       }// foreach
@@ -332,7 +332,8 @@ SELECT
     // override to ignore ComputeKind, Oracle does not have Stored columns
     public override bool ColumnsMatchComputed(DbColumnInfo oldColumn, DbColumnInfo newColumn, out string description) {
       description = null;
-      return oldColumn.ComputedAsExpression.Trim() == newColumn.ComputedAsExpression.Trim();
+      var doNotRecreate = OracleDbDriver.GeneratedColumnUpdateMode == GeneratedColumnUpdateMode.Never;
+      return doNotRecreate; // if doNotRecreate then pretend always matches the existing
     }
 
   } //class

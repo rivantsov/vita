@@ -69,7 +69,6 @@ namespace Vita.Testing.BasicTests.Misc {
 
     [Nullable] //test for fix
     IDriver Instructor { get; set; }
-
   }
 
   public interface IDriverComputedColumns {
@@ -82,11 +81,11 @@ namespace Vita.Testing.BasicTests.Misc {
     [SqlExpression(DbServerType.SQLite, "DATE({table}.\"LicenseIssuedOn\", '5 years')")]
     DateTime LicenseExpiresOn_NoCol { get; }
 
-    [DateOnly, DbComputed(kind: DbComputedKind.Column)]
     // Servers parse and reformat expression when storing it with Db column.
     // To let schema comparison work, we normally change to normalized expr looked up in db AFTER first schema update
     //  for your convenience VITA prints out normalized expr when there's mismatch to Debug.WriteLine
     //  (see it in Output window)
+    [DateOnly, DbComputed(kind: DbComputedKind.Column)]
     [SqlExpression(DbServerType.MsSql, "DATEADD(YEAR, 5, LicenseIssuedOn)")] 
     [SqlExpression(DbServerType.MySql, "DATE_ADD(LicenseIssuedOn, INTERVAL 5 YEAR)")] 
     [SqlExpression(DbServerType.Postgres, "(\"LicenseIssuedOn\" + 5 * INTERVAL '1 year')")]

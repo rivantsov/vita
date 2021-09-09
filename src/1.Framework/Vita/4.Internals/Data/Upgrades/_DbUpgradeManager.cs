@@ -80,6 +80,14 @@ namespace Vita.Data.Upgrades {
       }
       _upgradeInfo.OldDbModel = loader.LoadModel();
       _upgradeInfo.OldDbModel.VersionInfo = oldDbVersion;
+      //Collect migrations; do it first, migr methods may add to ignore objects list.
+      var migrSet = new DbMigrationSet(_app, _database, _upgradeInfo.OldDbModel);
+      foreach(var module in this._database.DbModel.EntityApp.Modules) {
+        migrSet.CurrentModule = module;
+        module.RegisterMigrations(migrSet);
+      }
+      migrSet.CurrentModule = null;
+
       //assign prior versions 
       //Compare two models and get changes
       var modelComparer = new DbModelComparer();
@@ -87,13 +95,8 @@ namespace Vita.Data.Upgrades {
       //build scripts
       var updater = driver.CreateDbModelUpdater(_database.Settings);
       updater.BuildScripts(_upgradeInfo);
+
       //Add migrations
-      var migrSet = new DbMigrationSet(_app, _database, _upgradeInfo.OldDbModel);
-      foreach (var module in this._database.DbModel.EntityApp.Modules) {
-        migrSet.CurrentModule = module;
-        module.RegisterMigrations(migrSet);
-      }
-      migrSet.CurrentModule = null;
       _upgradeInfo.AddMigrations(migrSet);
       //Update final status
       _upgradeInfo.VersionsChanged = oldDbVersion != null &&  _database.DbModel.VersionInfo.VersionChanged(oldDbVersion);

@@ -25,6 +25,7 @@ namespace Vita.Testing.BasicTests.SchemaUpdates {
     #region Version1
     //Original model consisting of 2 tables
     public class EntityModuleV1 : EntityModule {
+
       [Entity, Index("IntProp,StringProp")]
       public interface IParentEntity: IParentEntityComputed {
         [PrimaryKey, Auto]
@@ -75,6 +76,16 @@ namespace Vita.Testing.BasicTests.SchemaUpdates {
       public EntityModuleV1(EntityArea area) : base(area, "TestModule", version: new Version("1.0.0.0")) {
         RegisterEntities(typeof(IParentEntity), typeof(IChildEntity), typeof(IEntityToDelete), typeof(ITable));
       }
+
+      public override void RegisterMigrations(DbMigrationSet migrations) {
+        // Test Ignore list for db upgradeds. Add an index thru script and put it on Ignore list, so that auto db upgrade does not touch it
+        if(migrations.ServerType == DbServerType.MsSql) {
+          migrations.AddSql("1.0.0.0", "CustomIndex", "Ignore list test",
+            $@"CREATE NONCLUSTERED INDEX [IX_Table_User] ON [upd].[Table] ( [User] ASC)");
+          // now register this index as ignored. We have to use full name with schema
+          migrations.IgnoreDbObjectChanges("upd.IX_Table_User");
+        }
+      }
     }// module
 
     public class EntityAppV1 : EntityApp {
@@ -82,7 +93,6 @@ namespace Vita.Testing.BasicTests.SchemaUpdates {
         var area = this.AddArea(SchemaName);
         var module = new EntityModuleV1(area);
         var dbInfo = new DbInfoModule(area);
-
       }
     }
 
@@ -127,6 +137,7 @@ namespace Vita.Testing.BasicTests.SchemaUpdates {
         Guid Id { get; set; }
         DateTime Begin { get; set; }
         DateTime End { get; set; }
+        string User { get; set; }
         string Insert { get; set; }
       }
 
@@ -142,7 +153,7 @@ namespace Vita.Testing.BasicTests.SchemaUpdates {
         base.RegisterEntities(typeof(IParentEntity), typeof(IChildEntityRenamed), typeof(ITable), typeof(INewTable));
       }
 
-      public override void RegisterMigrations(DbMigrationSet migrations) {
+      public override void RegisterMigrations(DbMigrationSet migrations) { 
         //ChildEntityRenamed has added reference column OtherParent (not null); we have to add a script that initializes the column for existing records,
         // otherwise adding foreign key constraint would fail. We set it to the same reference as Parent_Id column.
         // The script timing is 'Middle' - it will be executed AFTER column is added (as nullable), but before it is switched to NOT NULL and ref constraint is added. 
@@ -163,6 +174,11 @@ namespace Vita.Testing.BasicTests.SchemaUpdates {
           ent2.Name = "Name2";
           session.SaveChanges(); // this is optional, SaveChanges will be called after all actions are executed. 
         });
+
+        // Tell the system to ignore this index - it was created by migration SQL in v1 
+        // Note: manually check after test run that this index exists, there's no automatic check
+        migrations.IgnoreDbObjectChanges("upd.IX_Table_User");
+
       } //method
 
     }//class

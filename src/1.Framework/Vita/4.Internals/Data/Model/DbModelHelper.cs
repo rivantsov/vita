@@ -140,6 +140,10 @@ namespace Vita.Data.Model {
       return ignore;
     }
 
+    public static void IgnoreDbObjectChanges(this DbSettings dbStt, string objectName) {
+      dbStt.UpgradeSettings.IgnoreDbObjects.Add(objectName);
+    }
+
 
   }//class
 

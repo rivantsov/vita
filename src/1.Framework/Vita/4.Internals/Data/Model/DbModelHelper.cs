@@ -132,6 +132,15 @@ namespace Vita.Data.Model {
       return key.KeyColumns.Count == pk.KeyColumns.Count &&
                key.KeyColumns.All(kc => kc.Column.Flags.IsSet(DbColumnFlags.PrimaryKey));
     }
+
+    internal static bool ShouldIgnoreUpgradeFor(this DbSettings dbStt, DbModelObjectBase dbObj) {
+      if(dbObj == null)
+        return false;
+      var ignore = dbStt.UpgradeSettings.IgnoreDbObjects.Contains(dbObj.FullRefName);
+      return ignore;
+    }
+
+
   }//class
 
 }

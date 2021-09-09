@@ -14,6 +14,7 @@ using Vita.Modules.Login;
 using Vita.Data.Driver;
 using Vita.Data;
 using Vita.Tools;
+using Vita.Data.Upgrades;
 
 namespace Vita.Testing.ExtendedTests {
 
@@ -44,13 +45,13 @@ namespace Vita.Testing.ExtendedTests {
     [TestMethod]
     public void TestMultiTenant() {
       // Multi-tenant test is available only for MS SQL Server.
-      if (Startup.ServerType != DbServerType.MsSql)
+      if(Startup.ServerType != DbServerType.MsSql)
         return;
       const string Books2 = "VitaBooks2";
-      var app = Startup.BooksApp; 
+      var app = Startup.BooksApp;
       var connString2 = Startup.CurrentConfig.ConnectionString.Replace("VitaBooks", Books2);
-      var mainDbStt = Startup.DbSettings; 
-      var dbSettings2 = new DbSettings(mainDbStt.ModelConfig,  connString2, upgradeMode: DbUpgradeMode.Always, dataSourceName: Books2);
+      var mainDbStt = Startup.DbSettings;
+      var dbSettings2 = new DbSettings(mainDbStt.ModelConfig, connString2, dataSourceName: Books2);
       DataUtility.DropSchemaObjects(app, dbSettings2);
       app.ConnectTo(dbSettings2);
 

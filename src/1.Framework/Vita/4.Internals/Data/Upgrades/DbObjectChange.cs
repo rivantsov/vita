@@ -73,6 +73,7 @@ namespace Vita.Data.Upgrades {
       var tbl = NewTable ?? OldTable;
       TableName = tbl.FullName;
     }
+
     internal DbObjectChange AddChange(DbModelObjectBase oldObj, DbModelObjectBase newObj, DbObjectChangeType? changeType = null, string notes = null) {
       var change = new DbObjectChange(oldObj, newObj, changeType, notes);
       this.Changes.Add(change);

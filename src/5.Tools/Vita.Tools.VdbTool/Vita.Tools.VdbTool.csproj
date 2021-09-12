@@ -4,7 +4,7 @@
 
     <PropertyGroup>
         <OutputType>Exe</OutputType>
-        <TargetFramework>netcoreapp3.1</TargetFramework>
+        <TargetFramework>net472</TargetFramework>
         <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
         <AssemblyName>vdbtool</AssemblyName>
 
@@ -15,22 +15,12 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <Folder Include="Properties\" />
-    </ItemGroup>
-
-    <ItemGroup>
         <ProjectReference Include="..\..\1.Framework\Vita.Tools\090.Vita.Tools.csproj" />
         <ProjectReference Include="..\..\2.Drivers\Vita.Data.MsSql\210.Vita.Data.MsSql.csproj" />
         <ProjectReference Include="..\..\2.Drivers\Vita.Data.MySql\220.Vita.Data.MySql.csproj" />
         <ProjectReference Include="..\..\2.Drivers\Vita.Data.Oracle\260.Vita.Data.Oracle.csproj" />
         <ProjectReference Include="..\..\2.Drivers\Vita.Data.Postgres\230.Vita.Data.Postgres.csproj" />
         <ProjectReference Include="..\..\2.Drivers\Vita.Data.SQLite\250.Vita.Data.SQLite.csproj" />
-    </ItemGroup>
-
-    <ItemGroup>
-        <None Update="run-vdbtool.bat">
-            <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-        </None>
     </ItemGroup>
 
 </Project>

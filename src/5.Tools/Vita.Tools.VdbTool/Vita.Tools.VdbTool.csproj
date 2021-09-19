@@ -7,11 +7,16 @@
         <TargetFramework>net472</TargetFramework>
         <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
         <AssemblyName>vdbtool</AssemblyName>
-
-        <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
         <Copyright>Roman Ivantsov</Copyright>
-        <AssemblyVersion>$(VITA_VERSION)</AssemblyVersion>
-        <Version>$(VITA_VERSION)</Version>
+      <!-- Disabling for now; tried to create 'tool' package (Sept 2021), did not work well, maybe later
+              for tool, fwk must be netcoreapp3.1, and build pkg on project build
+        <PackAsTool>true</PackAsTool>
+        <ToolCommandName>vdbtool</ToolCommandName>
+        <PackageOutputPath>./nupkg</PackageOutputPath>
+        <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+        <PackageId>Vita.Vdbtool</PackageId>
+        <PackageLicenseExpression>MIT</PackageLicenseExpression>
+      -->
     </PropertyGroup>
 
     <ItemGroup>

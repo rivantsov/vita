@@ -71,6 +71,7 @@ namespace Vita.Data.Model {
 
     public DbKeyInfo PrimaryKey;
     public string ViewSql;
+    public string ViewSqlHash; // MD5 hash is used to detect view changes from version to version
     public bool IsMaterializedView;
     public EntityRecordReader RecordReader;
     // special column lists

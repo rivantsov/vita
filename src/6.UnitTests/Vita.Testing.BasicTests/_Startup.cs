@@ -58,6 +58,7 @@ namespace Vita.Testing.BasicTests {
         connStringName += "_MS";
       }
 
+      DbModelUpdater.Test_RandomizeInitialSchemaUpdatesOrder = true;
 
       var connString = AppConfig[connStringName];
       Util.Check(!string.IsNullOrEmpty(connString), "Connection string not found for key: {0}.", connStringName);

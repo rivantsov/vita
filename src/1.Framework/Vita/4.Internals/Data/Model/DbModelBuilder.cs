@@ -87,7 +87,11 @@ namespace Vita.Data.Model {
         //there might be some local values that are transformed into params. But they will be replaced with literals 
         // when generating final SQL
         cmdBuilder.AddLinqStatement(sql, viewCmd.ParamValues); 
-        viewTbl.ViewSql = cmdBuilder.GetSqlText();   
+        viewTbl.ViewSql = cmdBuilder.GetSqlText();
+        viewTbl.ViewSqlHash = StringHelper.GetMd5Hash(viewTbl.ViewSql.Trim());
+        // save view hash in dbModelVersion rec
+        var key = "Hash-" + viewTbl.FullName;
+        this._dbModel.VersionInfo.Values[key] = viewTbl.ViewSqlHash;
       }
     }
     private static object[] _emptyArray = new object[] { };

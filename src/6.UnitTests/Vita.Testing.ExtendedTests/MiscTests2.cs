@@ -240,18 +240,23 @@ namespace Vita.Testing.ExtendedTests {
       var upgradeMgr = new DbUpgradeManager(ds.Database, app.ActivationLog);
       var upgradeInfo = upgradeMgr.BuildUpgradeInfo(); //.AddDbModelChanges(currentDbModel, modelInDb, DbUpgradeOptions.Default, app.ActivationLog);
       var changeCount = upgradeInfo.TableChanges.Count + upgradeInfo.NonTableChanges.Count;
-      #region Rant about Postgres
+      #region Postgres
       // For Postgres we have no way to compare view definitions to detect change. 
       // The view SQL returned by information_schema.Views is extensively modified and beautified (!) version of 
       // the original View SQL (these guys must be very proud, I'm happy for them). 
       // So views in PG driver will always be marked as modified, unless you use extra upgradeMode parameter in RegisterView.
+      // Update Sept 2021. ----------------------------
+      //  Introduced a workaround. If you use DbInfoModule to track db version in a separate table, then the system
+      //  saves MD5 hashes of all generated views in the version record (blob field Values); on upgrade, we compare new hash
+      //  for a view with old hash; if they match the view did not change. So disabling this correction clause for this test.
+      //if(Startup.ServerType == DbServerType.Postgres) {
+      //  var viewCount = app.Model.Entities.Where(e => e.Kind == Entities.Model.EntityKind.View).Count(); 
+      //  changeCount -= viewCount; // views are marked as mismatch, so ignore these
+      //}
       #endregion
-      if(Startup.ServerType == DbServerType.Postgres) {
-        var viewCount = app.Model.Entities.Where(e => e.Kind == Entities.Model.EntityKind.View).Count(); 
-        changeCount -= viewCount; // views are marked as mismatch, so ignore these
-      }
+
       //Known issue in v3.0, SQLite in Release mode - fails, one diff detected, FK_BookOrder_EncryptedData
-      if (changeCount == 1 && Startup.ServerType == DbServerType.SQLite)
+      if(changeCount == 1 && Startup.ServerType == DbServerType.SQLite)
         Assert.Fail("Known issue: SQLite fails in Relase mode in DbModelCompare test. Fails to load FK BookOrder->EncrData");
       //  is not found in database
       if (changeCount > 0) {

@@ -44,7 +44,7 @@ namespace Vita.Testing.BasicTests.SchemaUpdates {
 
       [Entity]
       public interface IChildEntity {
-        [PrimaryKey, Auto]
+        [PrimaryKey(Clustered = true), Auto]
         Guid Id { get; set; }
         IParentEntity Parent { get; set; }
         IParentEntity ParentRefToDelete { get; set; }
@@ -120,7 +120,7 @@ namespace Vita.Testing.BasicTests.SchemaUpdates {
 
       [Entity, OldNames("IChildEntity")]
       public interface IChildEntityRenamed {
-        [PrimaryKey]
+        [PrimaryKey (Clustered = true)]
         Guid Id { get; set; }
         IParentEntity Parent { get; set; }
         [Size(20)]

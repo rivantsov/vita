@@ -2,10 +2,13 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Security.Cryptography;
 using System.Text;
 using Vita.Data.Model;
 using Vita.Data.Upgrades;
+using Vita.Entities.DbInfo;
 using Vita.Entities.Model;
+using Vita.Entities.Utilities;
 
 namespace Vita.Data.Driver {
 
@@ -105,7 +108,6 @@ Computed column '{newColumn.ColumnName}' definition mismatch.
       return nf;
     }
 
-
     public virtual bool ViewsMatch(DbTableInfo oldView, DbTableInfo newView) {
       if(oldView.IsMaterializedView != newView.IsMaterializedView)
         return false;
@@ -115,6 +117,9 @@ Computed column '{newColumn.ColumnName}' definition mismatch.
         return false;
       if(oldS == newS)
         return true;
+      // If we do not have old view definition (ex: Pgres Mat views) try comparing MD5 hashes
+      if(newView.ViewSqlHash == oldView.ViewSqlHash)
+        return true; 
       oldS = NormalizeViewScript(oldS);
       newS = NormalizeViewScript(newS);
       if(oldS == newS)

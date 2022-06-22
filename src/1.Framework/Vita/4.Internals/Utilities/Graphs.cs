@@ -13,40 +13,45 @@ namespace Vita.Entities.Utilities {
 
     #region nested Vertex class
     public class Vertex {
-      public object Tag;
-      public List<Vertex> LinkedTo = new List<Vertex>();
+      public object Source { get; }
+      public int SccIndex { get; internal set; }
+      public bool NonTrivialGroup { get; internal set; }
+
+      internal List<Vertex> LinkedTo = new List<Vertex>();
       internal int Index, LowIndex;
-      public bool InStack;
-      public int SccIndex;
-      public bool NonTrivialGroup;
+      internal bool InStack;
+
+      public Vertex(object source) {
+        this.Source = source; 
+      }
 
       public void AddLink(params Vertex[] toVertexes) {
         foreach(var v in toVertexes)
           LinkedTo.Add(v);
       }
       public override string ToString() {
-        return Tag + ", Scc=" + SccIndex;
+        return Source + ", Scc=" + SccIndex;
       }
     }
     #endregion
 
     public readonly List<Vertex> Vertexes = new List<Vertex>();
-    public int SccCount; //# of SCC group
-
-    public Vertex Add(object tag) {
-      var v = new Vertex() { Tag = tag };
-      Vertexes.Add(v);
-      return v;
-    }
-    public Vertex FindOrAdd(object tag) {
-      var vf = Vertexes.FirstOrDefault(v => v.Tag == tag);
-      if (vf == null)
-        vf = Add(tag);
-      return vf; 
-    }
+    public int SccCount { get; private set; } //# of SCC groups
 
     Stack<Vertex> _vertexStack;
     int _currentIndex;
+
+    public Vertex AddVertex(object source) {
+      var v = new Vertex(source);
+      Vertexes.Add(v);
+      return v;
+    }
+    public Vertex FindOrAddVertex(object source) {
+      var vf = Vertexes.FirstOrDefault(v => v.Source == source);
+      if (vf == null)
+        vf = AddVertex(source);
+      return vf; 
+    }
 
     /// <summary>Builds SCC for a graph. Sets SCC index for each vertex. </summary>
     /// <returns>The top index of SCC.</returns>

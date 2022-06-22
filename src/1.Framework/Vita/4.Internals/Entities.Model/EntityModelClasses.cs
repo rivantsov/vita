@@ -394,6 +394,7 @@ namespace Vita.Entities.Model {
       return this.Name + "(" + string.Join(",", KeyMembers.Select(km => km.Member.MemberName)) + ")";
     }
 
+    public static IList<EntityKeyInfo> EmptyList = new EntityKeyInfo[] { };
 
   }//class
 

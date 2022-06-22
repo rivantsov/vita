@@ -85,13 +85,6 @@ namespace Vita.Entities.Model.Construction {
       Log.WriteMessage("Entity model built successfully.");
     }//method
 
-    /// <summary>
-    /// Checks activation log messages and throws exception if there were any errors during application initialization.
-    /// </summary>
-    public void CheckErrors() {
-      Log.CheckErrors("Entity Model build failed.");
-    }
-
     //Collects registered entities - creates EntityInfo objects for each entity and adds them to Model's Entities set. 
     private void CollectEntitiesAndViews() {
       // Collect initial entities
@@ -384,8 +377,8 @@ namespace Vita.Entities.Model.Construction {
     }
 
     private void BuildEntityClasses() {
-      var emitProvider = EntityClassEmitter.CreateEntityClassProvider();
-      emitProvider.SetupEntityClasses(this.Model);
+      var classEmitter = new EntityClassEmitter();
+      classEmitter.SetupEntityClasses(this.Model);
     }
 
     private void CollectEnumTypes() {
@@ -419,7 +412,7 @@ namespace Vita.Entities.Model.Construction {
       var g = new SccGraph();
       //Perform SCC analysis.
       foreach (var ent in Model.Entities)
-        ent.SccVertex = g.Add(ent);
+        ent.SccVertex = g.AddVertex(ent);
       //setup links
       foreach (var ent in Model.Entities) {
         var cascadeMembers = new List<EntityMemberInfo>();
@@ -491,6 +484,13 @@ namespace Vita.Entities.Model.Construction {
           }//switch
         
       } // foreach entity
+    }
+
+    /// <summary>
+    /// Checks activation log messages and throws exception if there were any errors during application initialization.
+    /// </summary>
+    public void CheckErrors() {
+      Log.CheckErrors("Entity Model build failed.");
     }
 
 

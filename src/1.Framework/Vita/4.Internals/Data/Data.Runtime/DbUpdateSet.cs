@@ -215,12 +215,12 @@ namespace Vita.Data.Runtime {
           // we are interested only in case when both records are inserted, or both are deleted.
           if (targetRec.Status != rec.Status)
             continue;
-          // Both records must be in the same SCC group - i.e. have the same SccIndex
+          // Both records must be in the same SCC group - i.e. have the same topological index
           if (targetRec.EntityInfo.TopologicalIndex != rec.EntityInfo.TopologicalIndex)
             continue;
           // We have potential conflict; add vertexes and link for the conflict
-          var thisV = graph.FindOrAdd(rec);
-          var targetV = graph.FindOrAdd(targetRec);
+          var thisV = graph.FindOrAddVertex(rec);
+          var targetV = graph.FindOrAddVertex(targetRec);
           thisV.AddLink(targetV);
         }
       }//foreach cmd
@@ -232,7 +232,7 @@ namespace Vita.Data.Runtime {
       // Once SCC is built, we have SCC indexes in Vertexes; use them to assign Record's SortSubIndex
       bool hasNonTrivialGroups = false;
       foreach (var v in graph.Vertexes) {
-        var rec = (EntityRecord)v.Tag;
+        var rec = (EntityRecord)v.Source;
         rec.SortSubIndex = rec.Status == EntityStatus.New ? v.SccIndex : -v.SccIndex; // -v.SccIndex : v.SccIndex;
         hasNonTrivialGroups |= v.NonTrivialGroup;
       }
@@ -258,7 +258,7 @@ namespace Vita.Data.Runtime {
           return isIsolated ? DbUpdateOrder.IsolatedDelete : DbUpdateOrder.Delete;
         default:
           Util.Throw("Fatal: Invalid record status, should not be in update set. Record: {0}", record);
-          return default(DbUpdateOrder); //never happens
+          return default; //never happens
       }//switch
     }
 

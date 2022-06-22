@@ -80,21 +80,21 @@ SELECT SOME NONSENSE
       SetupSampleGraph(gr);
       gr.BuildScc();
       // additionally sort by tags, so that result string matches
-      var sortedVertexes = gr.Vertexes.OrderBy(v => v.SccIndex).ThenBy(v => (string)v.Tag).ToList();
+      var sortedVertexes = gr.Vertexes.OrderBy(v => v.SccIndex).ThenBy(v => (string)v.Source).ToList();
       var strOut = string.Join("; ", sortedVertexes);
       Assert.AreEqual(expected, strOut, "SCC computation did not return expected result.");
     }
 
     // Builds a sample graph from http://en.wikipedia.org/wiki/Strongly_connected_components
     private static void SetupSampleGraph(SccGraph gr) {
-      var a = gr.Add("a");
-      var b = gr.Add("b");
-      var c = gr.Add("c");
-      var d = gr.Add("d");
-      var e = gr.Add("e");
-      var f = gr.Add("f");
-      var g = gr.Add("g");
-      var h = gr.Add("h");
+      var a = gr.AddVertex("a");
+      var b = gr.AddVertex("b");
+      var c = gr.AddVertex("c");
+      var d = gr.AddVertex("d");
+      var e = gr.AddVertex("e");
+      var f = gr.AddVertex("f");
+      var g = gr.AddVertex("g");
+      var h = gr.AddVertex("h");
       //links
       a.AddLink(b);
       b.AddLink(e, f, c);

@@ -7,12 +7,8 @@ using Proxemity;
 
 namespace Vita.Entities.Model.Emit {
 
-  public class EntityClassEmitter : IEntityClassProvider {
+  public class EntityClassEmitter {
     DynamicAssemblyInfo _assemblyInfo; 
-
-    public static IEntityClassProvider CreateEntityClassProvider() {
-      return new EntityClassEmitter();
-    }
 
     public void SetupEntityClasses(EntityModel model) {
       var ns = model.App.GetType().Namespace + ".Proxies";

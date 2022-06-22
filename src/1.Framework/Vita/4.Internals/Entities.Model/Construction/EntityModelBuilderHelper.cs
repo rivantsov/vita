@@ -10,6 +10,24 @@ namespace Vita.Entities.Model.Construction {
 
   public static class EntityModelBuilderHelper {
 
+    // new stuff for entity key fix 
+    // returns keys that this key 'depends on', so that these other keys must be expanded first. 
+    // will be used in topological sorting (SCC)
+    public static IList<EntityKeyInfo> GetDependsOnKeysForExpansion(this EntityKeyInfo key) {
+      var refKeyMembers = key.KeyMembers.Where(km => km.Member.Kind == EntityMemberKind.EntityRef).ToList(); 
+      if (refKeyMembers.Count == 0)
+        return EntityKeyInfo.EmptyList;
+      // long path
+      var list = new List<EntityKeyInfo>();
+      foreach(var km in refKeyMembers) 
+        list.Add(km.Member.ReferenceInfo.ToKey);
+      return list; 
+    }
+
+
+    // end new stuff
+
+
     public static string GetAttributeName(this Attribute attr) {
       const string suffix = "Attribute";
       var name = attr.GetType().Name;

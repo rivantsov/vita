@@ -58,15 +58,6 @@ namespace Vita.Entities {
     /// <summary>Default length for string properties without Size attribute. </summary>
     public int DefaultStringLength = 50;
 
-    /// <summary>Obsolete. Entity class provider. The service responsible for generating (emitting) entity classes. </summary>
-    /// <remarks>The default implementation based on IL-emit. 
-    /// </remarks>
-    [Obsolete("Do not assign this property, it is no longer used.")]
-    public IEntityClassProvider EntityClassProvider;
-
-    // SlimApi not ported
-    // public ApiConfiguration ApiConfiguration = new ApiConfiguration();
-
     public Sizes.SizeTable SizeTable = Sizes.GetDefaultSizes();
 
     public IBufferedLog ActivationLog; 

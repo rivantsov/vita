@@ -57,7 +57,7 @@ namespace Vita.Entities.Model {
     public readonly Type EntityType;
     public readonly HashSet<Type> ReplacesTypes = new HashSet<Type>(); //in case of entity replacement, the types that this type is replacing
     public EntityInfo ReplacedBy;
-    public List<EntityMemberInfo> Members;
+    public List<EntityMemberInfo> Members = new List<EntityMemberInfo>();
     public readonly List<EntityKeyInfo> Keys = new List<EntityKeyInfo>(); 
     public EntityKeyInfo PrimaryKey;
 
@@ -80,7 +80,7 @@ namespace Vita.Entities.Model {
     public EntityFlags Flags;
     public EntityCachingType CachingType;
 
-    public EntityEvents Events { get; private set; }
+    public EntityEvents Events { get; private set; } = new EntityEvents(); 
     public readonly EntitySaveEvents SaveEvents = new EntitySaveEvents();
     internal object[] InitialColumnValues;
 
@@ -109,8 +109,6 @@ namespace Vita.Entities.Model {
       Area = altArea ?? Module.Area;
       Kind = kind; 
       Name = entityType.Name;
-      Members = new List<EntityMemberInfo>();
-      Events = new EntityEvents(); 
       //Check for generic types - happens in modules with generic entities (interfaces), provided for customization
       if(Name.Contains('`'))
         Name = Name.Substring(0, Name.IndexOf('`'));
@@ -128,11 +126,6 @@ namespace Vita.Entities.Model {
       Members = new List<EntityMemberInfo>();
       Events = new EntityEvents();
       FullName = Name; 
-    }
-
-    ICollection<EntityMemberInfo> _membersColl; 
-    public ICollection<EntityMemberInfo> GetMembers() {
-      return _membersColl = _membersColl ?? new Collection<EntityMemberInfo>(this.Members.OfType<EntityMemberInfo>().ToList()); 
     }
 
     public override string ToString() {

@@ -26,6 +26,7 @@ namespace Vita.Data.Driver {
     protected DbSettings Settings;
     protected DbDriver Driver;
     protected ILog Log;
+    internal protected DbVersionInfo OldDbVersionInfo; 
     protected DbModel Model;
 
     //Static empty table, to use as return object for methods that return 'nothing' (not supported aspects)
@@ -125,6 +126,12 @@ namespace Vita.Data.Driver {
         view.ViewSql = sql;
         if (supportsMatViews && row.GetAsString("IS_MATERIALIZED") == "Y")
           view.IsMaterializedView = true;
+        // get view hash if available
+        var key = "Hash-" + view.FullName;
+        if (this.OldDbVersionInfo != null) {
+          if(this.OldDbVersionInfo.Values.TryGetValue(key, out var hash))
+            view.ViewSqlHash = hash;
+        }
       }
     }
 
@@ -298,7 +305,8 @@ namespace Vita.Data.Driver {
           continue;
         }
         var dbCol = table.Columns.FindByName(colName);
-        if (dbCol == null) continue;
+        if (dbCol == null)
+          continue;
         var desc = row.GetAsInt("IS_DESCENDING");
         bool isDesc = desc == 1;
         var oldKeyCol = key.KeyColumns.FirstOrDefault(kc => kc.Column == dbCol);

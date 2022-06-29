@@ -36,11 +36,11 @@ namespace Vita.Data.Model {
     public DbModel DbModel;
     public string Schema;
     public DbObjectType ObjectType;
-    public string LogRefName { get; protected set; } //used for recording DBModel change scripts in the database
+    public string FullRefName { get; protected set; } // used for logging
 
     public DbModelObjectBase(DbModel dbModel, string schema, DbObjectType objectType, object entityModelObject = null) {
       DbModel = dbModel;
-      Schema = LogRefName = schema; 
+      Schema = FullRefName = schema; 
       ObjectType = objectType; 
       if (DbModel != null && entityModelObject != null)
         DbModel.RegisterDbObject(entityModelObject, this);
@@ -71,6 +71,7 @@ namespace Vita.Data.Model {
 
     public DbKeyInfo PrimaryKey;
     public string ViewSql;
+    public string ViewSqlHash; // MD5 hash is used to detect view changes from version to version
     public bool IsMaterializedView;
     public EntityRecordReader RecordReader;
     // special column lists
@@ -94,7 +95,7 @@ namespace Vita.Data.Model {
       else if (objectType == DbObjectType.View)
         Kind = EntityKind.View; // when loading from database
       FullName = model.FormatFullName(Schema, tableName);
-      base.LogRefName = DbModelHelper.JoinNames(Schema, TableName);
+      base.FullRefName = DbModelHelper.JoinNames(Schema, TableName);
       if (!IsNullTable())
         model.AddTable(this);
       DefaultSqlAlias = DbModelHelper.GetDefaultSqlAlias(this.TableName);
@@ -210,7 +211,7 @@ namespace Vita.Data.Model {
     public void SetName(string columnName) {
       ColumnName = columnName;
       ColumnNameQuoted = Table.DbModel.Driver.SqlDialect.QuoteName(columnName);
-      base.LogRefName = DbModelHelper.JoinNames(Schema, Table.TableName, columnName);
+      base.FullRefName = DbModelHelper.JoinNames(Schema, Table.TableName, columnName);
       SqlColumnNameQuoted = new TextSqlFragment(ColumnNameQuoted);
     }
 
@@ -224,7 +225,7 @@ namespace Vita.Data.Model {
       if (isNullable)
         this.Flags |= DbColumnFlags.Nullable; 
       Table.Columns.Add(this);
-      base.LogRefName = DbModelHelper.JoinNames(table.Schema, table.TableName, columnName);
+      base.FullRefName = DbModelHelper.JoinNames(table.Schema, table.TableName, columnName);
     }
 
     public override string ToString() {
@@ -277,7 +278,7 @@ namespace Vita.Data.Model {
       KeyType = type; 
       EntityKey = entityKey;
       table.Keys.Add(this);
-      base.LogRefName = DbModelHelper.JoinNames(table.Schema, name);
+      base.FullRefName = DbModelHelper.JoinNames(table.Schema, name);
     }
   }//class
 
@@ -298,7 +299,7 @@ namespace Vita.Data.Model {
       ToKey = toKey;
       OwnerReference = ownerRef;
       CascadeDelete = cascadeDelete;
-      base.LogRefName = DbModelHelper.JoinNames(fromKey.Table.Schema, fromKey.Name);
+      base.FullRefName = DbModelHelper.JoinNames(fromKey.Table.Schema, fromKey.Name);
       FromKey.Table.RefConstraints.Add(this); 
     }
 

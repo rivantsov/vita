@@ -22,7 +22,7 @@ namespace Vita.Testing.ExtendedTests {
 
       // SQLite sometimes fails this test (fails to find a book), but only when running ALL tests in extended project, 
       // for no apparent reason; trying to fix it
-      if (Startup.ServerType == DbServerType.SQLite) {
+      if(Startup.ServerType == DbServerType.SQLite) {
         System.Threading.Thread.Sleep(100);
         System.Threading.Thread.Sleep(100);
       }
@@ -80,7 +80,7 @@ OFFSET @P4 ROWS FETCH NEXT @P5 ROWS ONLY;
 
       // SQLite sometimes fails this test (fails to find a book), but only when running ALL tests in extended project, 
       // for no apparent reason; trying to fix it
-      if (Startup.ServerType == DbServerType.SQLite) {
+      if(Startup.ServerType == DbServerType.SQLite) {
         System.Threading.Thread.Sleep(100);
         System.Threading.Thread.Sleep(100);
       }
@@ -99,6 +99,50 @@ OFFSET @P4 ROWS FETCH NEXT @P5 ROWS ONLY;
           .Where(b => b.Authors.Any(a => a.FirstName == "Jack"))
           .ToList();
       Assert.AreEqual(2, booksByJack.Count, "expected 2 books by Jack");
+
+    }
+
+
+    [TestMethod]
+    public void TestLinqSearchWithOR() {
+      Startup.BooksApp.LogTestStart();
+
+      var app = Startup.BooksApp;
+      var session = app.OpenSession();
+      session.LogMessage("----------- Using OR in search expressions test -------------------------");
+
+      // Search for books published after dateX, with title starting with any of 2 terms
+      var pubAfter = new DateTime(2000, 1, 1);
+      string term1 = "c#";
+      string term2 = "VB";
+
+      var where = session.NewPredicate<IBook>()
+        .AndIfNotEmpty(pubAfter, b => b.PublishedOn.Value >= pubAfter);
+      // Build optional OR clause
+      var emptyClause = session.NewPredicate<IBook>(false); // important! should be False since its OR expr
+      var termMatchClause = emptyClause
+        .OrIfNotNull(term1, b => b.Title.StartsWith(term1))
+        .OrIfNotNull(term2, b => b.Title.StartsWith(term2));
+      // check if we added any conditions to OR expr
+      if(termMatchClause != emptyClause)
+        where = where.And(termMatchClause);
+
+      // Execute
+      var searchPrms = new SearchParams() { OrderBy = "Title", Take = 10 };
+      var res = session.ExecuteSearch(where, searchPrms);
+      var cmd = session.GetLastCommand();
+      Assert.AreEqual(2, res.Results.Count, "expected 2 books");
+      
+/* SQL: 
+
+SELECT  "Id", "Title", "Description", "PublishedOn", "Abstract", "Category", "Editions", "Price", "WholeSalePrice", "SpecialCode", "Isbn", "CreatedOn", "Publisher_Id", "CoverImage_Id", "Editor_Id"
+FROM "books"."Book"
+WHERE 1 = 1 AND "PublishedOn" >= @P0 AND (1 <> 1 OR "Title" LIKE @P1 ESCAPE '\' OR "Title" LIKE @P2 ESCAPE '\')
+ORDER BY "Title"
+OFFSET @P4 ROWS FETCH NEXT @P3 ROWS ONLY;
+
+ */
+
 
     }
   }

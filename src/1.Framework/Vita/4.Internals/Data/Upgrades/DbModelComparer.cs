@@ -258,6 +258,8 @@ namespace Vita.Data.Upgrades {
 
     //Analyzes changes in columns and keys, but not ref constraints
     private DbTableChangeGroup AnalyzeTableChanges(DbTableInfo oldTable) {
+      if(IgnoreObject(oldTable))
+        return null; 
       var tableChangeGrp = new DbTableChangeGroup(oldTable, oldTable.Peer);
       if(oldTable.Peer == null) {
         //Table deleted -----------------------------------------------------------------------------------
@@ -286,6 +288,8 @@ namespace Vita.Data.Upgrades {
         // Internals of the table or view
         switch(oldTable.Kind) {
           case EntityKind.View:
+            if(IgnoreObject(oldTable))
+              break; 
             if (_compareViews && !ViewsMatch(oldTable, oldTable.Peer)) {
               tableChangeGrp.AddChange(oldTable, null, DbObjectChangeType.Drop);
               tableChangeGrp.AddChange(null, oldTable.Peer, DbObjectChangeType.Add);
@@ -293,6 +297,8 @@ namespace Vita.Data.Upgrades {
             break; 
           case EntityKind.Table:
             foreach(var oldCol in oldTable.Columns) {
+              if(IgnoreObject(oldCol) || IgnoreObject(oldCol.Peer))
+                continue; 
               if(oldCol.Peer == null) {
                 oldCol.Flags |= DbColumnFlags.IsChanging;
                 tableChangeGrp.AddChange(oldCol, null);
@@ -308,7 +314,9 @@ namespace Vita.Data.Upgrades {
             } //foreach col
             //new columns
             foreach (var newCol in newTable.Columns) {
-              if (!newCol.IsRealDbColumn())
+              if(IgnoreObject(newCol))
+                continue;
+              if(!newCol.IsRealDbColumn())
                 continue; // ignore db computed cols
               if (newCol.Peer == null) //if not null - it is already taken care of
                 tableChangeGrp.AddChange(null, newCol);
@@ -324,6 +332,8 @@ namespace Vita.Data.Upgrades {
       // We do not modify keys, only drop/create them if anything mismatches; 
       // key.Peer is set only if the keys did not change and non of the columns changed
       foreach (var oldKey in oldTable.Keys) {
+        if(IgnoreObject(oldKey) || IgnoreObject(oldKey.Peer))
+          continue; 
         bool changed = oldKey.Peer == null || !_comparer.KeysMatch(oldKey, oldKey.Peer);
         if (!changed)
           continue; 
@@ -333,7 +343,7 @@ namespace Vita.Data.Upgrades {
         tableChangeGrp.AddChange(oldKey, oldKey.Peer);
       }
       foreach (var key in newTable.Keys) {
-        if (key.Peer != null)
+        if (key.Peer != null || IgnoreObject(key))
           continue; //if Peer != null, it is already included in previous loop
         //ignore primary key on Views - this is artificial attribute, used on CLR side only
         if (newTable.Kind == EntityKind.View && key.KeyType.IsSet(KeyType.PrimaryKey))
@@ -391,6 +401,14 @@ namespace Vita.Data.Upgrades {
 
     private static bool NamesMatch(string x, string y) {
       return string.Compare(x, y, ignoreCase: true) == 0; 
+    }
+
+    private bool IgnoreTable(DbTableInfo table) {
+      return IgnoreObject(table) || IgnoreObject(table.Peer); 
+    }
+
+    private bool IgnoreObject(DbModelObjectBase dbObj) {
+      return this._upgradeInfo.Settings.ShouldIgnoreUpgradeFor(dbObj);
     }
 
   } //class

@@ -4,19 +4,20 @@
 
     <PropertyGroup>
         <OutputType>Exe</OutputType>
-        <TargetFramework>netcoreapp3.1</TargetFramework>
+        <TargetFramework>net472</TargetFramework>
         <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
         <AssemblyName>vdbtool</AssemblyName>
-
-        <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
         <Copyright>Roman Ivantsov</Copyright>
-        <AssemblyVersion>$(VITA_VERSION)</AssemblyVersion>
-        <Version>$(VITA_VERSION)</Version>
+      <!-- Disabling for now; tried to create 'tool' package (Sept 2021), did not work well, maybe later
+              for tool, fwk must be netcoreapp3.1, and build pkg on project build
+        <PackAsTool>true</PackAsTool>
+        <ToolCommandName>vdbtool</ToolCommandName>
+        <PackageOutputPath>./nupkg</PackageOutputPath>
+        <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+        <PackageId>Vita.Vdbtool</PackageId>
+        <PackageLicenseExpression>MIT</PackageLicenseExpression>
+      -->
     </PropertyGroup>
-
-    <ItemGroup>
-        <Folder Include="Properties\" />
-    </ItemGroup>
 
     <ItemGroup>
         <ProjectReference Include="..\..\1.Framework\Vita.Tools\090.Vita.Tools.csproj" />
@@ -25,12 +26,6 @@
         <ProjectReference Include="..\..\2.Drivers\Vita.Data.Oracle\260.Vita.Data.Oracle.csproj" />
         <ProjectReference Include="..\..\2.Drivers\Vita.Data.Postgres\230.Vita.Data.Postgres.csproj" />
         <ProjectReference Include="..\..\2.Drivers\Vita.Data.SQLite\250.Vita.Data.SQLite.csproj" />
-    </ItemGroup>
-
-    <ItemGroup>
-        <None Update="run-vdbtool.bat">
-            <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-        </None>
     </ItemGroup>
 
 </Project>

@@ -18,8 +18,8 @@ namespace Vita.Data.Upgrades {
       return (flags & flag) != 0;
     }
 
-    public static bool EntitiesChanging(this DbUpgradeInfo changeSet, params Type[] entities) {
-      foreach(var tg in changeSet.TableChanges) {
+    public static bool EntitiesChanging(this DbUpgradeInfo upgradeInfo, params Type[] entities) {
+      foreach(var tg in upgradeInfo.TableChanges) {
         if(tg.NewTable == null)
           continue; 
         if(entities.Contains(tg.NewTable.Entity.EntityType))
@@ -32,13 +32,6 @@ namespace Vita.Data.Upgrades {
       var result = string.Join(Environment.NewLine, scripts.Select(s => s.Sql));
       return result;
     }
-
-
-    /*
-        public static bool IsSet(this DbModelUpdateOptions options, DbModelUpdateOptions option) {
-          return (options & option) != 0;
-        }
-        */
 
   }//class
 

@@ -72,6 +72,8 @@ namespace Vita.Data.Upgrades {
     public bool IsNewInstall() {
       return _oldDbModel.VersionInfo == null;
     }
+
+    public DbUpgradeSettings GetDbUpgradeSettings() => _database.Settings.UpgradeSettings;
     #endregion
 
     internal IList<SqlMigration> GetActiveSqlMigrations() {
@@ -91,6 +93,8 @@ namespace Vita.Data.Upgrades {
       return migration.Version > dbVersion && migration.Version <= currCodeVersion;
     }
 
-
+    public void IgnoreDbObjectChanges(string objectName) {
+      _database.Settings.IgnoreDbObjectChanges(objectName); 
+    }
   }
 }

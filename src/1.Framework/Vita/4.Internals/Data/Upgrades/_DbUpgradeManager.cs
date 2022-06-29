@@ -74,26 +74,33 @@ namespace Vita.Data.Upgrades {
       if (!CheckCanUpgrade(oldDbVersion)) 
         return _upgradeInfo;
       var loader = driver.CreateDbModelLoader(_database.Settings, _log);
+      loader.OldDbVersionInfo = oldDbVersion; // important - Values in DbVersion rec contain hashes of views 
       if (driver.Supports(DbFeatures.Schemas)) {
         var schemas = _database.DbModel.Schemas.Select(s => s.Schema).ToList();
         loader.SetSchemasSubset(schemas);
       }
       _upgradeInfo.OldDbModel = loader.LoadModel();
       _upgradeInfo.OldDbModel.VersionInfo = oldDbVersion;
-      //assign prior versions 
-      //Compare two models and get changes
-      var modelComparer = new DbModelComparer();
-      modelComparer.BuildDbModelChanges(_upgradeInfo, loader as IDbObjectComparer, _log);
-      //build scripts
-      var updater = driver.CreateDbModelUpdater(_database.Settings);
-      updater.BuildScripts(_upgradeInfo);
-      //Add migrations
+      _app.DataSourceEvents.OnDbUpgrading(new DbUpgradeEventArgs(_database, DbUpgradeEventType.DbModelLoaded, _upgradeInfo));
+      //Collect migrations; do it first, migr methods may add to ignore objects list.
       var migrSet = new DbMigrationSet(_app, _database, _upgradeInfo.OldDbModel);
-      foreach (var module in this._database.DbModel.EntityApp.Modules) {
+      foreach(var module in this._database.DbModel.EntityApp.Modules) {
         migrSet.CurrentModule = module;
         module.RegisterMigrations(migrSet);
       }
       migrSet.CurrentModule = null;
+
+      //assign prior versions 
+      //Compare two models and get changes
+      var modelComparer = new DbModelComparer();
+      modelComparer.BuildDbModelChanges(_upgradeInfo, loader as IDbObjectComparer, _log);
+      _app.DataSourceEvents.OnDbUpgrading(new DbUpgradeEventArgs(_database, DbUpgradeEventType.DbModelCompared, _upgradeInfo));
+      //build scripts
+      var updater = driver.CreateDbModelUpdater(_database.Settings);
+      updater.BuildScripts(_upgradeInfo);
+      _app.DataSourceEvents.OnDbUpgrading(new DbUpgradeEventArgs(_database, DbUpgradeEventType.DbModelUpgradeScriptsGenerated, _upgradeInfo));
+
+      //Add migrations
       _upgradeInfo.AddMigrations(migrSet);
       //Update final status
       _upgradeInfo.VersionsChanged = oldDbVersion != null &&  _database.DbModel.VersionInfo.VersionChanged(oldDbVersion);

@@ -23,6 +23,11 @@ namespace Vita.Data.Postgres {
     }
 
     public override DbTypeInfo GetColumnDbTypeInfo(InfoRow columnRow) {
+      // workaround for view columns (mat views esp)
+      var dt = columnRow["data_type"];
+      if(dt == DBNull.Value)
+        columnRow["data_type"] = columnRow["pg_data_type"];
+
       var typeInfo =  base.GetColumnDbTypeInfo(columnRow);
       if(typeInfo != null && typeInfo.DbTypeSpec == "text") {
         typeInfo.Size = -1;
@@ -58,7 +63,7 @@ FROM pg_class t
           ON n.nspname = cl.table_schema AND t.relname = cl.table_name AND a.attname = cl.Column_name
    WHERE 
          a.attnum > 0
-         AND t.relkind = 'r'  
+         AND t.relkind in ('r', 'v', 'm')
          AND {0} 
 ORDER BY table_schema, table_name, ordinal_position;
 ", filter);
@@ -150,7 +155,7 @@ FROM  pg_class t
       JOIN pg_catalog.pg_namespace n ON n.oid = t.relnamespace
 where
     a.attnum = ANY(ix.indkey)
-    AND t.relkind IN('v', 'm', 'r') -- m: mat view; r:table; v:view; i: index
+    AND t.relkind IN('v', 'm', 'r', 'i') -- m: mat view; r:table; v:view; i: index
     AND {0}
 ORDER BY table_schema, table_name, index_name, column_ordinal_position    
 ", filter);

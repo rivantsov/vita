@@ -45,6 +45,9 @@ namespace Vita.Data.Runtime {
   }
 
   public enum DbUpgradeEventType {
+    DbModelLoaded,
+    DbModelCompared,
+    DbModelUpgradeScriptsGenerated,
     DbModelUpgrading,
     DbModelUpgraded,
     MigrationScriptsApplying,

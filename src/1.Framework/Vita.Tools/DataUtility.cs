@@ -111,7 +111,7 @@ namespace Vita.Tools {
     public static void DropSchemaObjects(DbSettings settings, List<string> schemas, ILog log) {
       var driver = settings.Driver; 
       var model = LoadDbModel(settings, schemas, log);
-      var upgradeInfo = new DbUpgradeInfo(null, model);
+      var upgradeInfo = new DbUpgradeInfo(settings, model);
       foreach(var sch in model.Schemas)
         if(sch.Schema != "dbo") //just for MS SQL, can never drop this
           upgradeInfo.AddChange(sch, null);

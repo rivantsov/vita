@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
+using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -232,7 +233,15 @@ namespace Vita.Entities.Utilities {
       return result;
     }
 
-
+    static MD5 _md5; 
+    public static string GetMd5Hash(string value) {
+      _md5 ??= MD5.Create();
+      value ??= string.Empty;
+      var bytes = Encoding.UTF8.GetBytes(value);
+      var hash = _md5.ComputeHash(bytes);
+      var hexHash = HexUtil.ByteArrayToHex(hash);
+      return hexHash; 
+    }
 
   }//class
 } //ns

@@ -7,11 +7,13 @@ using System.Data;
 using System.Data.Common;
 using Vita.Entities.Utilities;
 using Vita.Entities;
+using System.Diagnostics;
 
 namespace Vita.Data.Driver.InfoSchema {
   // DataSet, DataTable, DataRow are not supported by .NET core. DbModelLoader returns meta data as tables/rows
   // so here are simple replacements
   // Update: DataSet is supported now, but we better go without it, it is too heavy
+  [DebuggerDisplay("{Name}")]
   public class InfoColumn {
     public readonly InfoTable Table;
     public string Name;
@@ -41,7 +43,9 @@ namespace Vita.Data.Driver.InfoSchema {
       while(reader.Read()) {
         var row = AddRow(); 
         foreach(var col in Columns) {
-          row[col.Index] = reader[col.Index];
+          var v = reader[col.Index];
+          // if(v == DBNull.Value)  v = null; 
+          row[col.Index] = v;
         }
       }
     }

@@ -48,6 +48,7 @@ namespace Vita.Data.Upgrades {
       return Util.SafeFormat("{0}, {1} changes.", NewDbModel.EntityApp.AppName, totalCount);
     }
     public DbObjectChange AddChange(DbModelObjectBase oldObject, DbModelObjectBase newObject, string notes = null) {
+      var ignore = this.Settings.ShouldIgnoreUpgradeFor(oldObject);
       var change = new DbObjectChange(oldObject, newObject, null, notes);
       NonTableChanges.Add(change);
       return change;

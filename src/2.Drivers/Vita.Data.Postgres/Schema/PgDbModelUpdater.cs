@@ -30,7 +30,8 @@ namespace Vita.Data.Postgres {
       base.BuildPrimaryKeyAddSql(change, key);
       if(key.KeyType.IsSet(KeyType.Clustered)) {
         var kn = QuoteName(key.Name); 
-        change.AddScript(DbScriptType.PrimaryKeyAdd, $"ALTER TABLE {key.Table.FullName} CLUSTER ON {kn};");
+        // Phase=Late, to make sure it is after PK itself
+        change.AddScript(DbScriptType.PrimaryKeyAdd, ApplyPhase.Late, $"ALTER TABLE {key.Table.FullName} CLUSTER ON {kn};");
       }
     }
 

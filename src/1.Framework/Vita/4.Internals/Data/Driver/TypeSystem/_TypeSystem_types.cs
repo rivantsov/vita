@@ -70,9 +70,8 @@ namespace Vita.Data.Driver.TypeSystem {
     public override string ToString() {
       return $"{Name}";
     }
-
-
   }
+
 
   public class DbTypeInfo {
     public Type ClrType;

@@ -81,7 +81,6 @@ namespace Vita.Data {
       }
     }
 
-
   }//class
 
 }//namespace

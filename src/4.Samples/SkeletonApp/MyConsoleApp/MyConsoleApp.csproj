@@ -9,8 +9,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.Data.SqlClient" Version="3.0.0" />
-    <PackageReference Include="Vita" Version="3.4.0" />
+    <PackageReference Include="Microsoft.Data.SqlClient" Version="4.1.0" />
+    <PackageReference Include="Vita" Version="3.4.1" />
     <PackageReference Include="Vita.Data.MsSql" Version="3.4.0" />
   </ItemGroup>
 

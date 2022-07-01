@@ -16,8 +16,8 @@ See [Wiki pages](https://github.com/rivantsov/vita/wiki) of this repository.
 The source code contains a sample BookStore application. The test projects contain many examples of data access using the framework. 
 
 ## Nuget packages
-Binaries are distributed as Nuget packages. 
+Binaries are distributed as Nuget packages named Vita.* 
 
 ## System Requirements
-* .NET Standard 2.0, Visual Studio 2019; .NET Core 3.1 for test and sample projects 
+* .NET Standard 2.0, .NET 5.0 for test and sample projects 
 * MS SQL Server 2012+; MySql, PostgreSQL, Oracle, SQLite

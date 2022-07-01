@@ -48,7 +48,7 @@ namespace Vita.Tools.DbFirst {
 
     private static IList<MetadataReference> GetAssemblyReferences(Type driverType) {
       // could not make these refs through Type object (like Console), type.assembly.loc returns some other system assembly
-      var netstandard = Assembly.Load("netstandard, Version=2.0.0.0").Location;
+      var netstandard = Assembly.Load("netstandard, Version=2.0.3.0").Location;
       var runtime = Assembly.Load("System.Runtime, Version=4.0.0.0").Location;
       var collections = Assembly.Load("System.Collections, Version=4.0.0.0").Location;
       var console = typeof(Console).Assembly.Location;

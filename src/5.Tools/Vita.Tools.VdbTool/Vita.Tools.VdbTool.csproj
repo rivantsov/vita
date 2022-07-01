@@ -4,7 +4,7 @@
 
     <PropertyGroup>
         <OutputType>Exe</OutputType>
-        <TargetFramework>net472</TargetFramework>
+        <TargetFramework>net5.0</TargetFramework>
         <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
         <AssemblyName>vdbtool</AssemblyName>
         <Copyright>Roman Ivantsov</Copyright>
@@ -26,6 +26,12 @@
         <ProjectReference Include="..\..\2.Drivers\Vita.Data.Oracle\260.Vita.Data.Oracle.csproj" />
         <ProjectReference Include="..\..\2.Drivers\Vita.Data.Postgres\230.Vita.Data.Postgres.csproj" />
         <ProjectReference Include="..\..\2.Drivers\Vita.Data.SQLite\250.Vita.Data.SQLite.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <None Update="ConfigSamples\db1.mssql.books.cfg">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </None>
     </ItemGroup>
 
 </Project>

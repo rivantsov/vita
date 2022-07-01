@@ -9,14 +9,6 @@ namespace Vita.Entities.Model.Construction {
   // key expansion methods
   public partial class EntityModelBuilder {
 
-    private void ExpandEntityKeyMembersNew() {
-      var sccBuilder = new SccGraph(); 
-
-    }
-
-
-    //==================== old stuff =====================================
-
     private List<EntityKeyInfo> _keysInExpansion;
 
 

@@ -154,7 +154,7 @@ namespace Vita.Data.Runtime {
             dex.Data[DataAccessException.KeyEntityName] = entKey.Entity.Name;
             dex.Data[DataAccessException.KeyEntityKeyName] = entKey.Name;
             dex.Data[DataAccessException.KeyIndexAlias] = entKey.Alias;
-            dex.Data[DataAccessException.KeyMemberNames] = entKey.GetMemberNames(",");
+            dex.Data[DataAccessException.KeyMemberNames] = entKey.GetMemberNamesAsString(",");
           }
           return;
         case DataAccessException.SubTypeConcurrentUpdate:

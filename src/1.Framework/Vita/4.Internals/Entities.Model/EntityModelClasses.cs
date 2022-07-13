@@ -368,19 +368,9 @@ namespace Vita.Entities.Model {
     public override string ToString() {
       return Util.SafeFormat("{0}:{1}({2})", Entity.FullName, KeyType, string.Join(",", KeyMembers));
     }
+
     public bool IsExpanded() {
       return ExpandedKeyMembers.Count > 0; 
-    }
-
-    public string GetMemberNames(string separator = "", bool removeUnderscore = false) {
-      string result;
-      if (ExpandedKeyMembers.Count == 1)
-        result = ExpandedKeyMembers[0].Member.MemberName; 
-      else 
-        result = string.Join(separator, ExpandedKeyMembers.Select(m => m.Member.MemberName));
-      if (removeUnderscore)
-        result = result.Replace("_", string.Empty);
-      return result; 
     }
 
     public string GetFullRef() {

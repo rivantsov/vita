@@ -49,7 +49,7 @@ namespace Vita.Entities.Model.Construction {
         var target = key.OwnerMember.ReferenceInfo.ToKey.Entity;
         return prefix + tName + "_" + (target.TableName ?? target.Name);
       } else {
-        var members = key.GetMemberNames();
+        var members = key.GetMemberNamesAsString();
         string memberNames = string.Join(string.Empty, members).Replace("_", string.Empty); //remove underscores in names 
         return prefix + tName + "_" + memberNames;
       }
@@ -189,6 +189,19 @@ namespace Vita.Entities.Model.Construction {
       var method = type.GetMethod(methodName, bFlags);
       return method; 
     }
+
+    public static string GetMemberNamesAsString(this EntityKeyInfo key, string separator = "", bool removeUnderscore = false) {
+      string result;
+      if (key.ExpandedKeyMembers.Count == 1)
+        result = key.ExpandedKeyMembers[0].Member.MemberName;
+      else
+        result = string.Join(separator, key.ExpandedKeyMembers.Select(m => m.Member.MemberName));
+      if (removeUnderscore)
+        result = result.Replace("_", string.Empty);
+      return result;
+    }
+
+
 
   } //class
 }

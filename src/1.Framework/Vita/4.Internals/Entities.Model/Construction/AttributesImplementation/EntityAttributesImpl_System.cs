@@ -67,7 +67,7 @@ namespace Vita.Entities {
     public virtual void CreateKey(ILog log) {
       if(this.Key != null) //protect against multiple processing
         return;
-      // we initially assign temp names
+      // we initially assign temp key name
       this.Key = new EntityKeyInfo(HostEntity, KeyType, HostMember, this.Alias);
       // add members
       if(HostMember != null) {

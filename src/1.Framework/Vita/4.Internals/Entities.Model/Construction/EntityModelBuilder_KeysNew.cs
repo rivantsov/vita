@@ -10,35 +10,46 @@ namespace Vita.Entities.Model.Construction {
   public partial class EntityModelBuilder {
 
     private bool ExpandEntityKeyMembersNew() {
-      var keysToExpand = Model.Entities.SelectMany(e => e.Keys).ToList();
+      var allKeys = Model.Entities.SelectMany(e => e.Keys).ToList();
+      var pkFkList = allKeys.Where(key => key.KeyType.IsSet(KeyType.PrimaryKey | KeyType.ForeignKey)).ToList();
       do {
         var newList = new List<EntityKeyInfo>();
-        foreach (var key in keysToExpand)
-          if (TryExpandKey(key))
+        foreach (var key in pkFkList) {
+          if (TryExpandPrimaryOrForeignKey(key))
             continue;
-          else
-            newList.Add(key);
+          newList.Add(key);
+        }
         // check if we are stuck, report error and exit if we are
-        if (newList.Count == keysToExpand.Count) {
-          ReportErrorFailedToExpandKeys(keysToExpand);
+        if (newList.Count == pkFkList.Count) { // no progress
+          ReportErrorFailedToExpandKeys(pkFkList);
           return false; 
         }
-        keysToExpand = newList; 
-      } while (keysToExpand.Count > 0);
+        pkFkList = newList; 
+      } while (pkFkList.Count > 0);
+      CheckErrors();
+
+      // process other keys
+      var otherKeys = allKeys.Where(key => !key.KeyType.IsSet(KeyType.PrimaryKey | KeyType.ForeignKey)).ToList();
+      foreach (var key in otherKeys)
+        ExpandOtherKey(key);
       CheckErrors();
       return true; 
     }
 
-    private bool TryExpandKey(EntityKeyInfo key) {
+    private bool TryExpandPrimaryOrForeignKey(EntityKeyInfo key) {
       if (key.IsExpanded())
         return true;
       if (key.KeyType.IsSet(KeyType.ForeignKey))
         return TryExpandForeignKey(key);
       else
-        return TryExpandRegularKey(key); 
+        return TryExpandPrimaryKey(key); 
     }
 
-    private bool TryExpandRegularKey(EntityKeyInfo key) {
+    private bool TryExpandPrimaryKey(EntityKeyInfo key) {
+      // check if there are any ref members in the key that are not expanded.
+      var hasNotExpandedRefs = key.KeyMembers.Any(km => km.Member.Kind == EntityMemberKind.EntityRef && !km.Member.ReferenceInfo.ToKey.IsExpanded());
+      if (hasNotExpandedRefs)
+        return false; 
 
     }
 
@@ -51,6 +62,17 @@ namespace Vita.Entities.Model.Construction {
       var nullable = refMember.Flags.IsSet(EntityMemberFlags.Nullable);
       var isPk = refMember.Flags.IsSet(EntityMemberFlags.PrimaryKey);
     }
+
+    private void ExpandOtherKey(EntityKeyInfo key) {
+      // check if there are any ref members in the key that are not expanded.
+      var notExpandedRefs = key.KeyMembers.Where(km => km.Member.Kind == EntityMemberKind.EntityRef && !km.Member.ReferenceInfo.ToKey.IsExpanded()).ToList();
+      if (notExpandedRefs.Count > 0) {
+        Log.LogError($"FATAL: cannot expand regular key {key.GetFullRef()} ");
+        return false;
+      }
+
+    }
+
 
     private void ReportErrorFailedToExpandKeys(List<EntityKeyInfo> keys) {
 

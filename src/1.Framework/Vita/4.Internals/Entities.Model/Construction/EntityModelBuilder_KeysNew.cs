@@ -14,11 +14,10 @@ namespace Vita.Entities.Model.Construction {
       var pkFkList = allKeys.Where(key => key.KeyType.IsSet(KeyType.PrimaryKey | KeyType.ForeignKey)).ToList();
       do {
         var newList = new List<EntityKeyInfo>();
-        foreach (var key in pkFkList) {
-          if (TryExpandPrimaryOrForeignKey(key))
-            continue;
-          newList.Add(key);
-        }
+        foreach (var key in pkFkList) 
+          if (!TryExpandPrimaryOrForeignKey(key))
+            newList.Add(key);
+        
         // check if we are stuck, report error and exit if we are
         if (newList.Count == pkFkList.Count) { // no progress
           ReportErrorFailedToExpandKeys(pkFkList);

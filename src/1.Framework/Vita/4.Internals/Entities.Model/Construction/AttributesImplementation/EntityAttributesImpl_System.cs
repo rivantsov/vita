@@ -65,19 +65,7 @@ namespace Vita.Entities {
     }
 
     public virtual void CreateKey(ILog log) {
-      if(this.Key != null) //protect against multiple processing
-        return;
-      // we initially assign temp key name
-      this.Key = new EntityKeyInfo(HostEntity, KeyType, HostMember, this.Alias);
-      // add members
-      if(HostMember != null) {
-        Key.KeyMembers.Add(new EntityKeyMemberInfo(HostMember, false));
-      } else {
-        // it will add errors if it fails
-        HostEntity.TryParseKeySpec(this.MemberNames, log, out Key.KeyMembers, ordered: true);
-      }
-      // construct name
-      Key.ExplicitDbKeyName = this.DbKeyName; 
+      this.Key = new EntityKeyInfo(HostEntity, KeyType, HostMember, this);
       // PK
       if(KeyType.IsSet(KeyType.PrimaryKey)) {
         if(HostEntity.PrimaryKey == null) {

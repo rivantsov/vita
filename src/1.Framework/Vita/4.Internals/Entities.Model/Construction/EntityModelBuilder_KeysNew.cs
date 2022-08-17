@@ -67,7 +67,6 @@ namespace Vita.Entities.Model.Construction {
       var notExpandedRefs = key.KeyMembers.Where(km => km.Member.Kind == EntityMemberKind.EntityRef && !km.Member.ReferenceInfo.ToKey.IsExpanded()).ToList();
       if (notExpandedRefs.Count > 0) {
         Log.LogError($"FATAL: cannot expand regular key {key.GetFullRef()} ");
-        return false;
       }
 
     }

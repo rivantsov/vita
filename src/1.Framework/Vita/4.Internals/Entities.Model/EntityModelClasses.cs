@@ -314,7 +314,7 @@ namespace Vita.Entities.Model {
     public readonly EntityMemberInfo Member;
     public readonly bool Desc;
 
-    public EntityKeyMemberInfo(EntityMemberInfo member, bool desc) {
+    public EntityKeyMemberInfo(EntityMemberInfo member, bool desc = false) {
       Member = member;
       Desc = desc;
     }
@@ -337,6 +337,10 @@ namespace Vita.Entities.Model {
     public string Name;
     public string Alias;
     public EntityInfo Entity;
+    // source attributes, might be null
+    public KeyAttribute SourceKeyAttribute;
+    public EntityRefAttribute SourceRefAttribute; 
+
     public KeyType KeyType;
     //Original members specified in attributes; may contain members that are entity references
     public List<EntityKeyMemberInfo> KeyMembers = new List<EntityKeyMemberInfo>();
@@ -356,13 +360,16 @@ namespace Vita.Entities.Model {
     internal string SqlCacheKey_SelectByPkNoLock;
     internal string SqlCacheKey_ChildExists;
 
-    public EntityKeyInfo(EntityInfo entity, KeyType keyType, 
-        EntityMemberInfo ownerMember = null, string alias = null) {
+    public EntityKeyInfo(EntityInfo entity, KeyType keyType, EntityMemberInfo hostMember = null, 
+                         KeyAttribute sourceKeyAttr = null, EntityRefAttribute sourceRefAttr = null) {
       KeyType = keyType;
       Entity = entity;
-      OwnerMember = ownerMember;
-      Alias = alias; 
+      OwnerMember = hostMember; 
+      Alias = SourceKeyAttribute?.Alias;
+      ExplicitDbKeyName = sourceKeyAttr?.DbKeyName;
       entity.Keys.Add(this);
+      if (hostMember != null)
+        this.KeyMembers.Add(new EntityKeyMemberInfo(hostMember));
     }
     
     public override string ToString() {

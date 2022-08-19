@@ -6,10 +6,19 @@ using Vita.Entities.Logging;
 using Vita.Entities.Utilities;
 
 namespace Vita.Entities.Model.Construction {
-  // key expansion methods
-  public partial class EntityModelBuilder {
 
-    private bool ExpandEntityKeyMembersNew() {
+  public partial class EntityKeysBuilder {
+    EntityModelBuilder _modelBuilder;
+    internal EntityModel Model => _modelBuilder.Model;
+
+    internal EntityKeysBuilder(EntityModelBuilder modelBuilder) {
+      _modelBuilder = modelBuilder;      
+    }
+
+    internal bool BuildKeys() {
+    }
+
+    internal bool BuildMembers() {
       var allKeys = Model.Entities.SelectMany(e => e.Keys).ToList();
       var pkFkList = allKeys.Where(key => key.KeyType.IsSet(KeyType.PrimaryKey | KeyType.ForeignKey)).ToList();
       do {
@@ -25,13 +34,13 @@ namespace Vita.Entities.Model.Construction {
         }
         pkFkList = newList; 
       } while (pkFkList.Count > 0);
-      CheckErrors();
+      _modelBuilder.CheckErrors();
 
       // process other keys
       var otherKeys = allKeys.Where(key => !key.KeyType.IsSet(KeyType.PrimaryKey | KeyType.ForeignKey)).ToList();
       foreach (var key in otherKeys)
         ExpandOtherKey(key);
-      CheckErrors();
+      _modelBuilder.CheckErrors();
       return true; 
     }
 

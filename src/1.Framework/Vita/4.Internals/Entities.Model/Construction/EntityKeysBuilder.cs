@@ -9,60 +9,64 @@ namespace Vita.Entities.Model.Construction {
 
   public partial class EntityKeysBuilder {
     EntityModelBuilder _modelBuilder;
-    internal EntityModel Model => _modelBuilder.Model;
+    EntityModel _model => _modelBuilder.Model;
+    ILog _log => _modelBuilder.Log; 
 
     internal EntityKeysBuilder(EntityModelBuilder modelBuilder) {
-      _modelBuilder = modelBuilder;      
+      _modelBuilder = modelBuilder;
     }
 
     internal bool BuildKeys() {
-    }
-
-    internal bool BuildMembers() {
-      var allKeys = Model.Entities.SelectMany(e => e.Keys).ToList();
-      var pkFkList = allKeys.Where(key => key.KeyType.IsSet(KeyType.PrimaryKey | KeyType.ForeignKey)).ToList();
-      do {
-        var newList = new List<EntityKeyInfo>();
-        foreach (var key in pkFkList) 
-          if (!TryExpandPrimaryOrForeignKey(key))
-            newList.Add(key);
-        
-        // check if we are stuck, report error and exit if we are
-        if (newList.Count == pkFkList.Count) { // no progress
-          ReportErrorFailedToExpandKeys(pkFkList);
-          return false; 
+      var allKeys = _model.Entities.SelectMany(e => e.Keys).ToList();
+      var keysToBuild = allKeys.Where(key => key.KeyType.IsSet(KeyType.PrimaryKey | KeyType.ForeignKey)).ToList();
+      while (keysToBuild.Count > 0) {
+        var newList = BuildKeys(keysToBuild);
+        _modelBuilder.CheckErrors();
+        if (newList.Count == keysToBuild.Count) { // no progress
+          ReportErrorFailedToExpandKeys(newList);
+          return false;
         }
-        pkFkList = newList; 
-      } while (pkFkList.Count > 0);
-      _modelBuilder.CheckErrors();
-
+        keysToBuild = newList; 
+      }
       // process other keys
       var otherKeys = allKeys.Where(key => !key.KeyType.IsSet(KeyType.PrimaryKey | KeyType.ForeignKey)).ToList();
       foreach (var key in otherKeys)
         ExpandOtherKey(key);
       _modelBuilder.CheckErrors();
-      return true; 
+      return true;
     }
 
-    private bool TryExpandPrimaryOrForeignKey(EntityKeyInfo key) {
+    internal List<EntityKeyInfo> BuildKeys(List<EntityKeyInfo> currentList) {
+        var newList = new List<EntityKeyInfo>();
+        foreach (var key in currentList) 
+          if (!TryBuildPrimaryOrForeignKey(key))
+            newList.Add(key);
+      return newList; 
+    }
+
+    private bool TryBuildPrimaryOrForeignKey(EntityKeyInfo key) {
       if (key.IsExpanded())
         return true;
-      if (key.KeyType.IsSet(KeyType.ForeignKey))
-        return TryExpandForeignKey(key);
+      if (key.KeyType.IsSet(KeyType.ForeignKey))  //foreign key should be first
+        return TryBuildForeignKey(key);
       else
-        return TryExpandPrimaryKey(key); 
+        return TryBuildPrimaryKey(key); 
     }
 
-    private bool TryExpandPrimaryKey(EntityKeyInfo key) {
+    private bool TryBuildPrimaryKey(EntityKeyInfo key) {
+      if (key.KeyMembers.Count == 0) {
+
+      }
       // check if there are any ref members in the key that are not expanded.
       var hasNotExpandedRefs = key.KeyMembers.Any(km => km.Member.Kind == EntityMemberKind.EntityRef && !km.Member.ReferenceInfo.ToKey.IsExpanded());
       if (hasNotExpandedRefs)
-        return false; 
+        return false;
 
+      return true; 
     }
 
-    private bool TryExpandForeignKey(EntityKeyInfo key) {
-      var refMember = key.OwnerMember;
+    private bool TryBuildForeignKey(EntityKeyInfo key) {
+      var refMember = key.OwnerRefMember;
       var toKey = refMember.ReferenceInfo.ToKey;
       if (!toKey.IsExpanded())
           return false;

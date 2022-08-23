@@ -46,7 +46,7 @@ namespace Vita.Entities.Model.Construction {
       if (key.KeyType.IsSet(KeyType.PrimaryKey)) {
         return prefix + tName;
       } else if (key.KeyType.IsSet(KeyType.ForeignKey)) {
-        var target = key.OwnerMember.ReferenceInfo.ToKey.Entity;
+        var target = key.OwnerRefMember.ReferenceInfo.ToKey.Entity;
         return prefix + tName + "_" + (target.TableName ?? target.Name);
       } else {
         var members = key.GetMemberNamesAsString();

@@ -339,7 +339,7 @@ namespace Vita.Entities.Model {
     public EntityInfo Entity;
     // source attributes, might be null
     public KeyAttribute SourceKeyAttribute;
-    public EntityRefAttribute SourceRefAttribute; 
+    public EntityRefAttribute SourceRefAttribute;
 
     public KeyType KeyType;
     //Original members specified in attributes; may contain members that are entity references
@@ -351,10 +351,11 @@ namespace Vita.Entities.Model {
     public EntityKeyInfo IsCopyOf; //for FKs
 
     public bool HasIdentityMember;
-    public EntityMemberInfo OwnerMember; //for FK, the ref member
+    public EntityMemberInfo OwnerRefMember; //for FK, the ref member
     public Delegate CacheSelectMethod; // compiled method to select in cache
     public EntityFilter IndexFilter;
     public string ExplicitDbKeyName;
+    public string MemberNames => SourceKeyAttribute?.MemberNames;
 
     // cached keys, set on first use
     internal string SqlCacheKey_SelectByPkNoLock;
@@ -364,7 +365,7 @@ namespace Vita.Entities.Model {
                          KeyAttribute sourceKeyAttr = null, EntityRefAttribute sourceRefAttr = null) {
       KeyType = keyType;
       Entity = entity;
-      OwnerMember = hostMember; 
+      OwnerRefMember = hostMember; 
       Alias = SourceKeyAttribute?.Alias;
       ExplicitDbKeyName = sourceKeyAttr?.DbKeyName;
       entity.Keys.Add(this);

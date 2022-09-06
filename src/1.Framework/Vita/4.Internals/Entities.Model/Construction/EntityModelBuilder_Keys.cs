@@ -93,7 +93,7 @@ namespace Vita.Entities.Model.Construction {
 
     //FK expansion is a special case - we expand members from target expanded members (of target PrimaryKey)
     private bool ExpandForeignKey(EntityKeyInfo key) {
-      var refMember = key.OwnerMember;
+      var refMember = key.OwnerRefMember;
       var nullable = refMember.Flags.IsSet(EntityMemberFlags.Nullable);
       var isPk = refMember.Flags.IsSet(EntityMemberFlags.PrimaryKey);
       var refInfo = refMember.ReferenceInfo;
@@ -149,8 +149,8 @@ namespace Vita.Entities.Model.Construction {
         if(isPk)
           fkMember.Flags |= EntityMemberFlags.PrimaryKey;
         //copy old names
-        if(key.OwnerMember.OldNames != null)
-          fkMember.OldNames = key.OwnerMember.OldNames.Select(n => n + "_" + targetMember.MemberName).ToArray();
+        if(key.OwnerRefMember.OldNames != null)
+          fkMember.OldNames = key.OwnerRefMember.OldNames.Select(n => n + "_" + targetMember.MemberName).ToArray();
         key.ExpandedKeyMembers.Add(new EntityKeyMemberInfo(fkMember, false));
       }//foreach targetMember
       return true;

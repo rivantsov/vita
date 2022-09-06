@@ -316,7 +316,7 @@ namespace Vita.Tools.DbFirst {
           }
           refMember.ReferenceInfo = new EntityReferenceInfo(refMember, fromEntKey, targetEnt.PrimaryKey);
           // Add lists on parent entities only for ref members that have indexes
-          var memberIndex = refMember.Entity.Keys.FirstOrDefault(k => k.OwnerMember == refMember && k.KeyType.IsSet(KeyType.Index));
+          var memberIndex = refMember.Entity.Keys.FirstOrDefault(k => k.OwnerRefMember == refMember && k.KeyType.IsSet(KeyType.Index));
           if (addListMembers && memberIndex != null) {
             //create List member on target entity
             var listName = StringHelper.Pluralize(ent.Name.Substring(1)); //remove 'I' prefix and pluralize

@@ -81,8 +81,8 @@ namespace Vita.Entities.Runtime {
     public override string ToString() {
       if (this.KeyInfo.KeyType.IsSet(KeyType.PrimaryKey)) 
         return AsString(); 
-      else if (this.KeyInfo.OwnerMember != null && this.KeyInfo.KeyType == KeyType.ForeignKey)
-        return Util.SafeFormat("{0}.{1}/{2}/{3}", this.KeyInfo.Entity.Name, this.KeyInfo.OwnerMember.MemberName, this.KeyInfo.KeyType, ValuesToString());
+      else if (this.KeyInfo.OwnerRefMember != null && this.KeyInfo.KeyType == KeyType.ForeignKey)
+        return Util.SafeFormat("{0}.{1}/{2}/{3}", this.KeyInfo.Entity.Name, this.KeyInfo.OwnerRefMember.MemberName, this.KeyInfo.KeyType, ValuesToString());
       else 
         return Util.SafeFormat("{0}/{1}/{2}", this.KeyInfo.Entity.Name, this.KeyInfo.KeyType, ValuesToString());
     }

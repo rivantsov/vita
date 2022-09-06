@@ -10,16 +10,51 @@ namespace Vita.Entities.Model.Construction {
   public partial class EntityKeysBuilder {
     EntityModelBuilder _modelBuilder;
     internal EntityModel Model => _modelBuilder.Model;
+    ILog _log; 
+    List<EntityKeyInfo> _allKeys;
+    List<EntityKeyInfo> _pkFkKeys;
 
     internal EntityKeysBuilder(EntityModelBuilder modelBuilder) {
-      _modelBuilder = modelBuilder;      
+      _modelBuilder = modelBuilder;
+      _log = _modelBuilder.Log; 
+      _allKeys = Model.Entities.SelectMany(e => e.Keys).ToList();
     }
 
-    internal bool BuildKeys() {
+    internal void BuildKeys() {
+      InitMemberSpecs(); 
     }
+
+    
+
+    internal void InitMemberSpecs() {
+      // initialize member specs
+      foreach(var key in _allKeys) {
+        var kref = key.GetSafeKeyRef();
+        // fast path for single-column PKs
+        if (key.OwnerMember != null && key.KeyMemberListSpec == null) {
+          key.KeyMemberListSpec = key.OwnerMember.MemberName;
+          key.ParsedMemberSpecs = new[] { new MemberSpec { Name = key.OwnerMember.MemberName } };
+          key.KeyMembers.Add(new EntityKeyMemberInfo(key.OwnerMember));
+          continue;
+        }
+        // general case
+        key.KeyMemberListSpec = key.KeyMemberListSpec ?? key.OwnerMember?.MemberName;
+        if(string.IsNullOrEmpty(key.KeyMemberListSpec)) { //should never happen
+          _log.LogError($"Fatal: missing or invalid key members list on entity {kref}.");
+          continue;
+        }
+        key.ParsedMemberSpecs = TryParseKeySpec(key.KeyMemberListSpec, key.Entity, allowAscDecs: false);
+
+      }      
+    }
+
+    private bool ResolveMemberList(EntityKeyInfo key) {
+
+    }
+
+
 
     internal bool BuildMembers() {
-      var allKeys = Model.Entities.SelectMany(e => e.Keys).ToList();
       var pkFkList = allKeys.Where(key => key.KeyType.IsSet(KeyType.PrimaryKey | KeyType.ForeignKey)).ToList();
       do {
         var newList = new List<EntityKeyInfo>();
@@ -85,5 +120,52 @@ namespace Vita.Entities.Model.Construction {
 
     }
 
+    // entity and specHolder are the same in most cases. Except for [OrderBy] attribute
+    //  on list property. In this case 'entity' is target entity being ordered, and specHolder
+    //  is entity that hosts the list property and attribute
+    public List<MemberSpec> TryParseKeySpec(string keySpec, EntityInfo entity, bool allowAscDecs, 
+                                            EntityInfo specHolder = null) {
+      specHolder = specHolder ?? entity;
+      var segments = StringHelper.SplitNames(keySpec);
+      var specs = new List<MemberSpec>();
+      foreach (var segm in segments) {
+        bool desc = false;
+        string[] parts;
+        if (allowAscDecs) {
+          parts = StringHelper.SplitNames(spec, ':');
+          if (parts.Length > 2) {
+            _log.LogError($"Invalid key/order spec '{keySpec}', entity {specHolder.EntityType}; only single ':' char is allowed.");
+            return false;
+          }
+          string strDesc = parts.Length == 1 ? "asc" : parts[1];
+          switch (strDesc.ToLowerInvariant()) {
+            case "": case "asc": desc = false; break;
+            case "desc": desc = true; break;
+            default:
+              log.LogError($"Invalid key/order spec '{keySpec}', entity {specHolder.EntityType}. Expected ':asc' or ':desc' as direction specification.");
+              return false;
+          }//switch
+        }//if ordered
+        else
+          parts = new string[] { spec, null };
+        var member = entity.GetMember(parts[0]);
+        if (member == null) {
+          log.LogError($"Invalid key/order spec '{keySpec}', entity {specHolder.EntityType}. member {parts[0]} not found.");
+          return false;
+        }
+        parsedKeyMembers.Add(new EntityKeyMemberInfo(member, desc));
+      }//foreach spec
+      return true;
+    }
+
+  }
+
+  // =============================== Helper =======================================
+
+  internal static class KeyBuilderHelper {
+
+    public static string GetSafeKeyRef(this EntityKeyInfo key) {
+      return $"{key.Entity.Name}/{key.KeyType}";
+    }
   }
 }

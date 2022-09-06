@@ -333,6 +333,11 @@ namespace Vita.Entities.Model {
     public List<EntityMemberInfo> Members; 
   }
 
+  public class MemberSpec {
+    public string Name;
+    public bool Desc; 
+  }
+
   public class EntityKeyInfo {
     public string Name;
     public string Alias;
@@ -342,13 +347,15 @@ namespace Vita.Entities.Model {
     public EntityRefAttribute SourceRefAttribute; 
 
     public KeyType KeyType;
+    public string KeyMemberListSpec; //ex for index: "price:desc;brand,prodName"
+    public IList<MemberSpec> ParsedMemberSpecs; // parsed KeyMemberListSpec
     //Original members specified in attributes; may contain members that are entity references
     public List<EntityKeyMemberInfo> KeyMembers = new List<EntityKeyMemberInfo>();
     //Often the same as Members, except entity reference members had been "expanded" - replaced with value members that constitute the foreign key
     public List<EntityKeyMemberInfo> ExpandedKeyMembers = new List<EntityKeyMemberInfo>();
     public List<EntityMemberInfo> IncludeMembers = new List<EntityMemberInfo>();
     public List<EntityMemberInfo> ExpandedIncludeMembers = new List<EntityMemberInfo>();
-    public EntityKeyInfo IsCopyOf; //for FKs
+    public EntityKeyInfo TargetUniqueKey; //for FKs
 
     public bool HasIdentityMember;
     public EntityMemberInfo OwnerMember; //for FK, the ref member

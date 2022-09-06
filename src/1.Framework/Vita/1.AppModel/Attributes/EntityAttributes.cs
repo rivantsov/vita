@@ -175,10 +175,10 @@ namespace Vita.Entities {
     }
   }
 
-    /// <summary> Identifies a primary key. Can be placed on a property (without parameters), 
-    /// or on an entity with a list of column names as parameter.
-    /// </summary>
-    [AttributeUsage(AttributeTargets.Interface | AttributeTargets.Property)]
+  /// <summary> Identifies a primary key. Can be placed on a property (without parameters), 
+  /// or on an entity with a list of column names as parameter.
+  /// </summary>
+  [AttributeUsage(AttributeTargets.Interface | AttributeTargets.Property)]
   public partial class PrimaryKeyAttribute: KeyAttribute {
     public bool Clustered;
 

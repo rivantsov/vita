@@ -7,7 +7,9 @@ using Vita.Entities.Utilities;
 
 namespace Vita.Entities.Model.Construction {
 
-  public partial class EntityKeysBuilder {
+  //  !!  See EntityKeysBuilder_ReadMe.md for more info about this class 
+
+  internal partial class EntityKeysBuilder {
     EntityModelBuilder _modelBuilder;
     internal EntityModel Model => _modelBuilder.Model;
     ILog _log; 
@@ -21,18 +23,21 @@ namespace Vita.Entities.Model.Construction {
     }
 
     internal void BuildKeys() {
-      InitMemberSpecs(); 
+      InitKeyMemberListsForKeysOnMembers();
+
+
+
+      // setup PK members, moved here from PK attr
+      //        Key.KeyMembers.Each(km => km.Member.Flags |= EntityMemberFlags.PrimaryKey);
+
     }
 
-    
-
-    internal void InitMemberSpecs() {
+    internal void InitKeyMemberListsForKeysOnMembers() {
       // initialize member specs
       foreach(var key in _allKeys) {
         var kref = key.GetSafeKeyRef();
         // fast path for single-column PKs
-        if (key.OwnerMember != null && key.KeyMemberListSpec == null) {
-          key.KeyMemberListSpec = key.OwnerMember.MemberName;
+        if (key.OwnerMember != null) {
           key.ParsedMemberSpecs = new[] { new MemberSpec { Name = key.OwnerMember.MemberName } };
           key.KeyMembers.Add(new EntityKeyMemberInfo(key.OwnerMember));
           continue;

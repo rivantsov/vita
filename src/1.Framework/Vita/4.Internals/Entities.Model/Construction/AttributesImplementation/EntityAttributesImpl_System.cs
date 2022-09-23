@@ -55,6 +55,9 @@ namespace Vita.Entities {
       if(this.HostMember == null && string.IsNullOrWhiteSpace(this.MemberNames)) {
         log.LogError($"{HostRef}: Index/key attribute ({this.GetType()}) on entity may not have empty member list.");
       }
+      if (this.HostMember != null && !string.IsNullOrWhiteSpace(this.MemberNames)) {
+        log.LogError($"{HostRef}: Index/key attribute ({this.GetType()}) on member should not have explicit member list.");
+      }
     }
 
     public override void ApplyOnEntity(EntityModelBuilder builder) {
@@ -70,12 +73,11 @@ namespace Vita.Entities {
       if(KeyType.IsSet(KeyType.PrimaryKey)) {
         if(HostEntity.PrimaryKey == null) {
           HostEntity.PrimaryKey = Key;
-          Key.KeyMembers.Each(km => km.Member.Flags |= EntityMemberFlags.PrimaryKey);
         } else
           log.LogError($"Entity {HostEntity.Name} has more than one Primary Key specified.");
       }
+    } // CreateKey
 
-    }
   }
 
   public partial class PrimaryKeyAttribute {

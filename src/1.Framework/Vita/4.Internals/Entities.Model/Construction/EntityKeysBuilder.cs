@@ -19,149 +19,107 @@ namespace Vita.Entities.Model.Construction {
     internal EntityKeysBuilder(EntityModelBuilder modelBuilder) {
       _modelBuilder = modelBuilder;
       _log = _modelBuilder.Log; 
-      _allKeys = Model.Entities.SelectMany(e => e.Keys).ToList();
     }
 
     internal void BuildKeys() {
-      InitKeyMemberListsForKeysOnMembers();
+      _allKeys = Model.Entities.SelectMany(e => e.Keys).ToList();
+      ParseKeySpecs();
+      _modelBuilder.CheckErrors();
+      // process simple 1-column PKs if any.
+      _pkFkKeys = _allKeys.Where(key => key.KeyType.IsSet(KeyType.PrimaryKey | KeyType.ForeignKey)).ToList();
+      InitSimplePks(); //one-column PKs
+      // run main loop
+      if (!RunKeyBuildLoop())
+        return; 
 
+    } // method
 
+    private bool RunKeyBuildLoop() {
+      var workList = _allKeys.Where(key => key.BuildStatus != KeyBuildStatus.MembersExpanded).ToList();
+      // run loop several times:
+      //   1. try process FKs, this can adds columns mapped from target FK
+      //   2. try process PKs
+      while (true) {
+        var oldKeyCount = workList.Count;
 
-      // setup PK members, moved here from PK attr
-      //        Key.KeyMembers.Each(km => km.Member.Flags |= EntityMemberFlags.PrimaryKey);
-
-    }
-
-    internal void InitKeyMemberListsForKeysOnMembers() {
-      // initialize member specs
-      foreach(var key in _allKeys) {
-        var kref = key.GetSafeKeyRef();
-        // fast path for single-column PKs
-        if (key.OwnerMember != null) {
-          key.ParsedMemberSpecs = new[] { new MemberSpec { Name = key.OwnerMember.MemberName } };
-          key.KeyMembers.Add(new EntityKeyMemberInfo(key.OwnerMember));
-          continue;
-        }
-        // general case
-        key.KeyMemberListSpec = key.KeyMemberListSpec ?? key.OwnerMember?.MemberName;
-        if(string.IsNullOrEmpty(key.KeyMemberListSpec)) { //should never happen
-          _log.LogError($"Fatal: missing or invalid key members list on entity {kref}.");
-          continue;
-        }
-        key.ParsedMemberSpecs = TryParseKeySpec(key.KeyMemberListSpec, key.Entity, allowAscDecs: false);
-
-      }      
-    }
-
-    private bool ResolveMemberList(EntityKeyInfo key) {
-
-    }
-
-
-
-    internal bool BuildMembers() {
-      var pkFkList = allKeys.Where(key => key.KeyType.IsSet(KeyType.PrimaryKey | KeyType.ForeignKey)).ToList();
-      do {
-        var newList = new List<EntityKeyInfo>();
-        foreach (var key in pkFkList) 
-          if (!TryExpandPrimaryOrForeignKey(key))
-            newList.Add(key);
-        
-        // check if we are stuck, report error and exit if we are
-        if (newList.Count == pkFkList.Count) { // no progress
-          ReportErrorFailedToExpandKeys(pkFkList);
+        // refresh work list
+        workList = _allKeys.Where(key => key.BuildStatus != KeyBuildStatus.MembersExpanded).ToList();
+        if (workList.Count == 0)
+          return true; 
+        if (workList.Count == oldKeyCount) { //count did not change, we make no progress, it is error
+          var keyList = string.Join(",", workList.Select(km => km.GetSafeKeyRef()));
+          _log.LogError(
+            @$"FATAL: Key builder process could not complete, remaining key count: {workList.Count}. Keys: {keyList}");
           return false; 
         }
-        pkFkList = newList; 
-      } while (pkFkList.Count > 0);
-      _modelBuilder.CheckErrors();
-
-      // process other keys
-      var otherKeys = allKeys.Where(key => !key.KeyType.IsSet(KeyType.PrimaryKey | KeyType.ForeignKey)).ToList();
-      foreach (var key in otherKeys)
-        ExpandOtherKey(key);
-      _modelBuilder.CheckErrors();
-      return true; 
-    }
-
-    private bool TryExpandPrimaryOrForeignKey(EntityKeyInfo key) {
-      if (key.IsExpanded())
-        return true;
-      if (key.KeyType.IsSet(KeyType.ForeignKey))
-        return TryExpandForeignKey(key);
-      else
-        return TryExpandPrimaryKey(key); 
-    }
-
-    private bool TryExpandPrimaryKey(EntityKeyInfo key) {
-      // check if there are any ref members in the key that are not expanded.
-      var hasNotExpandedRefs = key.KeyMembers.Any(km => km.Member.Kind == EntityMemberKind.EntityRef && !km.Member.ReferenceInfo.ToKey.IsExpanded());
-      if (hasNotExpandedRefs)
-        return false; 
-
-    }
-
-    private bool TryExpandForeignKey(EntityKeyInfo key) {
-      var refMember = key.OwnerMember;
-      var toKey = refMember.ReferenceInfo.ToKey;
-      if (!toKey.IsExpanded())
-          return false;
-
-      var nullable = refMember.Flags.IsSet(EntityMemberFlags.Nullable);
-      var isPk = refMember.Flags.IsSet(EntityMemberFlags.PrimaryKey);
-    }
-
-    private void ExpandOtherKey(EntityKeyInfo key) {
-      // check if there are any ref members in the key that are not expanded.
-      var notExpandedRefs = key.KeyMembers.Where(km => km.Member.Kind == EntityMemberKind.EntityRef && !km.Member.ReferenceInfo.ToKey.IsExpanded()).ToList();
-      if (notExpandedRefs.Count > 0) {
-        Log.LogError($"FATAL: cannot expand regular key {key.GetFullRef()} ");
       }
-
     }
 
-
-    private void ReportErrorFailedToExpandKeys(List<EntityKeyInfo> keys) {
-
+    private void ParseKeySpecs() {
+      foreach(var key in _allKeys) {
+        if (!string.IsNullOrEmpty(key.MemberListSpec))
+          ParseKeySpec(key);
+      }
     }
+
+    private void InitSimplePks() {
+      var simplePks = _pkFkKeys.Where(key => key.KeyType.IsSet(KeyType.PrimaryKey) && 
+                   key.OwnerMember != null && key.OwnerMember.Kind == EntityMemberKind.Column);
+      foreach (var key in simplePks) {
+        var keyMember = new EntityKeyMemberInfo(key.OwnerMember);
+        key.KeyMembers.Add(keyMember);
+        key.ExpandedKeyMembers.Add(keyMember);
+        key.BuildStatus = KeyBuildStatus.MembersExpanded;
+      }
+    }
+
 
     // entity and specHolder are the same in most cases. Except for [OrderBy] attribute
     //  on list property. In this case 'entity' is target entity being ordered, and specHolder
     //  is entity that hosts the list property and attribute
-    public List<MemberSpec> TryParseKeySpec(string keySpec, EntityInfo entity, bool allowAscDecs, 
-                                            EntityInfo specHolder = null) {
-      specHolder = specHolder ?? entity;
-      var segments = StringHelper.SplitNames(keySpec);
-      var specs = new List<MemberSpec>();
+    public void ParseKeySpec(EntityKeyInfo key) {
+      var ent = key.Entity;
+      var allowAscDesc = key.KeyType.IsSet(KeyType.Index | KeyType.PrimaryKey);
+      var spec = key.MemberListSpec;
+      var success = true;
+      var segments = StringHelper.SplitNames(key.MemberListSpec);
       foreach (var segm in segments) {
-        bool desc = false;
         string[] parts;
-        if (allowAscDecs) {
-          parts = StringHelper.SplitNames(spec, ':');
-          if (parts.Length > 2) {
-            _log.LogError($"Invalid key/order spec '{keySpec}', entity {specHolder.EntityType}; only single ':' char is allowed.");
-            return false;
-          }
-          string strDesc = parts.Length == 1 ? "asc" : parts[1];
-          switch (strDesc.ToLowerInvariant()) {
-            case "": case "asc": desc = false; break;
-            case "desc": desc = true; break;
-            default:
-              log.LogError($"Invalid key/order spec '{keySpec}', entity {specHolder.EntityType}. Expected ':asc' or ':desc' as direction specification.");
-              return false;
-          }//switch
-        }//if ordered
-        else
-          parts = new string[] { spec, null };
-        var member = entity.GetMember(parts[0]);
-        if (member == null) {
-          log.LogError($"Invalid key/order spec '{keySpec}', entity {specHolder.EntityType}. member {parts[0]} not found.");
-          return false;
+        parts = StringHelper.SplitNames(segm, ':');
+        if (parts.Length > 2) {
+          _log.LogError($"Key '{spec}', entity {ent}: Invalid segment '{segm}'; expected format: 'member[:desc]'.");
+          success = false;
+          continue;
         }
-        parsedKeyMembers.Add(new EntityKeyMemberInfo(member, desc));
-      }//foreach spec
-      return true;
-    }
+        var memberName = parts[0];
+        if (string.IsNullOrWhiteSpace(memberName)) {
+          _log.LogError($"Key '{spec}', entity {ent}: Invalid segment '{segm}';  member name may not be null.");
+          success = false;
+          continue; 
+        }
+        bool desc = false;
+        string strDesc = parts.Length == 1 ? "asc" : parts[1];
+        switch (strDesc.Trim().ToLowerInvariant()) {
+          case "": case "asc": desc = false; break;
+          case "desc": desc = true; break;
+          default:
+            _log.LogError($"Key '{spec}', entity {ent}: Invalid segment '{segm}'; Expected ':asc' or ':desc' as direction specification.");
+            success = false;
+            continue;
+        }//switch
+
+        if (parts.Length > 1 && !allowAscDesc) {
+          _log.LogError($"Key '{spec}', entity {ent}: Invalid segment '{segm}';  asc/desc specifier not allowed for this key/index type.");
+          success = false;
+          continue;
+        }
+        var member = ent.GetMember(memberName); //might be null 
+        key.KeyMembers.Add(new EntityKeyMemberInfo(memberName, member, desc));
+      }//foreach segm
+      //set build status
+      if (success && key.KeyMembers.All(km => km.Member != null))
+        key.BuildStatus = KeyBuildStatus.MembersFilled;
+    } //foreach segm
 
   }
 

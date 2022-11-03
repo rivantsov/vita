@@ -311,15 +311,25 @@ namespace Vita.Entities.Model {
 
   // Container member+order info, for ordered column lists in attributes: Index("LastName:desc,FirstName:asc"); 
   public class EntityKeyMemberInfo {
-    public readonly EntityMemberInfo Member;
-    public readonly bool Desc;
+    public string MemberName; // may come from key spec, when there's no member yet
+    public EntityMemberInfo Member;
+    public bool Desc;
 
     public EntityKeyMemberInfo(EntityMemberInfo member, bool desc = false) {
       Member = member;
       Desc = desc;
+      MemberName = member.MemberName;
     }
+
+    //used when member comes from KeySpec
+    public EntityKeyMemberInfo(string memberName, EntityMemberInfo member = null, bool desc = false) {
+      Desc = desc;
+      MemberName = memberName;
+    }
+
+
     public override string ToString() {
-      return Member.MemberName + (Desc ? " DESC" : string.Empty);
+      return MemberName + (Desc ? " DESC" : string.Empty);
     }
   }
 
@@ -333,9 +343,10 @@ namespace Vita.Entities.Model {
     public List<EntityMemberInfo> Members; 
   }
 
-  public class MemberSpec {
-    public string Name;
-    public bool Desc; 
+  public enum KeyBuildStatus {
+    Created, // not started
+    MembersFilled, //KeyMembers filled
+    MembersExpanded //ExpandedMembers filled, build completed
   }
 
   public class EntityKeyInfo {
@@ -347,8 +358,7 @@ namespace Vita.Entities.Model {
     public EntityRefAttribute SourceRefAttribute; 
 
     public KeyType KeyType;
-    public string KeyMemberListSpec; //ex for index: "price:desc;brand,prodName"
-    public IList<MemberSpec> ParsedMemberSpecs; // parsed KeyMemberListSpec
+    public string MemberListSpec; //ex for index: "price:desc;brand,prodName"
     //Original members specified in attributes; may contain members that are entity references
     public List<EntityKeyMemberInfo> KeyMembers = new List<EntityKeyMemberInfo>();
     //Often the same as Members, except entity reference members had been "expanded" - replaced with value members that constitute the foreign key
@@ -362,6 +372,8 @@ namespace Vita.Entities.Model {
     public Delegate CacheSelectMethod; // compiled method to select in cache
     public EntityFilter IndexFilter;
     public string ExplicitDbKeyName;
+
+    public KeyBuildStatus BuildStatus;
 
     // cached keys, set on first use
     internal string SqlCacheKey_SelectByPkNoLock;
@@ -384,7 +396,7 @@ namespace Vita.Entities.Model {
     }
 
     public bool IsExpanded() {
-      return ExpandedKeyMembers.Count > 0; 
+      return BuildStatus == KeyBuildStatus.MembersExpanded; 
     }
 
     public string GetFullRef() {

@@ -93,7 +93,7 @@ namespace Vita.Entities.Model.Construction {
 
     //FK expansion is a special case - we expand members from target expanded members (of target PrimaryKey)
     private bool ExpandForeignKey(EntityKeyInfo key) {
-      var refMember = key.OwnerRefMember;
+      var refMember = key.OwnerMember;
       var nullable = refMember.Flags.IsSet(EntityMemberFlags.Nullable);
       var isPk = refMember.Flags.IsSet(EntityMemberFlags.PrimaryKey);
       var refInfo = refMember.ReferenceInfo;

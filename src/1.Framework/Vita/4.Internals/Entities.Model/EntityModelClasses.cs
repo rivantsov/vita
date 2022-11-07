@@ -343,10 +343,23 @@ namespace Vita.Entities.Model {
     public List<EntityMemberInfo> Members; 
   }
 
+  /// <summary>Encodes the phases of building the EntityKeyInfo instance for a key. </summary>
   public enum KeyBuildStatus {
-    Created, // not started
-    MembersFilled, //KeyMembers filled
-    MembersExpanded //ExpandedMembers filled, build completed
+    /// <summary>Initial state, the Key created, but key members are not filled </summary>
+    Created,
+
+    /// <summary>KeyMembers list created, but not all references to actual entity members are assigned </summary>
+    KeyMembersCreated,
+
+    /// <summary>KeyMembers list created and all refs to entity members are assigned </summary>
+    KeyMembersDone,
+
+    /// <summary>KeyMembers are expanded into key.ExpandedKeyMembers list - 
+    /// all ref members are 'expanded' - replaced with simple columns matching the target primary key.</summary>
+    ExpandedKeyMembersDone,
+
+    /// <summary>All additional lists are built, for ex: IncludeMembers </summary>
+    Done
   }
 
   public class EntityKeyInfo {
@@ -361,7 +374,7 @@ namespace Vita.Entities.Model {
     public string MemberListSpec; //ex for index: "price:desc;brand,prodName"
     //Original members specified in attributes; may contain members that are entity references
     public List<EntityKeyMemberInfo> KeyMembers = new List<EntityKeyMemberInfo>();
-    //Often the same as Members, except entity reference members had been "expanded" - replaced with value members that constitute the foreign key
+    // Entity reference members had been "expanded" - replaced with value members that constitute the foreign key
     public List<EntityKeyMemberInfo> ExpandedKeyMembers = new List<EntityKeyMemberInfo>();
     public List<EntityMemberInfo> IncludeMembers = new List<EntityMemberInfo>();
     public List<EntityMemberInfo> ExpandedIncludeMembers = new List<EntityMemberInfo>();
@@ -396,7 +409,7 @@ namespace Vita.Entities.Model {
     }
 
     public bool IsExpanded() {
-      return BuildStatus == KeyBuildStatus.MembersExpanded; 
+      return BuildStatus == KeyBuildStatus.ExpandedKeyMembersDone; 
     }
 
     public string GetFullRef() {

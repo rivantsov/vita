@@ -14,7 +14,6 @@ namespace Vita.Entities.Model.Construction {
     internal EntityModel Model => _modelBuilder.Model;
     ILog _log; 
     List<EntityKeyInfo> _allKeys;
-    List<EntityKeyInfo> _pkFkKeys;
 
     internal EntityKeysBuilder(EntityModelBuilder modelBuilder) {
       _modelBuilder = modelBuilder;
@@ -30,7 +29,7 @@ namespace Vita.Entities.Model.Construction {
       _pkFkKeys = _allKeys.Where(key => key.KeyType.IsSet(KeyType.PrimaryKey | KeyType.ForeignKey)).ToList();
       PreprocessKeysOnMembers(); //one-column PKs
       // run main loop
-      if (!RunKeyBuildLoop())
+      if (!RunMembersExpansionLoop())
         return; 
 
     } // method
@@ -40,7 +39,7 @@ namespace Vita.Entities.Model.Construction {
         if (key.OwnerMember != null) {
           BuildKeyMembersForKeyOnEntityMember(key);
         } else if (!string.IsNullOrEmpty(key.MemberListSpec)) {
-          ParseKeySpec(key);
+          BuildKeyMembersFromKeySpec(key);
         } else {
           var keyRef = key.GetSafeKeyRef();
           // should never happen, this case should be caught earlier
@@ -55,54 +54,15 @@ namespace Vita.Entities.Model.Construction {
     private void BuildKeyMembersForKeyOnEntityMember(EntityKeyInfo key) {
       var keyMember = new EntityKeyMemberInfo(key.OwnerMember);
       key.KeyMembers.Add(keyMember);
-      key.BuildStatus = KeyBuildStatus.KeyMembersCreated;
+      key.MembersStatus = KeyMembersStatus.Listed;
       // if it is a simple column, we can expand it right now
       if (keyMember.Member.Kind == EntityMemberKind.Column) {
         key.ExpandedKeyMembers.Add(keyMember);
-        key.BuildStatus = KeyBuildStatus.ExpandedKeyMembersDone;
+        key.MembersStatus = KeyMembersStatus.Expanded;
       }
     }
 
-    private bool RunKeyBuildLoop() {
-      var workList = _allKeys.Where(key => key.BuildStatus != KeyBuildStatus.ExpandedKeyMembersDone).ToList();
-      // run loop several times:
-      //   1. try process FKs, this can adds columns mapped from target FK
-      //   2. try process PKs
-      while (workList.Count > 0) {
-        var oldKeyCount = workList.Count;
-        ProcessKeys(workList);
-        // refresh work list
-        workList = _allKeys.Where(key => key.BuildStatus != KeyBuildStatus.ExpandedKeyMembersDone).ToList();
-        if (workList.Count == 0)
-          return true; 
-        if (workList.Count == oldKeyCount) { //count did not change, we make no progress, it is a fatal error
-          var keyList = string.Join(",", workList.Select(km => km.GetSafeKeyRef()));
-          _log.LogError(
-            @$"FATAL: Key builder process could not complete, remaining key count: {workList.Count}. Keys: {keyList}");
-          return false; 
-        }
-      }
-      return true; 
-    }
-
-    private void ProcessKeys(IList<EntityKeyInfo> keys) {
-      foreach(var key in keys) {
-        if (key.KeyType.IsSet(KeyType.ForeignKey)) {
-          var toKey = key.OwnerMember.ReferenceInfo.ToKey;
-          if (toKey.BuildStatus != KeyBuildStatus.ExpandedKeyMembersDone)
-            continue; // cannot expand it yet 
-          ProcessForeignKey(key);
-          continue; 
-        }
-        ProcessRegularKey(key);
-      }
-
-    } //method
-
-
-
-
-    public void ParseKeySpec(EntityKeyInfo key) {
+    public void BuildKeyMembersFromKeySpec(EntityKeyInfo key) {
       var ent = key.Entity;
       var allowAscDesc = key.KeyType.IsSet(KeyType.Index | KeyType.PrimaryKey);
       var spec = key.MemberListSpec;
@@ -120,7 +80,7 @@ namespace Vita.Entities.Model.Construction {
         if (string.IsNullOrWhiteSpace(memberName)) {
           _log.LogError($"Key '{spec}', entity {ent}: Invalid segment '{segm}';  member name may not be null.");
           success = false;
-          continue; 
+          continue;
         }
         bool desc = false;
         string strDesc = parts.Length == 1 ? "asc" : parts[1];
@@ -142,13 +102,49 @@ namespace Vita.Entities.Model.Construction {
         key.KeyMembers.Add(new EntityKeyMemberInfo(memberName, member, desc));
       }//foreach segm
       //set build status
-      if (success && key.KeyMembers.All(km => km.Member != null))
-        key.BuildStatus = KeyBuildStatus.KeyMembersCreated;
+      if (!success)
+        return;
+      key.MembersStatus = (key.KeyMembers.All(km => km.Member != null))  ? KeyMembersStatus.Assigned: KeyMembersStatus.Listed;
     } //foreach segm
 
 
+    private bool RunMembersExpansionLoop() {
+      var workList = _allKeys.Where(key => key.MembersStatus != KeyMembersStatus.Expanded).ToList();
+      // run loop several times:
+      //   1. try process FKs, this can adds columns mapped from target FK
+      //   2. try process PKs
+      while (workList.Count > 0) {
+        var oldKeyCount = workList.Count;
+        BuildKeysMembers(workList);
+        // refresh work list
+        workList = _allKeys.Where(key => key.MembersStatus != KeyMembersStatus.Expanded).ToList();
+        if (workList.Count == 0)
+          return true; 
+        if (workList.Count == oldKeyCount) { //count did not change, we make no progress, it is a fatal error
+          var keyList = string.Join(",", workList.Select(km => km.GetSafeKeyRef()));
+          _log.LogError(
+            @$"FATAL: Key builder process could not complete, remaining key count: {workList.Count}. Keys: {keyList}");
+          return false; 
+        }
+      }
+      return true; 
+    }
+
+    private void BuildKeysMembers(IList<EntityKeyInfo> keys) {
+      foreach(var key in keys) {
+        if (key.KeyType.IsSet(KeyType.ForeignKey)) {
+          var toKey = key.OwnerMember.ReferenceInfo.ToKey;
+          if (toKey.IsExpanded())
+            BuildForeignKeyMembers(key);
+        } else 
+          ProcessRegularKey(key);
+      }
+
+    } //method
+
+
     //FK expansion is a special case - we expand members from target expanded members (of target PrimaryKey)
-    private bool ProcessForeignKey(EntityKeyInfo key) {
+    private bool BuildForeignKeyMembers(EntityKeyInfo key) {
       var refMember = key.OwnerMember;
       var refInfo = refMember.ReferenceInfo;
       if (!refInfo.ToKey.IsExpanded())
@@ -207,7 +203,7 @@ namespace Vita.Entities.Model.Construction {
         if (key.OwnerMember.OldNames != null)
           fkMember.OldNames = key.OwnerMember.OldNames.Select(n => n + "_" + targetMember.MemberName).ToArray();
         key.ExpandedKeyMembers.Add(new EntityKeyMemberInfo(fkMember, false));
-        key.BuildStatus = KeyBuildStatus.ExpandedKeyMembersDone;
+        key.MembersStatus = KeyMembersStatus.Expanded;
       }//foreach targetMember
       return true;
     }

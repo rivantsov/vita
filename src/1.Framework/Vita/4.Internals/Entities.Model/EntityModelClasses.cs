@@ -344,22 +344,20 @@ namespace Vita.Entities.Model {
   }
 
   /// <summary>Encodes the phases of building the EntityKeyInfo instance for a key. </summary>
-  public enum KeyBuildStatus {
-    /// <summary>Initial state, the Key created, but key members are not filled </summary>
-    Created,
+  public enum KeyMembersStatus {
+    /// <summary>Initial state </summary>
+    None,
 
-    /// <summary>KeyMembers list created, but not all references to actual entity members are assigned </summary>
-    KeyMembersCreated,
+    /// <summary>KeyMembers list is created (from keyspec), but not all references to actual entity members are assigned </summary>
+    Listed,
 
-    /// <summary>KeyMembers list created and all refs to entity members are assigned </summary>
-    KeyMembersDone,
+    /// <summary>For all KeyMembers the field Member is assigned </summary>
+    Assigned,
 
-    /// <summary>KeyMembers are expanded into key.ExpandedKeyMembers list - 
-    /// all ref members are 'expanded' - replaced with simple columns matching the target primary key.</summary>
-    ExpandedKeyMembersDone,
+    /// <summary>KeyMembers are copied to ExpandedKeyMembers with expansion of entity-type members. 
+    /// For ex, Customer in KeyMembers is translated into CustomerId in ExpandedKeyMembers.</summary>
+    Expanded,
 
-    /// <summary>All additional lists are built, for ex: IncludeMembers </summary>
-    Done
   }
 
   public class EntityKeyInfo {
@@ -386,7 +384,7 @@ namespace Vita.Entities.Model {
     public EntityFilter IndexFilter;
     public string ExplicitDbKeyName;
 
-    public KeyBuildStatus BuildStatus;
+    public KeyMembersStatus MembersStatus;
 
     // cached keys, set on first use
     internal string SqlCacheKey_SelectByPkNoLock;
@@ -400,8 +398,6 @@ namespace Vita.Entities.Model {
       Alias = SourceKeyAttribute?.Alias;
       ExplicitDbKeyName = sourceKeyAttr?.DbKeyName;
       entity.Keys.Add(this);
-      if (hostMember != null)
-        this.KeyMembers.Add(new EntityKeyMemberInfo(hostMember));
     }
     
     public override string ToString() {
@@ -409,7 +405,7 @@ namespace Vita.Entities.Model {
     }
 
     public bool IsExpanded() {
-      return BuildStatus == KeyBuildStatus.ExpandedKeyMembersDone; 
+      return MembersStatus == KeyMembersStatus.Expanded; 
     }
 
     public string GetFullRef() {

@@ -275,7 +275,7 @@ namespace Vita.Data.Model {
           //copy FKeys into a separate list, to avoid trouble when adding indexes to collection that we are iterating
           var foreignKeys = table.Keys.Where(k => k.KeyType.IsSet(KeyType.ForeignKey)).ToList();
           foreach (var key in foreignKeys) {
-            if(!ListExistsOnTargetEntity(key.EntityKey.OwnerRefMember))
+            if(!ListExistsOnTargetEntity(key.EntityKey.OwnerMember))
               continue; 
             //Check if there is already index with the same starting columns
             var matchingIndex = FindMatchingIndexForForeignKey(key);

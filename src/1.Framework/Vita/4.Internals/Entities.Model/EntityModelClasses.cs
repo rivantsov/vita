@@ -379,7 +379,7 @@ namespace Vita.Entities.Model {
     public EntityKeyInfo TargetUniqueKey; //for FKs
 
     public bool HasIdentityMember;
-    public EntityMemberInfo OwnerMember; //for FK, the ref member
+    public EntityMemberInfo OwnerMember; 
     public Delegate CacheSelectMethod; // compiled method to select in cache
     public EntityFilter IndexFilter;
     public string ExplicitDbKeyName;
@@ -399,17 +399,20 @@ namespace Vita.Entities.Model {
       ExplicitDbKeyName = sourceKeyAttr?.DbKeyName;
       entity.Keys.Add(this);
     }
-    
-    public override string ToString() {
-      return Util.SafeFormat("{0}:{1}({2})", Entity.FullName, KeyType, string.Join(",", KeyMembers));
-    }
 
     public bool IsExpanded() {
-      return MembersStatus == KeyMembersStatus.Expanded; 
+      return MembersStatus >= KeyMembersStatus.Expanded;
+    }
+
+    public override string ToString() {
+      return Util.SafeFormat("{0}:{1}({2})", Entity.FullName, KeyType, GetMembersListAsString());
     }
 
     public string GetFullRef() {
-      return this.Name + "(" + string.Join(",", KeyMembers.Select(km => km.Member.MemberName)) + ")";
+      return this.Name + "(" + GetMembersListAsString() + ")";
+    }
+    public string GetMembersListAsString() {
+      return string.Join(",", KeyMembers.Select(km => km.MemberName));
     }
 
     public static IList<EntityKeyInfo> EmptyList = new EntityKeyInfo[] { };

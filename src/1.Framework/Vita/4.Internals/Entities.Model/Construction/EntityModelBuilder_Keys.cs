@@ -149,8 +149,8 @@ namespace Vita.Entities.Model.Construction {
         if(isPk)
           fkMember.Flags |= EntityMemberFlags.PrimaryKey;
         //copy old names
-        if(key.OwnerRefMember.OldNames != null)
-          fkMember.OldNames = key.OwnerRefMember.OldNames.Select(n => n + "_" + targetMember.MemberName).ToArray();
+        if(key.OwnerMember.OldNames != null)
+          fkMember.OldNames = key.OwnerMember.OldNames.Select(n => n + "_" + targetMember.MemberName).ToArray();
         key.ExpandedKeyMembers.Add(new EntityKeyMemberInfo(fkMember, false));
       }//foreach targetMember
       return true;

@@ -138,11 +138,10 @@ SELECT SOME NONSENSE
       if(Startup.ServerType != DbServerType.MsSql)
         return;
       Debug.WriteLine("\r\n-------------------- TestGenerateCryptoKeys: generated Crypto Keys ---------------------------------\r\n");
-      GenerateAndPrintKey(new RijndaelManaged());
-      GenerateAndPrintKey(new AesManaged());
-      GenerateAndPrintKey(new DESCryptoServiceProvider());
-      GenerateAndPrintKey(new RC2CryptoServiceProvider());
-      GenerateAndPrintKey(new TripleDESCryptoServiceProvider());
+      GenerateAndPrintKey(Aes.Create());
+      GenerateAndPrintKey(DES.Create());
+      GenerateAndPrintKey(RC2.Create());
+      GenerateAndPrintKey(TripleDES.Create());
     }
 
     private void GenerateAndPrintKey(SymmetricAlgorithm alg) {

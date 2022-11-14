@@ -11,17 +11,16 @@ namespace Vita.Entities.Model.Construction {
 
   internal partial class EntityKeyMembersBuilder {
     EntityModelBuilder _modelBuilder;
-    internal EntityModel Model => _modelBuilder.Model;
     ILog _log; 
     List<EntityKeyInfo> _allKeys;
 
     internal EntityKeyMembersBuilder(EntityModelBuilder modelBuilder) {
       _modelBuilder = modelBuilder;
-      _log = _modelBuilder.Log; 
+      _log = modelBuilder.Log;
     }
 
-    internal void BuildKeys() {
-      _allKeys = Model.Entities.SelectMany(e => e.Keys).ToList();
+    internal void BuildKeyMemberss() {
+      _allKeys = _modelBuilder.Model.Entities.SelectMany(e => e.Keys).ToList();
       // step 1 - build key.KeyMembers lists, possibly with unassigned KeyMember.Member refs, 
       //           from either OwnerMember (keys on Members/Properties), or KeySpec (keys on entity)
       BuildInitialKeyMembersLists();
@@ -30,7 +29,10 @@ namespace Vita.Entities.Model.Construction {
       // Step 2 - run main loop, assigining target Member field in KeyMemberInfo, and expandig (KeyMembers into 
       //        ExpandedKeyMembers)
       RunMembersAssignExpandLoop();
-      
+      _modelBuilder.CheckErrors();
+
+      // Step 3 - fill and expand Include members in Index keys
+      BuildExpandTheIncludeMembers(); 
     } // method
 
     // Filling initial key.KeyMembers lists; either from OwnerMember (single KeyMember), or from KeySpec
@@ -47,7 +49,7 @@ namespace Vita.Entities.Model.Construction {
           _log.LogError($"FATAL: Key {keyRef} has no OwnerMember and no MemberListSpec.");
           continue; 
         }
-      }
+      } //foreach
     }
 
     // process keys on members; these keys have a single member; some of them can be immediately 
@@ -126,9 +128,9 @@ namespace Vita.Entities.Model.Construction {
         workList = workList.Where(key => key.MembersStatus < KeyMembersStatus.Expanded).ToList();
       }
       // if we are not done after multiple iterations, it is an error - fatal error, something is broken in this algorithm
-      var keyList = string.Join(",", workList.Select(km => km.GetSafeKeyRef()));
+      var keyListStr = string.Join(",", workList.Select(km => km.GetSafeKeyRef()));
       _log.LogError(
-        @$"FATAL: Key builder process could not complete, remaining key count: {workList.Count}. Keys: {keyList}");
+        @$"FATAL: Key builder process could not complete, remaining key count: {workList.Count}. Keys: {keyListStr}");
       return false;
     }
 
@@ -164,30 +166,56 @@ namespace Vita.Entities.Model.Construction {
       // check if we can expand all members
       if (key.MembersStatus != KeyMembersStatus.Assigned)
         return;
-      var success = false;
-      try {
-        foreach(var km in key.KeyMembers) {
-          switch(km.Member.Kind) {
-            case EntityMemberKind.Column: 
-              key.ExpandedKeyMembers.Add(km); 
-              break;
-            case EntityMemberKind.EntityRef:
-              var fromKey = km.Member.ReferenceInfo.FromKey;
-              if (fromKey.MembersStatus < KeyMembersStatus.Expanded)
-                return; // not success 
-              // good so far, add expanded members
-              key.ExpandedKeyMembers.AddRange(fromKey.ExpandedKeyMembers);
-              break;
-          }// switch
-        } // foreach
-        success = true; 
-      } finally {
-        if (success)
-          key.MembersStatus = KeyMembersStatus.Expanded;
-        else
+      foreach(var km in key.KeyMembers) {
+        if(!TryExpandMember(km, key.ExpandedKeyMembers)) {
           key.ExpandedKeyMembers.Clear();
-      }
+          return; 
+        }
+        key.MembersStatus = KeyMembersStatus.Expanded;
+      } // foreach
     } //method
+
+    private bool TryExpandMember(EntityKeyMemberInfo keyMember, List<EntityKeyMemberInfo> toMembers) {
+      var member = keyMember.Member;
+      var kind = member.Kind;
+      switch (kind) {
+        case EntityMemberKind.Column:
+          toMembers.Add(keyMember);
+          return true;
+        case EntityMemberKind.EntityRef:
+          var fromKey = member.ReferenceInfo.FromKey;
+          if (fromKey.MembersStatus < KeyMembersStatus.Expanded)
+            return false; // not success 
+                    // good so far, add expanded members
+          toMembers.AddRange(fromKey.ExpandedKeyMembers);
+          return true;
+        default:
+          _log.LogError(
+            @$"FATAL: Invalid kind {kind} for member {member.MemberName} pushed for expansion. ");
+          return false;
+      }// switch
+    }
+
+    private void TryExpandTheIncludeMembers(EntityKeyInfo key) {
+      var list = key.SourceKeyAttribute
+      // check if we can expand all members
+      if (key.inc..MembersStatus != KeyMembersStatus.ex.Assigned)
+        return;
+      foreach (var km in key.KeyMembers) {
+        if (!TryExpandMember(km, key.ExpandedKeyMembers)) {
+          key.ExpandedKeyMembers.Clear();
+          return;
+        }
+        key.MembersStatus = KeyMembersStatus.Expanded;
+      } // foreach
+    } //method
+
+
+    private void BuildExpandTheIncludeMembers() {
+
+    }
+
+
 
     //FK expansion is a special case - we expand members from target expanded members (of target PrimaryKey)
     private bool ExpandForeignKeyMembers(EntityKeyInfo key) {
@@ -205,8 +233,9 @@ namespace Vita.Entities.Model.Construction {
       if (!string.IsNullOrEmpty(refInfo.ForeignKeyColumns)) {
         fkNames = refInfo.ForeignKeyColumns.SplitNames(',', ';');
         if (fkNames.Length != toKeyMembers.Count) {
+          
           _log.LogError($"Invalid KeyColumns specification in property {propRef}: # of columns ({fkNames.Length}) " +
-            $" does not match # of columns ({toKeyMembers.Count}) in target primary key.");
+            $" does not match # of columns ({toKeyMembers.Count}) in the target key.");
           return false;
         }
       }

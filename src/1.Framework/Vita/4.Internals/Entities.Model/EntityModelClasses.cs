@@ -366,7 +366,8 @@ namespace Vita.Entities.Model {
     public EntityInfo Entity;
     // source attributes, might be null
     public KeyAttribute SourceKeyAttribute;
-    public EntityRefAttribute SourceRefAttribute; 
+    public EntityRefAttribute SourceRefAttribute;
+    public EntityMemberInfo OwnerMember;
 
     public KeyType KeyType;
     public string MemberListSpec; //ex for index: "price:desc;brand,prodName"
@@ -379,7 +380,6 @@ namespace Vita.Entities.Model {
     public EntityKeyInfo TargetUniqueKey; //for FKs
 
     public bool HasIdentityMember;
-    public EntityMemberInfo OwnerMember; 
     public Delegate CacheSelectMethod; // compiled method to select in cache
     public EntityFilter IndexFilter;
     public string ExplicitDbKeyName;

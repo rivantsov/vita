@@ -364,20 +364,23 @@ namespace Vita.Entities.Model {
     public string Name;
     public string Alias;
     public EntityInfo Entity;
+    public KeyType KeyType;
     // source attributes, might be null
     public KeyAttribute SourceKeyAttribute;
     public EntityRefAttribute SourceRefAttribute;
     public EntityMemberInfo OwnerMember;
 
-    public KeyType KeyType;
+    public EntityKeyInfo TargetUniqueKey; //for FKs
+
     public string MemberListSpec; //ex for index: "price:desc;brand,prodName"
     //Original members specified in attributes; may contain members that are entity references
     public List<EntityKeyMemberInfo> KeyMembers = new List<EntityKeyMemberInfo>();
     // Entity reference members had been "expanded" - replaced with value members that constitute the foreign key
     public List<EntityKeyMemberInfo> ExpandedKeyMembers = new List<EntityKeyMemberInfo>();
-    public List<EntityMemberInfo> IncludeMembers = new List<EntityMemberInfo>();
+    // Include members
+    public string IndexIncludeMembersSpec; 
+    // public List<EntityMemberInfo> IncludeMembers = new List<EntityMemberInfo>();
     public List<EntityMemberInfo> ExpandedIncludeMembers = new List<EntityMemberInfo>();
-    public EntityKeyInfo TargetUniqueKey; //for FKs
 
     public bool HasIdentityMember;
     public Delegate CacheSelectMethod; // compiled method to select in cache

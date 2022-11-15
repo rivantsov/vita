@@ -196,26 +196,40 @@ namespace Vita.Entities.Model.Construction {
       }// switch
     }
 
-    private void TryExpandTheIncludeMembers(EntityKeyInfo key) {
-      var list = key.SourceKeyAttribute
-      // check if we can expand all members
-      if (key.inc..MembersStatus != KeyMembersStatus.ex.Assigned)
-        return;
-      foreach (var km in key.KeyMembers) {
-        if (!TryExpandMember(km, key.ExpandedKeyMembers)) {
-          key.ExpandedKeyMembers.Clear();
-          return;
-        }
-        key.MembersStatus = KeyMembersStatus.Expanded;
-      } // foreach
-    } //method
-
-
     private void BuildExpandTheIncludeMembers() {
-
-    }
-
-
+      // only index keys have include-members spec
+      var keys = _allKeys.Where(k => k.KeyType.IsSet(KeyType.Index) && 
+                         !string.IsNullOrWhiteSpace(k.IndexIncludeMembersSpec))
+                   .ToList();
+      foreach(var key in keys) {
+        var keyRef = key.GetFullRef();
+        var names = key.IndexIncludeMembersSpec.Split(';', ',').Select(m => m.Trim()).ToList(); 
+        foreach(var memberName in names) {
+          if (memberName == string.Empty) {
+            _log.LogError($"Invalid Include spec on key '{keyRef}', empty member name (double comma?).");
+            break; //foreach memberName
+          }
+          var member = key.Entity.GetMember(memberName); 
+          if (member == null) {
+            _log.LogError($"Invalid Include list in Index '{keyRef}'; member '{memberName}' not found.");
+            continue; //next
+          }
+          switch(member.Kind) {
+            case EntityMemberKind.Column: 
+              key.ExpandedIncludeMembers.Add(member); 
+              break;
+            case EntityMemberKind.EntityRef:
+              var fkCols = member.ReferenceInfo.FromKey.ExpandedKeyMembers.Select(km => km.Member);
+              key.ExpandedIncludeMembers.AddRange(fkCols);
+              break;
+            default:
+              _log.LogError($"Invalid Include member '{memberName}', in Index '{keyRef}': " + 
+                             $"member of this kind may not be used in include list.");
+              break; 
+          }
+        } // foreach
+      }// foreach key
+    } // method
 
     //FK expansion is a special case - we expand members from target expanded members (of target PrimaryKey)
     private bool ExpandForeignKeyMembers(EntityKeyInfo key) {

@@ -244,7 +244,7 @@ namespace Vita.Data.Model {
   }//class
 
   public class DbTableFilter {
-    public EntityFilter EntityFilter;
+    public EntityFilterTemplate EntityFilter;
     public List<DbColumnInfo> Columns = new List<DbColumnInfo>();
     // SQL with columns without table/alias prefix
     public string DefaultSql;

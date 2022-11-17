@@ -209,7 +209,7 @@ namespace Vita.Tools.DbFirst {
             entKey.ExpandedKeyMembers.Add(new EntityKeyMemberInfo(keyCol.Column.Member, keyCol.Desc));
           if (entKey.KeyType.IsSet(KeyType.Index) && supportsIncludeOrFilter) {
             if (key.Filter != null && !string.IsNullOrEmpty(key.Filter.DefaultSql)) {
-              entKey.IndexFilter =  ParseIndexFilter(key.Filter.DefaultSql, entKey.Entity);
+              entKey.IndexFilterTemplate =  ParseIndexFilter(key.Filter.DefaultSql, entKey.Entity);
             }
             //carefully add included members
             var incMembers = key.IncludeColumns.Select(c => c.Member).ToList();
@@ -226,11 +226,11 @@ namespace Vita.Tools.DbFirst {
       }//foreach table
     }//method
 
-    private EntityFilter ParseIndexFilter(string filterSql, EntityInfo entity) {
+    private EntityFilterTemplate ParseIndexFilter(string filterSql, EntityInfo entity) {
       // The filter coming from database has references to column names (without braces like {colName})
       // The filter in Index attribute references entity members using {..} notation. 
       // Technically we should try to convert filter from db into attribute form, but we don't; maybe later
-      var entFilter = new EntityFilter() { Template = StringTemplate.Parse(filterSql) };
+      var entFilter = new EntityFilterTemplate() { Template = StringTemplate.Parse(filterSql) };
       return entFilter; 
     }
 

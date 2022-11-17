@@ -252,8 +252,8 @@ namespace Vita.Data.Model {
           dbKey.KeyColumns.AddRange(keyCols);
           dbKey.IncludeColumns.AddRange(inclCols);
           //check filter
-          if(entityKey.IndexFilter != null)
-            dbKey.Filter = this._dbModel.Driver.SqlDialect.BuildDbTableFilter(table, entityKey.IndexFilter);
+          if(entityKey.IndexFilterTemplate != null)
+            dbKey.Filter = this._dbModel.Driver.SqlDialect.BuildDbTableFilter(table, entityKey.IndexFilterTemplate);
           //Assign PK if it is PK
           if (keyType.IsSet(KeyType.PrimaryKey)) 
             table.PrimaryKey = dbKey;

@@ -101,7 +101,7 @@ namespace Vita.Entities.Model.Construction {
           success = false;
           continue;
         }
-        var member = ent.GetMember(memberName); //might be null 
+        var member = ent.FindMemberOrColumn(memberName); //might be null 
         key.KeyMembers.Add(new EntityKeyMemberInfo(memberName, member, desc));
       }//foreach segm
       //set build status
@@ -154,7 +154,7 @@ namespace Vita.Entities.Model.Construction {
       if (key.MembersStatus == KeyMembersStatus.Listed) {
         foreach (var km in key.KeyMembers) {
           if (km.Member == null)
-            km.Member = key.Entity.GetMember(km.MemberName);
+            km.Member = key.Entity.FindMemberOrColumn(km.MemberName);
           allAssigned &= km.Member != null;
         }
         if (allAssigned)
@@ -209,7 +209,7 @@ namespace Vita.Entities.Model.Construction {
             _log.LogError($"Invalid Include spec on key '{keyRef}', empty member name (double comma?).");
             break; //foreach memberName
           }
-          var member = key.Entity.GetMember(memberName); 
+          var member = key.Entity.FindMemberOrColumn(memberName); 
           if (member == null) {
             _log.LogError($"Invalid Include list in Index '{keyRef}'; member '{memberName}' not found.");
             continue; //next
@@ -263,7 +263,7 @@ namespace Vita.Entities.Model.Construction {
           //CLR type is not nullable - flip it to nullable
           memberType = ReflectionHelper.GetNullable(memberType);
         }
-        var fkMember = key.Entity.GetMember(fkMemberName);
+        var fkMember = key.Entity.FindMemberOrColumn(fkMemberName);
         // if member exists, it is declared explicitly, or maybe it is part of another FK
         if (fkMember != null) {
           // check it matches the type

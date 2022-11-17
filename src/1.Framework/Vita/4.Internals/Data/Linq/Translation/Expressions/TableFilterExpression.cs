@@ -15,7 +15,7 @@ namespace Vita.Data.Linq.Translation.Expressions {
     public DbTableFilter Filter;
     public List<ColumnExpression> Columns; 
 
-    public TableFilterExpression(TableExpression table, EntityFilter filter)  : base(SqlExpressionType.TableFilter, typeof(bool)) {
+    public TableFilterExpression(TableExpression table, EntityFilterTemplate filter)  : base(SqlExpressionType.TableFilter, typeof(bool)) {
       Table = table;
       Filter = new DbTableFilter() { EntityFilter = filter };
       // Retrieve columns

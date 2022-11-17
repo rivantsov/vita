@@ -345,7 +345,7 @@ namespace Vita.Data.Driver {
       }
     }
 
-    public virtual DbTableFilter BuildDbTableFilter(DbTableInfo tbl, EntityFilter entityFilter, ILog log = null) {
+    public virtual DbTableFilter BuildDbTableFilter(DbTableInfo tbl, EntityFilterTemplate entityFilter, ILog log = null) {
       var dbFilter = new DbTableFilter() { EntityFilter = entityFilter };
       var colList = new List<DbColumnInfo>();
       // setup columns

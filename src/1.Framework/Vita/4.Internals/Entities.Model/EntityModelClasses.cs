@@ -338,7 +338,7 @@ namespace Vita.Entities.Model {
     View
   }
 
-  public class EntityFilter {
+  public class EntityFilterTemplate {
     public StringTemplate Template;
     public List<EntityMemberInfo> Members; 
   }
@@ -384,7 +384,7 @@ namespace Vita.Entities.Model {
 
     public bool HasIdentityMember;
     public Delegate CacheSelectMethod; // compiled method to select in cache
-    public EntityFilter IndexFilter;
+    public EntityFilterTemplate IndexFilterTemplate;
     public string ExplicitDbKeyName;
 
     public KeyMembersStatus MembersStatus;
@@ -463,7 +463,7 @@ namespace Vita.Entities.Model {
     public EntityMemberInfo OtherEntityRefMember;
     public EntityMemberInfo PersistentOrderMember; //set if owner property has [PersistOrderIn] attribute.
 
-    public EntityFilter Filter;
+    public EntityFilterTemplate Filter;
     public List<EntityKeyMemberInfo> OrderBy;
 
     internal string SqlCacheKey_SelectChildRecs;

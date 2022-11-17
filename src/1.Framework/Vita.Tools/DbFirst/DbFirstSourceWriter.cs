@@ -391,8 +391,8 @@ using Vita.Data;  // used only in console app
       var args = new List<string>(); 
       if(!onProperty)
         args.Add(DQuote(GetKeyColumnList(key)));
-      if(key.IndexFilter != null)
-        args.Add("Filter = " + DQuote(key.IndexFilter.Template.OriginalTemplate));
+      if(key.IndexFilterTemplate != null)
+        args.Add("Filter = " + DQuote(key.IndexFilterTemplate.Template.OriginalTemplate));
       if(key.IncludeMembers.Count > 0) {
         var sInc = string.Join(",", key.IncludeMembers.Select(m => m.MemberName));
         args.Add("IncludeMembers = " + DQuote(sInc));

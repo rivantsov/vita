@@ -108,7 +108,7 @@ namespace Vita.Entities {
 
     private void ProcessIndexIncludesAndFilters(ILog log) {
       if (!string.IsNullOrWhiteSpace(this.Filter))
-        Key.IndexFilter = EntityModelBuilder.ParseFilter(this.Filter, this.HostEntity, log);
+        Key.IndexFilterTemplate = EntityModelBuilder.ParseFilter(this.Filter, this.HostEntity, log);
       // Check include fields
       if(!string.IsNullOrWhiteSpace(this.IncludeMembers))
         if(EntityModelBuilderHelper.TryParseKeySpec(HostEntity, this.IncludeMembers, log, 

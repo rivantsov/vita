@@ -122,7 +122,7 @@ namespace Vita.Entities.Model.Construction {
         */
     } //method
 
-    public static EntityFilter ParseFilter(string listFilter, EntityInfo entity, ILog log) {
+    public static EntityFilterTemplate ParseFilter(string listFilter, EntityInfo entity, ILog log) {
       //Safely parse template - parse throws exc
       StringTemplate template;
       try {
@@ -140,7 +140,7 @@ namespace Vita.Entities.Model.Construction {
         else
           members.Add(member); 
       }
-      return new EntityFilter() { Template = template, Members = members };
+      return new EntityFilterTemplate() { Template = template, Members = members };
     }
 
   } //class

@@ -31,6 +31,14 @@ namespace Vita.Entities.Model.Construction {
       RunMembersAssignExpandLoop();
       _modelBuilder.CheckErrors();
 
+      // check all expanded
+      var nonExpanded = _allKeys.Where(key => key.MembersStatus < KeyMembersStatus.Expanded).ToList(); 
+      if (nonExpanded.Count > 0) {
+        var strKeys = string.Join("; ", nonExpanded.Select(key => key.GetKeyRefForError()));
+        _log.LogError($"Key builder failed to expand the following keys: {strKeys}");
+        _modelBuilder.CheckErrors(); 
+      }
+
       // Step 3 - fill and expand Include members in Index keys
       BuildExpandTheIncludeMembers();
 
@@ -38,19 +46,6 @@ namespace Vita.Entities.Model.Construction {
 
 
     } // method
-
-    private void BuildKeyNamesFilters() {
-      foreach (var ent in _modelBuilder.Model.Entities)
-        foreach (var key in ent.Keys) {
-          if (string.IsNullOrWhiteSpace(key.ExplicitDbKeyName))
-            key.Name = key.ConstructKeyName();
-          else
-            key.Name = key.ExplicitDbKeyName;
-          // Filter
-          if (!string.IsNullOrWhiteSpace(key.FilterSpec))
-            key.ParsedFilterTemplate = ParseFilter(key.FilterSpec, key.Entity);
-        }
-    }
 
     // Filling initial key.KeyMembers lists; either from OwnerMember (single KeyMember), or from KeySpec
     //  (string, list of members as parameter of attribute, like PrimaryKey("CustId,Id")
@@ -63,7 +58,7 @@ namespace Vita.Entities.Model.Construction {
         } else {
           var keyRef = key.GetKeyRefForError();
           // should never happen, this case should be caught earlier
-          _log.LogError($"FATAL: Key {keyRef} has no OwnerMember and no MemberListSpec.");
+          _log.LogError($"Key {keyRef} has no OwnerMember and no MembersSpec.");
           continue; 
         }
       } //foreach
@@ -127,27 +122,6 @@ namespace Vita.Entities.Model.Construction {
       key.MembersStatus = (key.KeyMembers.All(km => km.Member != null))  ? KeyMembersStatus.Assigned: KeyMembersStatus.Listed;
     } // method
 
-    private EntityFilterTemplate ParseFilter(string listFilter, EntityInfo entity) {
-      //Safely parse template - parse throws exc
-      StringTemplate template;
-      try {
-        template = StringTemplate.Parse(listFilter);
-      } catch (Exception ex) {
-        _log.LogError($"{entity.Name}, error in list filter: {ex.Message}");
-        return null;
-      }
-      // map names to members
-      var members = new List<EntityMemberInfo>();
-      foreach (var name in template.ArgNames) {
-        var member = entity.FindMemberOrColumn(name);
-        if (member == null)
-          _log.LogError($"Entity {entity.EntityType}, error in filter expression, member/column {name} not found. ");
-        else
-          members.Add(member);
-      }
-      return new EntityFilterTemplate() { Template = template, Members = members };
-    }
-
 
     private bool RunMembersAssignExpandLoop() {
       var repeatCount = 5;
@@ -209,8 +183,8 @@ namespace Vita.Entities.Model.Construction {
           key.KeyMembersExpanded.Clear();
           return; 
         }
-        key.MembersStatus = KeyMembersStatus.Expanded;
       } // foreach
+      key.MembersStatus = KeyMembersStatus.Expanded;
     } //method
 
     private bool TryExpandMember(EntityKeyMemberInfo keyMember, List<EntityKeyMemberInfo> toMembers) {
@@ -233,43 +207,6 @@ namespace Vita.Entities.Model.Construction {
           return false;
       }// switch
     }
-
-    private void BuildExpandTheIncludeMembers() {
-      // only index keys have include-members spec
-      var keys = _allKeys.Where(k => k.KeyType.IsSet(KeyType.Index) && 
-                         !string.IsNullOrWhiteSpace(k.IncludeMembersSpec))
-                   .ToList();
-      foreach(var key in keys) {
-        var keyRef = key.GetFullRef();
-        var names = key.IncludeMembersSpec.Split(';', ',').Select(m => m.Trim()).ToList(); 
-        foreach(var memberName in names) {
-          if (memberName == string.Empty) {
-            _log.LogError($"Invalid Include spec on key '{keyRef}', empty member name (double comma?).");
-            break; //foreach memberName
-          }
-          var member = key.Entity.FindMemberOrColumn(memberName); 
-          if (member == null) {
-            _log.LogError($"Invalid Include list in Index '{keyRef}'; member '{memberName}' not found.");
-            continue; //next
-          }
-
-          key.IncludeMembers.Add(member);
-          switch(member.Kind) {
-            case EntityMemberKind.Column: 
-              key.IncludeMembersExpanded.Add(member); 
-              break;
-            case EntityMemberKind.EntityRef:
-              var fkCols = member.ReferenceInfo.FromKey.KeyMembersExpanded.Select(km => km.Member);
-              key.IncludeMembersExpanded.AddRange(fkCols);
-              break;
-            default:
-              _log.LogError($"Invalid Include member '{memberName}', in Index '{keyRef}': " + 
-                             $"member of this kind may not be used in include list.");
-              break; 
-          }
-        } // foreach
-      }// foreach key
-    } // method
 
     //FK expansion is a special case - we expand members from target expanded members (of target PrimaryKey)
     private bool ExpandForeignKeyMembers(EntityKeyInfo key) {
@@ -335,6 +272,77 @@ namespace Vita.Entities.Model.Construction {
         key.MembersStatus = KeyMembersStatus.Expanded;
       }//foreach targetMember
       return true;
+    }
+
+    private void BuildExpandTheIncludeMembers() {
+      // only index keys have include-members spec
+      var keys = _allKeys.Where(k => k.KeyType.IsSet(KeyType.Index) &&
+                         !string.IsNullOrWhiteSpace(k.IncludeMembersSpec))
+                   .ToList();
+      foreach (var key in keys) {
+        var keyRef = key.GetFullRef();
+        var names = key.IncludeMembersSpec.Split(';', ',').Select(m => m.Trim()).ToList();
+        foreach (var memberName in names) {
+          if (memberName == string.Empty) {
+            _log.LogError($"Invalid Include spec on key '{keyRef}', empty member name (double comma?).");
+            break; //foreach memberName
+          }
+          var member = key.Entity.FindMemberOrColumn(memberName);
+          if (member == null) {
+            _log.LogError($"Invalid Include list in Index '{keyRef}'; member '{memberName}' not found.");
+            continue; //next
+          }
+
+          key.IncludeMembers.Add(member);
+          switch (member.Kind) {
+            case EntityMemberKind.Column:
+              key.IncludeMembersExpanded.Add(member);
+              break;
+            case EntityMemberKind.EntityRef:
+              var fkCols = member.ReferenceInfo.FromKey.KeyMembersExpanded.Select(km => km.Member);
+              key.IncludeMembersExpanded.AddRange(fkCols);
+              break;
+            default:
+              _log.LogError($"Invalid Include member '{memberName}', in Index '{keyRef}': " +
+                             $"member of this kind may not be used in include list.");
+              break;
+          }
+        } // foreach
+      }// foreach key
+    } // method
+
+    private void BuildKeyNamesFilters() {
+      foreach (var ent in _modelBuilder.Model.Entities)
+        foreach (var key in ent.Keys) {
+          if (string.IsNullOrWhiteSpace(key.ExplicitDbKeyName))
+            key.Name = key.ConstructKeyName();
+          else
+            key.Name = key.ExplicitDbKeyName;
+          // Filter
+          if (!string.IsNullOrWhiteSpace(key.FilterSpec))
+            key.ParsedFilterTemplate = ParseFilter(key.FilterSpec, key.Entity);
+        }
+    }
+
+    private EntityFilterTemplate ParseFilter(string listFilter, EntityInfo entity) {
+      //Safely parse template - parse throws exc
+      StringTemplate template;
+      try {
+        template = StringTemplate.Parse(listFilter);
+      } catch (Exception ex) {
+        _log.LogError($"{entity.Name}, error in list filter: {ex.Message}");
+        return null;
+      }
+      // map names to members
+      var members = new List<EntityMemberInfo>();
+      foreach (var name in template.ArgNames) {
+        var member = entity.FindMemberOrColumn(name);
+        if (member == null)
+          _log.LogError($"Entity {entity.EntityType}, error in filter expression, member/column {name} not found. ");
+        else
+          members.Add(member);
+      }
+      return new EntityFilterTemplate() { Template = template, Members = members };
     }
 
   } //class

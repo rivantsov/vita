@@ -351,6 +351,12 @@ namespace Vita.Entities.Model {
     /// <summary>KeyMembers list is created (from keyspec), but not all references to actual entity members are assigned </summary>
     Listed,
 
+    // Key assignment. We may have situation when key members/columns are specified in member list
+    // (ex: PK on entity with list of members, not on single member)
+    //  But some members/columns are 'hidden' initially, they are produced from EntityRef with explicit
+    //  column names. So initially we list KeyMembers with names only, possibly without actuall ref to member
+    //  Then we do assignment - when we try to put actual refs to members based on name
+
     /// <summary>For all KeyMembers the field Member is assigned </summary>
     Assigned,
 

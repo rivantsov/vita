@@ -660,11 +660,13 @@ namespace Vita.Entities {
       _targetEntity = builder.Model.GetEntityInfo(HostMember.DataType);
       Util.Check(_targetEntity != null, "Target entity not found: {0}", HostMember.DataType.Name);
       //check that PK of target entity points back to 'this' entity
-      var targetPkMembers = _targetEntity.PrimaryKey.KeyMembers;
-      var isOk = targetPkMembers.Count == 1 && targetPkMembers[0].Member.DataType == HostEntity.EntityType;
+      // limitations - no composte keys; we can use only primary keys for OneToOne
+      var targetPkDataType = _targetEntity.PrimaryKey?.OwnerMember?.DataType;
+      var isOk = targetPkDataType != null && targetPkDataType == HostEntity.EntityType;
       if(!isOk) {
         builder.Log.LogError(
-          $"OneToOne property {HostRef}: target entity must have Primary key pointing back to host entity {HostEntity.EntityType}.");
+          $"OneToOne property {HostRef}: target entity must have Primary key (non-composite entity ref) " + 
+          $"that references back to the entity {HostEntity.EntityType}.");
         return;
       }
       HostMember.GetValueRef = GetValue;

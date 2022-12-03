@@ -232,14 +232,14 @@ namespace Vita.Data.Linq.Translation {
     }
 
     private IList<EntityMemberInfo> GetAssociationMembers(TableExpression thisTableExpression, EntityMemberInfo member,
-                            out IList<EntityMemberInfo> otherKey, out TableJoinType joinType, out string joinID) {
+                            out IList<EntityMemberInfo> otherKeyMembers, out TableJoinType joinType, out string joinID) {
       switch(member.Kind) {
         case EntityMemberKind.EntityRef:
           // by default, join is inner
           joinType = TableJoinType.Inner;
           joinID = member.MemberName;
           var otherType = member.ReferenceInfo.ToKey.Entity.ClassInfo.Type;
-          otherKey = member.ReferenceInfo.ToKey.KeyMembersExpanded.Select(km => km.Member).ToList();
+          otherKeyMembers = member.ReferenceInfo.ToKey.KeyMembersExpanded.Select(km => km.Member).ToList();
           var thisKey = member.ReferenceInfo.FromKey.KeyMembersExpanded.Select(km => km.Member).ToList();
           if(member.Flags.IsSet(EntityMemberFlags.Nullable))
             joinType |= TableJoinType.LeftOuter;
@@ -247,16 +247,17 @@ namespace Vita.Data.Linq.Translation {
         case EntityMemberKind.Transient:
           if(!member.Flags.IsSet(EntityMemberFlags.FromOneToOneRef))
             break;
+          
           joinType = TableJoinType.LeftOuter;
           joinID = member.MemberName;
           var targetEnt = _dbModel.EntityModel.GetEntityInfo(member.DataType, throwIfNotFound: true);
-          otherKey = targetEnt.PrimaryKey.KeyMembersExpanded.Select(km => km.Member).ToList();
-          var thisPk = member.Entity.PrimaryKey.KeyMembersExpanded.Select(km => km.Member).ToList();
-          return thisPk;
+          otherKeyMembers = targetEnt.PrimaryKey.KeyMembersExpanded.Select(km => km.Member).ToList();
+          var thisPkMembers = member.Entity.PrimaryKey.KeyMembersExpanded.Select(km => km.Member).ToList();
+          return thisPkMembers;
       }
       Util.Throw("Cannot create JOIN expression for property {0}, property not supported in LINQ.", member);
       //just to satisfy 
-      otherKey = null;
+      otherKeyMembers = null;
       joinType = TableJoinType.Default;
       joinID = null;
       return null;

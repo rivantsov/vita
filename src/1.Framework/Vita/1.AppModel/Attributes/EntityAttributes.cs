@@ -183,8 +183,13 @@ namespace Vita.Entities {
     public bool Clustered;
 
     public PrimaryKeyAttribute() : base(KeyType.PrimaryKey) { }
-    public PrimaryKeyAttribute(string propertyOrColumnNames) : base(KeyType.PrimaryKey) {
-      MemberNames = propertyOrColumnNames;
+
+    /// <summary>Constructor with explicit key members list, with optional asc/desc flags.</summary>
+    /// <param name="membersSpec">Members specification. Ex: 'Name-asc;DateCreated-desc;ParentId'</param>
+    /// <remarks>You can use entity property names, or column names, 
+    ///   for ex: foreign key columns for an entity ref member.</remarks>
+    public PrimaryKeyAttribute(string membersSpec) : base(KeyType.PrimaryKey) {
+      MembersSpec = membersSpec;
     }
   }
 
@@ -201,7 +206,7 @@ namespace Vita.Entities {
 
     public IndexAttribute() : this(null) { }
     public IndexAttribute(string memberNames) : base(KeyType.Index) {
-      base.MemberNames = memberNames;
+      base.MembersSpec = memberNames;
     }
 
   }

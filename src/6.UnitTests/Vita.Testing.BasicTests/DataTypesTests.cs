@@ -40,7 +40,7 @@ namespace Vita.Testing.BasicTests.DataTypes {
 
     [Entity]
     //testing really long index name
-    //[Index(IndexName ="IX_LongIndex", MemberNames = "StringProp,ByteProp,Int16Prop,Int32Prop,Int64Prop,Int32NullProp,DoubleProp,DoublePropNull,SingleProp,DecProp,MoneyProp,DateTimeProp,EnumProp")]
+    //[Index(IndexName ="IX_LongIndex", MembersSpec = "StringProp,ByteProp,Int16Prop,Int32Prop,Int64Prop,Int32NullProp,DoubleProp,DoublePropNull,SingleProp,DecProp,MoneyProp,DateTimeProp,EnumProp")]
     public interface IDataTypesEntity {
 
       // Guid

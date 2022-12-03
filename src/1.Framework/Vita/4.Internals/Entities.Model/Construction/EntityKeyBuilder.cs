@@ -56,12 +56,12 @@ namespace Vita.Entities.Model.Construction {
     //  (string, list of members as parameter of attribute, like PrimaryKey("CustId,Id")
     private void BuildInitialKeyMembersLists() {
       foreach (var key in _allKeys) {
-        if (key.OwnerMember != null) {
-          BuildKeyMembersForKeyOnEntityMember(key);
-        } else if (!string.IsNullOrEmpty(key.KeyMembersSpec)) {
+        if (!string.IsNullOrEmpty(key.KeyMembersSpec)) {
           BuildKeyMembersFromKeySpec(key);
+        } else if (key.OwnerMember != null) {
+          BuildKeyMembersForKeyOnEntityMember(key);
         } else {
-          var keyRef = key.GetSafeKeyRef();
+          var keyRef = key.GetKeyRefForError();
           // should never happen, this case should be caught earlier
           _log.LogError($"FATAL: Key {keyRef} has no OwnerMember and no MemberListSpec.");
           continue; 
@@ -166,7 +166,7 @@ namespace Vita.Entities.Model.Construction {
         workList = workList.Where(key => key.MembersStatus < KeyMembersStatus.Expanded).ToList();
       }
       // if we are not done after multiple iterations, it is an error - fatal error, something is broken in this algorithm
-      var keyListStr = string.Join(",", workList.Select(km => km.GetSafeKeyRef()));
+      var keyListStr = string.Join(",", workList.Select(km => km.GetKeyRefForError()));
       _log.LogError(
         @$"FATAL: Key builder process could not complete, remaining key count: {workList.Count}. Keys: {keyListStr}");
       return false;
@@ -337,16 +337,5 @@ namespace Vita.Entities.Model.Construction {
       return true;
     }
 
-
   } //class
-
-
-  // =============================== Helper =======================================
-
-  internal static class KeyBuilderHelper {
-
-    public static string GetSafeKeyRef(this EntityKeyInfo key) {
-      return $"{key.Entity.Name}/{key.KeyType}";
-    }
-  }
 }

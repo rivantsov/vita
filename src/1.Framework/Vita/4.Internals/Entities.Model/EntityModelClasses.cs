@@ -395,11 +395,11 @@ namespace Vita.Entities.Model {
     internal string SqlCacheKey_SelectByPkNoLock;
     internal string SqlCacheKey_ChildExists;
 
-    public EntityKeyInfo(EntityInfo entity, KeyType keyType, EntityMemberInfo hostMember = null, 
+    public EntityKeyInfo(EntityInfo entity, KeyType keyType, EntityMemberInfo ownerMember = null, 
                          KeyAttribute sourceKeyAttr = null, EntityRefAttribute sourceRefAttr = null) {
       KeyType = keyType;
       Entity = entity;
-      OwnerMember = hostMember; 
+      OwnerMember = ownerMember; 
       Alias = SourceKeyAttribute?.Alias;
       ExplicitDbKeyName = sourceKeyAttr?.DbKeyName;
       entity.Keys.Add(this);

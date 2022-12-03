@@ -1,12 +1,5 @@
 ﻿using System;
 using System.Collections;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-using Vita.Entities.Api;
-using Vita.Entities.Utilities;
 using System.Reflection;
 using Vita.Entities.Runtime;
 
@@ -36,6 +29,15 @@ namespace Vita.Entities.Model {
           return EntityKey.Create(entity.PrimaryKey, new object[] { primaryKeyValue });
       }
     }
+
+    public static string GetKeyRefForError(this EntityKeyInfo key) {
+      var keyRef = key.Entity.Name;
+      if (key.OwnerMember != null)
+        keyRef += $".{key.OwnerMember.MemberName}";
+      keyRef += $"/{key.KeyType}";
+      return keyRef;
+    }
+
 
     public static bool IsSet(this EntityFlags flags, EntityFlags flag) {
       return (flags & flag) != 0;

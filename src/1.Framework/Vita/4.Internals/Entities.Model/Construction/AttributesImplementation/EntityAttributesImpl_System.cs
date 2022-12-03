@@ -39,7 +39,7 @@ namespace Vita.Entities {
 
   public abstract partial class KeyAttribute : EntityModelAttributeBase {
     public KeyType KeyType;
-    public string MemberNames;
+    public string MembersSpec;
     public string DbKeyName;
     public string Alias; //friendly alias; used in UniqueIndexViolationException
     internal EntityKeyInfo Key;
@@ -52,10 +52,10 @@ namespace Vita.Entities {
     }
     public override void Validate(ILog log) {
       base.Validate(log);
-      if(this.HostMember == null && string.IsNullOrWhiteSpace(this.MemberNames)) {
+      if(this.HostMember == null && string.IsNullOrWhiteSpace(this.MembersSpec)) {
         log.LogError($"{HostRef}: Index/key attribute ({this.GetType()}) on entity may not have empty member list.");
       }
-      if (this.HostMember != null && !string.IsNullOrWhiteSpace(this.MemberNames)) {
+      if (this.HostMember != null && !string.IsNullOrWhiteSpace(this.MembersSpec)) {
         log.LogError($"{HostRef}: Index/key attribute ({this.GetType()}) on member should not have explicit member list.");
       }
     }
@@ -69,6 +69,7 @@ namespace Vita.Entities {
 
     public virtual void CreateKey(ILog log) {
       this.Key = new EntityKeyInfo(HostEntity, KeyType, HostMember, this);
+      Key.Alias = this.Alias;
       // PK
       if(KeyType.IsSet(KeyType.PrimaryKey)) {
         if(HostEntity.PrimaryKey == null) {
@@ -86,6 +87,10 @@ namespace Vita.Entities {
       base.Validate(log);
       KeyType = KeyType.SetFlag(KeyType.Clustered, Clustered);
     }
+    public override void CreateKey(ILog log) {
+      base.CreateKey(log);
+      Key.KeyMembersSpec = this.MembersSpec;
+    }
     // No Apply method overrides, base methods do the job
   } //class
 
@@ -95,13 +100,14 @@ namespace Vita.Entities {
     public override void Validate(ILog log) {
       base.Validate(log);
       KeyType = KeyType.SetFlag(KeyType.Clustered, this.Clustered).SetFlag(KeyType.Unique, this.Unique);
-      if(HostMember != null && string.IsNullOrEmpty(this.MemberNames))
-        this.MemberNames = HostMember.MemberName;
+      if(HostMember != null && string.IsNullOrEmpty(this.MembersSpec))
+        this.MembersSpec = HostMember.MemberName;
     }
 
     public override void CreateKey(ILog log) {
       base.CreateKey(log);
       Key.FilterSpec = this.Filter;
+      Key.KeyMembersSpec = this.MembersSpec;
       Key.IncludeMembersSpec = this.IncludeMembers;
     }
 

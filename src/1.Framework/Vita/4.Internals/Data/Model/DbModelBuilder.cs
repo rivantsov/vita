@@ -234,12 +234,12 @@ namespace Vita.Data.Model {
             continue; //views do not have foreign keys; view entities can reference other entities, but this relationship is not represented in database
           var keyCols = new List<DbKeyColumnInfo>();
           //Find columns and add them to the key
-          foreach (var keyMember in entityKey.ExpandedKeyMembers) {
+          foreach (var keyMember in entityKey.KeyMembersExpanded) {
             var col = table.Columns.First(c => c.Member == keyMember.Member); 
             keyCols.Add(new DbKeyColumnInfo(col, keyMember));
           }//foreach member
           var inclCols = new List<DbColumnInfo>();
-          foreach(var incMember in entityKey.ExpandedIncludeMembers) {
+          foreach(var incMember in entityKey.IncludeMembersExpanded) {
             var col = table.Columns.First(c => c.Member == incMember);
             inclCols.Add(col);
           }//foreach member
@@ -252,8 +252,8 @@ namespace Vita.Data.Model {
           dbKey.KeyColumns.AddRange(keyCols);
           dbKey.IncludeColumns.AddRange(inclCols);
           //check filter
-          if(entityKey.IndexFilterTemplate != null)
-            dbKey.Filter = this._dbModel.Driver.SqlDialect.BuildDbTableFilter(table, entityKey.IndexFilterTemplate);
+          if(entityKey.ParsedFilterTemplate != null)
+            dbKey.Filter = this._dbModel.Driver.SqlDialect.BuildDbTableFilter(table, entityKey.ParsedFilterTemplate);
           //Assign PK if it is PK
           if (keyType.IsSet(KeyType.PrimaryKey)) 
             table.PrimaryKey = dbKey;

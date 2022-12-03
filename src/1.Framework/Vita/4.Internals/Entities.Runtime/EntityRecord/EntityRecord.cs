@@ -63,8 +63,8 @@ namespace Vita.Entities.Runtime {
       _primaryKey = primaryKey;
       //copy primary key
       var keyInfo = primaryKey.KeyInfo;
-      for (int i = 0; i < keyInfo.ExpandedKeyMembers.Count; i++) {
-        var member = keyInfo.ExpandedKeyMembers[i].Member;
+      for (int i = 0; i < keyInfo.KeyMembersExpanded.Count; i++) {
+        var member = keyInfo.KeyMembersExpanded[i].Member;
         var v = primaryKey.Values[i]; 
         ValuesOriginal[member.ValueIndex] = v;
       }
@@ -389,8 +389,8 @@ namespace Vita.Entities.Runtime {
 
 
     public bool KeyIsNull(EntityKeyInfo key) {
-      for(int i = 0; i < key.ExpandedKeyMembers.Count; i++) {
-        var valueIndex = key.ExpandedKeyMembers[i].Member.ValueIndex;
+      for(int i = 0; i < key.KeyMembersExpanded.Count; i++) {
+        var valueIndex = key.KeyMembersExpanded[i].Member.ValueIndex;
         var v = ValuesModified[valueIndex] ?? ValuesOriginal[valueIndex];
         // Note: transient values in new record might be null
         if(v != DBNull.Value) return false;
@@ -398,8 +398,8 @@ namespace Vita.Entities.Runtime {
       return true;
     }
     public bool KeyIsLoaded(EntityKeyInfo key) {
-      for(int i = 0; i < key.ExpandedKeyMembers.Count; i++) {
-        var valueIndex = key.ExpandedKeyMembers[i].Member.ValueIndex;
+      for(int i = 0; i < key.KeyMembersExpanded.Count; i++) {
+        var valueIndex = key.KeyMembersExpanded[i].Member.ValueIndex;
         var v = ValuesModified[valueIndex] ?? ValuesOriginal[valueIndex];
         if(v == null) return false;
       }
@@ -407,8 +407,8 @@ namespace Vita.Entities.Runtime {
     }
 
     public bool KeyMatches(EntityKeyInfo keyInfo, object[] keyValues) {
-      for(int i = 0; i < keyInfo.ExpandedKeyMembers.Count; i++) {
-        var member = keyInfo.ExpandedKeyMembers[i].Member;
+      for(int i = 0; i < keyInfo.KeyMembersExpanded.Count; i++) {
+        var member = keyInfo.KeyMembersExpanded[i].Member;
         var thisValue = GetValue(member);
         var otherValue = keyValues[i];
         var eq = member.AreValuesEqual(thisValue, otherValue);
@@ -505,7 +505,7 @@ namespace Vita.Entities.Runtime {
           continue;
         var idMember = targetRec.EntityInfo.IdentityMember;
         var idValue = targetRec.GetRawValue(idMember);
-        var fkMember = refM.ReferenceInfo.FromKey.ExpandedKeyMembers[0].Member;
+        var fkMember = refM.ReferenceInfo.FromKey.KeyMembersExpanded[0].Member;
         this.SetValue(fkMember, idValue); 
       }
     }

@@ -198,7 +198,7 @@ using Vita.Data;  // used only in console app
           attrList.Add(colAttr);
           break; 
         case EntityMemberKind.EntityRef:
-          var fkMembers = member.ReferenceInfo.FromKey.ExpandedKeyMembers;
+          var fkMembers = member.ReferenceInfo.FromKey.KeyMembersExpanded;
           var strCols = string.Join(",", fkMembers.Select(km => km.Member.ColumnName));
           attrList.Add(Util.SafeFormat("EntityRef(KeyColumns = \"{0}\")", strCols));
           if (member.Flags.IsSet(EntityMemberFlags.CascadeDelete))
@@ -391,8 +391,8 @@ using Vita.Data;  // used only in console app
       var args = new List<string>(); 
       if(!onProperty)
         args.Add(DQuote(GetKeyColumnList(key)));
-      if(key.IndexFilterTemplate != null)
-        args.Add("Filter = " + DQuote(key.IndexFilterTemplate.Template.OriginalTemplate));
+      if(key.ParsedFilterTemplate != null)
+        args.Add("Filter = " + DQuote(key.ParsedFilterTemplate.Template.OriginalTemplate));
       if(key.IncludeMembers.Count > 0) {
         var sInc = string.Join(",", key.IncludeMembers.Select(m => m.MemberName));
         args.Add("IncludeMembers = " + DQuote(sInc));

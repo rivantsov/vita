@@ -138,10 +138,10 @@ namespace Vita.Data.Driver {
     public virtual SqlStatement BuildLinqDeleteWithSubquery() {
       // base query must return set of PK values
       var targetEnt = Command.TargetTable.Entity;
-      Util.Check(targetEnt.PrimaryKey.ExpandedKeyMembers.Count == 1,
+      Util.Check(targetEnt.PrimaryKey.KeyMembersExpanded.Count == 1,
         "DELETE LINQ query with multiple tables may not be used for table with composite primiry key. Entity: {0}",
             targetEnt.EntityType);
-      var pk = targetEnt.PrimaryKey.ExpandedKeyMembers[0].Member;
+      var pk = targetEnt.PrimaryKey.KeyMembersExpanded[0].Member;
       var outExprType = Command.BaseSelect.ReaderOutputType;
       Util.Check(outExprType == pk.DataType,
         "DELETE Query with multiple tables must return a value compatible with primary key of the table." +

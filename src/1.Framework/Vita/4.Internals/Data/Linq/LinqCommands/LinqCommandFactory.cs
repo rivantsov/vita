@@ -81,7 +81,7 @@ namespace Vita.Data.Linq {
       listInfo.SqlCacheKey_SelectChildRecsForInclude = listInfo.SqlCacheKey_SelectChildRecsForInclude ??
         SqlCacheKeyBuilder.BuildSpecialSelectKey(Tag_SelectByKeyArrayListPropertyManyToOne, fromKey.Entity.Name, fromKey.Name, LockType.None, null);
       // it is simply select-by-key-array command
-      var orderBy = fromKey.ExpandedKeyMembers.Merge(listInfo.OrderBy);
+      var orderBy = fromKey.KeyMembersExpanded.Merge(listInfo.OrderBy);
       var paramValues = new object[] { keyValues };
       return new SpecialLinqCommand(session, listInfo.SqlCacheKey_SelectChildRecsForInclude, 
                                      fromKey, LockType.None, orderBy, paramValues, Setup_SelectByKeyValueArray);
@@ -94,7 +94,7 @@ namespace Vita.Data.Linq {
       listInfo.SqlCacheKey_SelectChildRecsForInclude = listInfo.SqlCacheKey_SelectChildRecsForInclude ??
         SqlCacheKeyBuilder.BuildSpecialSelectKey(Tag_SelectByKeyArrayListPropertyManyToMany, fromKey.Entity.Name, fromKey.Name, LockType.None, null);
       // it is simply select-by-key-array command
-      var orderBy = fromKey.ExpandedKeyMembers.Merge(listInfo.OrderBy);
+      var orderBy = fromKey.KeyMembersExpanded.Merge(listInfo.OrderBy);
       var paramValues = new object[] { keyValues };
       return new SpecialLinqCommand(session, listInfo.SqlCacheKey_SelectChildRecsForInclude,
                                      listInfo, orderBy, paramValues, Setup_SelectByValueArrayManyToMany);
@@ -120,7 +120,7 @@ namespace Vita.Data.Linq {
       var orderBy = command.OrderBy; 
 
       var entType = key.Entity.EntityType;
-      var prms = key.ExpandedKeyMembers.Select(m => Expression.Parameter(m.Member.DataType, "@" + m.Member.MemberName)).ToArray();
+      var prms = key.KeyMembersExpanded.Select(m => Expression.Parameter(m.Member.DataType, "@" + m.Member.MemberName)).ToArray();
       var pred = ExpressionMaker.MakeKeyPredicate(key, prms);
       var entSet = (lockType == LockType.None) ? key.Entity.EntitySetConstant
                                                : ExpressionMaker.MakeEntitySetConstant(entType, lockType);
@@ -134,7 +134,7 @@ namespace Vita.Data.Linq {
       var key = command.Key;
       var entType = key.Entity.EntityType;
       //build expression
-      var prms = key.ExpandedKeyMembers.Select(m => Expression.Parameter(m.Member.DataType, "@" + m.Member.MemberName)).ToArray();
+      var prms = key.KeyMembersExpanded.Select(m => Expression.Parameter(m.Member.DataType, "@" + m.Member.MemberName)).ToArray();
       var entSet = key.Entity.EntitySetConstant;
       var genAny = LinqExpressionHelper.QueryableAny2ArgMethod.MakeGenericMethod(entType);
       var pred = ExpressionMaker.MakeKeyPredicate(key, prms);
@@ -145,7 +145,7 @@ namespace Vita.Data.Linq {
     }
 
     private static void Setup_SelectByKeyValueArray(SpecialLinqCommand command) {
-      var member = command.Key.ExpandedKeyMembers[0].Member; 
+      var member = command.Key.KeyMembersExpanded[0].Member; 
       var listType = typeof(IList<>).MakeGenericType(member.DataType);
       var listPrm = Expression.Parameter(listType, "@list");
       var entType = command.Key.Entity.EntityType;
@@ -167,7 +167,7 @@ namespace Vita.Data.Linq {
       */
       var listInfo = command.ListInfoManyToMany;
       var keyParentRef = listInfo.ParentRefMember.ReferenceInfo.FromKey;
-      var prms = keyParentRef.ExpandedKeyMembers.Select(m => Expression.Parameter(m.Member.DataType, "@" + m.Member.MemberName)).ToArray();
+      var prms = keyParentRef.KeyMembersExpanded.Select(m => Expression.Parameter(m.Member.DataType, "@" + m.Member.MemberName)).ToArray();
       var wherePred = ExpressionMaker.MakeKeyPredicate(keyParentRef, prms);
       var linkEntSet = listInfo.LinkEntity.EntitySetConstant;
       var entSetFiltered = ExpressionMaker.MakeCallWhere(linkEntSet, wherePred);
@@ -180,7 +180,7 @@ namespace Vita.Data.Linq {
 
     private static void Setup_SelectByValueArrayManyToMany(SpecialLinqCommand command) {
       var listInfo = command.ListInfoManyToMany;
-      var fkMember = listInfo.ParentRefMember.ReferenceInfo.FromKey.ExpandedKeyMembers[0].Member;
+      var fkMember = listInfo.ParentRefMember.ReferenceInfo.FromKey.KeyMembersExpanded[0].Member;
       var listType = typeof(IList<>).MakeGenericType(fkMember.DataType);
       var listPrm = Expression.Parameter(listType, "@list");
       var entType = listInfo.LinkEntity.EntityType;

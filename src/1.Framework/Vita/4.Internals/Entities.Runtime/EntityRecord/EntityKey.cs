@@ -15,12 +15,12 @@ namespace Vita.Entities.Runtime {
 
     public EntityKey(EntityKeyInfo keyInfo, EntityRecord record) {
       KeyInfo = keyInfo;
-      Values = new object[KeyInfo.ExpandedKeyMembers.Count];
+      Values = new object[KeyInfo.KeyMembersExpanded.Count];
       CopyValues(record); 
     }
 
     public EntityKey(EntityKeyInfo key, params object[] values) {
-      var keyCount = key.ExpandedKeyMembers.Count; 
+      var keyCount = key.KeyMembersExpanded.Count; 
       Util.Check(keyCount == values.Length, "Invalid number of key values, expected: {0}, provided: {1}.", keyCount, values.Length);
       KeyInfo = key; 
       Values = values;
@@ -28,7 +28,7 @@ namespace Vita.Entities.Runtime {
 
     public void CopyValues(EntityRecord fromRecord) {
       for (int i = 0; i < Values.Length; i++)
-        Values[i] = fromRecord.GetRawValue(KeyInfo.ExpandedKeyMembers[i].Member);
+        Values[i] = fromRecord.GetRawValue(KeyInfo.KeyMembersExpanded[i].Member);
       _hashCode = 0;
       _asString = null; 
     }
@@ -36,12 +36,12 @@ namespace Vita.Entities.Runtime {
     //Verify values and create key
     public static EntityKey Create(EntityKeyInfo key, params object[] values) {
       //Verify
-      Util.Check(key.ExpandedKeyMembers.Count == values.Length,
+      Util.Check(key.KeyMembersExpanded.Count == values.Length,
         "EntityKeyValue constructor: values count does not match key members count. Key={0}", key);
       for (int i = 0; i < values.Length; i++) {
         var value = values[i];
         if (value == null) continue; 
-        var memberType = key.ExpandedKeyMembers[i].Member.DataType;
+        var memberType = key.KeyMembersExpanded[i].Member.DataType;
         var valueType = value.GetType();
         Util.Check(memberType.GetTypeInfo().IsAssignableFrom(valueType.GetTypeInfo()), "Invalid key value [{0}] (type: {1}); expected {2}.",
              value, valueType, memberType);
@@ -90,30 +90,30 @@ namespace Vita.Entities.Runtime {
     public string ValuesToString(string separator = ",") {
       //Fast path
       if (Values.Length == 1) {
-        var m0 = KeyInfo.ExpandedKeyMembers[0].Member;
+        var m0 = KeyInfo.KeyMembersExpanded[0].Member;
         return m0.ValueToStringRef(m0, Values[0]);
       }
       //full path
       var sv = new string[Values.Length];
       for (int i = 0; i < Values.Length; i++) {
-        var m = KeyInfo.ExpandedKeyMembers[i].Member;
+        var m = KeyInfo.KeyMembersExpanded[i].Member;
         sv[i] = m.ValueToStringRef(m, Values[i]);
       }
       return string.Join(separator, sv);
     }
 
     public static EntityKey KeyFromString(EntityKeyInfo key, string valueString) {
-      if (key.ExpandedKeyMembers.Count == 1) { //shortcut
-        var m0 = key.ExpandedKeyMembers[0].Member;
+      if (key.KeyMembersExpanded.Count == 1) { //shortcut
+        var m0 = key.KeyMembersExpanded[0].Member;
         var v = m0.ValueFromStringRef(m0, valueString);
         var kv = new EntityKey(key, new object[] { v });
         return kv;
       }
       //complex keys
       var sValues = valueString.Split(';');
-      var values = new object[key.ExpandedKeyMembers.Count];
+      var values = new object[key.KeyMembersExpanded.Count];
       for (int i = 0; i < values.Length; i++) {
-        var m = key.ExpandedKeyMembers[i].Member;
+        var m = key.KeyMembersExpanded[i].Member;
         values[i] = m.ValueFromStringRef(m, sValues[i]);
       }
       return new EntityKey(key, values);
@@ -122,7 +122,7 @@ namespace Vita.Entities.Runtime {
     public bool IsNull() {
       if (Values.Length == 1 && Values[0] == DBNull.Value) //fast path, most often
         return true; 
-      for (int i = 0; i < KeyInfo.ExpandedKeyMembers.Count; i++) {
+      for (int i = 0; i < KeyInfo.KeyMembersExpanded.Count; i++) {
         var v = Values[i];
         if (v != null && v != DBNull.Value)
           return false; 

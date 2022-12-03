@@ -192,10 +192,10 @@ namespace Vita.Entities.Model.Construction {
 
     public static string GetMemberNamesAsString(this EntityKeyInfo key, string separator = "", bool removeUnderscore = false) {
       string result;
-      if (key.ExpandedKeyMembers.Count == 1)
-        result = key.ExpandedKeyMembers[0].Member.MemberName;
+      if (key.KeyMembersExpanded.Count == 1)
+        result = key.KeyMembersExpanded[0].Member.MemberName;
       else
-        result = string.Join(separator, key.ExpandedKeyMembers.Select(m => m.Member.MemberName));
+        result = string.Join(separator, key.KeyMembersExpanded.Select(m => m.Member.MemberName));
       if (removeUnderscore)
         result = result.Replace("_", string.Empty);
       return result;

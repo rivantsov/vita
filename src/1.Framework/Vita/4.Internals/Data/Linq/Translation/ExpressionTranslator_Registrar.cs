@@ -239,8 +239,8 @@ namespace Vita.Data.Linq.Translation {
           joinType = TableJoinType.Inner;
           joinID = member.MemberName;
           var otherType = member.ReferenceInfo.ToKey.Entity.ClassInfo.Type;
-          otherKey = member.ReferenceInfo.ToKey.ExpandedKeyMembers.Select(km => km.Member).ToList();
-          var thisKey = member.ReferenceInfo.FromKey.ExpandedKeyMembers.Select(km => km.Member).ToList();
+          otherKey = member.ReferenceInfo.ToKey.KeyMembersExpanded.Select(km => km.Member).ToList();
+          var thisKey = member.ReferenceInfo.FromKey.KeyMembersExpanded.Select(km => km.Member).ToList();
           if(member.Flags.IsSet(EntityMemberFlags.Nullable))
             joinType |= TableJoinType.LeftOuter;
           return thisKey;
@@ -250,8 +250,8 @@ namespace Vita.Data.Linq.Translation {
           joinType = TableJoinType.LeftOuter;
           joinID = member.MemberName;
           var targetEnt = _dbModel.EntityModel.GetEntityInfo(member.DataType, throwIfNotFound: true);
-          otherKey = targetEnt.PrimaryKey.ExpandedKeyMembers.Select(km => km.Member).ToList();
-          var thisPk = member.Entity.PrimaryKey.ExpandedKeyMembers.Select(km => km.Member).ToList();
+          otherKey = targetEnt.PrimaryKey.KeyMembersExpanded.Select(km => km.Member).ToList();
+          var thisPk = member.Entity.PrimaryKey.KeyMembersExpanded.Select(km => km.Member).ToList();
           return thisPk;
       }
       Util.Throw("Cannot create JOIN expression for property {0}, property not supported in LINQ.", member);

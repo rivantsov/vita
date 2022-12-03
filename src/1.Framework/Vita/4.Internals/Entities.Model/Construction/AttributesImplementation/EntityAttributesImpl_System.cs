@@ -100,26 +100,12 @@ namespace Vita.Entities {
     }
 
     public override void CreateKey(ILog log) {
-      if(this.Key == null) { //protect against multiple processing
-        base.CreateKey(log);
-        ProcessIndexIncludesAndFilters(log);
-      }
+      base.CreateKey(log);
+      Key.FilterSpec = this.Filter;
+      Key.IncludeMembersSpec = this.IncludeMembers;
     }
 
-    private void ProcessIndexIncludesAndFilters(ILog log) {
-      if (!string.IsNullOrWhiteSpace(this.Filter))
-        Key.IndexFilterTemplate = EntityModelBuilder.ParseFilter(this.Filter, this.HostEntity, log);
-      // Check include fields
-      if(!string.IsNullOrWhiteSpace(this.IncludeMembers))
-        if(EntityModelBuilderHelper.TryParseKeySpec(HostEntity, this.IncludeMembers, log, 
-            out List<EntityKeyMemberInfo> keyMembers, ordered: false)) {
-          Key.IncludeMembers.AddRange(keyMembers.Select(km => km.Member));
-      }
-    }
-    #endregion 
+   #endregion 
 
   }//class
-
-
-
 }//ns

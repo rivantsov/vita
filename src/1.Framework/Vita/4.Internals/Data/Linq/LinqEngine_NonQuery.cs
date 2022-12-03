@@ -50,9 +50,9 @@ namespace Vita.Data.Linq {
                 break; 
               case EntityMemberKind.EntityRef:
                 var fromKey = memberInfo.ReferenceInfo.FromKey;
-                Util.Check(fromKey.ExpandedKeyMembers.Count == 1,
+                Util.Check(fromKey.KeyMembersExpanded.Count == 1,
                   "References with composite keys are not supported in LINQ non-query operations. Reference: ", memberName);
-                var pkMember = fromKey.ExpandedKeyMembers[0].Member; 
+                var pkMember = fromKey.KeyMembersExpanded[0].Member; 
                 var col2 = _translator.CreateColumnForMember(targetTableExpr, pkMember, translCtx);
                 nonQueryCmd.TargetColumns.Add(col2.ColumnInfo);
                 nonQueryCmd.SelectOutputValues.Add(outValues[i]);

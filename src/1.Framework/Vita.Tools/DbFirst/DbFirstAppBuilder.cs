@@ -181,7 +181,7 @@ namespace Vita.Tools.DbFirst {
           ent.PrimaryKey.KeyType |= KeyType.Clustered;
         foreach (var keyCol in table.PrimaryKey.KeyColumns) {
           keyCol.Column.Member.Flags |= EntityMemberFlags.PrimaryKey;
-          ent.PrimaryKey.ExpandedKeyMembers.Add(new EntityKeyMemberInfo(keyCol.Column.Member, keyCol.Desc));
+          ent.PrimaryKey.KeyMembersExpanded.Add(new EntityKeyMemberInfo(keyCol.Column.Member, keyCol.Desc));
         }
       }
     }
@@ -193,26 +193,26 @@ namespace Vita.Tools.DbFirst {
         if(table.Entity == null)
           continue; //ignore this table
         bool hasClusteredIndex = false; 
-        foreach (var key in table.Keys) {
-          if (key.KeyType.IsSet(KeyType.Clustered))
+        foreach (var dbKey in table.Keys) {
+          if (dbKey.KeyType.IsSet(KeyType.Clustered))
             hasClusteredIndex = true;
-          if (!key.KeyType.IsSet(KeyType.Index)) 
+          if (!dbKey.KeyType.IsSet(KeyType.Index)) 
             continue;
-          if (fkAutoIndexed && key.KeyType.IsSet(KeyType.ForeignKey)) {
+          if (fkAutoIndexed && dbKey.KeyType.IsSet(KeyType.ForeignKey)) {
             // NOTE: commented out - do not put explicit index on FK in entity model; it is added only on DbModel!
-            //if (key.EntityKey != null)  key.EntityKey.KeyType |= KeyType.Index;
+            //if (dbKey.EntityKey != null)  dbKey.EntityKey.KeyType |= KeyType.Index;
             continue;
           }
-          var entKey = key.EntityKey = new EntityKeyInfo(table.Entity, key.KeyType); //added automatically to entity.Keys
-          entKey.Name = key.Name;
-          foreach(var keyCol in key.KeyColumns)
-            entKey.ExpandedKeyMembers.Add(new EntityKeyMemberInfo(keyCol.Column.Member, keyCol.Desc));
+          var entKey = dbKey.EntityKey = new EntityKeyInfo(table.Entity, dbKey.KeyType); //added automatically to entity.Keys
+          entKey.Name = dbKey.Name;
+          foreach(var keyCol in dbKey.KeyColumns)
+            entKey.KeyMembersExpanded.Add(new EntityKeyMemberInfo(keyCol.Column.Member, keyCol.Desc));
           if (entKey.KeyType.IsSet(KeyType.Index) && supportsIncludeOrFilter) {
-            if (key.Filter != null && !string.IsNullOrEmpty(key.Filter.DefaultSql)) {
-              entKey.IndexFilterTemplate =  ParseIndexFilter(key.Filter.DefaultSql, entKey.Entity);
+            if (dbKey.Filter != null && !string.IsNullOrEmpty(dbKey.Filter.DefaultSql)) {
+              entKey.ParsedFilterTemplate =  ParseIndexFilter(dbKey.Filter.DefaultSql, entKey.Entity);
             }
             //carefully add included members
-            var incMembers = key.IncludeColumns.Select(c => c.Member).ToList();
+            var incMembers = dbKey.IncludeColumns.Select(c => c.Member).ToList();
             foreach(var m in incMembers) {
               if(m.Flags.IsSet(EntityMemberFlags.ForeignKey))
                 entKey.IncludeMembers.Add(m.ForeignKeyOwner);
@@ -234,19 +234,19 @@ namespace Vita.Tools.DbFirst {
       return entFilter; 
     }
 
-    // When we initially created entity keys, we filled out key.ExplandedMembers list - these include real FK members (ex: IBook.Publisher_Id). 
-    // We now need to build key.Members lists that include refMembers (ex: IBook.Publisher) instead of FK members in key.ExpandedMembers
+    // When we initially created entity keys, we filled out dbKey.ExplandedMembers list - these include real FK members (ex: IBook.Publisher_Id). 
+    // We now need to build dbKey.Members lists that include refMembers (ex: IBook.Publisher) instead of FK members in dbKey.ExpandedMembers
     // c# entity definitions use entity reference members in keys and indexes, ex: [Index("Publisher"] on IBook interface.
     private void SetupKeyMembers() {
       foreach (var ent in _entityModel.Entities) {
         foreach (var key in ent.Keys) {
-          foreach (var keyMember in key.ExpandedKeyMembers) {
+          foreach (var keyMember in key.KeyMembersExpanded) {
             var member = keyMember.Member; 
             if (member.Flags.IsSet(EntityMemberFlags.ForeignKey)) {
-              // It is foreign key member; replace it with refMember 
+              // It is foreign dbKey member; replace it with refMember 
               var refMember = member.ForeignKeyOwner;
-              var allFkKeyMembers = member.ForeignKeyOwner.ReferenceInfo.FromKey.ExpandedKeyMembers;
-              bool canUseRefMember = ContainsAll(key.ExpandedKeyMembers, allFkKeyMembers);
+              var allFkKeyMembers = member.ForeignKeyOwner.ReferenceInfo.FromKey.KeyMembersExpanded;
+              bool canUseRefMember = ContainsAll(key.KeyMembersExpanded, allFkKeyMembers);
               if (canUseRefMember) {
                 // add it if it is not there yet. Note we might have multiple FK members for a single ref member (if FK is composite)
                 if (!key.KeyMembers.Any(km => km.Member == refMember)) 
@@ -258,7 +258,7 @@ namespace Vita.Tools.DbFirst {
               key.KeyMembers.Add(keyMember); 
             
           }//foreach member
-        }//foreach key
+        }//foreach dbKey
       }//foreach ent            
     }//method
 
@@ -303,12 +303,12 @@ namespace Vita.Tools.DbFirst {
           var refMember = new EntityMemberInfo(ent, EntityMemberKind.EntityRef, memberName, targetEnt.EntityType);
           if (constr.CascadeDelete)
             refMember.Flags |= EntityMemberFlags.CascadeDelete;
-          // create foreign key
+          // create foreign dbKey
           var fromDbKey = constr.FromKey;
           var fromEntKey = fromDbKey.EntityKey = new EntityKeyInfo(ent, KeyType.ForeignKey, refMember); // added to ent.Keys automatically
           fromEntKey.Name = fromDbKey.Name; 
           foreach(var fromKeyCol in fromDbKey.KeyColumns) {
-            fromEntKey.ExpandedKeyMembers.Add(new EntityKeyMemberInfo(fromKeyCol.Column.Member, fromKeyCol.Desc)); 
+            fromEntKey.KeyMembersExpanded.Add(new EntityKeyMemberInfo(fromKeyCol.Column.Member, fromKeyCol.Desc)); 
             fromKeyCol.Column.Member.Flags |= EntityMemberFlags.ForeignKey;
             fromKeyCol.Column.Member.ForeignKeyOwner = refMember;
             if (fromKeyCol.Column.Member.Flags.IsSet(EntityMemberFlags.Nullable))

@@ -115,33 +115,7 @@ namespace Vita.Entities.Model.Construction {
       else
         //Set back reference to list from ref member
         listInfo.ParentRefMember.ReferenceInfo.TargetListMember = member;
-      //Filter - not implemented in .NET core version 
-      /*
-      if(oneToManyAttr != null && !string.IsNullOrWhiteSpace(oneToManyAttr.Filter))
-        listInfo.Filter = ParseFilter(oneToManyAttr.Filter, listInfo.TargetEntity, this.Log);
-        */
     } //method
-
-    public static EntityFilterTemplate ParseFilter(string listFilter, EntityInfo entity, ILog log) {
-      //Safely parse template - parse throws exc
-      StringTemplate template;
-      try {
-        template = StringTemplate.Parse(listFilter);
-      } catch(Exception ex) {
-        log.LogError($"{entity.Name}, error in list filter: {ex.Message}");
-        return null;
-      }
-      // map names to members
-      var members = new List<EntityMemberInfo>(); 
-      foreach(var name in template.ArgNames) {
-        var member = entity.FindMemberOrColumn(name);
-        if(member == null)
-          log.LogError($"Entity {entity.EntityType}, error in filter expression, member/column {name} not found. ");
-        else
-          members.Add(member); 
-      }
-      return new EntityFilterTemplate() { Template = template, Members = members };
-    }
 
   } //class
 }

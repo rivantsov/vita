@@ -354,8 +354,8 @@ namespace Vita.Entities.Model {
     /// <summary>For all KeyMembers the field Member is assigned </summary>
     Assigned,
 
-    /// <summary>KeyMembers are copied to ExpandedKeyMembers with expansion of entity-type members. 
-    /// For ex, Customer in KeyMembers is translated into CustomerId in ExpandedKeyMembers.</summary>
+    /// <summary>KeyMembers are copied to KeyMembersExpanded with expansion of entity-type members. 
+    /// For ex, Customer in KeyMembers is translated into CustomerId in KeyMembersExpanded.</summary>
     Expanded,
 
   }
@@ -369,25 +369,27 @@ namespace Vita.Entities.Model {
     public KeyAttribute SourceKeyAttribute;
     public EntityRefAttribute SourceRefAttribute;
     public EntityMemberInfo OwnerMember;
+    public string ExplicitDbKeyName;
 
     public EntityKeyInfo TargetUniqueKey; //for FKs
 
-    public string MemberListSpec; //ex for index: "price:desc;brand,prodName"
+    public string KeyMembersSpec; //ex for index: "price:desc;brand,prodName"
     //Original members specified in attributes; may contain members that are entity references
     public List<EntityKeyMemberInfo> KeyMembers = new List<EntityKeyMemberInfo>();
     // Entity reference members had been "expanded" - replaced with value members that constitute the foreign key
-    public List<EntityKeyMemberInfo> ExpandedKeyMembers = new List<EntityKeyMemberInfo>();
+    public List<EntityKeyMemberInfo> KeyMembersExpanded = new List<EntityKeyMemberInfo>();
     // Include members
-    public string IndexIncludeMembersSpec; 
-    // public List<EntityMemberInfo> IncludeMembers = new List<EntityMemberInfo>();
-    public List<EntityMemberInfo> ExpandedIncludeMembers = new List<EntityMemberInfo>();
+    public string IncludeMembersSpec; 
+    public List<EntityMemberInfo> IncludeMembers = new List<EntityMemberInfo>();
+    public List<EntityMemberInfo> IncludeMembersExpanded = new List<EntityMemberInfo>();
 
-    public bool HasIdentityMember;
-    public Delegate CacheSelectMethod; // compiled method to select in cache
-    public EntityFilterTemplate IndexFilterTemplate;
-    public string ExplicitDbKeyName;
+    // for indexes with filter
+    public string FilterSpec;
+    public EntityFilterTemplate ParsedFilterTemplate;
 
     public KeyMembersStatus MembersStatus;
+    public bool HasIdentityMember;
+    public Delegate CacheSelectMethod; // compiled method to select in cache
 
     // cached keys, set on first use
     internal string SqlCacheKey_SelectByPkNoLock;

@@ -219,7 +219,7 @@ namespace Vita.Entities.Model.Construction {
     //Copies PK values into corresponding FK
     public static void CopyPrimaryKeyToForeign(EntityRecord record, EntityMemberInfo entityRefMember, EntityRecord refTarget) {
       var refInfo = entityRefMember.ReferenceInfo;
-      var fkMembers = refInfo.FromKey.ExpandedKeyMembers;
+      var fkMembers = refInfo.FromKey.KeyMembersExpanded;
       //If target is null, set all to DbNull 
       if (refTarget == null) {
         for (int i = 0; i < fkMembers.Count; i++)
@@ -227,7 +227,7 @@ namespace Vita.Entities.Model.Construction {
         return;
       }
       //refTarget is not null
-      var pkMembers = refInfo.ToKey.ExpandedKeyMembers;
+      var pkMembers = refInfo.ToKey.KeyMembersExpanded;
       for (int i = 0; i < pkMembers.Count; i++) {
         //copy value from PK to FK member
         var value = refTarget.GetRawValue(pkMembers[i].Member); 

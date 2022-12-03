@@ -9,7 +9,7 @@ namespace Vita.Entities.Runtime {
 
     internal static IList<EntityRecord> GetRecordsWithUnloadedRefMember(this EntitySession session, EntityMemberInfo member) {
       var targetEntity = member.ReferenceInfo.ToKey.Entity;
-      var fkMember = member.ReferenceInfo.ToKey.ExpandedKeyMembers[0].Member;
+      var fkMember = member.ReferenceInfo.ToKey.KeyMembersExpanded[0].Member;
       // Filter for records - we choose records that have ref member value null or stub
       Func<EntityRecord, bool> recFilter = (EntityRecord rec) => {
         var mValue = rec.GetRawValue(member);

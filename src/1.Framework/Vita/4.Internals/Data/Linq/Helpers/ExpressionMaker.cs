@@ -83,7 +83,7 @@ namespace Vita.Data.Linq {
       // Special case - member is entity ref
       if (member.Kind == EntityMemberKind.EntityRef) {
         var orderedEntSet = entSet;
-        foreach(var fkm in member.ReferenceInfo.FromKey.ExpandedKeyMembers)
+        foreach(var fkm in member.ReferenceInfo.FromKey.KeyMembersExpanded)
           orderedEntSet = AddOrderBy(orderedEntSet, fkm.Member, desc);
         return orderedEntSet; 
       }
@@ -131,8 +131,8 @@ namespace Vita.Data.Linq {
       var entType = key.Entity.EntityType;
       var entPrm = Expression.Parameter(entType, "e");
       Expression cond = null;
-      for(int i = 0; i < key.ExpandedKeyMembers.Count; i++) {
-        var member = key.ExpandedKeyMembers[i].Member;
+      for(int i = 0; i < key.KeyMembersExpanded.Count; i++) {
+        var member = key.KeyMembersExpanded[i].Member;
         var readV = MakeGetProperty(entPrm, member);
         var eq = Expression.MakeBinary(ExpressionType.Equal, readV, keyValues[i]);
         if(cond == null)

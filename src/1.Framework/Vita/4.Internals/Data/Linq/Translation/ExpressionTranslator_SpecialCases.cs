@@ -118,7 +118,7 @@ namespace Vita.Data.Linq.Translation {
         return null;
       //check that expr is trying read PK member of the target entity (Id of Publisher)
       var idMemberName = bookPubIdExpr.Member.Name;
-      var idMember = pubTable.PrimaryKey.EntityKey.ExpandedKeyMembers.FirstOrDefault(km => km.Member.MemberName == idMemberName);
+      var idMember = pubTable.PrimaryKey.EntityKey.KeyMembersExpanded.FirstOrDefault(km => km.Member.MemberName == idMemberName);
       if (idMember == null)
         return null;
       //OK, it might be a case for optimization. Analyze bottom parameter (Book reference) 
@@ -131,10 +131,10 @@ namespace Vita.Data.Linq.Translation {
         return bookPubIdPrm;
       }
       // Find FK member on src table (Publisher_id on book entity)
-      var idMemberIndex = pubTable.PrimaryKey.EntityKey.ExpandedKeyMembers.IndexOf(idMember);
+      var idMemberIndex = pubTable.PrimaryKey.EntityKey.KeyMembersExpanded.IndexOf(idMember);
       var pubRefMember = bookPubExpr.Member;
       var pubRefMemberInfo = bookTable.Entity.Members.First(m => m.ClrMemberInfo == pubRefMember);
-      var bookPubIdMemberInfo = pubRefMemberInfo.ReferenceInfo.FromKey.ExpandedKeyMembers[idMemberIndex].Member;
+      var bookPubIdMemberInfo = pubRefMemberInfo.ReferenceInfo.FromKey.KeyMembersExpanded[idMemberIndex].Member;
       var bookTableExpr = (TableExpression)analyzedBookExpr;
       ColumnExpression queryColumnExpression = RegisterColumnByMemberName(bookTableExpr, bookPubIdMemberInfo.MemberName, context);
       return queryColumnExpression;
@@ -230,8 +230,8 @@ namespace Vita.Data.Linq.Translation {
     }//method
 
     private Expression BuildListPropertyJoinExpression(TableExpression fromTable, TableExpression toTable, EntityMemberInfo refMember, TranslationContext context) {
-      var fromKeyMembers = refMember.ReferenceInfo.FromKey.ExpandedKeyMembers;
-      var toKeyMembers = refMember.ReferenceInfo.ToKey.ExpandedKeyMembers;
+      var fromKeyMembers = refMember.ReferenceInfo.FromKey.KeyMembersExpanded;
+      var toKeyMembers = refMember.ReferenceInfo.ToKey.KeyMembersExpanded;
       var clauses = new List<Expression>();
       for (int i = 0; i < fromKeyMembers.Count; i++) {
         var mFrom = fromKeyMembers[i];

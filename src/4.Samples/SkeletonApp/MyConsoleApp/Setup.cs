@@ -1,6 +1,9 @@
 ﻿using System.Configuration;
+using System.IO;
 using MyEntityModel;
 using Vita.Data;
+using Microsoft.Extensions.Configuration;
+using System.Reflection;
 
 /*
 Sample entity app setup and data access code. Do not include this class into entity model library, where you define
@@ -20,11 +23,21 @@ namespace MyConsoleApp
 
     public static void Init()
     {
+      var appConfig = new ConfigurationBuilder().AddJsonFile("appSettings.json").Build();
+
       // MyDatabase must exist on local server; or adjust conn string
-      var connString = ConfigurationManager.AppSettings["ConnString"]; 
+      var connString = appConfig["SQLiteConnectionString"];
+
+      // adjust conn string
+      if (connString.Contains("{bin}")) {
+        var asmPath = Assembly.GetExecutingAssembly().Location;
+        var binFolder = Path.GetDirectoryName(asmPath);
+        connString = connString.Replace("{bin}", binFolder);
+      }
+
       // Change to the driver for your server type if not MS SQL Server
-      var driver = new Vita.Data.MsSql.MsSqlDbDriver();
-      _dbSettings = new DbSettings(driver, Vita.Data.MsSql.MsSqlDbDriver.DefaultMsSqlDbOptions, connString);
+      var driver = new Vita.Data.SQLite.SQLiteDbDriver();
+      _dbSettings = new DbSettings(driver, Vita.Data.SQLite.SQLiteDbDriver.DefaultSQLiteDbOptions, connString);
       App = new MyEntityApp();
       App.LogPath = "_operationLog.log"; // in bin folder
       App.ConnectTo(_dbSettings);

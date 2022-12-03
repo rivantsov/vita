@@ -64,7 +64,7 @@ namespace Vita.Entities.Model.Construction {
       ApplyAttributesProcessRefsLists();
 
       // ExpandEntityKeyMembers();
-      var keyBuilder = new EntityKeyMembersBuilder(this);
+      var keyBuilder = new EntityKeyBuilder(this);
       keyBuilder.BuildKeyMembers();
 
       Model.ModelState = EntityModelState.Constructed;

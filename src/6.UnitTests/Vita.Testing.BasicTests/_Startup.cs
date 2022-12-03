@@ -31,9 +31,7 @@ namespace Vita.Testing.BasicTests {
     public static void InitAppConfig() {
       if(AppConfig != null)
         return;
-      var builder = new ConfigurationBuilder();
-      builder.SetBasePath(Directory.GetCurrentDirectory()).AddJsonFile("appSettings.json");
-      AppConfig = builder.Build(); 
+      AppConfig = new ConfigurationBuilder().AddJsonFile("appSettings.json").Build();
     }
 
     //Prepares for full run with a specified server

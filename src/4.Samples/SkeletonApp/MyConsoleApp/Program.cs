@@ -6,7 +6,6 @@ using System.Text;
 using System.Threading.Tasks;
 using MyEntityModel;
 using Vita.Data;
-using Vita.Data.MsSql;
 using Vita.Entities;
 
 namespace MyConsoleApp

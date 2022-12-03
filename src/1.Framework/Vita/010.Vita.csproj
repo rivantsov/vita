@@ -14,11 +14,11 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <Compile Remove="4.Internals\Entities.Model\Construction\EntityModelBuilder_Keys.cs" />
+      <Compile Remove="4.Internals\Entities.Model\Construction\EntityModelBuilder_Keys_Disabled.cs" />
     </ItemGroup>
 
     <ItemGroup>
-      <None Include="4.Internals\Entities.Model\Construction\EntityModelBuilder_Keys.cs" />
+      <None Include="4.Internals\Entities.Model\Construction\EntityModelBuilder_Keys_Disabled.cs" />
     </ItemGroup>
     
     <ItemGroup>

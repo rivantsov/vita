@@ -44,7 +44,6 @@ namespace Vita.Entities.Model.Construction {
 
       BuildKeyNamesFilters();
 
-      BuildMembersUsedByKeyLists();
     } // method
 
     // Filling initial key.KeyMembers lists; either from OwnerMember (single KeyMember), or from KeySpec
@@ -140,9 +139,7 @@ namespace Vita.Entities.Model.Construction {
         workList = workList.Where(key => key.MembersStatus < KeyMembersStatus.Expanded).ToList();
       }
       // if we are not done after multiple iterations, it is an error - fatal error, something is broken in this algorithm
-      var keyListStr = string.Join("\r\n", workList.Select(km => km.GetKeyRefForError()));
-      _log.LogError(
-        @$"FATAL: Key builder process could not complete, remaining key count: {workList.Count}. Keys:\r\n {keyListStr}");
+      ReportLoopFailed(workList);
       return false;
     }
 
@@ -350,21 +347,18 @@ namespace Vita.Entities.Model.Construction {
       return new EntityFilterTemplate() { Template = template, Members = members };
     }
 
-    private void BuildMembersUsedByKeyLists() {
-      foreach(var key in _allKeys) {
-        foreach (var km in key.KeyMembers)
-          AddUsedByKey(km.Member, key);
-        foreach (var km in key.KeyMembersExpanded)
-          AddUsedByKey(km.Member, key);
+    private void ReportLoopFailed(IList<EntityKeyInfo> workList) {
+      var keyListStr = string.Join("\r\n", workList.Select(km => km.GetKeyRefForError()));
+      _log.LogError(
+        @$"FATAL: Key builder process could not complete, remaining key count: {workList.Count}. Keys:\r\n {keyListStr}");
+      var notFound = workList.SelectMany(
+           key => key.KeyMembers.Where(km => km.Member == null).Select(km => km.MemberName)
+           ).ToList();
+      var notFoundStr = string.Join("\r\n  ", notFound);
+      if (notFound.Count > 0) {
+        _log.LogError($"The following properties/members could not be found:\r\n {notFoundStr}");
       }
     }
-
-    private void AddUsedByKey(EntityMemberInfo member, EntityKeyInfo key) {
-      if (member.UsedByKeys.Contains(key))
-        return;
-      member.UsedByKeys.Add(key); 
-    }
-
 
   } //class
 }

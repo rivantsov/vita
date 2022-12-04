@@ -214,7 +214,6 @@ namespace Vita.Entities.Model {
     //  PropertyInfo for entity interfaces; FieldInfo or PropertyInfo for view entities
     public MemberInfo ClrMemberInfo; 
     public MemberInfo ClrClassMemberInfo;
-    public readonly List<EntityKeyInfo> UsedByKeys = new();
     // for FK expanded column: the owner ref member that references entity with Identity that produces this value
     public EntityMemberInfo OwnerIdSourceRefMember; 
 

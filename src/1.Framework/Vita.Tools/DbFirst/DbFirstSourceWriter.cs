@@ -155,7 +155,8 @@ using Vita.Data;  // used only in console app
       var specs = new string[key.KeyMembers.Count];
       for (int i = 0; i < key.KeyMembers.Count; i++) {
         var keyMember = key.KeyMembers[i];
-        var memberSpec = keyMember.Member.MemberName;// ?? keyMember.Member.MemberName;
+        var member = keyMember.Member;
+        var memberSpec = member.ColumnName ?? member.MemberName;
         if (keyMember.Desc)
           memberSpec += ":DESC";
         specs[i] = memberSpec;
@@ -205,10 +206,7 @@ using Vita.Data;  // used only in console app
             attrList.Add("CascadeDelete");
           break; 
         case EntityMemberKind.EntityList:
-          // check if we have two or more lists of the same type - then we need to add [ManyToOne] attr to set explicitly the property name of back reference
-          var count = member.Entity.Members.Where(m => m.DataType == member.DataType).Count();
-          if (count > 1)
-            attrList.Add(Util.SafeFormat("OneToMany(\"{0}\")", member.ChildListInfo.ParentRefMember.MemberName));
+          // we do not add list props
           break; 
       }
       //Size, unlimited, nullable, identity, utc
@@ -370,20 +368,18 @@ using Vita.Data;  // used only in console app
     }
 
     private bool IsPropertyKey(EntityKeyInfo key) {
-      if (key.KeyMembers.Count != 1)  return false;
-      if(key.KeyMembers[0].Desc) return false; 
+      if (key.KeyMembers.Count != 1) 
+        return false;
+      if(key.KeyMembers[0].Desc) return 
+          false; 
       // Only Index or PK - but not ForeignKey; FK is hidden key, without attribute
       bool isIndexOrPk = key.KeyType.IsSet(KeyType.Index | KeyType.PrimaryKey);
       if (!isIndexOrPk)
         return false; 
       //if it is a key on fk column that is NOT explicitly exposed as property
-      if (key.KeyMembers.Any(km => km.Member.Flags.IsSet(EntityMemberFlags.ForeignKey)))
-        return false; 
+      //if (key.KeyMembers.Any(km => km.Member.Flags.IsSet(EntityMemberFlags.ForeignKey)))
+      //  return false; 
       return true; 
-    }
-
-    private bool CanBeIdentity(Type type) {
-      return type == typeof(int) || type == typeof(uint) || type == typeof(long) || type == typeof(ulong);
     }
 
     private string GetKeyAttribute(EntityKeyInfo key, bool onProperty) {
@@ -394,7 +390,7 @@ using Vita.Data;  // used only in console app
       if(key.ParsedFilterTemplate != null)
         args.Add("Filter = " + DQuote(key.ParsedFilterTemplate.Template.OriginalTemplate));
       if(key.IncludeMembers.Count > 0) {
-        var sInc = string.Join(",", key.IncludeMembers.Select(m => m.MemberName));
+        var sInc = string.Join(",", key.IncludeMembers.Select(m => m.ColumnName));
         args.Add("IncludeMembers = " + DQuote(sInc));
       }
       if(key.KeyType.IsSet(KeyType.PrimaryKey) && key.KeyType.IsSet(KeyType.Clustered))

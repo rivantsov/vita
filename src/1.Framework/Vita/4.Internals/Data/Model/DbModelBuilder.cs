@@ -399,7 +399,7 @@ namespace Vita.Data.Model {
       }
       // construct the name
       var tbl = dbKey.Table;
-      var prefix = Entities.Model.Construction.EntityModelBuilderHelper.GetKeyNamePrefix(dbKey.KeyType);
+      var prefix = Entities.Model.Construction.EntityModelBuilderExtensions.GetKeyNamePrefix(dbKey.KeyType);
       if(dbKey.KeyType.IsSet(KeyType.PrimaryKey)) {
         dbKey.Name = prefix + tbl.TableName; // PK_Book
       } else if(dbKey.KeyType.IsSet(KeyType.ForeignKey)) {

@@ -216,18 +216,24 @@ namespace Vita.Data.Runtime {
     // called only non-batch mode
     public bool CheckReferencesNewIdentity(EntityRecord rec, SqlColumnValuePlaceHolder cph, out string idParamName) {
       idParamName = null;
-      if(!ReferencesNewIdentity(rec, cph.Column, out EntityRecord targetRec))
+      if (!cph.Column.Flags.IsSet(DbColumnFlags.IdentityForeignKey))
+        return false;
+      var targetRec = GetTargetIdentityRecord(rec, cph.Column);
+      if (targetRec == null)
         return false;
       var targetCmdData = targetRec.DbCommandData; 
-      Util.Check(targetCmdData != null, "Fatal error: the target record of FK column {0} does not have {1} field set. " + 
-             "Fault in record sequencing.",  cph.Column.ColumnName, nameof(EntityRecord.DbCommandData));
+      if(targetCmdData == null) {
+        var msg = $"Fatal error: the target record of FK column {cph.Column.ColumnName} does not have " +
+             $"  {nameof(EntityRecord.DbCommandData)} field set. Fault in record sequencing.";
+        Util.Check(false, msg); // to avoid formatting string if not needed
+      }
       var idPrmInfo = targetCmdData.OutputParameters.First(op => op.Column.Flags.IsSet(DbColumnFlags.Identity));
       Util.Check(idPrmInfo != null, "Fatal error: the identity parameter is not found in referenced target record. " + 
                                         "Fault in record sequencing.");
 
       // Batch mode: check if identity parameter belongs to the same data command - the case for very large batches that contaim multiple 
-      // DbCommands (each containing mltiple update SQLs). It may happen that parameter returning identity is in different (prior)
-      // DbCommand. Note: parameters cannot be reused accross DB commands 
+      // DbCommands (each containing multiple update SQLs). It may happen that parameter returning identity is in different (prior)
+      // DbCommand. Note: parameters cannot be reused across DB commands 
       if(targetRec.DbCommandData.DbCommand == this._dbCommand) {
         // use the same parameter
         idParamName = idPrmInfo.Parameter.ParameterName;
@@ -241,20 +247,18 @@ namespace Vita.Data.Runtime {
       return true; 
     }
 
-    private static bool ReferencesNewIdentity(EntityRecord rec, DbColumnInfo fkCol, out EntityRecord targetRecord) {
-      targetRecord = null;
-      if(!rec.EntityInfo.Flags.IsSet(EntityFlags.ReferencesIdentity))
-        return false;
-      if(!fkCol.Flags.IsSet(DbColumnFlags.IdentityForeignKey))
-        return false;
-      var targetRef = rec.GetRawValue(fkCol.Member.ForeignKeyOwner);
+    private static EntityRecord GetTargetIdentityRecord(EntityRecord rec, DbColumnInfo fkCol) {
+      // get ref member that targets entity that produces the identity
+      var refMemberWithId = fkCol.Member.OwnerIdSourceRefMember;
+      if(refMemberWithId == null)
+        Util.Check(false, $"FATAL: OwnerRef for identity fk column {fkCol.ColumnName} not found, table: {fkCol.Table.TableName}.");
+      var targetRef = rec.GetRawValue(refMemberWithId);
       if(targetRef == null || targetRef == DBNull.Value)
-        return false;
+        return null;
       var targetRec = (EntityRecord)targetRef;
       if(targetRec.Status != EntityStatus.New)
-        return false;
-      targetRecord = targetRec;
-      return true;
+        return null;
+      return targetRec;
     }
 
 

@@ -214,6 +214,10 @@ namespace Vita.Entities.Model {
     //  PropertyInfo for entity interfaces; FieldInfo or PropertyInfo for view entities
     public MemberInfo ClrMemberInfo; 
     public MemberInfo ClrClassMemberInfo;
+    public readonly List<EntityKeyInfo> UsedByKeys = new();
+    // for FK expanded column: the owner ref member that references entity with Identity that produces this value
+    public EntityMemberInfo OwnerIdSourceRefMember; 
+
 
     public string MemberName { get; set; }
     // Member data type - type of interface property
@@ -251,8 +255,6 @@ namespace Vita.Entities.Model {
     //Meta-data for various kinds
     //For member Kind = EntityRef: 
     public EntityReferenceInfo ReferenceInfo;
-    //For member Kind = ForeignKey 
-    public EntityMemberInfo ForeignKeyOwner; //Entity ref member that owns this fk member
     //For member Kind = EntityList
     public ChildEntityListInfo ChildListInfo;
     //Permission granted by reference
@@ -264,6 +266,11 @@ namespace Vita.Entities.Model {
     public object DeniedValue;
 
     public EntityMemberInfo[] DependentMembers; //array of (computed) members that depend on this member
+    
+    // Deprecated! member may be in multiple FKs
+    //For member Kind = ForeignKey 
+    //public EntityMemberInfo ForeignKeyOwner; //Entity ref member that owns this fk member
+
 
     public EntityMemberInfo(EntityInfo entity, EntityMemberKind kind, PropertyInfo property) :
           this(entity, kind, property.Name, property.PropertyType) {
@@ -307,6 +314,7 @@ namespace Vita.Entities.Model {
     public string FullName {
       get { return $"{Entity.Name}.{MemberName}"; }
     }
+
   }//class
 
   // Container member+order info, for ordered column lists in attributes: Index("LastName:desc,FirstName:asc"); 

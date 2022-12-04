@@ -77,6 +77,7 @@ namespace Vita.Entities.Model{
     AsIs = 1 << 19,
 
     FromOneToOneRef = 1 << 20,
+    IdentityForeignKey = 1 << 21,
   }
 
   // extended version of DbComputedKind

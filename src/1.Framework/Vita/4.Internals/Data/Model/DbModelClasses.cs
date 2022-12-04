@@ -191,9 +191,14 @@ namespace Vita.Data.Model {
         Flags |= DbColumnFlags.Identity | DbColumnFlags.NoUpdate | DbColumnFlags.NoInsert;
       if (member.Flags.IsSet(EntityMemberFlags.ForeignKey)) {
         Flags |= DbColumnFlags.ForeignKey;
-        if (member.ForeignKeyOwner.ReferenceInfo.ToKey.Entity.Flags.IsSet(EntityFlags.HasIdentity))
+        if(member.Flags.IsSet( EntityMemberFlags.IdentityForeignKey)) {
           Flags |= DbColumnFlags.IdentityForeignKey;
+          // find Id ref member
+          // var refMember = member.Entity.RefMembers     .Where(m => m.ReferenceInfo.FromKey.KeyMembersExpanded.Contains(member)
+            
+        }
       }
+      
       if (member.Flags.IsSet(EntityMemberFlags.RowVersion))
         Flags |= DbColumnFlags.RowVersion | DbColumnFlags.NoUpdate | DbColumnFlags.NoInsert;
       if (member.Flags.IsSet(EntityMemberFlags.NoDbInsert))

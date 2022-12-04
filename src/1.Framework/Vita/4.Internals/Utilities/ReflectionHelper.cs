@@ -284,6 +284,12 @@ namespace Vita.Entities.Utilities {
       return typeof(Nullable<>).MakeGenericType(valueType);
     }
 
+    public static Type UnwrapNullable(this Type type) {
+      var unwrapped = Nullable.GetUnderlyingType(type);
+      if (unwrapped != null)
+        return unwrapped;
+      return type; 
+    }
 
     /*
     public static Type GetValueTypeFromNullable(this Type nullableValueType) {

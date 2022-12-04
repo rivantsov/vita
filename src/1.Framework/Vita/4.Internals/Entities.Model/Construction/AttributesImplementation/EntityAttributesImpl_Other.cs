@@ -132,7 +132,7 @@ namespace Vita.Entities {
       if(HostEntity.DefaultOrderBy != null) {
         builder.Log.LogError($"More than one OrderBy attribute in entity {HostRef}.");
       }
-      if(!EntityModelBuilderHelper.TryParseKeySpec(HostEntity, this.OrderByList, builder.Log, out HostEntity.DefaultOrderBy,
+      if(!EntityModelBuilderExtensions.TryParseKeySpec(HostEntity, this.OrderByList, builder.Log, out HostEntity.DefaultOrderBy,
         ordered: true, specHolder: HostEntity))
         return;
       //Check that they are real cols
@@ -147,7 +147,7 @@ namespace Vita.Entities {
     public override void ApplyOnMember(EntityModelBuilder builder) {
       var entity = HostEntity;
       var listInfo = HostMember.ChildListInfo;
-      EntityModelBuilderHelper.TryParseKeySpec(HostMember.ChildListInfo.TargetEntity, this.OrderByList, builder.Log,
+      EntityModelBuilderExtensions.TryParseKeySpec(HostMember.ChildListInfo.TargetEntity, this.OrderByList, builder.Log,
            out listInfo.OrderBy, ordered: true, specHolder: HostEntity);
     }
 

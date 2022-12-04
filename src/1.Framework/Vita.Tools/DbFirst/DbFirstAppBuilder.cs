@@ -213,12 +213,15 @@ namespace Vita.Tools.DbFirst {
             }
             //carefully add included members
             var incMembers = dbKey.IncludeColumns.Select(c => c.Member).ToList();
+            entKey.IncludeMembers.AddRange(incMembers); 
+/*
             foreach(var m in incMembers) {
               if(m.Flags.IsSet(EntityMemberFlags.ForeignKey))
                 entKey.IncludeMembers.Add(m.ForeignKeyOwner);
               else
                 entKey.IncludeMembers.Add(m); 
             }
+*/
           }
         }
         if (hasClusteredIndex)
@@ -243,7 +246,9 @@ namespace Vita.Tools.DbFirst {
           foreach (var keyMember in key.KeyMembersExpanded) {
             var member = keyMember.Member; 
             if (member.Flags.IsSet(EntityMemberFlags.ForeignKey)) {
-              // It is foreign dbKey member; replace it with refMember 
+              // It is foreign dbKey member; replace it with refMember
+              // Note that FK column might be in multiple FKeys; so you can include multiple  find with maximum columns included
+
               var refMember = member.ForeignKeyOwner;
               var allFkKeyMembers = member.ForeignKeyOwner.ReferenceInfo.FromKey.KeyMembersExpanded;
               bool canUseRefMember = ContainsAll(key.KeyMembersExpanded, allFkKeyMembers);
@@ -310,7 +315,6 @@ namespace Vita.Tools.DbFirst {
           foreach(var fromKeyCol in fromDbKey.KeyColumns) {
             fromEntKey.KeyMembersExpanded.Add(new EntityKeyMemberInfo(fromKeyCol.Column.Member, fromKeyCol.Desc)); 
             fromKeyCol.Column.Member.Flags |= EntityMemberFlags.ForeignKey;
-            fromKeyCol.Column.Member.ForeignKeyOwner = refMember;
             if (fromKeyCol.Column.Member.Flags.IsSet(EntityMemberFlags.Nullable))
               refMember.Flags |= EntityMemberFlags.Nullable; 
           }

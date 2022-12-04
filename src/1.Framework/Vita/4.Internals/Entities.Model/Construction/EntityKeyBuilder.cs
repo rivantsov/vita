@@ -42,9 +42,9 @@ namespace Vita.Entities.Model.Construction {
       // Step 3 - fill and expand Include members in Index keys
       BuildExpandTheIncludeMembers();
 
-      BuildKeyNamesFilters(); 
+      BuildKeyNamesFilters();
 
-
+      BuildMembersUsedByKeyLists();
     } // method
 
     // Filling initial key.KeyMembers lists; either from OwnerMember (single KeyMember), or from KeySpec
@@ -124,7 +124,7 @@ namespace Vita.Entities.Model.Construction {
 
 
     private bool RunMembersAssignExpandLoop() {
-      var repeatCount = 5;
+      var repeatCount = 20;
       var workList = _allKeys.Where(key => key.MembersStatus < KeyMembersStatus.Expanded).ToList();
       // run loop several times;
       // keys are dependent on each other, so they sometimes cannot be completed/expanded in one pass
@@ -140,9 +140,9 @@ namespace Vita.Entities.Model.Construction {
         workList = workList.Where(key => key.MembersStatus < KeyMembersStatus.Expanded).ToList();
       }
       // if we are not done after multiple iterations, it is an error - fatal error, something is broken in this algorithm
-      var keyListStr = string.Join(",", workList.Select(km => km.GetKeyRefForError()));
+      var keyListStr = string.Join("\r\n", workList.Select(km => km.GetKeyRefForError()));
       _log.LogError(
-        @$"FATAL: Key builder process could not complete, remaining key count: {workList.Count}. Keys: {keyListStr}");
+        @$"FATAL: Key builder process could not complete, remaining key count: {workList.Count}. Keys:\r\n {keyListStr}");
       return false;
     }
 
@@ -234,24 +234,24 @@ namespace Vita.Entities.Model.Construction {
       for (var i = 0; i < toKeyMembers.Count; i++) {
         var targetMember = toKeyMembers[i].Member;
         string fkMemberName = (fkNames == null) ? refMember.MemberName + "_" + targetMember.MemberName : fkMemberName = fkNames[i];
-        var memberType = targetMember.DataType;
+        var targetMemberType = targetMember.DataType;
         //If reference is nullable, then force member to be nullable too - and flip c# type to nullable
-        if (nullable && (memberType.IsValueType || memberType.IsEnum)) {
+        if (nullable && targetMemberType.IsValueType) {
           //CLR type is not nullable - flip it to nullable
-          memberType = ReflectionHelper.GetNullable(memberType);
+          targetMemberType = ReflectionHelper.GetNullable(targetMemberType);
         }
         var fkMember = key.Entity.FindMemberOrColumn(fkMemberName);
         // if member exists, it is declared explicitly, or maybe it is part of another FK
         if (fkMember != null) {
           // check it matches the type
-          if (fkMember.DataType != memberType) {
-            _log.LogError($"Property {propRef}: underlying foreign key column '{fkMemberName}' already exists - " +
-              $"it is declared explicitly (or is a part of another key) and its type {fkMember.DataType} does not match foreign key column type {memberType.Name}.");
+          if (fkMember.DataType.UnwrapNullable() != targetMemberType.UnwrapNullable()) {
+            _log.LogError($"Property {propRef} useed by member '{fkMemberName}' " +
+              $" type {fkMember.DataType} does not match target key column type {targetMember.FullName}.");
             return false;
           }
         } else {
           //create new column member
-          fkMember = new EntityMemberInfo(key.Entity, EntityMemberKind.Column, fkMemberName, memberType);
+          fkMember = new EntityMemberInfo(key.Entity, EntityMemberKind.Column, fkMemberName, targetMemberType);
           fkMember.ExplicitDbTypeSpec = targetMember.ExplicitDbTypeSpec;
         }
         fkMember.Flags |= EntityMemberFlags.ForeignKey;
@@ -260,11 +260,16 @@ namespace Vita.Entities.Model.Construction {
         if (targetMember.Flags.IsSet(EntityMemberFlags.AutoValue)) {
           fkMember.Flags |= EntityMemberFlags.AutoValue;
         }
-        fkMember.ForeignKeyOwner = refMember;
         if (nullable)
           fkMember.Flags |= EntityMemberFlags.Nullable;
         if (isPk)
           fkMember.Flags |= EntityMemberFlags.PrimaryKey;
+
+        if (refInfo.ToKey.KeyMembers.Any(km => km.Member.Flags.IsSet(EntityMemberFlags.Identity))) {
+          fkMember.Flags |= EntityMemberFlags.IdentityForeignKey;
+          fkMember.OwnerIdSourceRefMember = refMember; 
+
+        }
         //copy old names
         if (key.OwnerMember.OldNames != null)
           fkMember.OldNames = key.OwnerMember.OldNames.Select(n => n + "_" + targetMember.MemberName).ToArray();
@@ -344,6 +349,22 @@ namespace Vita.Entities.Model.Construction {
       }
       return new EntityFilterTemplate() { Template = template, Members = members };
     }
+
+    private void BuildMembersUsedByKeyLists() {
+      foreach(var key in _allKeys) {
+        foreach (var km in key.KeyMembers)
+          AddUsedByKey(km.Member, key);
+        foreach (var km in key.KeyMembersExpanded)
+          AddUsedByKey(km.Member, key);
+      }
+    }
+
+    private void AddUsedByKey(EntityMemberInfo member, EntityKeyInfo key) {
+      if (member.UsedByKeys.Contains(key))
+        return;
+      member.UsedByKeys.Add(key); 
+    }
+
 
   } //class
 }

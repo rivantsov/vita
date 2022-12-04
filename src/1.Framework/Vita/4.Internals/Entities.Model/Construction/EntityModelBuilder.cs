@@ -307,10 +307,10 @@ namespace Vita.Entities.Model.Construction {
             continue;
           }
           //check no nullable members
-          var hasNullMembers = pk.KeyMembers.Select(km => km.Member)
-                                 .Any(m => m.Flags.IsSet(EntityMemberFlags.Nullable));
-          if (hasNullMembers)
-            Log.LogError($"Entity {entity.Name}: primary key may not contain nullable members.");
+          var allNullMembers = pk.KeyMembers.Select(km => km.Member)
+                                 .All(m => m.Flags.IsSet(EntityMemberFlags.Nullable));
+          if (allNullMembers)
+            Log.LogError($"Entity {entity.Name}: primary key may not contain all nullable members.");
         }
 
         //Clustered indexes

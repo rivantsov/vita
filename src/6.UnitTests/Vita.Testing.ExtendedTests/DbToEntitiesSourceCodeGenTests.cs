@@ -47,7 +47,6 @@ namespace Vita.Testing.ExtendedTests {
 ";
       var sqliteForceTypes = "CreatedOn:System.DateTime,CreatedIn:System.Guid,UpdatedIn:System.Guid";
       var forceTypes = Startup.ServerType == DbServerType.SQLite? sqliteForceTypes : string.Empty;
-      var driver = Startup.Driver;
       var xml = xmlConfigTemplate
         .Replace("@Provider@", Startup.ServerType.ToString())
         .Replace("@ConnString@", Startup.CurrentConfig.ConnectionString)

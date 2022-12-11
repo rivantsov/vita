@@ -72,7 +72,8 @@ namespace Vita.Tools.DbFirst {
         schemaMessage = "Schema verification completed, schemas are identical.";
       } else {
         HasErrors = true; 
-        schemaMessage = Util.SafeFormat("Schema verification: detected {0} differences (schema update actions).\r\n",
+        schemaMessage = Util.SafeFormat("Schema verification: detected {0} differences - \r\n" +
+           " schema update actions that need to be applied to the database to make it match entity model. ",
                   nonProcActions.Count);
         schemaMessage += "Schema update actions:\r\n  ";
         schemaMessage += string.Join("\r\n  ", nonProcActions);
@@ -102,11 +103,14 @@ Note: Non-empty update action list represents the delta between the original dat
 
     public static List<DbUpgradeScript> CompareDatabaseSchemas(DbFirstConfig config, Type modelType) {
       var entApp = Activator.CreateInstance(modelType) as EntityApp;
-      entApp.Init(); 
+      entApp.Init();
+      //  We ignore stored procs 
       // important - do not use DbOptions.AutoIndexForeignKeys - which is recommended for MS SQL, but is not helpful here.
       // This will create a bunch of extra indexes on FKs in entities schema and result in extra differences with original schema.
-      //  We ignore stored procs 
-      var dbOptions = config.Driver.GetDefaultOptions() & ~DbOptions.AutoIndexForeignKeys;
+      var dbOptions = config.Driver.GetDefaultOptions();
+      // 12/10/2022 changing my mind on this
+      //dbOptions = dbOptions & ~DbOptions.AutoIndexForeignKeys;
+      
       var dbSettings = new DbSettings(config.Driver, dbOptions, config.ConnectionString, 
                                       upgradeMode: DbUpgradeMode.Always,  
                                       upgradeOptions : DbUpgradeOptions.UpdateTables | DbUpgradeOptions.UpdateIndexes

@@ -164,6 +164,8 @@ namespace Vita.Data.Driver {
     }
 
     protected virtual void LoadTableConstraints() {
+      var foreignKeysAutoIndexed = this.Driver.Supports(DbFeatures.ForeignKeysAutoIndexed);
+
       var data = GetTableConstraints();
       foreach (InfoRow row in data.Rows) {
         var schema = row.GetAsString("TABLE_SCHEMA");
@@ -176,7 +178,11 @@ namespace Vita.Data.Driver {
         KeyType keyType;
         switch(constrTypeStr.Trim()) {
           case "PRIMARY KEY": keyType = KeyType.PrimaryKey;       break;
-          case "FOREIGN KEY": keyType = KeyType.ForeignKey;       break;
+          case "FOREIGN KEY": 
+            keyType = KeyType.ForeignKey;
+            if (foreignKeysAutoIndexed)
+              keyType |= KeyType.Index;
+            break;
           default: continue; //skip this constraint
         }
         var dbKey = new DbKeyInfo(constrName, table, keyType);

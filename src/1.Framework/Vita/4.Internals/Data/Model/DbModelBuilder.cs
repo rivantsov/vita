@@ -224,6 +224,7 @@ namespace Vita.Data.Model {
     private void CreateTableKeys() {
       var supportsClustedIndex = _driver.Supports(DbFeatures.ClusteredIndexes);
       var supportsIndexedViews = _driver.Supports(DbFeatures.MaterializedViews);
+      var foreignKeysAutoIndexed = _driver.Supports(DbFeatures.ForeignKeysAutoIndexed);
 
       foreach (var table in _dbModel.Tables) {
         if (table.Kind == EntityKind.View && !supportsIndexedViews)
@@ -248,6 +249,9 @@ namespace Vita.Data.Model {
           var keyType = entityKey.KeyType;
           if (!supportsClustedIndex)
             keyType &= ~KeyType.Clustered;
+          if (foreignKeysAutoIndexed && keyType.IsSet(KeyType.ForeignKey))
+            keyType |= KeyType.Index;
+          // create db key
           var dbKey = new DbKeyInfo(entityKey.Name, table, keyType, entityKey);
           dbKey.KeyColumns.AddRange(keyCols);
           dbKey.IncludeColumns.AddRange(inclCols);

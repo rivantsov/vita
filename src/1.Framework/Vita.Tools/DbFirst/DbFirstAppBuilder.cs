@@ -109,11 +109,12 @@ namespace Vita.Tools.DbFirst {
 
         foreach (var dbKey in table.Keys) {
           var isFkIndex = dbKey.KeyType.IsSet(KeyType.ForeignKey) && dbKey.KeyType.IsSet(KeyType.Index);
-          // NOTE: do not put explicit index on FK in entity model; it is added automatically!
-          // TODO: not sure if it really happens that FK key is index at the same time
+          // NOTE: do not put explicit index on FK in entity model; it is added automatically (MySql)
+          // so we drop Index flag 
+          var keyType = dbKey.KeyType;
           if (fkAutoIndexed && isFkIndex)
-            continue;
-          var entKey = dbKey.EntityKey = new EntityKeyInfo(table.Entity, dbKey.KeyType); //added automatically to entity.Keys
+            keyType &= ~KeyType.Index;
+          var entKey = dbKey.EntityKey = new EntityKeyInfo(table.Entity, keyType); //added automatically to entity.Keys
           entKey.Name = dbKey.Name;
           foreach (var keyCol in dbKey.KeyColumns) {
             entKey.KeyMembersExpanded.Add(new EntityKeyMemberInfo(keyCol.Column.Member, keyCol.Desc));
@@ -154,6 +155,7 @@ namespace Vita.Tools.DbFirst {
           var targetEnt = constr.ToKey.Table.Entity;
           var fromDbKey = constr.FromKey;
           var fromEntKey = fromDbKey.EntityKey; 
+          
           string memberName = GetRefMemberName(constr);
           var refMember = new EntityMemberInfo(ent, EntityMemberKind.EntityRef, memberName, targetEnt.EntityType);
           fromEntKey.KeyMembers.Add(new EntityKeyMemberInfo(refMember));
@@ -166,6 +168,11 @@ namespace Vita.Tools.DbFirst {
               refMember.Flags |= EntityMemberFlags.Nullable;
           }
           refMember.ReferenceInfo = new EntityReferenceInfo(refMember, fromEntKey, targetEnt.PrimaryKey);
+          // assign this ref member as owner to fromKey and to indexes with matching columns
+          fromEntKey.OwnerMember = refMember;
+          foreach (var dbkey in table.Keys)
+            if (ColumnsMatch(fromDbKey, dbkey))
+              dbkey.EntityKey.OwnerMember = refMember;
           // Add lists on parent entities only for ref members that have indexes
           var memberIndexKey = refMember.Entity.Keys.FirstOrDefault(k => k.OwnerMember == refMember && k.KeyType.IsSet(KeyType.Index));
           if (addListMembers && memberIndexKey != null) {
@@ -182,6 +189,15 @@ namespace Vita.Tools.DbFirst {
           }
         }
       }//foreach table
+    }
+
+    private bool ColumnsMatch(DbKeyInfo key1, DbKeyInfo key2) {
+      if (key1.KeyColumns.Count != key2.KeyColumns.Count)
+        return false;
+      for (int i = 0; i < key1.KeyColumns.Count; i++)
+        if (key1.KeyColumns[i].Column != key2.KeyColumns[i].Column)
+          return false;
+      return true; 
     }
 
 

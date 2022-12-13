@@ -114,9 +114,14 @@ namespace Vita.Data.Postgres {
       switch(ph) {
         case SqlListParamPlaceHolder lph:
           // For array parameters PG requires setting NpgsqlDbType to combination of Array and pg-dbType for element
-          var pgDbType = (NpgsqlDbType)lph.ElementTypeDef.ProviderDbType; 
+          // also, DateTime values got assigned dbType -> TimestampTZ (timestamp with timezone)
+          var pgDbType = (NpgsqlDbType)lph.TypeDef.ProviderDbType; 
           prm.NpgsqlDbType = NpgsqlDbType.Array | pgDbType;
-          break; 
+          break;
+
+        case SqlParamPlaceHolder pph:
+          //prm.NpgsqlDbType = (NpgsqlDbType)pph.TypeDef.ProviderDbType;
+          break;
       }
       return prm; 
     }

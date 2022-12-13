@@ -128,10 +128,10 @@ namespace Vita.Data.Runtime {
       switch(placeHolder) {
         case SqlColumnValuePlaceHolder colPh:
           return FormatColumnValuePlaceHolder(colPh, (EntityRecord)arg);
-        case SqlLinqParamPlaceHolder paramPh:
-          return FormatLinqPlaceHolder(paramPh, arg);
         case SqlListParamPlaceHolder listPh:
           return FormatListPlaceHolder(listPh, arg);
+        case SqlParamPlaceHolder paramPh:
+          return FormatLinqPlaceHolder(paramPh, arg);
         default:
           Util.Throw($"Unexpected SQL placeholder type {placeHolder.GetType()}");
           return null; 
@@ -162,7 +162,7 @@ namespace Vita.Data.Runtime {
         return AddParameter(cph, colValue, rec).ParameterName;
     }
 
-    private string FormatLinqPlaceHolder(SqlLinqParamPlaceHolder ph, object arg) {
+    private string FormatLinqPlaceHolder(SqlParamPlaceHolder ph, object arg) {
       var value = ph.ValueReader((object[])arg);
       var dbValue = ph.ValueToDbValue(value) ?? DBNull.Value; //move it into converters? currently no-conv does not do this
       var useLiteral = ShouldUseLiteral(dbValue);
@@ -177,7 +177,7 @@ namespace Vita.Data.Runtime {
 
     private string FormatListPlaceHolder(SqlListParamPlaceHolder ph, object arg) {
       // read value from locals (linq); for DeleteMany: read list of IDs from list of records
-      var list = ph.ListValueReader((object[])arg);
+      var list = ph.ValueReader((object[])arg);
       // always use parameter, unless option is not available
       var useLiteral = !_driver.Supports(DbFeatures.ArrayParameters) || _genMode == SqlGenMode.NoParameters;
       if(useLiteral) {
@@ -208,7 +208,7 @@ namespace Vita.Data.Runtime {
       return prm; 
     }
 
-    private IDataParameter AddParameter(SqlPlaceHolder ph, object value) {
+    private IDataParameter AddParameter(SqlParamPlaceHolder ph, object value) {
       return _sqlDialect.AddDbParameter(_dbCommand, ph, value); 
     }
 

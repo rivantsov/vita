@@ -20,6 +20,8 @@ using System.Threading;
 namespace Vita.Data.Postgres {
 
   public class PgDbDriver : DbDriver {
+    public static bool EnableLegacyTimestampBehavior = true;
+
     public const DbOptions DefaultPgDbOptions = DbOptions.UseRefIntegrity | DbOptions.AutoIndexForeignKeys; 
     public const DbFeatures PgFeatures =
       DbFeatures.Schemas | DbFeatures.StoredProcedures | DbFeatures.OutputParameters | DbFeatures.DefaultParameterValues
@@ -32,7 +34,12 @@ namespace Vita.Data.Postgres {
 
     public PgDbDriver()  : base(DbServerType.Postgres, PgFeatures) {
       base.TypeRegistry = new PgTypeRegistry(this);
-      base.SqlDialect = new PgSqlDialect(this); 
+      base.SqlDialect = new PgSqlDialect(this);
+      if (EnableLegacyTimestampBehavior) {
+        // New behavior in npgsql 6; breaks backward compatibility; opting out
+        //   https://www.npgsql.org/doc/release-notes/6.0.html#opting-out-of-the-new-timestamp-mapping-logic
+        AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
+      }
     }
 
     public override DbOptions GetDefaultOptions() {

@@ -64,7 +64,6 @@ namespace Vita.Data.Driver.TypeSystem {
     public IList<string> Aliases = new List<string>();
     public string ColumnInit;
     public ToLiteralFunc ToLiteral;
-    // Used only by Postgres, in array parameters - it requires explicit NpgDbType of elem in combination with Array flag
     public int ProviderDbType;
 
     public override string ToString() {

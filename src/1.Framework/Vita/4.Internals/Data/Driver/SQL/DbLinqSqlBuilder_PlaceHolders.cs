@@ -32,7 +32,7 @@ namespace Vita.Data.Driver {
         Util.Check(typeDef != null, "Failed to find DB type for linq parameter of type {0}", dataType);
         var dbConv = typeRegistry.GetDbValueConverter(typeDef.ColumnOutType, dataType);
         Util.Check(dbConv != null, "Failed to find converter from type {0} to type {1}", dataType, typeDef.ColumnOutType);
-        ph = new SqlLinqParamPlaceHolder(dataType, valueReader, dbConv.PropertyToColumn, typeDef.ToLiteral);
+        ph = new SqlParamPlaceHolder(dataType, typeDef, valueReader, dbConv.PropertyToColumn);
       }
       this.PlaceHolders.Add(ph);
       return ph; 

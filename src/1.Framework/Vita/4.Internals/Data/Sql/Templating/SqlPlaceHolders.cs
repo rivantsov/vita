@@ -43,30 +43,27 @@ namespace Vita.Data.Sql {
     }
   }
 
-  public class SqlLinqParamPlaceHolder : SqlPlaceHolder {
+  public class SqlParamPlaceHolder : SqlPlaceHolder {
     public Type DataType;
+    public DbTypeDef TypeDef;
     public Func<object[], object> ValueReader;
     public Func<object, object> ValueToDbValue;
 
-    public SqlLinqParamPlaceHolder(Type dataType, Func<object[], object> valueReader, Func<object, object> valueToDbValue, 
-          Func<object, string> formatLiteral)  {
+    public SqlParamPlaceHolder(Type dataType, DbTypeDef typeDef, Func<object[], object> valueReader, 
+                                    Func<object, object> valueToDbValue)  {
       DataType = dataType;
+      TypeDef = typeDef;
       ValueReader = valueReader;
       ValueToDbValue = valueToDbValue;
-      FormatLiteral = formatLiteral;
+      FormatLiteral = TypeDef.ToLiteral;
     }
   }
 
-  public class SqlListParamPlaceHolder : SqlPlaceHolder {
-    public Type ElementType;
-    public DbTypeDef ElementTypeDef; 
-    public Func<object[], object> ListValueReader;
+  public class SqlListParamPlaceHolder : SqlParamPlaceHolder {
 
     public SqlListParamPlaceHolder(Type elementType, DbTypeDef elemTypeDef, Func<object[], object> valueReader, 
-                                               Func<object, string> formatLiteral, Func<IDbDataParameter, string> formatParameter = null) {
-      ElementType = elementType;
-      ElementTypeDef = elemTypeDef;
-      ListValueReader = valueReader;
+                  Func<object, string> formatLiteral, Func<IDbDataParameter, string> formatParameter = null)
+            : base(elementType, elemTypeDef, valueReader, null) {
       base.FormatLiteral = formatLiteral;
       base.FormatParameter = formatParameter ?? (p => p.ParameterName);
     }

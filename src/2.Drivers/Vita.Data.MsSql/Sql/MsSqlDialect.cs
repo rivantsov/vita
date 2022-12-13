@@ -105,7 +105,7 @@ namespace Vita.Data.MsSql {
         switch(ph) {
           case SqlListParamPlaceHolder lph:
             lph.PreviewParameter = ConfigureListParameter; //sets up special properties of DbParameter
-            var template = GetSelectFromListParamTemplate(lph.ElementType);
+            var template = GetSelectFromListParamTemplate(lph.DataType);
             lph.FormatParameter = (prm) => string.Format(template, prm.ParameterName);
             break;
             
@@ -161,12 +161,12 @@ namespace Vita.Data.MsSql {
       var list = value as IList;
       if(list == null || list.Count == 0)
         return null; //it should null, not DbNull.Value
-      bool isEnum = lph.ElementType.IsEnum;
+      bool isEnum = lph.DataType.IsEnum;
       var records = new List<SqlDataRecord>();
       var rowMetaData = new SqlMetaData("Value", SqlDbType.Variant);
       foreach(object elem in list) {
         var rec = new SqlDataRecord(rowMetaData);
-        var v1 = isEnum ? ConvertHelper.EnumValueToInt(elem, lph.ElementType) : elem;
+        var v1 = isEnum ? ConvertHelper.EnumValueToInt(elem, lph.DataType) : elem;
         rec.SetValue(0, v1);
         records.Add(rec);
       }

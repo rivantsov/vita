@@ -128,8 +128,13 @@ namespace Vita.Entities.Model {
       FullName = Name; 
     }
 
+    public void SetCodeGenName(string name) {
+      Name = name;
+      FullName = Area.Name + "." + Name;
+    }
+
     public override string ToString() {
-      return EntityType.ToString();
+      return FullName; // EntityType.ToString();
     }
     public override int GetHashCode() {
       return Name.GetHashCode();

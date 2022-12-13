@@ -181,7 +181,6 @@ namespace BookStore {
     [Auto(AutoType.UpdatedOn), Utc]
     DateTime UpdatedOn { get; }
 
-    // we need explicit index here; indexes are auto-created on FK only if there's a list (user.Books) on other side
     [NoUpdate, Index] 
     IUser User { get; set; }
 

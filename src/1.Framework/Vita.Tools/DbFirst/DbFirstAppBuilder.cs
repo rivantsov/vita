@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
+using System.Reflection.Emit;
 
 using Vita.Entities;
 using Vita.Entities.Model;
@@ -16,8 +18,6 @@ namespace Vita.Tools.DbFirst {
   /// <summary>Reconstructs the entity model from the raw DbModel loaded from the database. 
   /// The constructed entity model may be used for generating the entity interfaces as c# source file. </summary>
   public partial class DbFirstAppBuilder {
-
-
     /*
     private Type CreateDummyEntityType(string entityTypeName) {
       var fullName = _tempNamespace + "." + entityTypeName;
@@ -27,14 +27,13 @@ namespace Vita.Tools.DbFirst {
     }
     */
 
-
     IProcessFeedback _feedback;
     DbFirstConfig _config; 
     DbSettings _dbSettings;
     DbModel _dbModel;
     EntityApp _app;
     EntityModel _entityModel;
-    IDbTypeRegistry _typeRegistry;
+    IDbTypeRegistry _typeRegistry; 
 
     public DbFirstAppBuilder(IProcessFeedback feedback) {
       _feedback = feedback; 
@@ -58,11 +57,11 @@ namespace Vita.Tools.DbFirst {
       GenerateKeys(); 
       AssignPrimaryKeys();
       GenerateReferenceMembers();
+      GenerateListMembers();
 
       SetupNonExpandedKeyMembers();
       return _app; 
     }
-
 
     private void GenerateModulesAndAreas() {
       if( _dbModel.Driver.Supports(DbFeatures.Schemas)) {
@@ -89,12 +88,11 @@ namespace Vita.Tools.DbFirst {
         var entName = GenerateEntityName(table);
         var entType = typeof(object); // CreateDummyEntityType(entName); //dummy type, just to have unique type instance
         // we add only entity types for tables; views are ignored (we do not have queries to create view definitions)
-        if (table.Kind == EntityKind.Table)
-          module.Entities.Add(entType); // register type in module
+        //if (table.Kind == EntityKind.Table) module.Entities.Add(entType); // register type in module
         // Note: we generate entity interfaces for Views, but do not register them as entities
         var entInfo = new EntityInfo(module, entType, table.Kind);
+        entInfo.SetCodeGenName(entName);
         entInfo.TableName = table.TableName;
-        entInfo.Name = entName; 
         table.Entity = entInfo; 
         _entityModel.RegisterEntity(entInfo);
         GenerateEntityMembers(table);
@@ -108,12 +106,13 @@ namespace Vita.Tools.DbFirst {
           continue; //ignore this table
 
         foreach (var dbKey in table.Keys) {
-          var isFkIndex = dbKey.KeyType.IsSet(KeyType.ForeignKey) && dbKey.KeyType.IsSet(KeyType.Index);
-          // NOTE: do not put explicit index on FK in entity model; it is added automatically (MySql)
-          // so we drop Index flag 
           var keyType = dbKey.KeyType;
-          if (fkAutoIndexed && isFkIndex)
-            keyType &= ~KeyType.Index;
+          if (fkAutoIndexed) {
+            // MySql, FKs are autoindexed: do not put explicit index on FK in entity model; so we drop Index flag 
+            var isFkIndex = dbKey.KeyType.IsSet(KeyType.ForeignKey) && dbKey.KeyType.IsSet(KeyType.Index);
+            if (isFkIndex)
+              keyType &= ~KeyType.Index;
+          }
           var entKey = dbKey.EntityKey = new EntityKeyInfo(table.Entity, keyType); //added automatically to entity.Keys
           entKey.Name = dbKey.Name;
           foreach (var keyCol in dbKey.KeyColumns) {
@@ -144,7 +143,6 @@ namespace Vita.Tools.DbFirst {
 
     // Creates ref members and foreign keys
     private void GenerateReferenceMembers() {
-      bool addListMembers = _config.Options.IsSet(DbFirstOptions.AddOneToManyLists);
       foreach (var table in _dbModel.Tables) {
         if (table.Entity == null)
           continue;
@@ -158,7 +156,9 @@ namespace Vita.Tools.DbFirst {
           
           string memberName = GetRefMemberName(constr);
           var refMember = new EntityMemberInfo(ent, EntityMemberKind.EntityRef, memberName, targetEnt.EntityType);
+          ent.RefMembers.Add(refMember);
           fromEntKey.KeyMembers.Add(new EntityKeyMemberInfo(refMember));
+
           if (constr.CascadeDelete)
             refMember.Flags |= EntityMemberFlags.CascadeDelete;
           // mark flags 
@@ -168,27 +168,23 @@ namespace Vita.Tools.DbFirst {
               refMember.Flags |= EntityMemberFlags.Nullable;
           }
           refMember.ReferenceInfo = new EntityReferenceInfo(refMember, fromEntKey, targetEnt.PrimaryKey);
-          // assign this ref member as owner to fromKey and to indexes with matching columns
-          fromEntKey.OwnerMember = refMember;
-          foreach (var dbkey in table.Keys)
-            if (ColumnsMatch(fromDbKey, dbkey))
-              dbkey.EntityKey.OwnerMember = refMember;
-          // Add lists on parent entities only for ref members that have indexes
-          var memberIndexKey = refMember.Entity.Keys.FirstOrDefault(k => k.OwnerMember == refMember && k.KeyType.IsSet(KeyType.Index));
-          if (addListMembers && memberIndexKey != null) {
-            //create List member on target entity
-            var listName = StringHelper.Pluralize(ent.Name.Substring(1)); //remove 'I' prefix and pluralize
-            listName = CheckMemberName(listName, targetEnt);
-            var listType = typeof(IList<>).MakeGenericType(ent.EntityType);
-            var listMember = new EntityMemberInfo(targetEnt, EntityMemberKind.EntityList, listName, listType);
-            var listInfo = listMember.ChildListInfo = new ChildEntityListInfo(listMember);
-            listInfo.RelationType = EntityRelationType.ManyToOne;
-            listInfo.TargetEntity = ent;
-            listInfo.ParentRefMember = refMember;
-            refMember.ReferenceInfo.TargetListMember = listMember;
-          }
+          // assign this ref member as owner to fk and indexes with matching columns
+          AssignOwnerMemberToMatchingKeys(refMember, fromDbKey);
         }
       }//foreach table
+    }
+
+    private void AssignOwnerMemberToMatchingKeys(EntityMemberInfo refMember, DbKeyInfo fkDbKey) {
+      var allTableKeys = fkDbKey.Table.Keys;
+      foreach (var dbkey in allTableKeys) {
+        if (!ColumnsMatch(fkDbKey, dbkey))
+          continue;
+        // Set owner and add it to key members
+        var entKey = dbkey.EntityKey;
+        entKey.OwnerMember = refMember;
+        entKey.KeyMembers.Clear();
+        entKey.KeyMembers.Add(new EntityKeyMemberInfo(refMember));
+      }
     }
 
     private bool ColumnsMatch(DbKeyInfo key1, DbKeyInfo key2) {
@@ -197,8 +193,32 @@ namespace Vita.Tools.DbFirst {
       for (int i = 0; i < key1.KeyColumns.Count; i++)
         if (key1.KeyColumns[i].Column != key2.KeyColumns[i].Column)
           return false;
-      return true; 
+      return true;
     }
+
+    private void GenerateListMembers() {
+      bool addLists = _config.Options.IsSet(DbFirstOptions.AddOneToManyLists);
+      if (!addLists)
+        return; 
+      foreach (var ent in _entityModel.Entities) 
+        foreach(var refMember in ent.RefMembers) {
+          var memberIndexKey = refMember.Entity.Keys.FirstOrDefault(k => k.OwnerMember == refMember && k.KeyType.IsSet(KeyType.Index));
+          if (memberIndexKey == null)
+            continue;
+        //create List member on target entity
+        var targetEnt = refMember.ReferenceInfo.ToKey.Entity;
+        var listName = StringHelper.Pluralize(ent.Name.Substring(1)); //remove 'I' prefix and pluralize
+        listName = CheckMemberName(listName, targetEnt);
+        var listType = typeof(IList<>).MakeGenericType(ent.EntityType);
+        var listMember = new EntityMemberInfo(targetEnt, EntityMemberKind.EntityList, listName, listType);
+        var listInfo = listMember.ChildListInfo = new ChildEntityListInfo(listMember);
+        listInfo.RelationType = EntityRelationType.ManyToOne;
+        listInfo.TargetEntity = ent;
+        listInfo.ParentRefMember = refMember;
+        refMember.ReferenceInfo.TargetListMember = listMember;
+      }
+    }
+  
 
 
     // When we initially created entity keys, we filled out dbKey.ExplandedMembers list - these include real FK members (ex: IBook.Publisher_Id). 
@@ -214,13 +234,6 @@ namespace Vita.Tools.DbFirst {
       }//foreach entInfo            
     }//method
 
-
-    private bool ContainsAll(IList<EntityKeyMemberInfo> list, IList<EntityKeyMemberInfo> subList) {
-      foreach(var skm in subList)
-        if(!list.Any(km => km.Member == skm.Member))
-          return false;
-      return true;
-    }
 
     private string CheckMemberName(string baseName, EntityInfo entity, string trySuffix = null) {
       var name = baseName; 

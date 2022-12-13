@@ -221,7 +221,7 @@ using Vita.Data;  // used only in console app
       if(member.Flags.IsSet(EntityMemberFlags.Identity))
         attrList.Add("Identity");
       // Keys and Indexes. If there is single-column asc index on the column, put it on property directly
-      var memberKeys = member.Entity.Keys.Where(key => IsPropertyKey(key) && key.KeyMembers[0].Member == member).ToList();
+      var memberKeys = member.Entity.Keys.Where(key => IsPropertyKey(key) && key.OwnerMember == member).ToList();
       foreach (var key in memberKeys) {
         var keyAttr = GetKeyAttribute(key, onProperty: true); 
         attrList.Add(keyAttr);

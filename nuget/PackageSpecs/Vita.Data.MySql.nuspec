@@ -17,7 +17,7 @@
          <dependency id="Vita" version="$version$"/>
        </group>	
        <group>
-         <dependency id="MySql.Data" version="8.0.18"/>
+         <dependency id="MySql.Data" version="8.0.31"/>
        </group>	
     </dependencies>
   </metadata>

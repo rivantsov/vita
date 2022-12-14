@@ -245,7 +245,8 @@ using Vita.Data;  // used only in console app
       _output.WriteLine();
       _output.WriteLine("  // -------------------  Entity modules --------------------------------------");
       foreach (var module in _app.Modules) {
-        if (module.Entities.Count == 0)
+        var moduleEntNames = _app.Model.Entities.Where(e => e.Module == module && e.Kind == EntityKind.Table).Select(e => e.Name).ToList();
+        if (moduleEntNames.Count == 0)
           continue;
         var entModuleName = module.Name;
         _output.WriteLine("  public class {0} : EntityModule {{", entModuleName);
@@ -254,8 +255,7 @@ using Vita.Data;  // used only in console app
         _output.Write("    public {0} (EntityArea area) : base(area, \"{0}\", version: CurrentVersion) {{\r\n", entModuleName);
         _output.Write("      base.RegisterEntities(");
         //build list of types
-        var moduleEntTypeNames = _app.Model.Entities.Where(e => e.Module == module && e.Kind == EntityKind.Table).Select(e => e.Name).ToList(); 
-        var entTypeList = moduleEntTypeNames.Select(n => "typeof(" + n + ")").ToList();
+        var entTypeList = moduleEntNames.Select(n => "typeof(" + n + ")").ToList();
         string indent = new string(' ', 12);
         int currLen = 200; //to force start from new line
         // write in lines with len < 120

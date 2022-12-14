@@ -87,6 +87,8 @@ namespace Vita.Tools.DbFirst {
         var module = GetModule(table.Schema);
         var entName = GenerateEntityName(table);
         var entType = typeof(object); // CreateDummyEntityType(entName); //dummy type, just to have unique type instance
+        // it is the same typeof(object) for all entities, but the non-empty Entities list indicates that module is not empty 
+        module.Entities.Add(entType); 
         // we add only entity types for tables; views are ignored (we do not have queries to create view definitions)
         //if (table.Kind == EntityKind.Table) module.Entities.Add(entType); // register type in module
         // Note: we generate entity interfaces for Views, but do not register them as entities
@@ -131,13 +133,17 @@ namespace Vita.Tools.DbFirst {
         var ent = table.Entity;
         if (ent == null || table.Kind == EntityKind.View)
           continue; //ignore this table
-        ent.PrimaryKey = ent.Keys.FirstOrDefault(k => k.KeyType.IsSet(KeyType.PrimaryKey));
-        if (ent.PrimaryKey == null) {
+        var pk = ent.PrimaryKey = ent.Keys.FirstOrDefault(k => k.KeyType.IsSet(KeyType.PrimaryKey));
+        if (pk == null) {
           _feedback.SendFeedback(FeedbackType.Warning, "WARNING: Table {0} has no primary key.", table.TableName);
-          //create fake
-          //ent.PrimaryKey = new EntityKeyInfo(table.Entity, KeyType.PrimaryKey);
         }
-        ent.PrimaryKey.KeyMembers.Each(km => km.Member.Flags |= EntityMemberFlags.PrimaryKey);
+        pk.KeyMembers.Each(km => km.Member.Flags |= EntityMemberFlags.PrimaryKey);
+        // if it is a single column key, make member an owner
+        if (pk.KeyMembers.Count == 0 && pk.KeyMembersExpanded.Count == 1) {
+          var col0 = pk.KeyMembersExpanded[0].Member;
+          pk.KeyMembers.Add(new EntityKeyMemberInfo(col0));
+          pk.OwnerMember = col0;
+        }
       } // foreach 
     }
 

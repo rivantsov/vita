@@ -17,7 +17,7 @@
          <dependency id="Vita" version="$version$"/>
        </group>	
        <group>
-         <dependency id="Oracle.ManagedDataAccess.Core" version="2.19.60"/>
+         <dependency id="Oracle.ManagedDataAccess.Core" version="2.19.170"/>
        </group>	
     </dependencies>
   </metadata>

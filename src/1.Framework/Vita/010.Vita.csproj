@@ -1,24 +1,34 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
-    <Import Project="..\..\Version.proj" />
+    <Import Project="..\..\Common.proj" />
 
     <PropertyGroup>
         <TargetFramework>netstandard2.0</TargetFramework>
-        <LangVersion>latest</LangVersion>
         <AssemblyName>Vita</AssemblyName>
         <RootNamespace>Vita</RootNamespace>
 
         <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
         <Copyright>Roman Ivantsov</Copyright>
         <Description>VITA ORM Core Functionality. </Description>
+        <Title>VITA .NET ORM</Title>
+        <Authors>Roman Ivantsov</Authors>
+        <PackageProjectUrl>https://github.com/rivantsov/vita</PackageProjectUrl>
+        <PackageReadmeFile>README.md</PackageReadmeFile>
+        <RepositoryUrl>https://github.com/rivantsov/vita</RepositoryUrl>
+        <PackageTags>ORM; .NET</PackageTags>
+        <IncludeSymbols>True</IncludeSymbols>
+        <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+        <RunAnalyzersDuringBuild>False</RunAnalyzersDuringBuild>
+        <RunAnalyzersDuringLiveAnalysis>False</RunAnalyzersDuringLiveAnalysis>
+        <GeneratePackageOnBuild>False</GeneratePackageOnBuild>
+        <PackageLicenseExpression>MIT</PackageLicenseExpression>
     </PropertyGroup>
 
     <ItemGroup>
-      <Compile Remove="4.Internals\Entities.Model\Construction\EntityModelBuilder_Keys_Disabled.cs" />
-    </ItemGroup>
-
-    <ItemGroup>
-      <None Include="4.Internals\Entities.Model\Construction\EntityModelBuilder_Keys_Disabled.cs" />
+      <None Include="..\..\..\README.md">
+        <Pack>True</Pack>
+        <PackagePath>\</PackagePath>
+      </None>
     </ItemGroup>
     
     <ItemGroup>

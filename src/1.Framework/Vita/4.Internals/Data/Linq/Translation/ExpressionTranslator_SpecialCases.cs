@@ -198,33 +198,35 @@ namespace Vita.Data.Linq.Translation {
     }
 
     private Expression AnalyzeEntityListMember(TableExpression table, PropertyInfo property, TranslationContext context) {
-        var propType = property.PropertyType;
-        if (!propType.IsEntitySequence())
-          return null; 
-        var modelInfo = context.DbModel.EntityModel;
-        var masterEntInfo = (EntityInfo) modelInfo.GetEntityInfo(table.Type);
-        var entMember = masterEntInfo.GetMember(property.Name, throwIfNotFound: true);
-        Util.Check(entMember.Kind == EntityMemberKind.EntityList, "Internal LINQ error: expected List member ({0}.{1}", masterEntInfo.Name, property.Name);
-        var listInfo = entMember.ChildListInfo;
-        Expression whereExpr; 
-        switch(listInfo.RelationType) {
+      var propType = property.PropertyType;
+      if (!propType.IsEntitySequence())
+        return null; 
+      var modelInfo = context.DbModel.EntityModel;
+      var masterEntInfo = (EntityInfo) modelInfo.GetEntityInfo(table.Type);
+      var entMember = masterEntInfo.GetMember(property.Name, throwIfNotFound: true);
+      Util.Check(entMember.Kind == EntityMemberKind.EntityList, "Internal LINQ error: expected List member ({0}.{1}", masterEntInfo.Name, property.Name);
+      var listInfo = entMember.ChildListInfo;
+      Expression whereExpr; 
+      switch(listInfo.RelationType) {
           
-          case EntityRelationType.ManyToOne:
-            var childTable = CreateTable(listInfo.TargetEntity.EntityType, context);
-            whereExpr = BuildListPropertyJoinExpression(childTable, table, listInfo.ParentRefMember, context);
-            if (listInfo.Filter != null) {
-              var filterExpr = new TableFilterExpression(childTable, listInfo.Filter);
-              whereExpr = Expression.And(whereExpr, filterExpr); 
-            }
-            RegisterWhere(whereExpr,  context); 
-            return childTable;
+        case EntityRelationType.ManyToOne:
+          var childTable = CreateTable(listInfo.TargetEntity.EntityType, context);
+          RegisterTable(childTable, context); 
+          whereExpr = BuildListPropertyJoinExpression(childTable, table, listInfo.ParentRefMember, context);
+          if (listInfo.Filter != null) {
+            var filterExpr = new TableFilterExpression(childTable, listInfo.Filter);
+            whereExpr = Expression.And(whereExpr, filterExpr); 
+          }
+          RegisterWhere(whereExpr,  context); 
+          return childTable;
 
-          case EntityRelationType.ManyToMany:
-            var linkTable = CreateTable(listInfo.LinkEntity.EntityType, context);
-            whereExpr = BuildListPropertyJoinExpression(linkTable, table, listInfo.ParentRefMember, context);
-            RegisterWhere(whereExpr, context); 
-            var targetTable = RegisterAssociation(linkTable, listInfo.OtherEntityRefMember, context);
-            return targetTable;
+        case EntityRelationType.ManyToMany:
+          var linkTable = CreateTable(listInfo.LinkEntity.EntityType, context);
+          RegisterTable(linkTable, context); 
+          whereExpr = BuildListPropertyJoinExpression(linkTable, table, listInfo.ParentRefMember, context);
+          RegisterWhere(whereExpr, context); 
+          var targetTable = RegisterAssociation(linkTable, listInfo.OtherEntityRefMember, context);
+          return targetTable;
         }
         return null; //never happens
     }//method

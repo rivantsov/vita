@@ -16,7 +16,7 @@ namespace Vita.Testing.ExtendedTests {
   public partial class LinqTests {
 
     [TestMethod]
-    public void TestLinqNonQuery_Update () {
+    public void TestLinqNonQuery_Update() {
       Startup.BooksApp.LogTestStart();
 
       var app = Startup.BooksApp;
@@ -34,7 +34,7 @@ namespace Vita.Testing.ExtendedTests {
       // query returns new value for Price property, without book ID
       var booksQuery = from b in session.EntitySet<IBook>()
                        where b.Category == BookCategory.Fiction
-                       select new { Price = b.Price + 1 }; 
+                       select new { Price = b.Price + 1 };
       //update 
       updateCount = session.ExecuteUpdate<IBook>(booksQuery);
       //verify with new session
@@ -49,15 +49,15 @@ namespace Vita.Testing.ExtendedTests {
       // make sure IronMan has Description = null
       var ironMan = session.EntitySet<IBook>().First(b => b.Title == "IronMan");
       ironMan.Description = null;
-      session.SaveChanges(); 
+      session.SaveChanges();
 
       // Let's update Description column in books with Description = null; then revert these back to NULL
       var noDescrCount = session.EntitySet<IBook>().Where(b => b.Description == null).Count();
       Assert.IsTrue(noDescrCount > 0, "Expected some books with Description = null");
       var defaultDescr = "(No Description)";
       var updateDescrQuery = from b in session.EntitySet<IBook>()
-                                where b.Description == null
-                                select new { Description = defaultDescr };
+                             where b.Description == null
+                             select new { Description = defaultDescr };
       var updateDescrCount = session.ExecuteUpdate<IBook>(updateDescrQuery);
       Assert.AreEqual(noDescrCount, updateDescrCount, "Update count does not match.");
       // count again books with Descr = null; should be zero
@@ -66,8 +66,8 @@ namespace Vita.Testing.ExtendedTests {
       Assert.AreEqual(0, noDescrCoun0, "Expected no books with no description.");
       // Update back to null
       var revertDescrQuery = from b in session.EntitySet<IBook>()
-                                where b.Description == defaultDescr
-                                select new { Id = b.Id, Description = (string)null }; // explicit type required here
+                             where b.Description == defaultDescr
+                             select new { Id = b.Id, Description = (string)null }; // explicit type required here
       session.ExecuteUpdate<IBook>(revertDescrQuery);
       //verify that noDescr count is back to original
       session = app.OpenSession();
@@ -80,7 +80,7 @@ namespace Vita.Testing.ExtendedTests {
       #region Linq update statement using data from several tables.
       // This results in a bit more complex SQL with FROM clause
       // Only MS SQL and Postgres support this syntax; For MySql there's a workaround (using JOIN), but this is not implemented yet
-      if(Startup.ServerType == DbServerType.MsSql || Startup.ServerType == DbServerType.Postgres) {
+      if (Startup.ServerType == DbServerType.MsSql || Startup.ServerType == DbServerType.Postgres) {
         // Let's update order totals from SUM of order lines
         // First let's reset all totals to zero
         var setZerosQuery = from bo in session.EntitySet<IBookOrder>()
@@ -95,7 +95,9 @@ namespace Vita.Testing.ExtendedTests {
                                 select new { Id = orderUpdate.Key, Total = orderUpdate.Sum(line => line.Price * line.Quantity) };
         var totalsCount = ordersTotalsQuery.Count();
         Assert.IsTrue(totalsCount > 0, "Expected totals.");
+        
         //Update
+        session.LogMessage("==================== Running total BookOrder totals update statement.");
         var updatedTotalsCount = session.ExecuteUpdate<IBookOrder>(ordersTotalsQuery);
         Assert.AreEqual(totalsCount, updatedTotalsCount, "Totals update count mismatch.");
         var cmd = session.GetLastCommand();
@@ -213,13 +215,13 @@ namespace Vita.Testing.ExtendedTests {
 
       var app = Startup.BooksApp;
       var session = app.OpenSession();
-      var count0 = session.EntitySet<ICoupon>().Count(); 
+      var count0 = session.EntitySet<ICoupon>().Count();
       // Simple delete involving a single table
       //Create 3 coupons
       session.NewCoupon("Z-1", 11, DateTime.Now.AddMonths(1));
       session.NewCoupon("Z-2", 12, DateTime.Now.AddMonths(1));
       session.NewCoupon("Z-3", 13, DateTime.Now.AddMonths(1));
-      session.SaveChanges(); 
+      session.SaveChanges();
       // new session, count coupons
       session = app.OpenSession();
       var count1 = session.EntitySet<ICoupon>().Count();
@@ -243,11 +245,11 @@ namespace Vita.Testing.ExtendedTests {
       //  Base query uses join of IBookReview and IUser tables
       // MySql does not allow this kind of query (https://dev.mysql.com/doc/refman/5.0/en/delete.html) : 
       //     "Currently, you cannot delete from a table and select from the same table in a subquery."
-      if(Startup.ServerType == DbServerType.MySql)
+      if (Startup.ServerType == DbServerType.MySql)
         return;
       // Create 3 test reviews
-      var reviewCount0 = session.EntitySet<IBookReview>().Count(); 
-      var ferb = session.EntitySet<IUser>().Where(u => u.UserName == "Ferb").Single(); 
+      var reviewCount0 = session.EntitySet<IBookReview>().Count();
+      var ferb = session.EntitySet<IUser>().Where(u => u.UserName == "Ferb").Single();
       var csBook = session.EntitySet<IBook>().Where(b => b.Title.StartsWith("c#")).Single();
       session.NewReview(ferb, csBook, 1, "Review 1", "Text 1");
       session.NewReview(ferb, csBook, 2, "Review 2", "Text 2");
@@ -260,7 +262,7 @@ namespace Vita.Testing.ExtendedTests {
       // The base query must return IDs of reviews to delete
       var reviewDelQuery = from r in session.EntitySet<IBookReview>()
                            where r.User.UserName.StartsWith("Fe")
-                           select r.Id; 
+                           select r.Id;
       countDel = session.ExecuteDelete<IBookReview>(reviewDelQuery);
       /* SQL: 
             DELETE FROM "books"."BookReview"   WHERE "Id" IN (
@@ -281,14 +283,14 @@ namespace Vita.Testing.ExtendedTests {
       // Postgres: If this test fails, you need to run the following command and install uuid-ossp extension:
       //   CREATE EXTENSION "uuid-ossp";
       // SQLite: SQLite does not have a function for generating GUID, so inserts that require new GUIDs for PK columns do not work for SQLite
-      if(Startup.ServerType == DbServerType.SQLite)
-        return; 
+      if (Startup.ServerType == DbServerType.SQLite)
+        return;
       var app = Startup.BooksApp;
       var session = app.OpenSession();
       var dora = session.EntitySet<IUser>().First(u => u.UserName == "Dora");
       var dtNow = DateTime.UtcNow;
       var reviewCaption = "(Inserted Review)";
-      var initialCount = session.EntitySet<IBookReview>().Count(); 
+      var initialCount = session.EntitySet<IBookReview>().Count();
       // Method 1: using FK names directly (ex: Book_id)
       {
         var insertReviewQuery = from b in session.EntitySet<IBook>()
@@ -316,8 +318,8 @@ namespace Vita.Testing.ExtendedTests {
     public void TestLinqNonQuery_ScheduledCommands() {
       Startup.BooksApp.LogTestStart();
 
-      const string NewCode = "(NewCode)"; 
-     var app = Startup.BooksApp;
+      const string NewCode = "(NewCode)";
+      var app = Startup.BooksApp;
       var session = app.OpenSession();
 
       // Set descriptions and schedule update of special codes
@@ -325,8 +327,8 @@ namespace Vita.Testing.ExtendedTests {
       foreach (var bk in noDescrBooks)
         bk.Description = "No description" + new string('.', 100); //to force using parameter in batch
       var booksUpdateQuery = from bk in session.EntitySet<IBook>()
-                        where bk.Category == BookCategory.Programming  && bk.SpecialCode == null
-                        select new {Id = bk.Id, SpecialCode = NewCode};
+                             where bk.Category == BookCategory.Programming && bk.SpecialCode == null
+                             select new { Id = bk.Id, SpecialCode = NewCode };
       //Schedule the query, so it should executed with SaveChanges, at transaction end, right before commit 
       session.ScheduleUpdate<IBook>(booksUpdateQuery, CommandSchedule.TransactionEnd); //TransactionEnd is default
       session.SaveChanges();
@@ -342,6 +344,30 @@ namespace Vita.Testing.ExtendedTests {
       }
       session.SaveChanges();
     }
+
+    
+    // MySql - does not allow Update with From clause; but does allow using subquery returning a single value directly in 'SET colName=(subquery)'
+    // When using this method, a but #205 was reported. Adding a test for this
+    [TestMethod]
+    public void TestLinqNonQuery_Update2() {
+      Startup.BooksApp.LogTestStart();
+
+      var app = Startup.BooksApp;
+      var session = app.OpenSession();
+
+      // #205, Error for subquery update  https://github.com/rivantsov/vita/issues/205
+      //  The cause is missing alias $bi for table BillingIvoice being updated
+      //  Modeling similar query, for BookOrder, updating total from lines
+
+      var order1 = session.EntitySet<IBookOrder>().OrderByDescending(o => o.Total).First();
+      // build update query to recalc total for this order
+      var updateTotalsQuery = session.EntitySet<IBookOrder>()
+                                .Where(bo => bo.Id == order1.Id)
+                                .Select(bo => new { bo.Id, Total = bo.Lines.Sum(bol => bol.Price * bol.Quantity) });
+      var list = updateTotalsQuery.ToList(); 
+      session.ExecuteUpdate<IBookOrder>(updateTotalsQuery);
+    }
+    
   }//class
 
 }

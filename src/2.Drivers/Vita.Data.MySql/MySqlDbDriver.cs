@@ -30,7 +30,8 @@ namespace Vita.Data.MySql {
     public const DbFeatures MySqlFeatures = DbFeatures.Schemas | DbFeatures.StoredProcedures
         | DbFeatures.Views | DbFeatures.DefaultCaseInsensitive | DbFeatures.InsertMany
         | DbFeatures.ReferentialConstraints | DbFeatures.ForeignKeysAutoIndexed //mySql automatically creates supporting index
-        | DbFeatures.Paging | DbFeatures.BatchedUpdates | DbFeatures.TreatBitAsInt;
+        | DbFeatures.Paging | DbFeatures.BatchedUpdates | DbFeatures.TreatBitAsInt
+      ;
     public const DbOptions DefaultMySqlDbOptions = DbOptions.UseRefIntegrity | DbOptions.ShareDbModel 
                                                  | DbOptions.AutoIndexForeignKeys | DbOptions.IgnoreTableNamesCase;
 

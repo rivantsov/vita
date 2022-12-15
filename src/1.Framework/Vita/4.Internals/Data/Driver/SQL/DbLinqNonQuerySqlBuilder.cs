@@ -56,15 +56,16 @@ namespace Vita.Data.Driver {
           return false;
         default:
           var allTables = select.Tables;
+          var hasSubselects = select.Operands.OfType<SelectExpression>().Count() > 0;
           var usesSkipTakeOrderBy = select.Offset != null || select.Limit != null;
-          var useSimple = allTables.Count == 1 && allTables[0].TableInfo == targetTable && !usesSkipTakeOrderBy;
+          var useSimple = !hasSubselects && allTables.Count == 1 && allTables[0].TableInfo == targetTable && !usesSkipTakeOrderBy;
           return useSimple;
       }
     }
 
     // Builds one-table update
     public virtual SqlStatement BuildLinqInsert() {
-      var tblName = Command.TargetTable.SqlFullName;
+      var tblName = Command.TargetTableSqlFullName;
       var colParts = Command.TargetColumns.Select(c => c.SqlColumnNameQuoted).ToList();
       var colList = SqlFragment.CreateList(SqlTerms.Comma, colParts);
       var selectSql = LinqSqlBuilder.BuildSelectSql(Command.BaseSelect);
@@ -88,7 +89,7 @@ namespace Vita.Data.Driver {
       var setClause = SqlFragment.CreateList(SqlTerms.Comma, setValueClauses);
       var where = Command.BaseSelect.Where;
       var sqlWhere = LinqSqlBuilder.BuildWhereClause(Command.BaseSelect, where);
-      var tablePart = Command.TargetTable.SqlFullName;
+      var tablePart = Command.TargetTableSqlFullName;
       var sqlUpdate = SqlDialect.SqlCrudTemplateUpdate.Format(tablePart, setClause, sqlWhere);
       return CreateNonQueryStatement(sqlUpdate, SqlKind.LinqUpdate);
     }
@@ -96,8 +97,8 @@ namespace Vita.Data.Driver {
     private static SqlFragment _fromAlias = new TextSqlFragment("_from");
 
     public virtual SqlStatement BuildLinqUpdateWithSubquery() {
-      Util.Check(DbModel.Driver.Supports(Data.Driver.DbFeatures.UpdateFromSubQuery),
-         "The database server does not support UPDATE statements with 'FROM <subquery>' clause, cannot translate this LINQ query.");
+      // Check if this kind of SQL supported by the server
+      CheckServerSupportsUpdateFromQuery(); 
       var setValueClauses = new List<SqlFragment>();
       var whereExprSqls = new List<SqlFragment>();
       for(int i = 0; i < Command.TargetColumns.Count; i++) {
@@ -122,15 +123,22 @@ namespace Vita.Data.Driver {
         whereClause = new CompositeSqlFragment(SqlTerms.Where, whereCond);
       }
       var fromClauseSql = LinqSqlBuilder.BuildSelectSql(Command.BaseSelect);
-      var tableNameSql = Command.TargetTable.SqlFullName;
+      var tableNameSql = Command.TargetTableSqlFullName;
       var sqlUpdate = SqlDialect.SqlCrudTemplateUpdateFrom.Format(tableNameSql, setClause, fromClauseSql, _fromAlias, whereClause);
       return CreateNonQueryStatement(sqlUpdate, SqlKind.LinqUpdate);
+    }
+
+    private void CheckServerSupportsUpdateFromQuery() {
+      if (DbModel.Driver.Supports(Data.Driver.DbFeatures.UpdateFromSubQuery))
+        return; 
+      Util.Check(false,  $@"The database server ({DbModel.Driver.ServerType}) does not support UPDATE statements with 'FROM <subquery>' clause 
+ that is required for this Linq-based operation. Reformulate/simplify the query, or use other facilities.");
     }
 
     public virtual SqlStatement BuildLinqDelete() {
       var where = Command.BaseSelect.Where;
       var sqlWhere = LinqSqlBuilder.BuildWhereClause(Command.BaseSelect, where);
-      var tblSql = Command.TargetTable.SqlFullName;
+      var tblSql = Command.TargetTableSqlFullName;
       var deleteSql = SqlDialect.SqlCrudTemplateDelete.Format(tblSql, sqlWhere);
       return CreateNonQueryStatement(deleteSql, SqlKind.LinqDelete);
     }
@@ -149,7 +157,7 @@ namespace Vita.Data.Driver {
       // will throw if not found.
       var pkCol = Command.TargetTable.GetColumnByMemberName(pk.MemberName);
       var pkColSql = pkCol.SqlColumnNameQuoted;
-      var tblNameSql = Command.TargetTable.SqlFullName;
+      var tblNameSql = Command.TargetTableSqlFullName;
       var subQuerySql = LinqSqlBuilder.BuildSelectSql(Command.BaseSelect);
       var deleteSql = SqlDialect.SqlCrudTemplateDeleteMany.Format(tblNameSql, pkColSql, subQuerySql);
       return CreateNonQueryStatement(deleteSql, SqlKind.LinqDelete);

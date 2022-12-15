@@ -19,7 +19,7 @@ namespace Vita.Entities.Model.Construction {
       _log = modelBuilder.Log;
     }
 
-    internal void BuildKeyMembers() {
+    internal void BuildKeys() {
       _allKeys = _modelBuilder.Model.Entities.SelectMany(e => e.Keys).ToList();
       // step 1 - build key.KeyMembers lists, possibly with unassigned KeyMember.Member refs, 
       //           from either OwnerMember (keys on Members/Properties), or KeySpec (keys on entity)
@@ -123,7 +123,7 @@ namespace Vita.Entities.Model.Construction {
 
 
     private bool RunMembersAssignExpandLoop() {
-      var repeatCount = 20;
+      var repeatCount = 10;
       var workList = _allKeys.Where(key => key.MembersStatus < KeyMembersStatus.Expanded).ToList();
       // run loop several times;
       // keys are dependent on each other, so they sometimes cannot be completed/expanded in one pass

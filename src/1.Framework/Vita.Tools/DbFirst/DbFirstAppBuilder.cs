@@ -55,11 +55,11 @@ namespace Vita.Tools.DbFirst {
       GenerateModulesAndAreas(); 
       GenerateEntities();
       GenerateKeys(); 
-      AssignPrimaryKeys();
       GenerateReferenceMembers();
+      AssignOwnerMembersToKeysMatchingForeignKeys();
+      SetupNonExpandedKeyMembers();
       GenerateListMembers();
 
-      SetupNonExpandedKeyMembers();
       return _app; 
     }
 
@@ -78,7 +78,6 @@ namespace Vita.Tools.DbFirst {
         var module = new EntityModule(area, "EntityModuleDefault");
       }
     }
-
 
     private void GenerateEntities() {
       foreach (var table in _dbModel.Tables) {
@@ -101,10 +100,51 @@ namespace Vita.Tools.DbFirst {
       }//foreach table
     }//method
 
+    private void GenerateEntityMembers(DbTableInfo table) {
+      var entInfo = table.Entity;
+      // generate entity members
+      foreach (var col in table.Columns) {
+        var nullable = col.Flags.IsSet(DbColumnFlags.Nullable);
+        var memberDataType = GetMemberType(col);
+        var memberName = CheckMemberName(DbNameToCsName(col.ColumnName), entInfo);
+        var member = col.Member = new EntityMemberInfo(entInfo, EntityMemberKind.Column, memberName, memberDataType);
+        member.ColumnName = col.ColumnName;
+        member.IsProperty = true; 
+        // member is added to entInfo.Members automatically in constructor
+        if (nullable)
+          member.Flags |= EntityMemberFlags.Nullable; // in case it is not set (for strings)
+        if (col.Flags.IsSet(DbColumnFlags.Identity)) {
+          member.Flags |= EntityMemberFlags.Identity;
+          member.AutoValueType = AutoType.Identity;
+        }
+        //hack for MS SQL
+        if (col.TypeInfo.TypeDef.Name == "timestamp")
+          member.AutoValueType = AutoType.RowVersion;
+        member.Size = (int)col.TypeInfo.Size;
+        member.Scale = col.TypeInfo.Scale;
+        member.Precision = col.TypeInfo.Precision;
+        //Check if we need to specify DbType or DbType spec explicitly
+        bool unlimited = member.Size < 0;
+        if (unlimited)
+          member.Flags |= EntityMemberFlags.UnlimitedSize;
+        var typeDef = col.TypeInfo.TypeDef;
+
+        // Detect if we need to set explicity DbType or DbTypeSpec in member attribute
+        var dftMapping = _typeRegistry.GetDbTypeInfo(member);
+        if (col.TypeInfo.Matches(dftMapping))
+          continue; //no need for explicit DbTypeSpec
+                    //DbTypeMapping is not default for this member - we need to specify DbType or TypeSpec explicitly
+        member.ExplicitDbTypeSpec = col.TypeInfo.DbTypeSpec;
+        if (member.Flags.IsSet(EntityMemberFlags.Identity))
+          entInfo.Flags |= EntityFlags.HasIdentity;
+      }
+    }
+
     private void GenerateKeys() {
       var fkAutoIndexed = _dbModel.Driver.Supports(DbFeatures.ForeignKeysAutoIndexed);
       foreach (var table in _dbModel.Tables) {
-        if (table.Entity == null)
+        var ent = table.Entity; 
+        if (ent == null)
           continue; //ignore this table
 
         foreach (var dbKey in table.Keys) {
@@ -122,30 +162,21 @@ namespace Vita.Tools.DbFirst {
           }
           if (dbKey.KeyType.IsSet(KeyType.Clustered))
             table.Entity.Flags |= EntityFlags.HasClusteredIndex;
+          // primary key
+          if (entKey.KeyType.IsSet(KeyType.PrimaryKey)) {
+            ent.PrimaryKey = entKey;
+            foreach (var km in entKey.KeyMembersExpanded)
+              km.Member.Flags |= EntityMemberFlags.PrimaryKey;
+          }
 
           BuildIndexFilterIncludes(dbKey);
+        } //foreach key
+        //check primary key
+        if (ent.Kind == EntityKind.Table && ent.PrimaryKey == null) {
+          _feedback.SendFeedback(FeedbackType.Warning, "WARNING: Table {0} has no primary key.", table.TableName);
         }
       }//foreach table
     }//method
-
-    private void AssignPrimaryKeys() {
-      foreach (var table in _dbModel.Tables) {
-        var ent = table.Entity;
-        if (ent == null || table.Kind == EntityKind.View)
-          continue; //ignore this table
-        var pk = ent.PrimaryKey = ent.Keys.FirstOrDefault(k => k.KeyType.IsSet(KeyType.PrimaryKey));
-        if (pk == null) {
-          _feedback.SendFeedback(FeedbackType.Warning, "WARNING: Table {0} has no primary key.", table.TableName);
-        }
-        pk.KeyMembers.Each(km => km.Member.Flags |= EntityMemberFlags.PrimaryKey);
-        // if it is a single column key, make member an owner
-        if (pk.KeyMembers.Count == 0 && pk.KeyMembersExpanded.Count == 1) {
-          var col0 = pk.KeyMembersExpanded[0].Member;
-          pk.KeyMembers.Add(new EntityKeyMemberInfo(col0));
-          pk.OwnerMember = col0;
-        }
-      } // foreach 
-    }
 
     // Creates ref members and foreign keys
     private void GenerateReferenceMembers() {
@@ -154,7 +185,6 @@ namespace Vita.Tools.DbFirst {
           continue;
         
         var ent = table.Entity;
-
         foreach (var constr in table.RefConstraints) {
           var targetEnt = constr.ToKey.Table.Entity;
           var fromDbKey = constr.FromKey;
@@ -162,44 +192,40 @@ namespace Vita.Tools.DbFirst {
           
           string memberName = GetRefMemberName(constr);
           var refMember = new EntityMemberInfo(ent, EntityMemberKind.EntityRef, memberName, targetEnt.EntityType);
+          refMember.IsProperty = true; 
           ent.RefMembers.Add(refMember);
           fromEntKey.KeyMembers.Add(new EntityKeyMemberInfo(refMember));
+          fromEntKey.OwnerMember = refMember;
+          refMember.ReferenceInfo = new EntityReferenceInfo(refMember, fromEntKey, targetEnt.PrimaryKey);
 
           if (constr.CascadeDelete)
             refMember.Flags |= EntityMemberFlags.CascadeDelete;
           // mark flags 
-          foreach (var km in fromDbKey.EntityKey.KeyMembersExpanded) {
+          foreach (var km in fromEntKey.KeyMembersExpanded) {
             km.Member.Flags |= EntityMemberFlags.ForeignKey;
             if (km.Member.Flags.IsSet(EntityMemberFlags.Nullable))
               refMember.Flags |= EntityMemberFlags.Nullable;
+            // mark column as non-property since it is inside entity ref
+            km.Member.IsProperty = false; 
           }
-          refMember.ReferenceInfo = new EntityReferenceInfo(refMember, fromEntKey, targetEnt.PrimaryKey);
-          // assign this ref member as owner to fk and indexes with matching columns
-          AssignOwnerMemberToMatchingKeys(refMember, fromDbKey);
         }
       }//foreach table
     }
 
-    private void AssignOwnerMemberToMatchingKeys(EntityMemberInfo refMember, DbKeyInfo fkDbKey) {
-      var allTableKeys = fkDbKey.Table.Keys;
-      foreach (var dbkey in allTableKeys) {
-        if (!ColumnsMatch(fkDbKey, dbkey))
-          continue;
-        // Set owner and add it to key members
-        var entKey = dbkey.EntityKey;
-        entKey.OwnerMember = refMember;
-        entKey.KeyMembers.Clear();
-        entKey.KeyMembers.Add(new EntityKeyMemberInfo(refMember));
+    private void AssignOwnerMembersToKeysMatchingForeignKeys() {
+      foreach(var ent in _entityModel.Entities) {
+        // for each FK, find non-FK keys with the same columns; copy OwnerMember of FK to these matching non-FK keys 
+        var fks = ent.Keys.Where(k => k.KeyType.IsSet(KeyType.ForeignKey)).ToList();
+        var nonFks = ent.Keys.Where(k => k.OwnerMember == null && !k.KeyType.IsSet(KeyType.ForeignKey)).ToList();
+        foreach (var nonFk in nonFks) {
+          foreach (var fk in fks)
+            if (KeyExpandedMembersMatch(fk, nonFk)) {
+              nonFk.OwnerMember = fk.OwnerMember;
+              nonFk.KeyMembers.Clear();
+              nonFk.KeyMembers.Add(new EntityKeyMemberInfo(fk.OwnerMember));
+            }
+        }
       }
-    }
-
-    private bool ColumnsMatch(DbKeyInfo key1, DbKeyInfo key2) {
-      if (key1.KeyColumns.Count != key2.KeyColumns.Count)
-        return false;
-      for (int i = 0; i < key1.KeyColumns.Count; i++)
-        if (key1.KeyColumns[i].Column != key2.KeyColumns[i].Column)
-          return false;
-      return true;
     }
 
     private void GenerateListMembers() {
@@ -211,17 +237,18 @@ namespace Vita.Tools.DbFirst {
           var memberIndexKey = refMember.Entity.Keys.FirstOrDefault(k => k.OwnerMember == refMember && k.KeyType.IsSet(KeyType.Index));
           if (memberIndexKey == null)
             continue;
-        //create List member on target entity
-        var targetEnt = refMember.ReferenceInfo.ToKey.Entity;
-        var listName = StringHelper.Pluralize(ent.Name.Substring(1)); //remove 'I' prefix and pluralize
-        listName = CheckMemberName(listName, targetEnt);
-        var listType = typeof(IList<>).MakeGenericType(ent.EntityType);
-        var listMember = new EntityMemberInfo(targetEnt, EntityMemberKind.EntityList, listName, listType);
-        var listInfo = listMember.ChildListInfo = new ChildEntityListInfo(listMember);
-        listInfo.RelationType = EntityRelationType.ManyToOne;
-        listInfo.TargetEntity = ent;
-        listInfo.ParentRefMember = refMember;
-        refMember.ReferenceInfo.TargetListMember = listMember;
+          //create List member on target entity
+          var targetEnt = refMember.ReferenceInfo.ToKey.Entity;
+          var listName = StringHelper.Pluralize(ent.Name.Substring(1)); //remove 'I' prefix and pluralize
+          listName = CheckMemberName(listName, targetEnt);
+          var listType = typeof(IList<>).MakeGenericType(ent.EntityType);
+          var listMember = new EntityMemberInfo(targetEnt, EntityMemberKind.EntityList, listName, listType);
+          listMember.IsProperty = true; 
+          var listInfo = listMember.ChildListInfo = new ChildEntityListInfo(listMember);
+          listInfo.RelationType = EntityRelationType.ManyToOne;
+          listInfo.TargetEntity = ent;
+          listInfo.ParentRefMember = refMember;
+          refMember.ReferenceInfo.TargetListMember = listMember;
       }
     }
   
@@ -233,33 +260,22 @@ namespace Vita.Tools.DbFirst {
     private void SetupNonExpandedKeyMembers() {
       foreach (var ent in _entityModel.Entities) {
         foreach (var key in ent.Keys) {
-          // if there is a member, it is entity ref member; otherwise just copy from expanded
-          if (key.KeyMembers.Count == 0)
-            key.KeyMembers.AddRange(key.KeyMembersExpanded);
+          // if there is a member in KeyMembers (non-expanded members), skip it, it is already dones; otherwise copy from expanded members
+          if (key.KeyMembers.Count > 0)
+            continue; 
+          key.KeyMembers.AddRange(key.KeyMembersExpanded);
+          // if it is a single column and it is 'visible', set it as key owner; ex: column Id which is PK (single column), 
+          // we want PrimaryKey to appear on this Id property, not on entity with list of columns
+          if (key.KeyMembersExpanded.Count == 1) {
+            var km0 = key.KeyMembersExpanded[0];
+            key.KeyMembers.Add(km0);
+            if (km0.Member.IsProperty)
+              key.OwnerMember = km0.Member;
+          }
         }//foreach dbKey
       }//foreach entInfo            
     }//method
 
-
-    private string CheckMemberName(string baseName, EntityInfo entity, string trySuffix = null) {
-      var name = baseName; 
-      if (entity.GetMember(name) == null)
-        return name;
-      // For entity references we might have occasional match of baseName with the FK column name. To avoid adding numbers, we try to add "Ref" at the end.
-      if (!string.IsNullOrEmpty(trySuffix)) {
-        name = baseName + trySuffix;
-        if (entity.GetMember(name) == null)
-          return name; 
-      }
-      // try adding number at the end.
-      for (int i = 1; i < 10; i++) {
-        name = baseName + i;
-        if (entity.GetMember(name) == null)
-          return name; 
-      }
-      Util.Throw("Failed to generate property name for entity {0}, base name {1}", entity.Name, baseName);
-      return null; 
-    }
 
     //We have one-module per area, so we find module by associated area's schema 
     private EntityModule GetModule(string schema) {
@@ -270,50 +286,6 @@ namespace Vita.Tools.DbFirst {
       Util.Check(module != null, "EntityModule for schema {0} not found.", schema);
       return module;
     }
-
-    private Type GetMemberType(DbColumnInfo colInfo) {
-      var nullable = colInfo.Flags.IsSet(DbColumnFlags.Nullable);
-      var typeInfo = colInfo.TypeInfo;
-      var mType = typeInfo.ClrType;
-      if(mType.IsValueType && nullable)
-        mType = ReflectionHelper.GetNullable(mType);
-      Type forcedType;
-      if(_config.ForceDataTypes.TryGetValue(colInfo.ColumnName, out forcedType))
-        return forcedType;
-      if(mType == typeof(byte[])) {
-        var changeToGuid =
-          _config.Options.IsSet(DbFirstOptions.Binary16AsGuid) && typeInfo.Size == 16 ||
-          _config.Options.IsSet(DbFirstOptions.BinaryKeysAsGuid) && colInfo.Flags.IsSet(DbColumnFlags.PrimaryKey | DbColumnFlags.ForeignKey);
-        if(changeToGuid)
-          return typeof(Guid); 
-      }
-      return mType;
-    }
-
-    // removes spaces and underscores, changes to sentence case
-    private static string DbNameToCsName(string name) {
-      if (name == null) return null;
-      //Do uppercasing first
-      string nameUpper = name; 
-      if (name.IndexOf('_') == -1)
-        nameUpper = name.FirstCap();
-      else {
-        //Convert to first cap all segments separated by underscore
-        var parts = name.Split(new [] {'_', ' '}, StringSplitOptions.RemoveEmptyEntries);
-        nameUpper = String.Join(string.Empty, parts.Select(p => p.FirstCap()));
-      }
-      //Check all chars they are CLR compatible
-      var chars = nameUpper.ToCharArray(); 
-      for(int i = 0; i < chars.Length; i++) {
-        if(char.IsLetterOrDigit(chars[i]) || chars[i] == '_')
-          continue; 
-        chars[i] = 'X';
-      }
-      nameUpper = new string(chars); 
-      return nameUpper;
-    }
-
-
 
   }//class
 }//ns

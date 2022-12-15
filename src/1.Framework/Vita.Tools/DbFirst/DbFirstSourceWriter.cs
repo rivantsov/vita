@@ -99,7 +99,7 @@ using Vita.Data;  // used only in console app
       _output.Write("  public interface {0} {{\r\n", entity.Name);
       //members
       foreach (var member in entity.Members) {
-        if (member.Flags.IsSet(EntityMemberFlags.ForeignKey))
+        if (!member.IsProperty)
           continue;
         if(member.Kind == EntityMemberKind.EntityList && !_config.Options.IsSet(DbFirstOptions.AddOneToManyLists))
           continue; 
@@ -111,7 +111,7 @@ using Vita.Data;  // used only in console app
         var csName = GetMemberTypeName(member); //.DataType.GetDisplayName();
         _output.Write("    {0} {1} {2}\r\n", csName, member.MemberName, accessors);
       }
-      _output.WriteLine("  }");
+      _output.WriteLine("  }"); 
     }
 
     private string GetMemberTypeName(EntityMemberInfo member) {
@@ -131,23 +131,12 @@ using Vita.Data;  // used only in console app
       // printout keys and indexes
       var attrList = new List<string>();
       attrList.Add(Util.SafeFormat("Entity(TableName = \"{0}\")", entity.TableName));
-      foreach (var key in entity.Keys) {
-        if (key.KeyType.IsSet(KeyType.ForeignKey))
-          continue;
-        //Skip single-column indexes - we set [Index] attribute directly on property; also skip erroneous keys with no members (if table has no PK, VITA creates PK with no columns)
-        if (IsPropertyKey(key) || key.KeyMembers.Count == 0) 
-          continue;
+      // select only keys without owner member, and not foreign keys
+      var entKeys = entity.Keys.Where(key => key.OwnerMember == null && !key.KeyType.IsSet(KeyType.ForeignKey)).ToList();
+      foreach (var key in entKeys) {
         var attrSpec = GetKeyAttribute(key, onProperty: false);
         attrList.Add(attrSpec); 
       }
-      // If PK is not found in database, system creates an empty fake PK
-/*
-      if(entity.PrimaryKey.KeyMembers.Count == 0) {
-        var warn = StringHelper.SafeFormat("  Warning: Table {0} has no primary key.", entity.TableName);
-        _warnings.Add(warn); 
-        _feedback.SendFeedback(FeedbackType.Warning, warn);
-      }
- */ 
       _output.Write("  [{0}]\r\n", string.Join(", ", attrList));
     }
 
@@ -221,7 +210,7 @@ using Vita.Data;  // used only in console app
       if(member.Flags.IsSet(EntityMemberFlags.Identity))
         attrList.Add("Identity");
       // Keys and Indexes. If there is single-column asc index on the column, put it on property directly
-      var memberKeys = member.Entity.Keys.Where(key => IsPropertyKey(key) && key.OwnerMember == member).ToList();
+      var memberKeys = member.Entity.Keys.Where(key => key.OwnerMember == member && !key.KeyType.IsSet(KeyType.ForeignKey)).ToList();
       foreach (var key in memberKeys) {
         var keyAttr = GetKeyAttribute(key, onProperty: true); 
         attrList.Add(keyAttr);
@@ -365,21 +354,6 @@ using Vita.Data;  // used only in console app
       if (_config.AutoValues.TryGetValue(member.MemberName, out result)) return result;
       if (_config.AutoValues.TryGetValue(member.ColumnName, out result)) return result;
       return null; 
-    }
-
-    private bool IsPropertyKey(EntityKeyInfo key) {
-      if (key.KeyMembers.Count != 1) 
-        return false;
-      if(key.KeyMembers[0].Desc) return 
-          false; 
-      // Only Index or PK - but not ForeignKey; FK is hidden key, without attribute
-      bool isIndexOrPk = key.KeyType.IsSet(KeyType.Index | KeyType.PrimaryKey);
-      if (!isIndexOrPk)
-        return false; 
-      //if it is a key on fk column that is NOT explicitly exposed as property
-      //if (key.KeyMembers.Any(km => km.Member.Flags.IsSet(EntityMemberFlags.ForeignKey)))
-      //  return false; 
-      return true; 
     }
 
     private string GetKeyAttribute(EntityKeyInfo key, bool onProperty) {

@@ -1,21 +1,16 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
     <Import Project="..\..\Common.proj" />
+    <Import Project="..\..\Packages.proj" />
 
     <PropertyGroup>
         <TargetFramework>netstandard2.0</TargetFramework>
-        <LangVersion>latest</LangVersion>
         <AssemblyName>Vita.Data.Postgres</AssemblyName>
         <RootNamespace>Vita.Data.Postgres</RootNamespace>
 
         <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
-        <Copyright>Roman Ivantsov</Copyright>
     </PropertyGroup>
 
-    <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
-        <DocumentationFile>bin\Release\netstandard2.0\Vita.Data.Postgres.xml</DocumentationFile>
-        <NoWarn>1701;1702;1591</NoWarn>
-    </PropertyGroup>
 
     <ItemGroup>
         <PackageReference Include="Npgsql" Version="7.0.0" />

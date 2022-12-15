@@ -1,6 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
     <Import Project="..\..\Common.proj" />
+    <Import Project="..\..\Packages.proj" />
 
     <PropertyGroup>
         <TargetFramework>netstandard2.0</TargetFramework>
@@ -8,13 +9,6 @@
         <AssemblyName>Vita.Data.Oracle</AssemblyName>
         <RootNamespace>Vita.Data.Oracle</RootNamespace>
 
-        <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
-        <Copyright>Roman Ivantsov</Copyright>
-    </PropertyGroup>
-
-    <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
-        <DocumentationFile>bin\Release\netstandard2.0\Vita.Data.Oracle.xml</DocumentationFile>
-        <NoWarn>1701;1702;1591</NoWarn>
     </PropertyGroup>
 
     <ItemGroup>

@@ -1,0 +1,13 @@
+<Project>
+    <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+        <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
+
+        <GenerateDocumentationFile>True</GenerateDocumentationFile>
+        <DocumentationFile></DocumentationFile>
+        <PackageLicenseExpression>MIT</PackageLicenseExpression>
+        <PackageOutputPath>..\..\..\packages</PackageOutputPath>
+        <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+        <IncludeSymbols>True</IncludeSymbols>
+        <PackageProjectUrl>https://github.com/rivantsov/vita</PackageProjectUrl>
+    </PropertyGroup>
+</Project>

@@ -1,27 +1,16 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
     <Import Project="..\..\Common.proj" />
+    <Import Project="..\..\Packages.proj" />
 
     <PropertyGroup>
         <TargetFramework>netstandard2.0</TargetFramework>
         <AssemblyName>Vita</AssemblyName>
         <RootNamespace>Vita</RootNamespace>
 
-        <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
-        <Copyright>Roman Ivantsov</Copyright>
         <Description>VITA ORM Core Functionality. </Description>
         <Title>VITA .NET ORM</Title>
-        <Authors>Roman Ivantsov</Authors>
-        <PackageProjectUrl>https://github.com/rivantsov/vita</PackageProjectUrl>
-        <PackageReadmeFile>README.md</PackageReadmeFile>
-        <RepositoryUrl>https://github.com/rivantsov/vita</RepositoryUrl>
         <PackageTags>ORM; .NET</PackageTags>
-        <IncludeSymbols>True</IncludeSymbols>
-        <SymbolPackageFormat>snupkg</SymbolPackageFormat>
-        <RunAnalyzersDuringBuild>False</RunAnalyzersDuringBuild>
-        <RunAnalyzersDuringLiveAnalysis>False</RunAnalyzersDuringLiveAnalysis>
-        <GeneratePackageOnBuild>False</GeneratePackageOnBuild>
-        <PackageLicenseExpression>MIT</PackageLicenseExpression>
     </PropertyGroup>
 
     <ItemGroup>
@@ -34,11 +23,6 @@
     <ItemGroup>
         <PackageReference Include="Proxemity" Version="2.0.1" />
     </ItemGroup>
-
-    <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
-        <DocumentationFile>bin\Release\netstandard2.0\Vita.xml</DocumentationFile>
-        <NoWarn>1701;1702;1591</NoWarn>
-    </PropertyGroup>
 
     <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
         <DefineConstants>TRACE;DEBUG;NETSTANDARD;NETSTANDARD2_0;_new</DefineConstants>

@@ -1,8 +1,18 @@
 <Project>
   <PropertyGroup>
+      
     <AssemblyVersion>3.5.0</AssemblyVersion>
     <Version>3.5.0</Version>
+
+      
     <LangVersion>10.0</LangVersion>
     <NoWarn>1701;1702;1591</NoWarn>
+    <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
+    <GenerateSerializationAssemblies>Off</GenerateSerializationAssemblies>
+    <Copyright>Roman Ivantsov</Copyright>
+    <Authors>Roman Ivantsov</Authors>
+    <RunAnalyzersDuringBuild>False</RunAnalyzersDuringBuild>
+    <RunAnalyzersDuringLiveAnalysis>False</RunAnalyzersDuringLiveAnalysis>
+    <RepositoryUrl>https://github.com/rivantsov/vita</RepositoryUrl>
   </PropertyGroup>
 </Project>

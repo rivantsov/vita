@@ -270,15 +270,13 @@ namespace Vita.Entities.Model {
     public object DeniedValue;
 
     public EntityMemberInfo[] DependentMembers; //array of (computed) members that depend on this member
-    
-    // Deprecated! member may be in multiple FKs
-    //For member Kind = ForeignKey 
-    //public EntityMemberInfo ForeignKeyOwner; //Entity ref member that owns this fk member
 
+    public bool IsProperty;
 
     public EntityMemberInfo(EntityInfo entity, EntityMemberKind kind, PropertyInfo property) :
           this(entity, kind, property.Name, property.PropertyType) {
       ClrMemberInfo = property;
+      IsProperty = property != null; 
     }
 
     public EntityMemberInfo(EntityInfo entity, EntityMemberKind kind, string name, Type dataType) {
@@ -342,6 +340,10 @@ namespace Vita.Entities.Model {
 
     public override string ToString() {
       return MemberName + (Desc ? " DESC" : string.Empty);
+    }
+
+    public bool Matches(EntityKeyMemberInfo other) {
+      return this.MemberName == other.MemberName && this.Desc == other.Desc;
     }
   }
 

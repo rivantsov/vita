@@ -38,45 +38,6 @@ namespace Vita.Tools.DbFirst {
       return entName;
     }
 
-    private void GenerateEntityMembers(DbTableInfo table) {
-      var entInfo = table.Entity;
-      // generate entity members
-      foreach (var col in table.Columns) {
-        var nullable = col.Flags.IsSet(DbColumnFlags.Nullable);
-        var memberDataType = GetMemberType(col);
-        var memberName = CheckMemberName(DbNameToCsName(col.ColumnName), entInfo);
-        var member = col.Member = new EntityMemberInfo(entInfo, EntityMemberKind.Column, memberName, memberDataType);
-        member.ColumnName = col.ColumnName;
-        // member is added to entInfo.Members automatically in constructor
-        if (nullable)
-          member.Flags |= EntityMemberFlags.Nullable; // in case it is not set (for strings)
-        if (col.Flags.IsSet(DbColumnFlags.Identity)) {
-          member.Flags |= EntityMemberFlags.Identity;
-          member.AutoValueType = AutoType.Identity;
-        }
-        //hack for MS SQL
-        if (col.TypeInfo.TypeDef.Name == "timestamp")
-          member.AutoValueType = AutoType.RowVersion;
-        member.Size = (int)col.TypeInfo.Size;
-        member.Scale = col.TypeInfo.Scale;
-        member.Precision = col.TypeInfo.Precision;
-        //Check if we need to specify DbType or DbType spec explicitly
-        bool unlimited = member.Size < 0;
-        if (unlimited)
-          member.Flags |= EntityMemberFlags.UnlimitedSize;
-        var typeDef = col.TypeInfo.TypeDef;
-
-        // Detect if we need to set explicity DbType or DbTypeSpec in member attribute
-        var dftMapping = _typeRegistry.GetDbTypeInfo(member);
-        if (col.TypeInfo.Matches(dftMapping))
-          continue; //no need for explicit DbTypeSpec
-                    //DbTypeMapping is not default for this member - we need to specify DbType or TypeSpec explicitly
-        member.ExplicitDbTypeSpec = col.TypeInfo.DbTypeSpec;
-        if (member.Flags.IsSet(EntityMemberFlags.Identity))
-          entInfo.Flags |= EntityFlags.HasIdentity;
-      }
-    }
-
     private void BuildIndexFilterIncludes(DbKeyInfo dbKey) {
       var entKey = dbKey.EntityKey;
       if (!entKey.KeyType.IsSet(KeyType.Index))
@@ -90,6 +51,25 @@ namespace Vita.Tools.DbFirst {
         var incMembers = dbKey.IncludeColumns.Select(c => c.Member).ToList();
         entKey.IncludeMembers.AddRange(incMembers);
       }
+    }
+
+    private Type GetMemberType(DbColumnInfo colInfo) {
+      var nullable = colInfo.Flags.IsSet(DbColumnFlags.Nullable);
+      var typeInfo = colInfo.TypeInfo;
+      var mType = typeInfo.ClrType;
+      if (mType.IsValueType && nullable)
+        mType = ReflectionHelper.GetNullable(mType);
+      Type forcedType;
+      if (_config.ForceDataTypes.TryGetValue(colInfo.ColumnName, out forcedType))
+        return forcedType;
+      if (mType == typeof(byte[])) {
+        var changeToGuid =
+          _config.Options.IsSet(DbFirstOptions.Binary16AsGuid) && typeInfo.Size == 16 ||
+          _config.Options.IsSet(DbFirstOptions.BinaryKeysAsGuid) && colInfo.Flags.IsSet(DbColumnFlags.PrimaryKey | DbColumnFlags.ForeignKey);
+        if (changeToGuid)
+          return typeof(Guid);
+      }
+      return mType;
     }
 
     private EntityFilterTemplate ParseIndexFilter(string filterSql, EntityInfo entity) {
@@ -127,5 +107,59 @@ namespace Vita.Tools.DbFirst {
       memberName = CheckMemberName(memberName, ent, trySuffix: "Ref");
       return memberName; 
     }
+
+    private bool KeyExpandedMembersMatch(EntityKeyInfo key1, EntityKeyInfo key2) {
+      if (key1.KeyMembersExpanded.Count != key2.KeyMembersExpanded.Count)
+        return false;
+      for (int i = 0; i < key1.KeyMembersExpanded.Count; i++)
+        if (!key1.KeyMembersExpanded[i].Matches(key2.KeyMembersExpanded[i]))
+          return false;
+      return true;
+    }
+
+    // removes spaces and underscores, changes to sentence case
+    private static string DbNameToCsName(string name) {
+      if (name == null) return null;
+      //Do uppercasing first
+      string nameUpper = name;
+      if (name.IndexOf('_') == -1)
+        nameUpper = name.FirstCap();
+      else {
+        //Convert to first cap all segments separated by underscore
+        var parts = name.Split(new[] { '_', ' ' }, StringSplitOptions.RemoveEmptyEntries);
+        nameUpper = String.Join(string.Empty, parts.Select(p => p.FirstCap()));
+      }
+      //Check all chars they are CLR compatible
+      var chars = nameUpper.ToCharArray();
+      for (int i = 0; i < chars.Length; i++) {
+        if (char.IsLetterOrDigit(chars[i]) || chars[i] == '_')
+          continue;
+        chars[i] = 'X';
+      }
+      nameUpper = new string(chars);
+      return nameUpper;
+    }
+
+    private string CheckMemberName(string baseName, EntityInfo entity, string trySuffix = null) {
+      var name = baseName;
+      if (entity.GetMember(name) == null)
+        return name;
+      // For entity references we might have occasional match of baseName with the FK column name. To avoid adding numbers, we try to add "Ref" at the end.
+      if (!string.IsNullOrEmpty(trySuffix)) {
+        name = baseName + trySuffix;
+        if (entity.GetMember(name) == null)
+          return name;
+      }
+      // try adding number at the end.
+      for (int i = 1; i < 10; i++) {
+        name = baseName + i;
+        if (entity.GetMember(name) == null)
+          return name;
+      }
+      Util.Throw("Failed to generate property name for entity {0}, base name {1}", entity.Name, baseName);
+      return null;
+    }
+
+
   }
 }

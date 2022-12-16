@@ -1,6 +1,6 @@
 SET pver=3.5.0
 Echo Version: "%pver%"
-dir Nupkg\*.nupkg
+dir packages\*.nupkg
 @echo off
 setlocal
 :PROMPT

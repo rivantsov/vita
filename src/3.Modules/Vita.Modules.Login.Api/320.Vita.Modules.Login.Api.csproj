@@ -1,23 +1,13 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
     <Import Project="..\..\Common.proj" />
+    <Import Project="..\..\Packages.proj" />
 
     <PropertyGroup>
         <TargetFramework>netstandard2.0</TargetFramework>
         <AssemblyName>Vita.Modules.Login.Api</AssemblyName>
         <RootNamespace>Vita.Modules.Login.Api</RootNamespace>
 
-        <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
-        <Copyright>Roman Ivantsov</Copyright>
-    </PropertyGroup>
-
-    <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
-        <NoWarn>1701;1702;1591</NoWarn>
-        <DocumentationFile>bin\Release\netstandard2.0\Vita.Modules.Login.Api.xml</DocumentationFile>
-    </PropertyGroup>
-
-    <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
-        <DocumentationFile></DocumentationFile>
     </PropertyGroup>
 
     <ItemGroup>

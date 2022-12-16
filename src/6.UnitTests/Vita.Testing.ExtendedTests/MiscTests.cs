@@ -118,6 +118,42 @@ namespace Vita.Testing.ExtendedTests {
 
     }
 
+    // Investigating reported issue #202: PropagateUpdatedOn does not trigger when adding new line
+    // Dec 2022 - so far no problem detected, works as expected without fixes
+
+    [TestMethod]
+    public void TestBugPropagateUpdatedOnAttr() {
+      Startup.BooksApp.LogTestStart();
+
+      var app = Startup.BooksApp;
+      var session = app.OpenSession();
+
+      // IBookOrderLine has [PropagateUpdateOn] on Order property. 
+      // For an existing order, after we add/modify/delete any line, the parent Order's status should be Modified, and UpdatedOn field should be updated 
+      //  on SaveChanges.
+
+      // We create order with one book; save it; and then add another book - the BookOrder should be set to Modified
+      var ferb = session.EntitySet<IUser>().First(u => u.UserName == "Ferb");
+      var order = session.NewOrder(ferb);
+      var csBook = session.EntitySet<IBook>().First(b => b.Title.StartsWith("c#"));
+      order.Add(csBook, 1);
+      session.SaveChanges();
+
+      var orderRec = EntityHelper.GetRecord(order);
+      Assert.AreEqual(EntityStatus.Loaded, orderRec.Status);
+      var updOn = order.UpdatedOn;
+      Thread.Sleep(100); // to make difference in UpdatedOn noticeable
+
+      // now lets add another book and check the order status
+      var vbBook = session.EntitySet<IBook>().First(b => b.Title.StartsWith("VB"));
+      order.Add(vbBook, 1);
+      // Check that order state changed to modified
+      Assert.AreEqual(EntityStatus.Modified, orderRec.Status, "Expected Order status changed to Modified");
+      session.SaveChanges();
+      var newUpdOn = order.UpdatedOn;
+      Assert.IsTrue(newUpdOn > updOn.AddMilliseconds(50), "Expected later new UpdatedOn value");
+    }
+
 
     [TestMethod]
     public void TestEntityToString() {

@@ -351,6 +351,7 @@ namespace Vita.Entities {
 
     public override void ApplyOnMember(EntityModelBuilder builder) {
       //Set interceptors
+      // HostMember.Entity.Events.New += Events_New; // for new record, parent's status is updated when we set the parent ref in SetMemberValue method 
       HostMember.Entity.Events.Modified += Events_ModifiedDeleted;
       HostMember.Entity.Events.Deleting += Events_ModifiedDeleted;
       _defaultValueSetter = HostMember.SetValueRef;

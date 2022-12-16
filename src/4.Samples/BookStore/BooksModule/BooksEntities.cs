@@ -206,7 +206,7 @@ namespace BookStore {
     [PrimaryKey, Auto]
     Guid Id { get; set; }
     [NoUpdate, CascadeDelete] //Delete all lines when order is deleted
-    [PropagateUpdatedOn] //update Order.UpdatedOn whenever order line is updated/deleted
+    [PropagateUpdatedOn] //update Order.UpdatedOn whenever order line is added/updated/deleted
     IBookOrder Order { get; set; }
     int LineNumber { get; set; } //automatically maintained line order - see IBookOrder.Lines property
     int Quantity { get; set; }

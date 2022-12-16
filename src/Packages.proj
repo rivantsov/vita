@@ -5,7 +5,7 @@
         <GenerateDocumentationFile>True</GenerateDocumentationFile>
         <DocumentationFile></DocumentationFile>
         <PackageLicenseExpression>MIT</PackageLicenseExpression>
-        <PackageOutputPath>..\..\..\packages</PackageOutputPath>
+        <PackageOutputPath>..\..\..\nuget\packages</PackageOutputPath>
         <SymbolPackageFormat>snupkg</SymbolPackageFormat>
         <IncludeSymbols>True</IncludeSymbols>
         <PackageProjectUrl>https://github.com/rivantsov/vita</PackageProjectUrl>

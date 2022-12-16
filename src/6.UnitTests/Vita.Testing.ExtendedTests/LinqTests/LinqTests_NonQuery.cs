@@ -344,29 +344,6 @@ namespace Vita.Testing.ExtendedTests {
       }
       session.SaveChanges();
     }
-
-    
-    // MySql - does not allow Update with From clause; but does allow using subquery returning a single value directly in 'SET colName=(subquery)'
-    // When using this method, a but #205 was reported. Adding a test for this
-    [TestMethod]
-    public void TestLinqNonQuery_Update2() {
-      Startup.BooksApp.LogTestStart();
-
-      var app = Startup.BooksApp;
-      var session = app.OpenSession();
-
-      // #205, Error for subquery update  https://github.com/rivantsov/vita/issues/205
-      //  The cause is missing alias $bi for table BillingIvoice being updated
-      //  Modeling similar query, for BookOrder, updating total from lines
-
-      var order1 = session.EntitySet<IBookOrder>().OrderByDescending(o => o.Total).First();
-      // build update query to recalc total for this order
-      var updateTotalsQuery = session.EntitySet<IBookOrder>()
-                                .Where(bo => bo.Id == order1.Id)
-                                .Select(bo => new { bo.Id, Total = bo.Lines.Sum(bol => bol.Price * bol.Quantity) });
-      var list = updateTotalsQuery.ToList(); 
-      session.ExecuteUpdate<IBookOrder>(updateTotalsQuery);
-    }
     
   }//class
 

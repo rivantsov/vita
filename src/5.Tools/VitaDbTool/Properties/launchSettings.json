@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "Vita.Tools.VdbTool": {
+      "commandName": "Project",
+      "commandLineArgs": "a b\r\n"
+    }
+  }
+}

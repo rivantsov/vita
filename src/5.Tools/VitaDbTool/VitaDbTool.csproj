@@ -1,0 +1,37 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <Import Project="..\..\Common.proj" />
+    <Import Project="..\..\Packages.proj" />
+
+    <PropertyGroup>
+        <OutputType>Exe</OutputType>
+        <TargetFramework>net6.0</TargetFramework>
+        <AssemblyName>vitadbtool</AssemblyName>
+        <Description>DB helper tool for VITA ORM. Provides DB-first code generation; SQL upgrade scripts generation.</Description>
+        <PackageTags>VITA ORM</PackageTags>
+        <PackAsTool>True</PackAsTool>
+        <PackageId>Vita.$(AssemblyName)</PackageId>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\..\1.Framework\Vita.Tools\090.Vita.Tools.csproj" />
+        <ProjectReference Include="..\..\2.Drivers\Vita.Data.MsSql\210.Vita.Data.MsSql.csproj" />
+        <ProjectReference Include="..\..\2.Drivers\Vita.Data.MySql\220.Vita.Data.MySql.csproj" />
+        <ProjectReference Include="..\..\2.Drivers\Vita.Data.Oracle\260.Vita.Data.Oracle.csproj" />
+        <ProjectReference Include="..\..\2.Drivers\Vita.Data.Postgres\230.Vita.Data.Postgres.csproj" />
+        <ProjectReference Include="..\..\2.Drivers\Vita.Data.SQLite\250.Vita.Data.SQLite.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <None Update="ConfigSamples\db1.mssql.books.cfg">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </None>
+      <None Update="ConfigSamples\db1._template_.cfg">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </None>
+      <None Update="ConfigSamples\dbupdate.mssql.books.cfg">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </None>
+    </ItemGroup>
+
+</Project>

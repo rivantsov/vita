@@ -1,8 +1,0 @@
-{
-  "profiles": {
-    "Vita.Tools.VdbTool": {
-      "commandName": "Project",
-      "commandLineArgs": "dbfirst /cfg:C:\\MyProjects\\VitaWorkHF\\hf_codegen.cfg"
-    }
-  }
-}

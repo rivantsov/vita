@@ -28,7 +28,7 @@ namespace Vita.Data.Postgres {
       // we are using ANY instead of IN, works for parameters and list literals
       base.SqlCrudTemplateDeleteMany = new SqlTemplate(
       @"DELETE FROM {0} 
-    WHERE {1} = ANY({2})");
+    WHERE {1} = ANY({2});");
     }
 
     public override void InitTemplates() {

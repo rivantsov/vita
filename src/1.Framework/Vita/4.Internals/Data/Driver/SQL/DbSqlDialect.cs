@@ -96,7 +96,7 @@ namespace Vita.Data.Driver {
 
     public SqlTemplate SqlCrudTemplateDeleteMany = new SqlTemplate(
 @"DELETE FROM {0} 
-    WHERE {1} IN ({2})");
+    WHERE {1} IN ({2});");
 
 
     // ====================================================================================================

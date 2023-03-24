@@ -152,6 +152,17 @@ namespace Vita.Testing.BasicTests.Misc {
       throw new NotImplementedException(
         $"Function '{methodName}' may not be called directly, only in LINQ expressions.");
     }
+
+
+    // Extra example of IsNull snippet for support issue #217
+    // MS SQL IsNull function: https://www.w3schools.com/sql/func_sqlserver_isnull.asp
+    [SqlExpression(DbServerType.MsSql, "ISNULL({value}, 0)")]
+    public static Decimal NullAsZero(this Decimal value) {
+      CannotCallDirectly();
+      return default;
+    }
+
   }
+
 
 }

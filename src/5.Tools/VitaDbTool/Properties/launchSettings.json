@@ -2,7 +2,7 @@
   "profiles": {
     "Vita.Tools.VdbTool": {
       "commandName": "Project",
-      "commandLineArgs": "a b\r\n"
+      "commandLineArgs": "dbfirst configsamples\\db1.mssql.sakila.cfg\r\n"
     }
   }
 }

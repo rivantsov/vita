@@ -119,7 +119,7 @@ namespace Vita.Data.Model {
       // try picking up caps - if there are both upper and lower cases
       var alias = new string(name.Where(c => char.IsUpper(c)).Take(3).ToArray()).ToLowerInvariant();
       if (string.IsNullOrEmpty(alias)) {
-        // try 
+        alias = "t" + name[0]; //fix for Sakila case (all low-case) 
       }
       return alias; 
     }

@@ -44,8 +44,8 @@ namespace BookStore.GraphQL {
       services.Add(new ServiceDescriptor(typeof(IAuthenticationTokenHandler), jwtTokenHandler));
 
       services.AddControllers()
-        // Note: by default System.Text.Json ns/serializer is used by AspNetCore 3.1; this serializer is no good -
-        // - does not serialize fields, does not handle dictionaries, etc. So we put back Newtonsoft serializer.
+        // Note: by default System.Text.Json ns/serializer is used by AspNetCore;  etc.
+        // So we put back Newtonsoft serializer.
         .AddNewtonsoftJson()
         // If your REST controllers reside in separate assembly, specify the assembly explicitly like that to make sure
         //  ASP.NET router finds these controllers

@@ -137,6 +137,6 @@ namespace Vita.Entities {
     }
 
 
-    }//class
+  }//class
 
-  }//namespace
+}//namespace

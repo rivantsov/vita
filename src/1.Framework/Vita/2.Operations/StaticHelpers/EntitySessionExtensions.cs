@@ -75,19 +75,24 @@ namespace Vita.Entities {
       return entSession.RecordsChanged.Count;
     }
 
-    //Helper method that can be used to create composite primary keys
+    //Helper methods that can be used to create composite primary keys
     /// <summary>Creates a primary key object for an entity identified by type. Use it for entity types with composite primary key, to create a key instance from 
     /// column values. The created key may be used in session.GetEntity() method as primary key parameter. </summary>
     /// <typeparam name="TEntity">Entity type.</typeparam>
     /// <param name="session">The entity session.</param>
     /// <param name="values">Value(s) of the primary key columns.</param>
     /// <returns>A primary key object.</returns>
-    public static object CreatePrimaryKey<TEntity>(this IEntitySession session, params object[] values) {
+    public static EntityKey CreatePrimaryKey<TEntity>(this IEntitySession session, params object[] values) {
+      return CreatePrimaryKey(session, typeof(TEntity), values);
+    }
+
+    public static EntityKey CreatePrimaryKey(this IEntitySession session, Type entityType, params object[] values) {
       Util.CheckParam(values, "values");
-      var entInfo = session.Context.App.Model.GetEntityInfo(typeof(TEntity), throwIfNotFound: true);
+      var entInfo = session.Context.App.Model.GetEntityInfo(entityType, throwIfNotFound: true);
       var pk = EntityKey.Create(entInfo.PrimaryKey, values);
       return pk;
     }
+
 
     // TODO: reimplement with offset stored in Claims
     /*

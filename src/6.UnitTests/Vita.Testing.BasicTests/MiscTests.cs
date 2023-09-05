@@ -23,7 +23,7 @@ namespace Vita.Testing.BasicTests.Misc {
     //  for console run with multiple servers, remember ServerType for the app, so we create new
     //  when server type changes
     static EntityApp _app;
-    static DbServerType _appServerType; 
+    static DbServerType _appServerType;
 
     [TestInitialize]
     public void Init() {
@@ -107,7 +107,7 @@ namespace Vita.Testing.BasicTests.Misc {
         // MySQL fails without this wait. Looks like we need to give some time to DB engine to settle the update.
         // any ideas?!  
         Thread.Sleep(100);
-        Thread.Yield(); 
+        Thread.Yield();
         veh1 = session.GetEntity<IVehicle>(car1Id);
         // without pause above, it loads NULL into FK driver_id
         var drId = EntityHelper.GetProperty(veh1, "Driver_Id");
@@ -324,15 +324,7 @@ namespace Vita.Testing.BasicTests.Misc {
     public void TestMisc_MatchBy2Refs() {
       // test for a bug - matching properties of 2 references to the same table (v.Owner and v.Driver); 
       DeleteAll();
-      var session = _app.OpenSession();
-      var john = session.NewDriver("D001", "John", "Dow");
-      var jane = session.NewDriver("D002", "Jane", "Crane");
-      var veh = session.NewVehicle("Ford", 2000, john, jane);
-
-      var veh2 = session.NewVehicle("Nissan", 2000, jane, john);
-      var veh3 = session.NewVehicle("Chevy", 2000, john, null);
-      session.SaveChanges();
-
+      _app.CreateSampleData();
       var session2 = _app.OpenSession();
       var qry = session2.EntitySet<IVehicle>().Where(v => v.Owner.FirstName == "Jane" && v.Driver.FirstName == "John");
       var ford = qry.FirstOrDefault();
@@ -355,8 +347,8 @@ namespace Vita.Testing.BasicTests.Misc {
       session = _app.OpenSession();
       var allDrivers = session.EntitySet<IDriver>().ToList();
       // check lic expires prop
-      var future4y = DateTime.Now.AddYears(4); 
-      foreach(var d in allDrivers) {
+      var future4y = DateTime.Now.AddYears(4);
+      foreach (var d in allDrivers) {
         Assert.IsTrue(d.LicenseExpiresOn_NoCol > future4y);
       }
 
@@ -367,7 +359,7 @@ namespace Vita.Testing.BasicTests.Misc {
                       .Select(d => new {
                         Name = d.FirstName,
                         LicNum = d.LicenseNumber,
-                        LicDatePlus3 = d.LicenseIssuedOn.DbAddYears(3) 
+                        LicDatePlus3 = d.LicenseIssuedOn.DbAddYears(3)
                       });
       var drivers = qry.ToList();
       Assert.AreEqual(2, drivers.Count, "Expected 2 drivers.");
@@ -375,6 +367,19 @@ namespace Vita.Testing.BasicTests.Misc {
       var allAfter2y = drivers.All(d => d.LicDatePlus3 > nowPlus2);
       Assert.IsTrue(allAfter2y, "Expected all dates in the future.");
 
+    }
+
+
+    [TestMethod]
+    public void TestMisc_MiscUtilities() {
+      DeleteAll();
+      _app.CreateSampleData();
+      var session = _app.OpenSession();
+      var ford = session.EntitySet<IVehicle>().First(v => v.Model == "Ford");
+      EntityHelper.MarkAllColumnsChanged(ford);
+      session.SaveChanges(); 
+      // Check the SQL log, it should have update statement with all columns in the SET list
+      
     }
   }//class
 }

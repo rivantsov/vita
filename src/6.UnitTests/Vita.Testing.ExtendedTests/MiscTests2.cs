@@ -12,6 +12,7 @@ using Vita.Entities.Utilities;
 using Vita.Modules.Login;
 using BookStore;
 using Vita.Tools.Testing;
+using System.Data;
 
 namespace Vita.Testing.ExtendedTests {
 
@@ -25,6 +26,19 @@ namespace Vita.Testing.ExtendedTests {
       var app = Startup.BooksApp;
       var session = app.OpenSession();
       var utcNow = app.TimeService.UtcNow;
+      IDbCommand cmd;
+
+      // Incorrect impl of Group By createTime.Date
+      var grpBy = session.EntitySet<IBookOrder>().GroupBy(bo => bo.CreatedOn.Date)
+        .Select(ig => new { Date = ig.Key, Count = ig.Count() }).ToList();
+      cmd = session.GetLastCommand();
+      Debug.WriteLine(cmd.CommandText);
+      // workaround
+      var preQry = session.EntitySet<IBookOrder>().Select(bo => new { Date = bo.CreatedOn.Date, bo.Status });
+      var grpBy2 = preQry.GroupBy(bo => new { bo.Status, bo.Date })
+        .Select(ig => new { Status = ig.Key.Status, Date = ig.Key.Date, Count = ig.Count()}).ToList();
+      cmd = session.GetLastCommand();
+      Debug.WriteLine(cmd.CommandText);
 
       // Bug - incorrect linq grouping of expressions with chained Where conditions
       // https://github.com/rivantsov/vita/issues/93
@@ -69,7 +83,7 @@ namespace Vita.Testing.ExtendedTests {
         .Where(b => b.CreatedOn > createdOn1 && b.CreatedOn < createdOn2)
         .Where(b => b.CreatedOn > new DateTime(2017, 1, 1)) //this results in constant (quoted string) in SQL
         .FirstOrDefault();
-      var cmd = session.GetLastCommand();
+      cmd = session.GetLastCommand();
       var cmdStr = cmd.ToLogString(); 
       //Obviously it should bring the same book 
       Assert.IsNotNull(bk2, "Expected book");

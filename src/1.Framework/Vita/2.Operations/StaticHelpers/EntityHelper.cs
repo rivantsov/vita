@@ -256,5 +256,22 @@ namespace Vita.Entities {
       return linkEntList;
     }
 
+    public static void MarkAllColumnsChanged(object entity) {
+      var rec = EntityHelper.GetRecord(entity);
+      Util.Check(rec != null, "Object is not an entity ({0}) - failed to retrieve entity record.", entity);
+      Util.Check(rec.Status == EntityStatus.Loaded || rec.Status == EntityStatus.Modified, 
+        "Invalid entity status ({0}) for entity ({1}), must be Loaded or Modified to mark all columns changed.", rec.Status, entity);
+      foreach(var m in rec.EntityInfo.Members) {
+        var okToSet = m.Kind == EntityMemberKind.Column && !m.Flags.IsSet(EntityMemberFlags.PrimaryKey | EntityMemberFlags.Identity) &&
+            rec.ValuesModified[m.ValueIndex] == null;
+        if (!okToSet)
+          continue;
+        // non-null modified value is indicator that value changed and should be updated in database
+        rec.ValuesModified[m.ValueIndex] = rec.ValuesOriginal[m.ValueIndex];
+      }
+      if (rec.Status == EntityStatus.Loaded)
+        rec.Status = EntityStatus.Modified;
+    }
+
   }//class
 }//ns

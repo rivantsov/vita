@@ -55,7 +55,7 @@ namespace Vita.Entities.Utilities {
           return (string)value;
         return value.ToString();
       }
-      if(valueType == typeof(string))
+      if(valueType == typeof(String))
         return FromString((string)value, type);
       //else try default Convert
       // but check if it is nullable value type

@@ -162,6 +162,16 @@ namespace Vita.Testing.BasicTests.Misc {
       return default;
     }
 
+    public static void CreateSampleData(this EntityApp app) {
+      var session = app.OpenSession();
+      var john = session.NewDriver("D001", "John", "Dow");
+      var jane = session.NewDriver("D002", "Jane", "Crane");
+      var veh = session.NewVehicle("Ford", 2000, john, jane);
+      var veh2 = session.NewVehicle("Nissan", 2000, jane, john);
+      var veh3 = session.NewVehicle("Chevy", 2000, john, null);
+      session.SaveChanges();
+    }
+
   }
 
 

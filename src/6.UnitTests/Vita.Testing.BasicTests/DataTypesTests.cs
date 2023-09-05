@@ -52,6 +52,8 @@ namespace Vita.Testing.BasicTests.DataTypes {
       string StringProp { get; set; }
       [Unlimited, Nullable]
       string MemoProp { get; set; }
+      [Size(20), Column(AnsiString = true), Nullable]
+      string StringAnsiProp { get; set; } // for testing LIKE operator
 
       //bool 
       bool BoolProp { get; set; }

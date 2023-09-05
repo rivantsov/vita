@@ -41,8 +41,9 @@ namespace Vita.Entities.Runtime {
         return;
       }
       var listMember = list.OwnerMember;
-      if (session.SmartLoadEnabled) {
-        var siblingRecs = session.GetRecordsWithUnloadedListMember(listMember);
+      var siblingRecs = session.GetRecordsWithUnloadedListMember(listMember);
+      // smartLoad: go for 'multiple IDs' form only if there's more than one sibling rec; query by single Id is faster
+      if (siblingRecs.Count > 1 && session.SmartLoadEnabled) {
         session.LoadListManyToOneMultipleRecords(siblingRecs, listMember);
         if (list.IsLoaded)
           return;
@@ -67,8 +68,9 @@ namespace Vita.Entities.Runtime {
       }
       var listMember = list.OwnerMember;
       var session = list.OwnerRecord.Session;
-      if (session.SmartLoadEnabled) {
-        var siblingRecs = session.GetRecordsWithUnloadedListMember(listMember);
+      var siblingRecs = session.GetRecordsWithUnloadedListMember(listMember);
+      // smartLoad: go for 'multiple IDs' form only if there's more than one sibling rec; query by single Id is faster
+      if (siblingRecs.Count > 1 && session.SmartLoadEnabled) {
         session.LoadListManyToManyMultipleRecords(siblingRecs, listMember);
         if (list.IsLoaded)
           return;

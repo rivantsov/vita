@@ -30,7 +30,11 @@ namespace Vita.Data.MsSql {
       base.MaxParamCount = 2100;
       base.MaxRecordsInInsertMany = 500; //actual is 1000, but just to be careful
       base.DynamicSqlParameterPrefix = "@P";
-      base.BatchBeginTransaction = new TextSqlFragment("BEGIN TRANSACTION;");
+      // SQL Server by default continues script execution on some errors and commits transaction, for ex: ref integrity errors.
+      // We set XACT_ABORT ON to make it stop and rollback
+      base.BatchBeginTransaction = new TextSqlFragment(
+@"SET XACT_ABORT ON; 
+BEGIN TRANSACTION;");
       base.BatchCommitTransaction = new TextSqlFragment("COMMIT TRANSACTION;");
       base.DDLSeparator = Environment.NewLine + "GO" + Environment.NewLine;
       //Change Count() to COUNT_BIG - COUNT is not allowed inside views, so we change default to Count_BIG

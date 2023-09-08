@@ -20,8 +20,9 @@ namespace Vita.Entities {
       if(condition)
         return null;
       var rec = EntityHelper.GetRecord(entity);
-      var recPath = rec.EntityInfo.EntityType.Name + "/" + rec.PrimaryKey.ToString();
-      var fault = new ClientFault() { Code = faultCode, Tag = propertyName, Message = Util.SafeFormat(message, args), Path = recPath };
+      var entRef = rec.GetEntityRef();
+      var fault = new ClientFault() { Code = faultCode, PropertyName = propertyName, 
+        Tag = propertyName, Message = Util.SafeFormat(message, args), EntityRef = entRef };
       if(invalidValue != null)
         fault.Parameters["InvalidValue"] = invalidValue.ToString();
       rec.AddValidationFault(fault);

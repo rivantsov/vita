@@ -75,7 +75,7 @@ namespace Vita.Entities.Runtime {
     string _asString; 
     public string AsString() {
       if (_asString == null)
-        _asString = KeyInfo.Entity.EntityType.Name + "/" + ValuesToString();
+        _asString = KeyInfo.Entity.Name + "/" + ValuesToString();
       return _asString;
     }
     public override string ToString() {

@@ -147,7 +147,8 @@ Parameters:
       try {
         if(fault == null)
           return null; 
-        var result = Util.SafeFormat("    Fault: {0} Code={1} Tag ={2} Path={3}.", fault.Message, fault.Code, fault.Tag, fault.Path);
+        var result = Util.SafeFormat("    Fault: {0} Code={1} Property ={2} EntityRef='{3}'.", fault.Message, fault.Code, 
+                    fault.PropertyName, fault.EntityRef);
         if (fault.Parameters.Count > 0)
           result += string.Join(";", fault.Parameters.Select(kv => Util.SafeFormat("{0}: {1}", kv.Key,  kv.Value.TrimMiddle())));
         return result; 

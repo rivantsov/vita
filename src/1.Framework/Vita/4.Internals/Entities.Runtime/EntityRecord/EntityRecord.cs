@@ -102,7 +102,11 @@ namespace Vita.Entities.Runtime {
     #endregion
 
     public event PropertyChangedEventHandler PropertyChanged;
-    public string AliasId { get; set; }
+    /// <summary>Entity reference assigned by the client when submitting the entity (data) to save, to use when returning 
+    /// validation errors.</summary>
+    /// <remarks>Typically used for new records that might not have PK assigned yet. If the system detects an error, it uses 
+    /// this key to identify the record/entity for the client, so it can indicated it in the UI.</remarks>
+    public string ClientEntityRef { get; set; }
 
     #region  PrimaryKey, Status, EntityInstance
     public EntityKey PrimaryKey {
@@ -350,15 +354,16 @@ namespace Vita.Entities.Runtime {
     public void ClearValidation() {
       ValidationFaults = null; 
     }
-    public string GetRecordRef() {
-      if(!string.IsNullOrEmpty(AliasId))
-        return AliasId;
-      return EntityInfo.Name + "/" + PrimaryKey.ToString();
+
+    public string GetEntityRef() {
+      if(!string.IsNullOrEmpty(ClientEntityRef))
+        return ClientEntityRef;
+      return PrimaryKey.ToString();
     }
+
     public ClientFault AddValidationError(string code, string message, object[] messageArgs, string targetProperty, object invalidValue = null) {
       var msg = Util.SafeFormat(message, messageArgs);
-      var recId = GetRecordRef();
-      var err = new ClientFault() { Code = code, Message = msg, Tag = targetProperty, Path = recId };
+      var err = new ClientFault() { Code = code, Message = msg, Tag = targetProperty, PropertyName = targetProperty, EntityRef = GetEntityRef()  };
       if(invalidValue != null) {
         err.Parameters["InvalidValue"] = invalidValue.ToString();
       }

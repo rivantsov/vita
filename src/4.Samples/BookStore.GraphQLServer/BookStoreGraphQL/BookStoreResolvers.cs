@@ -17,7 +17,7 @@ namespace BookStore.GraphQL {
       // It is copied from this dict into GraphQL requestContext.VitaOperationContext by GraphQLHttpServer
       _operationContext = (OperationContext) request.VitaOperationContext; 
       _app = (BooksEntityApp) _operationContext.App; //general case
-      _session = _operationContext.OpenSession(EntitySessionOptions.EnableSmartLoad);
+      _session = _operationContext.OpenSession();
       // _operationContext already has User info assigned.
     }
 

@@ -32,6 +32,7 @@ namespace Vita.Data.SQLite {
       AddTemplate("Lower({0})", SqlFunctionType.ToLower);
       AddTemplate("Length({0})", SqlFunctionType.StringLength);
       AddTemplate("{0}", SqlFunctionType.ConvertBoolToBit);
+      AddTemplate("date({0})", SqlFunctionType.Date);
 
     }
 

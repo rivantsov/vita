@@ -36,7 +36,7 @@ namespace Vita.Testing.ExtendedTests {
       Startup.BooksApp.LogTestStart();
       var app = Startup.BooksApp;
 
-      var session = app.OpenSession(EntitySessionOptions.EnableSmartLoad);
+      var session = app.OpenSession();
       session.LogMessage("=== Testing SmartLoad for entity references");
 
       var oldCount = GetSelectCount();
@@ -54,7 +54,7 @@ namespace Vita.Testing.ExtendedTests {
       Assert.AreEqual(2, qryCount, "expected 2 queries"); // books, publishers
 
       // Lists and nested lists/refs
-      session = app.OpenSession(EntitySessionOptions.EnableSmartLoad);
+      session = app.OpenSession();
       session.LogMessage("=== Testing SmartLoad for lists and deep-nested child refs and lists");
       names.Clear();
 

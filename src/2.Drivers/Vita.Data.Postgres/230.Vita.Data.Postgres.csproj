@@ -13,7 +13,9 @@
 
 
     <ItemGroup>
-        <PackageReference Include="Npgsql" Version="8.0.2" />
+        <!-- Apr 2024. Version 8.0.2 has a bug, in handling array params. they promise to fix it in 8.03
+                 so staying on 7.*-->
+        <PackageReference Include="Npgsql" Version="7.0.6" />
     </ItemGroup>
 
     <ItemGroup>

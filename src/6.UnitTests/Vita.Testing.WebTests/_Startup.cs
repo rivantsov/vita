@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Text.Json;
 using System.Threading.Tasks;
 using Arrest;
 using BookStore;
@@ -10,7 +11,6 @@ using BookStore.SampleData;
 using Microsoft.AspNetCore;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
-using Newtonsoft.Json;
 using Vita.Data;
 using Vita.Data.MsSql;
 using Vita.Entities;
@@ -28,6 +28,10 @@ namespace Vita.Testing.WebTests {
     public static string LogFilePath;
     internal static IConfigurationRoot AppConfiguration;
     public static MockLoginMessagingService LoginMessagingService;
+    static JsonSerializerOptions _jsonOptions = new JsonSerializerOptions() {
+      IncludeFields = true,
+      PropertyNameCaseInsensitive = true,
+    };
 
     public static void Init() {
       try {
@@ -92,10 +96,18 @@ namespace Vita.Testing.WebTests {
 
       RestClient.SharedHttpClientHandler.AllowAutoRedirect = false; //we need it for Redirect test
       // Setup handler converting BadRequestException into ClientFaultException, with list of faults already converted
-      Client.Events.ReceivedError += (s, e) => {
-        if (e.CallData.Exception is BadRequestException bre)
-          e.CallData.Exception = new ClientFaultException((IList<ClientFault>)bre.Details);
-      };
+      Client.Events.ReceivedError += OnReceivedError;
+    }
+
+    private static void OnReceivedError(object src, RestClientEventArgs e) {
+      if (e.CallData.Exception is BadRequestException bre) {
+        var json = bre.Details as string; 
+        if (!string.IsNullOrEmpty(json)) {
+          var faults = JsonSerializer.Deserialize<ClientFault[]>(json, _jsonOptions);
+          if (faults != null) 
+            e.CallData.Exception = new ClientFaultException(faults);
+        }
+      }
     }
 
     static IWebHost _webHost;

@@ -1,7 +1,7 @@
-<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="MSTest.Sdk/3.3.1">
 
-  <PropertyGroup>
-    <TargetFramework>net6.0</TargetFramework>
+    <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
     <LangVersion>latest</LangVersion>
     <AssemblyName>Vita.Testing.ExtendedTests</AssemblyName>
     <RootNamespace>Vita.Testing.ExtendedTests</RootNamespace>
@@ -9,32 +9,10 @@
     <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
   </PropertyGroup>
 
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
-    <DefineConstants>TRACE;DEBUG;NETCOREAPP;NETCOREAPP2_0;NETCOREAPP;NETCOREAPP2_0;NETCOREAPP;NETCOREAPP2_0;SQL_CACHE_LOG</DefineConstants>
-    <NoWarn>1701;1702;CA1416</NoWarn>
-  </PropertyGroup>
-
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
-    <DefineConstants>TRACE;RELEASE;NETCOREAPP;NETCOREAPP2_0;RELEASENETCOREAPP;NETCOREAPP2_0;;RELEASE;NETCOREAPP;NETCOREAPP2_0;RELEASE;NETCOREAPP;NETCOREAPP2_0;SQL_CACHE_LOG</DefineConstants>
-    <NoWarn>1701;1702;CA1416</NoWarn>
-  </PropertyGroup>
-
-  <ItemGroup>
-    <Compile Remove="Md1Tests\**" />
-    <EmbeddedResource Remove="Md1Tests\**" />
-    <None Remove="Md1Tests\**" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Compile Remove="_Generated_BookEntities_MsSql.cs" />
-  </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="Microsoft.Extensions.Configuration" Version="2.0.0" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="2.0.0" />
-    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="15.3.0-preview-20170628-02" />
-    <PackageReference Include="MSTest.TestAdapter" Version="1.1.18" />
-    <PackageReference Include="MSTest.TestFramework" Version="1.1.18" />
   </ItemGroup>
 
   <ItemGroup>

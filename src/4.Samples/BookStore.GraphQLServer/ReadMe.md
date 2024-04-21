@@ -1,6 +1,10 @@
 ﻿## GraphQL sample server application
-This folder contains a sample project that implements a GraphQL server running over a VITA-driven database. 
-
-The GraphQL handling is implemented by NGraphQL library. Among other things, the app demonstrates Login functionality - how to implement login thru GraphQL endpoint, and then track the current user using a Jwt token. The token is handled by the VitaWebMiddleware, the same that is used for implementing RESTful APIs. The AddReview GraphQL method expects the user to be authenticated and sets him/her as the author of the review. 
+This folder contains a sample project that implements a GraphQL server running over a VITA-driven database. The GraphQL handling is implemented by NGraphQL library. 
 
 This project actually implements a combined server, implementing both GraphQL endpoint and RESTful endpoint(s). REST endpoint is used for returning images (book cover image). GraphQL protocol does not provide a way to return binary data directly (so it's usable in image links on web page); so you have to use REST endpoint to return images. In this project books have cover images in the database identified by the CoverImageId field on the Book type. After you retrieve book(s) through GraphQL query, you can get its image as binary stream using the REST endpoint. This endpoint is implemented by the ImageController, defined right in this project. 
+
+## Exploring GraphQL API with Altair
+The prior versions (before Apr 2024) had Graphiql package integrated and Graphiql UI app was automatically launching if you start the BookStore.GraphQLServer project. The GraphiQL UI is no longer supported. Instead, I recommend installing Altair GraphQL client extension for Chrome (or other similar ext for browser). Install the extension; when the project is launched, the initial page in launchSettings.json is set to home page for GraphQL extension. Set the target GraphQL server URL (in Altair window) to current server endpoint (currently http://localhost:55571/graphql). After this you can enter graphql queries and execute them against the server. 
+
+## Support for Login and Jwt is dropped.
+Unlike in previous versions, this version of Books GraphQL server does NOT show login functionality, and related Jwt token handling. This is in general outside of GraphQL server scope. The Login and Jwt are tightly integrated with AspNetCore functionality - which keeps changing. Additionally, with the cloud deployments, these are often delegated or integrated with Cloud or 3d party services. Providing a custom implementation here does not make much sense anymore. Btw, the plan is to deprecate Vita.Web assembly completely.   

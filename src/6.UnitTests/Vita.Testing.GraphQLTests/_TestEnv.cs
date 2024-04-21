@@ -24,8 +24,6 @@ namespace Vita.Testing.GraphQLTests {
     public static string EndPointUrl;
     public static GraphQLClient Client;
     public static RestClient RestClient;
-    static IWebHost _webHost;
-
 
     public static void Init() {
       if (AppConfiguration != null)
@@ -36,32 +34,12 @@ namespace Vita.Testing.GraphQLTests {
       builder.SetBasePath(Directory.GetCurrentDirectory()).AddJsonFile("appSettings.json");
       AppConfiguration = builder.Build();
       ServiceUrl = AppConfiguration["ServiceUrl"];
-      StartService();
+      ServerSetup.SetupServer(ServiceUrl); 
       EndPointUrl = ServiceUrl + "/graphql";
       Client = new GraphQLClient(EndPointUrl);
       RestClient = new RestClient(ServiceUrl); 
-      // if you want to listen/log request/response
+      // if you want to listen/log request/gResult
       // Client.RequestCompleted += Client_RequestCompleted;
-    }
-
-    public static void StartService() {
-      IdentityModelEventSource.ShowPII = true;
-
-      GraphQLAspNetServerStartup.StartGrpaphiql = false; // do not start Graphiql UI, we do not need it in tests
-      var hostBuilder = WebHost.CreateDefaultBuilder()
-          .ConfigureAppConfiguration((context, config) => { })
-          .UseStartup<GraphQLAspNetServerStartup>()
-          .UseEnvironment("Development") //To return exception details info on ServerError
-          .UseUrls(ServiceUrl)
-          ;
-      _webHost = hostBuilder.Build();
-
-      _webHost.Start();
-      Debug.WriteLine("The service is running on URL: " + ServiceUrl);
-    }
-
-    public static void ShutDown() {
-      _webHost.StopAsync().Wait();
     }
 
     public static void FlushLogs() {
@@ -70,7 +48,7 @@ namespace Vita.Testing.GraphQLTests {
 
     public static long SqlQueryCountForLastRequest; 
 
-    public static async Task<ServerResponse> PostAsync(string query, IDictionary<string, object> variables = null, 
+    public static async Task<GraphQLResult> PostAsync(string query, IDictionary<string, object> variables = null, 
                      string operationName = null, CancellationToken cancellationToken = default) {
       var prevCounter = GetSqlCounter(); 
       var response = await Client.PostAsync(query, variables, operationName, cancellationToken);
@@ -96,17 +74,17 @@ namespace Vita.Testing.GraphQLTests {
 ");
     }
 
-    private static void LogCompletedResponse(ServerResponse response) {
+    private static void LogCompletedResponse(GraphQLResult gResult) {
       string reqText;
-      var req = response.Request;
+      var req = gResult.Request;
       if (req.HttpMethod == "GET") {
         reqText = @$"GET, URL: {req.UrlQueryPartForGet} 
                 unescaped: {Uri.UnescapeDataString(req.UrlQueryPartForGet)}";
       } else
-        reqText = "POST, payload: " + Environment.NewLine + response.Request.Body;
+        reqText = "POST, payload: " + Environment.NewLine + gResult.Request.Body;
       // for better readability, unescape \r\n
       reqText = reqText.Replace("\\r\\n", Environment.NewLine);
-      var jsonResponse = JsonConvert.SerializeObject(response.TopFields, Formatting.Indented);
+      var jsonResponse = JsonConvert.SerializeObject(gResult.TopFields, Formatting.Indented);
       var text = $@"
 Request: 
 {reqText}
@@ -114,12 +92,12 @@ Request:
 Response:
 {jsonResponse}
 
-//  time: {response.DurationMs} ms; Select SQL count: {SqlQueryCountForLastRequest}   ------------------------------------------ 
+//  time: {gResult.DurationMs} ms; Select SQL count: {SqlQueryCountForLastRequest}   ------------------------------------------ 
 
 ";
       LogText(text);
-      if (response.Exception != null)
-        LogText(response.Exception.ToString());
+      if (gResult.Exception != null)
+        LogText(gResult.Exception.ToString());
     }
 
 

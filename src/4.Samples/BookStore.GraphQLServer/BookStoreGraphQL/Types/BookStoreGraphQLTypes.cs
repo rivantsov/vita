@@ -59,7 +59,7 @@ namespace BookStore.GraphQL {
 
   [DebuggerDisplay("{Caption}")]
   public class BookReviewInput {
-    // UserId is currently logged in user
+    public Guid UserId;
     public Guid BookId;
     public int Rating;
     public string Caption;

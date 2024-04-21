@@ -13,10 +13,8 @@ namespace BookStore.GraphQL {
     IEntitySession _session; 
 
     public void BeginRequest(IRequestContext request) {
-      // OpContext is created by VitaWebMiddleware and saved in httpContext.Items[] dict. 
-      // It is copied from this dict into GraphQL requestContext.VitaOperationContext by GraphQLHttpServer
-      _operationContext = (OperationContext) request.VitaOperationContext; 
-      _app = (BooksEntityApp) _operationContext.App; //general case
+      _app = BooksEntityApp.Instance;
+      _operationContext = new OperationContext(_app);
       _session = _operationContext.OpenSession();
       // _operationContext already has User info assigned.
     }

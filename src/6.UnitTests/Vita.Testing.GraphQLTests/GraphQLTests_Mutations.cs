@@ -18,11 +18,11 @@ namespace Vita.Testing.GraphQLTests {
     public async Task TestAddBookReviews() {
       TestEnv.LogTestMethodStart();
 
-      var loggedIn = await LoginUser("cartman");
-      Assert.IsTrue(loggedIn, "Failed to login user cartman");
+      var cartmanUser = await FindUser("cartman");
+      Assert.IsNotNull(cartmanUser, "Failed to find user cartman");
 
       // 1. Find a book and a user
-      TestEnv.LogComment("Loading user and book objects.");
+      TestEnv.LogComment("Loading book object.");
       var bk = await FindBook("three"); //three little pigs book
 
       // 2. create mutation request, variables dict
@@ -39,11 +39,12 @@ mutation ($rv: BookReviewInput!) {
       var badReviewInp = new BookReviewInput();
       vars["rv"] = badReviewInp;
       var resp = await TestEnv.PostAsync(mutAddReview, vars);
-      Assert.AreEqual(2, resp.Errors.Count, "Expected 2 errors");
+      Assert.AreEqual(5, resp.Errors.Count, "Expected 5 errors");
 
       //  3.2 - init Caption and Review to non-null; it will get to resolver but it will reject it, multiple problems
       TestEnv.LogComment("Submitting another invalid BookReviewInput object; input validation in resolver rejects it with multiple errors.");
       badReviewInp = new BookReviewInput() { 
+        UserId = cartmanUser.Id,
         Review = "   ",  // whitespace not allowed 
         Caption = new string('x', 101) // too long
       };
@@ -54,6 +55,7 @@ mutation ($rv: BookReviewInput!) {
       // 4. Submit valid object, get back Id of new review
       TestEnv.LogComment("Submitting valid BookReviewInput object; review will be added.");
       var reviewInp = new BookReviewInput() {
+        UserId = cartmanUser.Id,
         BookId = bk.Id, Caption = "Boring", Rating = 1,
         Review = "Really really boring book."
       };
@@ -73,7 +75,6 @@ mutation ($reviewId: Uuid!) {
       resp = await TestEnv.PostAsync(mutDelReview, vars);
       resp.EnsureNoErrors();
 
-      await Logout(); 
     } //method
 
   }

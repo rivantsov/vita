@@ -1,29 +1,22 @@
-<Project Sdk="Microsoft.NET.Sdk.Web">
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
 
   <PropertyGroup>
-    <TargetFramework>net6.0</TargetFramework>
-  </PropertyGroup>
-
-  <PropertyGroup>
-    <WarningLevel>5</WarningLevel>
-    <DocumentationFile>bin\BookStore.GraphQLServer.xml</DocumentationFile>
-    <NoWarn>1701;1702;1591</NoWarn>
-    <AssemblyName>BookStore.GraphQLServer</AssemblyName>
-    <RootNamespace>BookStore.GraphQLServer</RootNamespace>
+    <TargetFramework>net8.0</TargetFramework>
+      <AssemblyName>BookStore.GraphQLServer</AssemblyName>
+      <RootNamespace>BookStore.GraphQLServer</RootNamespace>
+      <DocumentationFile>BookStore.GraphQLServer.xml</DocumentationFile>
+      <NoWarn>1701;1702;1591</NoWarn>
+      <ProduceReferenceAssembly>False</ProduceReferenceAssembly>
+      <GenerateDocumentationFile>False</GenerateDocumentationFile>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="GraphQL.Server.Ui.GraphiQL" Version="5.0.2" />
-    <PackageReference Include="Microsoft.AspNetCore.Mvc.NewtonsoftJson" Version="3.1.14" />
-    <PackageReference Include="NGraphQL.Client" Version="1.4.1" />
-    <PackageReference Include="NGraphQL.Server.AspNetCore" Version="1.4.1" />
+      <PackageReference Include="NGraphQL.Server" Version="1.7.0" />
+      <PackageReference Include="NGraphQL.Server.AspNetCore" Version="1.7.0" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\1.Framework\Vita.Tools\090.Vita.Tools.csproj" />
-    <ProjectReference Include="..\..\1.Framework\Vita.Web\030.Vita.Web.csproj" />
     <ProjectReference Include="..\..\2.Drivers\Vita.Data.MsSql\210.Vita.Data.MsSql.csproj" />
-    <ProjectReference Include="..\BookStore.SampleData\420.BookStore.SampleData.csproj" />
     <ProjectReference Include="..\BookStore\410.BookStore.csproj" />
   </ItemGroup>
 

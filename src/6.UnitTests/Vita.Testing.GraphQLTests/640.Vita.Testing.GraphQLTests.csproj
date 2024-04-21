@@ -1,17 +1,15 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="MSTest.Sdk/3.3.1">
 
-  <PropertyGroup>
-    <TargetFramework>net6.0</TargetFramework>
+    <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
 
     <IsPackable>false</IsPackable>
     <AssemblyName>Vita.Testing.GraphQLTests</AssemblyName>
     <RootNamespace>Vita.Testing.GraphQLTests</RootNamespace>
     <StartupObject>Vita.Testing.GraphQLTests.Program</StartupObject>
-  </PropertyGroup>
-
-  <PropertyGroup>
     <NoWarn>1701;1702;CA1416</NoWarn>
   </PropertyGroup>
+
 
   <ItemGroup>
     <Content Include="appsettings.json">
@@ -24,11 +22,8 @@
   <ItemGroup>
     <PackageReference Include="Arrest" Version="2.2.0" />
     <PackageReference Include="Microsoft.AspNetCore" Version="2.2.0" />
-    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="16.5.0" />
-    <PackageReference Include="MSTest.TestAdapter" Version="2.1.0" />
-    <PackageReference Include="MSTest.TestFramework" Version="2.1.0" />
-    <PackageReference Include="NGraphQL.Client" Version="1.4.1" />
-    <PackageReference Include="NGraphQL.Server.AspNetCore" Version="1.4.1" />
+    <PackageReference Include="NGraphQL.Client" Version="1.7.0" />
+    <PackageReference Include="NGraphQL.Server.AspNetCore" Version="1.7.0" />
   </ItemGroup>
 
   <ItemGroup>

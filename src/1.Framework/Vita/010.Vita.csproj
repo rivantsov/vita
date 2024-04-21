@@ -7,25 +7,13 @@
         <TargetFramework>netstandard2.0</TargetFramework>
         <AssemblyName>Vita</AssemblyName>
         <RootNamespace>Vita</RootNamespace>
-
         <Description>VITA ORM Core Functionality. </Description>
         <Title>VITA .NET ORM</Title>
         <PackageTags>ORM; .NET</PackageTags>
     </PropertyGroup>
-
-    <ItemGroup>
-      <None Include="..\..\..\README.md">
-        <Pack>True</Pack>
-        <PackagePath>\</PackagePath>
-      </None>
-    </ItemGroup>
     
     <ItemGroup>
         <PackageReference Include="Proxemity" Version="2.0.1" />
     </ItemGroup>
 
-    <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
-        <DefineConstants>TRACE;DEBUG;NETSTANDARD;NETSTANDARD2_0;_new</DefineConstants>
-        <WarningLevel>4</WarningLevel>
-    </PropertyGroup>
 </Project>

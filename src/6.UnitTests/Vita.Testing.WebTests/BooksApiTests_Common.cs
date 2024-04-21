@@ -1,5 +1,4 @@
-﻿using Arrest.Sync;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Vita.Modules.Login;
 
 namespace Vita.Testing.WebTests {

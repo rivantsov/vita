@@ -1,42 +1,20 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="MSTest.Sdk/3.3.1">
 
   <PropertyGroup>
-    <TargetFramework>net6.0</TargetFramework>
+    <TargetFramework>net8.0</TargetFramework>
     <LangVersion>latest</LangVersion>
     <StartupObject>Vita.Testing.BasicTests.Program</StartupObject>
     <OutputType>Exe</OutputType>
     <AssemblyName>Vita.Testing.BasicTests</AssemblyName>
     <RootNamespace>Vita.Testing.BasicTests</RootNamespace>
     <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
-  </PropertyGroup>
-
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
-    <NoWarn>1701;1702;CA1416</NoWarn>
-  </PropertyGroup>
-
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
     <NoWarn>1701;1702;CA1416</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Remove="BufferingQueueComparePerfTests.cs" />
-    <Compile Remove="BufferingQueueTests.cs" />
-    <Compile Remove="HashCryptTests_MOVETOEXT.cs" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <None Remove="_errors.log" />
-    <None Remove="_schemas_MsSql.log" />
-    <None Remove="__locksTest.log" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <PackageReference Include="Microsoft.Data.Sqlite" Version="6.0.6" />
-    <PackageReference Include="Microsoft.Extensions.Configuration" Version="2.0.0" />
-    <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="2.0.0" />
-    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="15.3.0-preview-20170517-02" />
-    <PackageReference Include="MSTest.TestAdapter" Version="1.1.17" />
-    <PackageReference Include="MSTest.TestFramework" Version="1.1.17" />
+      <PackageReference Include="Microsoft.Data.Sqlite" Version="6.0.6" />
+      <PackageReference Include="Microsoft.Extensions.Configuration" Version="2.0.0" />
+      <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="2.0.0" />
   </ItemGroup>
 
   <ItemGroup>
@@ -51,7 +29,7 @@
 
   <ItemGroup>
     <None Update="appSettings.json">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>
 

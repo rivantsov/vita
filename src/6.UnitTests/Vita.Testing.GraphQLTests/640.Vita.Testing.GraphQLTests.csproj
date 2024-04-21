@@ -9,7 +9,7 @@
     <StartupObject>Vita.Testing.GraphQLTests.Program</StartupObject>
   </PropertyGroup>
 
-  <PropertyGroup >
+  <PropertyGroup>
     <NoWarn>1701;1702;CA1416</NoWarn>
   </PropertyGroup>
 
@@ -22,7 +22,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Arrest" Version="1.4.0" />
+    <PackageReference Include="Arrest" Version="2.2.0" />
     <PackageReference Include="Microsoft.AspNetCore" Version="2.2.0" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="16.5.0" />
     <PackageReference Include="MSTest.TestAdapter" Version="2.1.0" />

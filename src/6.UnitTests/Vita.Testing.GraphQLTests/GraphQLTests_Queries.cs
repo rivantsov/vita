@@ -165,7 +165,7 @@ query userQuery {
       //Get c# book
       var csBook = await FindBook("c#"); // get Book using GraphQL api
       var imageUrl = TestEnv.ServiceUrl + "/api/images/" + csBook.CoverImageId;
-      var bytes = await restClient.GetBinaryAsync(imageUrl, null, acceptMediaType: "image/jpeg");
+      var bytes = await restClient.GetBinaryAsync(imageUrl); //, null, acceptMediaType: "image/jpeg");
       Assert.IsNotNull(bytes, "Expected image bytes");
       //Jpeg starts with 0xFFD8
       Assert.AreEqual(0xFF, bytes[0], "Expected FF byte.");

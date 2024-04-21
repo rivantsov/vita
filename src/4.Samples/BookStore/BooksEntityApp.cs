@@ -47,7 +47,7 @@ namespace BookStore {
       var encrModule = new EncryptedDataModule(booksArea);
       //  Use TestGenerateCryptoKeys test in BasicTests project to generate 
       // and print crypto keys for all algorithms.
-      var cryptoKey = "8E487AD4C490AC43DF15D33AB654E5A222A02C9C904BC51E48C4FE5B7D86F90A";
+      var cryptoKey = "07D8D082CEDAFEE9D05E8D78A891D4DB81A4F8972917DDEC7F028435DCD01BE7";
       var cryptoBytes = HexUtil.HexToByteArray(cryptoKey);
       encrModule.AddChannel(cryptoBytes); //creates default channel
 

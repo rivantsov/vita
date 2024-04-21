@@ -5,12 +5,12 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using Arrest;
-using Arrest.Xml;
 using BookStore;
 using BookStore.SampleData;
 using Microsoft.AspNetCore;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
+using Newtonsoft.Json;
 using Vita.Data;
 using Vita.Data.MsSql;
 using Vita.Entities;
@@ -87,16 +87,12 @@ namespace Vita.Testing.WebTests {
       var serviceUrl = AppConfiguration["ServiceUrl"];
       StartService(serviceUrl);
       // create client
-      var useXml = false;
-      if (useXml) {
-        var clientSettings = new RestClientSettings(serviceUrl, serializer: new XmlContentSerializer(), badRequestContentType: typeof(string)); // typeof(List<ClientFault>));
-        Client = new RestClient(clientSettings);
-      } else
-        Client = new RestClient(serviceUrl, badRequestContentType: typeof(List<ClientFault>)); //json, very simple setup
+      var restStt = new RestClientSettings(serviceUrl);
+      Client = new RestClient(serviceUrl); 
 
       RestClient.SharedHttpClientHandler.AllowAutoRedirect = false; //we need it for Redirect test
       // Setup handler converting BadRequestException into ClientFaultException, with list of faults already converted
-      Client.Settings.Events.ReceivedError += (s, e) => {
+      Client.Events.ReceivedError += (s, e) => {
         if (e.CallData.Exception is BadRequestException bre)
           e.CallData.Exception = new ClientFaultException((IList<ClientFault>)bre.Details);
       };

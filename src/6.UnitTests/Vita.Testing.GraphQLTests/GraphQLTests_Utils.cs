@@ -1,11 +1,8 @@
-using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
-using BookStore;
 using BookStore.GraphQL;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 using NGraphQL.Client;
 
 
@@ -24,7 +21,10 @@ mutation ($lg: LoginInput!) {
       vars["lg"] = new LoginInput() { UserName = userName, Password = password };
       var resp = await TestEnv.Client.PostAsync(mutLogin, vars);
       if (resp.Errors?.Count > 0) {
-        TestEnv.LogComment($"Login failed for user {userName}.");
+        var errors = resp.GetErrorsAsText();
+        var errText = $"Login failed for user {userName}.\r\n {errors}";
+        Debug.WriteLine(errText);
+        TestEnv.LogComment(errText);
         return false;
       }
       TestEnv.LogComment($"Login succeeded for user {userName}.");

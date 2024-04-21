@@ -9,7 +9,6 @@ using BookStore.Api;
 using System.Threading.Tasks;
 using Vita.Tools.Testing;
 using Arrest;
-using Arrest.Sync;
 
 namespace Vita.Testing.WebTests {
 

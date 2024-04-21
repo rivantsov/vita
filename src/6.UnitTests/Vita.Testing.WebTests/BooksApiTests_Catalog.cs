@@ -5,7 +5,6 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 using Vita.Entities;
 using Arrest;
-using Arrest.Sync;
 using BookStore;
 using BookStore.Api;
 
@@ -44,7 +43,7 @@ namespace Vita.Testing.WebTests {
         AuthorLastName = "Sharp", OrderBy = "PublishedOn-desc", Skip = 0, Take = 10
       };
 
-      var bkQuery = client.BuildUrlQuery(searchParams);
+      var bkQuery = RestUtility.BuildUrlQueryFromObject(searchParams);
       bks = client.Get<SearchResults<Book>>("api/books?" + bkQuery);
       Assert.AreEqual(1, bks.TotalCount, "Should return single c# book");
       Assert.AreEqual(1, bks.Results.Count, "Should return single c# book");
@@ -61,6 +60,7 @@ namespace Vita.Testing.WebTests {
       Assert.IsTrue(!string.IsNullOrWhiteSpace(authSharp.Bio), "Expected Bio for author Sharp");
 
       //Publishers 
+     
       var pubRes = client.Get<SearchResults<Publisher>>("api/publishers?name=ms");
       Assert.AreEqual(1, pubRes.Results.Count, "expected 1 publisher");
       Assert.AreEqual("MS Books", pubRes.Results[0].Name, "Expected MS Books.");
@@ -90,7 +90,7 @@ namespace Vita.Testing.WebTests {
       Assert.AreEqual(1, searchBooks.Results.Count, "Expected c# book only.");
       var csBook = searchBooks.Results[0];
       var imageUrl = client.Settings.ServiceUrl + "/api/images/" + csBook.CoverImageId;
-      var bytes = client.GetBinary(imageUrl, null, acceptMediaType: "image/jpeg");
+      var bytes = client.GetBinary(imageUrl); //, null, acceptMediaType: "image/jpeg");
       Assert.IsNotNull(bytes, "Expected image bytes");
       //Jpeg starts with 0xFFD8
       Assert.AreEqual(0xFF, bytes[0], "Expected FF byte.");

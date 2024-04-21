@@ -26,7 +26,7 @@ namespace BookStore.GraphQL {
     public IConfiguration Configuration { get; }
     public static GraphQLHttpServer GraphQLHttpServerInstance;
     public static bool StartGrpaphiql = true; // test project sets this to false
-    public string LogFilePath = "bin\\_serverSqlLog.log";
+    public string LogFilePath = "_serverSqlLog.log";
     public static bool RebuildSampleData = true;
 
     public GraphQLAspNetServerStartup(IConfiguration configuration)
@@ -39,7 +39,7 @@ namespace BookStore.GraphQL {
       // create books app connected to database; 
       CreateBooksEntityApp();
 
-      var jwtSecret = "VitaBooksJwtSecret"; // Note: this cannot be too short, at least 16 chars
+      var jwtSecret = "VitaBooksJwtSecret_VitaBooksJwtSecret"; // Note: this cannot be too short, at least 16 chars
       var jwtTokenHandler = new VitaJwtTokenHandler(BooksEntityApp.Instance, services, jwtSecret);
       services.Add(new ServiceDescriptor(typeof(IAuthenticationTokenHandler), jwtTokenHandler));
 

@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Runtime.CompilerServices;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Arrest;
@@ -15,7 +14,6 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Logging;
 using Newtonsoft.Json;
 using NGraphQL.Client;
-using NGraphQL.Server;
 
 namespace Vita.Testing.GraphQLTests {
 
@@ -41,7 +39,7 @@ namespace Vita.Testing.GraphQLTests {
       StartService();
       EndPointUrl = ServiceUrl + "/graphql";
       Client = new GraphQLClient(EndPointUrl);
-      RestClient = new RestClient(ServiceUrl, badRequestContentType: typeof(List<Vita.Entities.ClientFault>)); 
+      RestClient = new RestClient(ServiceUrl); 
       // if you want to listen/log request/response
       // Client.RequestCompleted += Client_RequestCompleted;
     }

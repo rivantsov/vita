@@ -15,7 +15,6 @@ using Vita.Modules.Login;
 using BookStore.Api;
 using Vita.Tools.Testing;
 using Arrest;
-using Arrest.Sync;
 
 namespace Vita.Testing.WebTests {
 

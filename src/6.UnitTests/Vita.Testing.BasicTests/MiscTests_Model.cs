@@ -1,12 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
-using System.Runtime.CompilerServices;
-using System.Text;
 using Vita.Data.Driver;
 using Vita.Entities;
 
 namespace Vita.Testing.BasicTests.Misc {
+  using CallerMemberNameAttribute = System.Runtime.CompilerServices.CallerMemberNameAttribute;
 
   //Description attr is defined in 2 places, resolving ambiguity. The other def in in Microsoft.VisualStudio.TestTools
   using DescriptionAttribute = System.ComponentModel.DescriptionAttribute;

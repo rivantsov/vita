@@ -237,7 +237,7 @@ namespace Vita.Testing.BasicTests.Misc {
       session = _app.OpenSession();
       var dr3 = session.NewDriver("M001", "Mindy", "Stone");
       session.SaveChanges();
-      var dr4 = session.NewDriver("M001", "Molly", "Sands");
+      var dr4 = session.NewDriver("M001", "Molly", "Sands", parent: dr1);
       dex = TestUtil.ExpectDataAccessException(() => { session.SaveChanges(); });
       Assert.AreEqual(DataAccessException.SubTypeUniqueIndexViolation, dex.SubType);
       switch (servType) {

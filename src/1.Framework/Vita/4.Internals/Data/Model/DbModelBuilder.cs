@@ -333,6 +333,10 @@ namespace Vita.Data.Model {
           var refInfo = member.ReferenceInfo;
           if (!IsActive(refInfo.ToKey.Entity.Area)) 
             continue; //target entity/table is not in this db model; so no foreign key link 
+          // check if we have foreign key
+          var refAttr = refInfo.FromKey.SourceRefAttribute;
+          if (refAttr != null && !refAttr.HasDbForeignKey)
+            continue;
           var fromDbKey = _dbModel.LookupDbObject<DbKeyInfo>(refInfo.FromKey);
           var toDbKey = _dbModel.LookupDbObject<DbKeyInfo>(refInfo.ToKey);
           var cascadeDelete = member.Flags.IsSet(EntityMemberFlags.CascadeDelete);

@@ -68,6 +68,9 @@ namespace Vita.Testing.BasicTests.Misc {
 
     [Nullable] //test for fix
     IDriver Instructor { get; set; }
+
+    [Nullable, EntityRef(HasDbForeignKey = false)] // test for HasDbForeignKey
+    IDriver Parent { get; set; }
   }
 
   public interface IDriverComputedColumns {
@@ -112,12 +115,15 @@ namespace Vita.Testing.BasicTests.Misc {
       veh.Driver = driver;
       return veh;
     }
-    public static IDriver NewDriver(this IEntitySession session, string licenseNumber, string firstName, string lastName) {
+    public static IDriver NewDriver(this IEntitySession session, string licenseNumber, string firstName, string lastName, 
+         IDriver instructor = null, IDriver parent = null) {
       var driver = session.NewEntity<IDriver>();
       driver.LicenseNumber = licenseNumber;
       driver.LicenseIssuedOn = DateTime.Now.Date;
       driver.FirstName = firstName;
       driver.LastName = lastName;
+      driver.Instructor = instructor;
+      driver.Parent = parent; 
       return driver;
     }
 

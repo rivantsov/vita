@@ -65,6 +65,7 @@ namespace Vita.Entities {
     public string KeyColumns;
     public string ForeignKeyName;
     public string TargetUniqueIndexAlias;
+    public bool HasDbForeignKey = true;
 
     public EntityRefAttribute(string keyColumns = null) {
       KeyColumns = keyColumns == null ? null : keyColumns.Replace(" ", string.Empty);

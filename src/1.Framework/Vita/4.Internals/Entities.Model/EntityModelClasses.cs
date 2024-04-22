@@ -422,6 +422,7 @@ namespace Vita.Entities.Model {
       OwnerMember = ownerMember; 
       Alias = SourceKeyAttribute?.Alias;
       ExplicitDbKeyName = sourceKeyAttr?.DbKeyName;
+      SourceRefAttribute = sourceRefAttr;
       entity.Keys.Add(this);
     }
 

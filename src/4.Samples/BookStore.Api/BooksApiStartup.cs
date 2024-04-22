@@ -5,6 +5,8 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using Vita.Data;
 using Vita.Data.MsSql;
 using Vita.Web;
@@ -21,7 +23,7 @@ namespace BookStore.Api {
 
     // This method gets called by the runtime. Use this method to add services to the container.
     public void ConfigureServices(IServiceCollection services) {
-      // entity app
+      // entity builder
       var connStr = Configuration["MsSqlConnectionString"];
       BooksEntityApp = CreateBooksEntityApp(connStr);
 
@@ -32,35 +34,39 @@ namespace BookStore.Api {
 
       var loginAssembly = typeof(Vita.Modules.Login.Api.LoginController).Assembly;
       services.AddControllers()
-        // Note: by default System.Text.Json ns/serializer is used by AspNetCore 3.1; this serializer is broken piece of sh..
-        // - does not serialize fields, does not handle dictionaries, etc. So we put back Newtonsoft serializer.
-        .AddNewtonsoftJson()
+        // setup Json options explicitly; default settings are 'strange'
+        .AddJsonOptions(options => {
+          var serOptions = options.JsonSerializerOptions;
+          serOptions.PropertyNameCaseInsensitive = true;
+          serOptions.PropertyNamingPolicy = null; //names as-is
+          serOptions.IncludeFields = true;
+          serOptions.WriteIndented = true;
+          serOptions.Converters.Add(new JsonStringEnumConverter());
+        })
         // make API controllers in Vita.Modules.Login.dll discovered by ASP.NET infrastructure
         .PartManager.ApplicationParts.Add(new AssemblyPart(loginAssembly));
-
+        
       // clear out default configuration - it installs Console output logger which sends out tons of garbage
       //  https://weblog.west-wind.com/posts/2018/Dec/31/Dont-let-ASPNET-Core-Default-Console-Logging-Slow-your-App-down
       services.AddLogging(config => {
         config.ClearProviders();
       });
-
     }
 
     // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
-    public void Configure(IApplicationBuilder app, IWebHostEnvironment env) {
+    public void Configure(IApplicationBuilder builder, IWebHostEnvironment env) {
       if (env.IsDevelopment()) {
-        app.UseDeveloperExceptionPage();
+        builder.UseDeveloperExceptionPage();
       }
-
-      app.UseHttpsRedirection();
+      builder.UseHttpsRedirection();
 
       // Vita middleware
-      app.UseMiddleware<VitaWebMiddleware>(BooksEntityApp);
+      builder.UseMiddleware<VitaWebMiddleware>(BooksEntityApp);
       
-      app.UseAuthentication();
-      app.UseRouting();
-      app.UseAuthorization();
-      app.UseEndpoints(endpoints =>
+      builder.UseAuthentication();
+      builder.UseRouting();
+      builder.UseAuthorization();
+      builder.UseEndpoints(endpoints =>
       {
         endpoints.MapControllers();
       });

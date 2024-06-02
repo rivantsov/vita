@@ -94,6 +94,8 @@ namespace Vita.Data.MsSql {
     }
 
     public override void ClassifyDatabaseException(DataAccessException dataException, IDbCommand command = null) {
+      const string DeleteStmt = "DELETE statement";
+
       var sqlEx = dataException.InnerException as SqlException;
       if (sqlEx == null) return;
       dataException.ProviderErrorNumber = sqlEx.Number;
@@ -107,8 +109,9 @@ namespace Vita.Data.MsSql {
         case 1205: //Transaction deadlock lock, process killed
           dataException.SubType = DataAccessException.SubTypeDeadLock;
           break; 
-        case 547: // FK constraint violation on delete
-          dataException.SubType = DataAccessException.SubTypeIntegrityViolation;
+        case 547: // FK constraint violation on delete or on bad ref
+          dataException.SubType = dataException.Message.Contains(DeleteStmt) ?
+              DataAccessException.SubTypeIntegrityViolationOnDelete : DataAccessException.SubTypeIntegrityViolation;
           break;
         case 50000:
           // We raise error with custom message, this results in error# 50000

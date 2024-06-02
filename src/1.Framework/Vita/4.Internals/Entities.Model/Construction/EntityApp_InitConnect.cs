@@ -101,6 +101,15 @@ namespace Vita.Entities {
         ActivationLog.WriteMessage("Connected to {0}.", dbSettings.DataSourceName);
       } finally {
         LogService.Flush();
+        SaveActivationLog(); 
+      }
+    }
+
+    private void SaveActivationLog() {
+      //save activation log
+      if (ActivationLogPath != null) {
+        var text = ActivationLog.GetAllAsText();
+        System.IO.File.WriteAllText(ActivationLogPath, text);
       }
     }
 

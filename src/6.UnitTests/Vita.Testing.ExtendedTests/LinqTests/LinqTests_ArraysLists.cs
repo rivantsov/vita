@@ -78,13 +78,24 @@ namespace Vita.Testing.ExtendedTests {
       Assert.AreEqual(0, cmd.Parameters.Count, "NoParameters option - expected no db parameters");
 
 
-      // Test intList.Contains()
+      // Test array.Contains()
       var userTypes = new UserType[] { UserType.Customer, UserType.Author };
       var qOrders2 = from bo in bookOrders
                      where userTypes.Contains(bo.User.Type)
                      select bo;
       var orders2 = qOrders2.ToList();
       Assert.IsTrue(orders2.Count > 0, "No orders by type found.");
+
+      // Used to fails for postgres, May 2024 - fixed it 
+      // Test List<enum>.Contains() - used to fails for Postgres, for enums array works but List fails
+      // Fixed by converting list to array
+      var userTypesList = new List<UserType>() { UserType.Customer, UserType.Author };
+      qOrders2 = from bo in bookOrders
+                     where userTypesList.Contains(bo.User.Type)
+                     select bo;
+      orders2 = qOrders2.ToList();
+      Assert.IsTrue(orders2.Count > 0, "No orders by type found.");
+
     }
 
     [TestMethod]

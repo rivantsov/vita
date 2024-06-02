@@ -23,7 +23,7 @@ namespace Vita.Testing.ExtendedTests {
     }
     [TestCleanup]
     public void TearDown() {
-      Startup.TearDown(); 
+      Startup.TearDown();
     }
 
     // Not exactly a test, just generates a few authenticator passcodes for current time. 
@@ -32,7 +32,7 @@ namespace Vita.Testing.ExtendedTests {
       Startup.BooksApp.LogTestStart();
 
       var secretBase32 = "ABCDABCD33ABCDABCD44";
-      var secret = Base32Encoder.Decode(secretBase32); 
+      var secret = Base32Encoder.Decode(secretBase32);
       var appIdentity = "VitaBookStore";
       var current = GoogleAuthenticatorUtil.GetCurrentCounter();
       for (int i = -1; i <= 4; i++) {
@@ -50,16 +50,16 @@ namespace Vita.Testing.ExtendedTests {
     public void TestValidation() {
       Startup.BooksApp.LogTestStart();
 
-      var app = Startup.BooksApp; 
+      var app = Startup.BooksApp;
       var session = app.OpenSession();
       // Entity validation: trying to save entities with errors -----------------------------------------
-      var invalidAuthor = session.NewAuthor("First", 
+      var invalidAuthor = session.NewAuthor("First",
         "VeryLoooooooooooooooooooooooooooongLaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaastName"); //make it more than 50
       var invalidBook = session.NewBook(BookEdition.EBook, BookCategory.Fiction, "Not valid book", "Some invalid book", null, DateTime.Now, -5.0m);
       //We expect 3 errors: Author's last name is too long; Publisher cannot be null;
       // Price must be > 1 cent. The first 3 errors are found by built-in validation; the last error, price check, is added
       // by custom validation method.
-      var cfEx = TestUtil.ExpectClientFault(() => {session.SaveChanges();}); 
+      var cfEx = TestUtil.ExpectClientFault(() => { session.SaveChanges(); });
       Assert.AreEqual(3, cfEx.Faults.Count, "Wrong # of faults.");
       foreach (var fault in cfEx.Faults)
         Assert.IsTrue(!string.IsNullOrWhiteSpace(fault.Message), "Fault message is empty");
@@ -76,7 +76,7 @@ namespace Vita.Testing.ExtendedTests {
       var msPub = session.EntitySet<IPublisher>().First(p => p.Name.StartsWith("MS"));
       var fsBook = session.NewBook(BookEdition.Paperback, BookCategory.Programming, "F# programming", "Introduction to F#", msPub, DateTime.Now, 20);
       var john = session.EntitySet<IAuthor>().First(a => a.LastName == "Sharp");
-      fsBook.Authors.Add(john); 
+      fsBook.Authors.Add(john);
       session.SaveChanges();
       var fsBkId = fsBook.Id;
 
@@ -84,7 +84,7 @@ namespace Vita.Testing.ExtendedTests {
       // We can delete a book even if there are links for it in BookAuthor link table (BookAuthor.Book has CascadeDelete attr)
       // so the result here should be true
       session = app.OpenSession();
-      fsBook = session.GetEntity<IBook>(fsBkId); 
+      fsBook = session.GetEntity<IBook>(fsBkId);
       Type[] blockingEntities;
       var canDelete = session.CanDeleteEntity(fsBook, out blockingEntities);
       Assert.IsTrue(canDelete, "CanDelete F# book failed.");
@@ -94,7 +94,7 @@ namespace Vita.Testing.ExtendedTests {
       //check it is deleted; we also check here that entity cache works correctly and does not keep object.
       fsBook = session.GetEntity<IBook>(fsBkId);
       Assert.IsNull(fsBook, "F# not deleted.");
-      var allBooks = session.GetEntities<IBook>(); 
+      var allBooks = session.GetEntities<IBook>();
 
       //Now check Publisher: mspub has associated books, so it should not be allowed to be deleted.
       msPub = session.EntitySet<IPublisher>().Single(p => p.Name.StartsWith("MS"));
@@ -111,11 +111,34 @@ namespace Vita.Testing.ExtendedTests {
       // Note: auth is not ported to 2.0 (net core)
       var lindaTheEditor = session.EntitySet<IUser>().First(u => u.UserName == "Linda").ToUserInfo();
       var opContext = new OperationContext(Startup.BooksApp, lindaTheEditor);
-      var secSession = opContext.OpenSecureSession(); 
+      var secSession = opContext.OpenSecureSession();
       msPub = secSession.EntitySet<IPublisher>().Single(p => p.Name.StartsWith("MS"));
       canDelete = secSession.CanDeleteEntity(msPub, out blockingEntities);
       Assert.IsFalse(canDelete, "Expected CanDelete to be false.");
+    }
 
+
+    [TestMethod]
+    public void TestDbRefIntegrityErrors() {
+      var app = Startup.BooksApp;
+      var session = app.OpenSession();
+
+      // Try deleting entity when there are still refs from other entities
+      var daExc = TestUtil.ExpectDataAccessException(() => {
+        // msPub has some books, so deleting it will fail
+        var msPub = session.EntitySet<IPublisher>().First(p => p.Name.StartsWith("MS"));
+        session.DeleteEntity(msPub);
+        session.SaveChanges();
+      });
+      Assert.AreEqual(DataAccessException.SubTypeIntegrityViolationOnDelete, daExc.SubType);
+     
+      // Try assigning ref to non-existent entity (with unknown PK)
+      daExc = TestUtil.ExpectDataAccessException(() => {
+        var csBook = session.EntitySet<IBook>().First(b => b.Title.StartsWith("c#"));
+        csBook.Publisher =  session.GetEntity<IPublisher>(Guid.NewGuid(), LoadFlags.Stub); //creates a stub
+        session.SaveChanges();
+      });
+      Assert.AreEqual(DataAccessException.SubTypeIntegrityViolation, daExc.SubType);
     }
 
     // Investigating reported issue #202: PropagateUpdatedOn does not trigger when adding new line

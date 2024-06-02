@@ -70,7 +70,9 @@ namespace Vita.Testing.ExtendedTests {
         BooksApp = new BooksEntityApp();
         BooksApp.LogPath = LogFilePath;
         BooksApp.ErrorLogPath = ErrorLogFilePath;
+        BooksApp.ActivationLogPath = "_activation.log";
         BooksApp.Init();
+        //File.WriteAllText("_activation.Log",  BooksApp.ActivationLog.GetAllAsText()); 
 
         // Oracle - uncomment this to see tablespace use, but you must pre-create the tablespace in SQL-Developer
         /* 
@@ -95,7 +97,8 @@ namespace Vita.Testing.ExtendedTests {
 
         CreateSampleData();
         // delete sample data log
-        BooksApp.Flush(); 
+        BooksApp.Flush();
+
         if (File.Exists(LogFilePath))
           File.Delete(LogFilePath);
 

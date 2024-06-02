@@ -59,8 +59,9 @@ namespace Vita.Data.Postgres {
       // Datetime
       AddDbTypeDef("timestamp without time zone", typeof(DateTime), providerDbType: NpgsqlDbType.Timestamp);
       AddDbTypeDef("timestamp with time zone", typeof(DateTimeOffset), providerDbType: NpgsqlDbType.TimestampTz);
-      AddDbTypeDef("date without time zone", typeof(DateTime), mapColumnType: false, providerDbType: NpgsqlDbType.Date);
-      AddDbTypeDef("time without time zone", typeof(TimeSpan), providerDbType: NpgsqlDbType.TimeTz);
+      AddDbTypeDef("date", typeof(DateTime), mapColumnType: false, providerDbType: NpgsqlDbType.Date);
+      AddDbTypeDef("time with time zone", typeof(DateTime), mapColumnType: false, providerDbType: NpgsqlDbType.TimeTz);
+      AddDbTypeDef("time without time zone", typeof(TimeSpan), providerDbType: NpgsqlDbType.Time);
       AddDbTypeDef("interval", typeof(TimeSpan), mapColumnType: false, providerDbType: NpgsqlDbType.Interval);
 
       // Binaries

@@ -314,10 +314,32 @@ Details: failed converting sub-expression of type {0} to type {1}", expression.T
       // evaluate locals
       command.ParamValues = new object[locals.Count];
       for(int i = 0; i < locals.Count; i++) {
-        var local = locals[i];
-        command.ParamValues[i] = ExpressionHelper.Evaluate(locals[i], command.ExternalParameters, extValues);
-      }
+        var localExpr = locals[i];
+        var value = ExpressionHelper.Evaluate(localExpr, command.ExternalParameters, extValues);
+        if (value != null && localExpr.Type.IsGenericType)
+          value = ConvertParamValue(value, localExpr.Type);
+        command.ParamValues[i] = value;  
+      } 
     } //method
+
+    // convert List<T> to array of T; npgsql fails with List<enum> but Ok with array of enum
+    // It would be safer if we convert all enum values to ints, but so far providers are OK with passing enums directly
+    private static object ConvertParamValue(object value, Type type) {
+      if (value == null || !type.IsGenericType)
+        return value;
+      var genType = type.GetGenericTypeDefinition();
+      var elemType = type.GetGenericArguments()[0];
+      // we care only about List<enum>, npgsql fails for these
+      if (genType != typeof(List<>) || !elemType.IsEnum)
+        return value;
+      // convert to array
+      var list = value as IList;
+      var arr = Array.CreateInstance(elemType, list.Count);
+      for (int i = 0; i < arr.Length; i++)
+        arr.SetValue(list[i], i);
+      return arr; 
+    }
+
 
   }//class
 }

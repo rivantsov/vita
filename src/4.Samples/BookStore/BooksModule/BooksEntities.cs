@@ -34,6 +34,7 @@ namespace BookStore {
     [Size(Sizes.Description), Nullable]
     string Description { get; set; }
 
+    [Column(DbTypeSpec = "date")]
     DateTime? PublishedOn { get; set; }
 
     [Nullable]

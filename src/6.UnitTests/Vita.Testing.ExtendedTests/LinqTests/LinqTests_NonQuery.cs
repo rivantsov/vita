@@ -5,9 +5,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System.IO;
 
 using Vita.Entities;
-using Vita.Data;
 using Vita.Data.Driver;
-using Vita.Modules.Login;
 using Vita.Tools.Testing;
 using BookStore;
 

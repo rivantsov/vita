@@ -1,12 +1,9 @@
 ﻿using System;
 using NGraphQL.CodeFirst;
-using Vita.Entities;
-using Vita.Modules.Login;
 
 namespace BookStore.GraphQL {
 
   public partial class BookStoreResolvers {
-
 
     public IBookReview AddReview(IFieldContext context, BookReviewInput review) {
       var book = _session.GetEntity<IBook>(review.BookId);

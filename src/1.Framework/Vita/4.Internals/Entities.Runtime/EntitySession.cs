@@ -210,12 +210,7 @@ namespace Vita.Entities.Runtime {
       var entInfo = GetEntityInfo(typeof(TEntity));
       var prov = new EntityQueryProvider(this);
       var entSet = new EntitySet<TEntity>(prov, lockType);
-      //Check filters
-      var pred = Context.QueryFilter.GetPredicate<TEntity>();
-      if(pred != null)
-        return entSet.Where(pred.Where);
-      else
-        return entSet;
+      return entSet;
     }
 
     internal IQueryable<INullEntity> CreateDbContextEntitySet() {

@@ -5,7 +5,6 @@ using System.Text;
 using System.Diagnostics;
 
 using Vita.Entities;
-using Vita.Modules.Login;
 using System.Reflection;
 
 namespace BookStore.SampleData {
@@ -23,8 +22,6 @@ namespace BookStore.SampleData {
 
     public static void CreateBasicTestData(EntityApp app) {
       var session = app.OpenSystemSession();
-      LoginModule.ImportDefaultSecretQuestions(session);
-      session.SaveChanges();
       //Create users
       var stan = session.CreateUser("Stan", UserType.Customer);
       var linda = session.CreateUser("Linda", UserType.BookEditor);
@@ -38,10 +35,6 @@ namespace BookStore.SampleData {
       var ferb = session.CreateUser("Ferb", UserType.Customer);
       var cartman = session.CreateUser("Cartman", UserType.Customer, email: "cartman@email.com");
       session.SaveChanges();
-      // Setup secret questions for dora
-      var doraLogin = session.EntitySet<ILogin>().First(lg => lg.UserName == "dora"); //logins are lower-case, important for Postgres
-      SetupSampleSecretQuestions(doraLogin);
-      session.SaveChanges(); 
     }
 
     public static void CreateSampleBooks(EntityApp app) {
@@ -144,25 +137,9 @@ Covers c# 4.0.";
 
     private static IUser CreateUser(this IEntitySession session, string userName, UserType userType, string password = DefaultPassword, string email = null) {
       var user = session.NewUser(userName, userType, userName);
-      var loginMgr = session.Context.App.GetService<ILoginManagementService>();
-      var login = loginMgr.NewLogin(session, userName, password, userId: user.Id, loginId: user.Id);
-      if (!string.IsNullOrEmpty(email))
-        loginMgr.AddFactor(login, ExtraFactorTypes.Email, email);
+      session.SaveChanges(); 
       return user;
     }
-
-    private static void SetupSampleSecretQuestions(ILogin login) {
-      var session = EntityHelper.GetSession(login); 
-      var loginMgr = session.Context.App.GetService<ILoginManagementService>(); 
-      var allQuestions = session.GetEntities<ISecretQuestion>();
-      var qFriend = allQuestions.First(q => q.Question.Contains("friend"));
-      var qFood = allQuestions.First(q => q.Question.Contains("favorite food"));
-      var qColor = allQuestions.First(q => q.Question.Contains("favorite color"));
-      loginMgr.AddSecretQuestionAnswer(login, 1, qFriend, "Diego");
-      loginMgr.AddSecretQuestionAnswer(login, 2, qFood, "banana");
-      loginMgr.AddSecretQuestionAnswer(login, 3, qColor, "yellow");
-    }
-
 
     private static string ConstructLongText(int length) {
       const string loremIpsum = @"

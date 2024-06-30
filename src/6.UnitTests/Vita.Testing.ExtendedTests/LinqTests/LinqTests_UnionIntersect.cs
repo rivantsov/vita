@@ -2,15 +2,12 @@
 using System.Collections.Generic;
 using System.Data;
 using System.Linq;
-using System.Diagnostics;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 using Vita.Entities;
-using BookStore;
 using Vita.Data.Driver;
-using Vita.Modules.Login;
 using Vita.Tools.Testing;
-using Vita.Data.Sql;
+using BookStore;
 
 namespace Vita.Testing.ExtendedTests {
 

@@ -4,8 +4,6 @@ using System.Collections.Generic;
 using System.ComponentModel;
 
 using Vita.Entities;
-using Vita.Modules;
-using Vita.Modules.EncryptedData;
 
 namespace BookStore {
 
@@ -188,10 +186,6 @@ namespace BookStore {
     decimal Total { get; set; }
 
     OrderStatus Status { get; set; }
-
-    // testing IEncryptedData
-    [Nullable]
-    IEncryptedData TrackingNumber { get; set; }
 
     [PersistOrderIn("LineNumber")]
     IList<IBookOrderLine> Lines { get; }

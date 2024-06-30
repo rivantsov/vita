@@ -31,7 +31,6 @@ namespace Vita.Entities {
     public WebCallContext WebContext { get; set; }
     public ILog Log;
     public DbConnectionReuseMode DbConnectionMode { get; set; }
-    public QueryFilter QueryFilter { get; } = new QueryFilter();
 
     internal DataSource LastDataSource; //last data source reference
 

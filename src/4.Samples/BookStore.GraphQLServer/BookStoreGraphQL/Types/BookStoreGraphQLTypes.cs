@@ -74,7 +74,6 @@ namespace BookStore.GraphQL {
     public DateTime CreatedOn;
     public Decimal Total;
     public OrderStatus Status;
-    public string TrackingNumber;
     public List<BookOrderLine> Lines;
   }
 

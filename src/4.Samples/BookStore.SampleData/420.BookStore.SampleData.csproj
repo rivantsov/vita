@@ -26,7 +26,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\1.Framework\Vita\010.Vita.csproj" />
-    <ProjectReference Include="..\..\3.Modules\Vita.Modules.Login\310.Vita.Modules.Login.csproj" />
     <ProjectReference Include="..\BookStore\410.BookStore.csproj" />
   </ItemGroup>
 

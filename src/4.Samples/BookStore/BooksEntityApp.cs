@@ -1,17 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Collections.Specialized;
-using System.Linq;
 using System.Security.Claims;
-using System.Text;
-using System.Threading.Tasks;
 
 using Vita.Entities;
 using Vita.Entities.DbInfo;
-using Vita.Entities.Services;
 using Vita.Entities.Utilities;
-using Vita.Modules.EncryptedData;
-using Vita.Modules.Login;
 
 namespace BookStore {
 
@@ -35,21 +28,6 @@ namespace BookStore {
 
       //Job exec module - disabled for now
       //var jobExecModule = new Modules.JobExecution.JobExecutionModule(booksArea);
-
-      // LoginModule
-      var loginStt = new LoginModuleSettings(passwordExpirationPeriod: TimeSpan.FromDays(180));
-      loginStt.RequiredPasswordStrength = PasswordStrength.Medium;
-      loginStt.DefaultEmailFrom = "team@bookstore.com";
-
-      var loginModule = new LoginModule(loginArea, loginStt);
-
-      // Setup encrypted data module. 
-      var encrModule = new EncryptedDataModule(booksArea);
-      //  Use TestGenerateCryptoKeys test in BasicTests project to generate 
-      // and print crypto keys for all algorithms.
-      var cryptoKey = "07D8D082CEDAFEE9D05E8D78A891D4DB81A4F8972917DDEC7F028435DCD01BE7";
-      var cryptoBytes = HexUtil.HexToByteArray(cryptoKey);
-      encrModule.AddChannel(cryptoBytes); //creates default channel
 
       Instance = this; 
     }

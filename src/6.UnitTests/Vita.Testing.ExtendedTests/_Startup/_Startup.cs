@@ -1,29 +1,16 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Diagnostics;
-using System.Configuration;
-using System.Threading;
-using System.Reflection;
 using System.IO;
-using System.Collections.Specialized;
-
-using Vita.Entities;
-using Vita.Data;
-using Vita.Data.Driver;
-using Vita.Data.Model;
-
+using System.Threading;
 using BookStore;
 using BookStore.SampleData;
 using Microsoft.Extensions.Configuration;
-using Vita.Tools;
+using Vita.Data;
+using Vita.Data.Driver;
+using Vita.Data.Model;
+using Vita.Entities;
 using Vita.Entities.DbInfo;
-using Vita.Tools.Testing;
-using Vita.Data.Sql;
-using Vita.Modules.Login.Mocks;
-using System.Runtime.CompilerServices;
-using Vita.Entities.Logging;
+using Vita.Tools;
 //using Microsoft.Data.Sqlite;
 
 namespace Vita.Testing.ExtendedTests {
@@ -41,7 +28,6 @@ namespace Vita.Testing.ExtendedTests {
     public static bool UseBatchMode;
     private static bool _initFailed;
 
-    public static MockLoginMessagingService LoginMessagingService;
     public static BooksEntityApp BooksApp;
 
     internal static IConfigurationRoot AppSettings;
@@ -80,11 +66,6 @@ namespace Vita.Testing.ExtendedTests {
           foreach(var area in BooksApp.Areas)
              area.OracleTableSpace = "Books";
         */
-
-        // Setup mock messaging service
-        LoginMessagingService = new MockLoginMessagingService(); 
-        var loginConfig = BooksApp.GetConfig<Modules.Login.LoginModuleSettings>();
-        loginConfig.MessagingService = LoginMessagingService;
 
         //Reset Db and drop schema objects; first set schema list 
         var resetDb = AppSettings["ResetDatabase"] == "true";

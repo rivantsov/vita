@@ -7,10 +7,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 using Vita.Entities;
 using BookStore;
-using Vita.Data.Driver;
-using Vita.Modules.Login;
 using Vita.Tools.Testing;
-using Vita.Data.Sql;
 
 namespace Vita.Testing.ExtendedTests {
 

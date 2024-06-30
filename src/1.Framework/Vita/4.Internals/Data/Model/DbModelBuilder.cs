@@ -153,7 +153,7 @@ namespace Vita.Data.Model {
     private void AddDbColumn(DbTableInfo table, EntityMemberInfo member) {
       var colName = member.ColumnName;
       var dbTypeInfo = GetDBTypeInfo(member);
-      if(dbTypeInfo == null)
+      if(dbTypeInfo == null) // there was an error
         return;
       var dbColumn = new DbColumnInfo(member, table, colName, dbTypeInfo);
       dbColumn.Converter = _driver.TypeRegistry.GetDbValueConverter(dbTypeInfo, member); 

@@ -15,3 +15,8 @@
      Specific notes
      MySql supports output params only for stored procs, not for dynamic SQL, so for identities we return inserted identity value 
      using extra SELECT appended to INSERT statement
+
+
+Note: June 2024
+  MySql.Data 8.4.0 (latest) references BouncyCastle.Cryptography 2.2.1, which is marked Vulnerable. 
+  As a standard workaround, explicitly added reference to version 2.4.0. May be removed in the future. 

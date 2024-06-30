@@ -126,10 +126,6 @@ namespace Vita.Data.Oracle {
     }
 
 
-    public override Task<DbDataReader> ExecuteReaderAsync(DbCommand command, CancellationToken cancellationToken) {
-      return base.ExecuteReaderAsync(command, cancellationToken); 
-    }
-
     public override DbOptions GetDefaultOptions() {
       return DefaultOracleDbOptions;
     }

@@ -127,16 +127,18 @@ namespace Vita.Tools.DbFirst {
         bool unlimited = member.Size < 0;
         if (unlimited)
           member.Flags |= EntityMemberFlags.UnlimitedSize;
-        var typeDef = col.TypeInfo.TypeDef;
-
-        // Detect if we need to set explicity DbType or DbTypeSpec in member attribute
-        var dftMapping = _typeRegistry.GetDbTypeInfo(member);
-        if (col.TypeInfo.Matches(dftMapping))
-          continue; //no need for explicit DbTypeSpec
-                    //DbTypeMapping is not default for this member - we need to specify DbType or TypeSpec explicitly
-        member.ExplicitDbTypeSpec = col.TypeInfo.DbTypeSpec;
         if (member.Flags.IsSet(EntityMemberFlags.Identity))
           entInfo.Flags |= EntityFlags.HasIdentity;
+
+        var typeDef = col.TypeInfo.TypeDef;
+        // Detect if we need to set explicity DbType or DbTypeSpec in member attribute
+        if (string.IsNullOrWhiteSpace(member.ExplicitDbTypeSpec)) {
+          var dftMapping = _typeRegistry.GetDbTypeInfo(member);
+          if (col.TypeInfo.Matches(dftMapping))
+            continue; //no need for explicit DbTypeSpec
+                      //DbTypeMapping is not default for this member - we need to specify DbType or TypeSpec explicitly
+          member.ExplicitDbTypeSpec = col.TypeInfo.DbTypeSpec;
+        }
       }
     }
 

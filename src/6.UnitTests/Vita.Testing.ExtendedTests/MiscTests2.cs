@@ -29,10 +29,11 @@ public partial class MiscTests {
     IDbCommand cmd;
 
     // Incorrect impl of Group By createTime.Date
-    var grpBy = session.EntitySet<IBookOrder>().GroupBy(bo => bo.CreatedOn.Date)
-      .Select(ig => new { Date = ig.Key, Count = ig.Count() }).ToList();
+    var grpByQry = session.EntitySet<IBookOrder>().GroupBy(bo => bo.CreatedOn.Date)
+      .Select(ig => new { Date = ig.Key, Count = ig.Count() });
+    var grpBy = grpByQry.ToList();
     cmd = session.GetLastCommand();
-    Debug.WriteLine(cmd.CommandText);
+    Debug.WriteLine(cmd.CommandText);  // This is incorrect SQL!
     // workaround
     var preQry = session.EntitySet<IBookOrder>().Select(bo => new { Date = bo.CreatedOn.Date, bo.Status });
     var grpBy2 = preQry.GroupBy(bo => new { bo.Status, bo.Date })

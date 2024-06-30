@@ -92,18 +92,6 @@ namespace Vita.Data.Driver {
       } 
     }
 
-    public virtual Task<DbDataReader> ExecuteReaderAsync(DbCommand command, CancellationToken cancellationToken) {
-      try {
-        var conn = command.Connection;
-        if (conn.State != ConnectionState.Open)
-          conn.Open();
-        return command.ExecuteReaderAsync(cancellationToken);
-      } catch (System.Data.Common.DbException dbExc) {
-        var dex = ConvertToDataAccessException(dbExc, command);
-        throw dex;
-      }
-    }
-
     public virtual DataAccessException ConvertToDataAccessException(Exception exception, IDbCommand command) {
       var dex = new DataAccessException(exception, command);
       dex.AddValue(DataAccessException.KeyDbCommand, command);

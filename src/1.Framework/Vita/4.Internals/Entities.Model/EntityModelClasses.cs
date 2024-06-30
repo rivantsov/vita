@@ -227,8 +227,6 @@ namespace Vita.Entities.Model {
     // Member data type - type of interface property
     public Type DataType { get; private set; }
     public int Size { get; set; }
-    public byte Precision;
-    public byte Scale; 
 
     public EntityMemberKind Kind;
     public DbComputedKindExt ComputedKind; 
@@ -249,7 +247,8 @@ namespace Vita.Entities.Model {
     //From ColumnAttribute
     public string ColumnName; //assigned by Column attribute, to specify explicit non-default name for table column
     public string ColumnDefault;
-
+    public byte Precision;
+    public byte Scale;
     public string ExplicitDbTypeSpec;
 
 

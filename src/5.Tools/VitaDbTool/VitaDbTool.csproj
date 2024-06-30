@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
     <Import Project="..\..\Common.proj" />
-    <Import Project="..\..\Packages.proj" />
+    <!--<Import Project="..\..\Packages.proj" />-->
 
     <PropertyGroup>
         <OutputType>Exe</OutputType>
@@ -9,8 +9,8 @@
         <AssemblyName>vitadbtool</AssemblyName>
         <Description>DB helper tool for VITA ORM. Provides DB-first code generation; SQL upgrade scripts generation.</Description>
         <PackageTags>VITA ORM</PackageTags>
-        <PackAsTool>True</PackAsTool>
-        <PackageId>Vita.$(AssemblyName)</PackageId>
+        <!--<PackAsTool>True</PackAsTool>
+        <PackageId>Vita.$(AssemblyName)</PackageId>-->
     </PropertyGroup>
 
     <ItemGroup>

@@ -1,14 +1,11 @@
-﻿
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Data;
-using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 
 using Vita.Data.Linq.Translation.Expressions;
 using Vita.Data.Model;
-using Vita.Entities;
 
 namespace Vita.Data.Linq.Translation {
 

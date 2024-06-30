@@ -559,9 +559,7 @@ namespace Vita.Entities {
       var targetEnt = HostMember.ReferenceInfo.ToKey.Entity;
       // _member.ByRefPermissions = UserRecordPermission.Create(targetEnt, this.Properties, this.AccessType);
     }
-
   }
-
 
   public partial class ColumnAttribute {
     public override void ApplyOnMember(EntityModelBuilder builder) {

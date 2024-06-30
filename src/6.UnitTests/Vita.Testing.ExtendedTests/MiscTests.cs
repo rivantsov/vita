@@ -130,7 +130,7 @@ namespace Vita.Testing.ExtendedTests {
         session.DeleteEntity(msPub);
         session.SaveChanges();
       });
-      Assert.AreEqual(DataAccessException.SubTypeIntegrityViolationOnDelete, daExc.SubType);
+      Assert.AreEqual(DataAccessException.SubTypeIntegrityViolation, daExc.SubType);
      
       // Try assigning ref to non-existent entity (with unknown PK)
       daExc = TestUtil.ExpectDataAccessException(() => {

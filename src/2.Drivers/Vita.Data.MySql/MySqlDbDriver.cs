@@ -120,7 +120,9 @@ namespace Vita.Data.MySql {
           dataException.SubType = DataAccessException.SubTypeUniqueIndexViolation;
           dataException.Data[DataAccessException.KeyDbKeyName] = indexName;
           break;
-        case 1451: //integrity violation
+        case 1451:
+        case 1452: 
+          //integrity violation
           dataException.SubType = DataAccessException.SubTypeIntegrityViolation;
           break; 
         default: 

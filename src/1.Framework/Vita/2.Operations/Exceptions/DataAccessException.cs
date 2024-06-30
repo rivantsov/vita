@@ -21,7 +21,7 @@ namespace Vita.Entities {
     public const string SubTypeConcurrentUpdate = "ConcurrentUpdate";
     public const string SubTypeUniqueIndexViolation = "UniqueIndexViolation";
     public const string SubTypeIntegrityViolation = "IntegrityViolation";
-    public const string SubTypeIntegrityViolationOnDelete = "IntegrityViolationOnDelete";
+    //public const string SubTypeIntegrityViolationOnDelete = "IntegrityViolationOnDelete";
     public const string SubTypeConstraintViolation = "ConstraintViolation";
 
     //keys for extra values in exc.Data dictionary

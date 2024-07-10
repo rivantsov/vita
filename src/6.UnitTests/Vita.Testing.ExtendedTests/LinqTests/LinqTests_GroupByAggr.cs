@@ -13,6 +13,24 @@ namespace Vita.Testing.ExtendedTests {
 
   public partial class LinqTests {
 
+    [TestMethod]
+    public void TestLinqGroupBy_Bugs() {
+      Startup.BooksApp.LogTestStart();
+
+      var app = Startup.BooksApp;
+      var session = app.OpenSession();
+
+      //expressions in Group by
+      var qry = session.EntitySet<IBookOrder>()
+        .Where(bo => bo.Total > 1)
+        .GroupBy(bo => new { UserId = bo.User.Id, bo.CreatedOn.Date, bo.CreatedOn.Hour }, bo => new {bo.Id, bo.Status})
+        .Select(g => new {g.Key.UserId, g.Key.Date, g.Key.Hour, Count = g.Count()  });
+      var result = qry.ToList();
+      var sql = session.GetLastCommand().CommandText;
+
+
+    }
+
     //There are 4 overloads of Queryable.GroupBy that we need to support (another 4 with IComparer as last parameter are not supported).
     // Test them all here.
     [TestMethod]

@@ -19,8 +19,8 @@
 
   <ItemGroup>
     <PackageReference Include="Arrest" Version="2.2.0" />
-    <PackageReference Include="NGraphQL.Client" Version="1.7.0" />
-    <PackageReference Include="NGraphQL.Server.AspNetCore" Version="1.7.0" />
+    <PackageReference Include="NGraphQL.Client" Version="2.0.0" />
+    <PackageReference Include="NGraphQL.Server.AspNetCore" Version="2.0.0" />
   </ItemGroup>
 
   <ItemGroup>

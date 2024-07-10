@@ -1,4 +1,7 @@
 *See prior history in the [Code Changes History](https://github.com/rivantsov/vita/wiki/Code-changes-history) page in Wiki tab of this repo.*
+## Version 4.1.0 July 9, 2024. Minor update
+* Fixed issues #225, #226 - using expressions in Group-By.
+* Upgraded System.Text.Json to latest. 
 
 ## Version 3.6. Sept 11, 2023. Minor update
 * MS SQL driver, batch execution. Added to batch text at start: SET XACT_ABORT ON -- to stop execution on any error and abort trans.

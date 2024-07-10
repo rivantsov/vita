@@ -24,13 +24,13 @@ namespace BookStore.GraphQL {
       var connStr = builder.Configuration["MsSqlConnectionString"];
       var entApp = CreateBooksEntityApp(connStr); 
       var graphQLServer = new BookStoreGraphQLServer(entApp);
-      builder.AddGraphQLServer(graphQLServer);
+      var x = builder.AddGraphQLServer(graphQLServer);
 
       var webApp = builder.Build();
       webApp.UseRouting();
       webApp.MapControllers();
       
-      webApp.MapGraphQLEndpoint();
+      webApp.MapGraphQLEndpoint(graphQLServer.Settings);
 
       var task = Task.Run(() => webApp.Run());
       return task;

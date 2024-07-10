@@ -132,14 +132,40 @@ namespace Vita.Data.Driver {
       if(exprs.Count == 0)
         return null;
       var parts = new List<SqlFragment>();
-      foreach(var ge in exprs)
-        foreach(var c in ge.Columns)
-          parts.Add(BuildLinqExpressionSql(c));
+      foreach(var ge in exprs) {
+        AddGroupByFragments(parts, ge);
+        // RI: July 24, changed from this old code (that uses columns, not operands)
+        //foreach (var c in ge.Columns)
+        //  parts.Add(BuildLinqExpressionSql(c));
+      }
       // this might happen with fake grouping to get aggregates on entire table
-      if(parts.Count == 0)
+      if (parts.Count == 0)
         return null; 
       var gbList = SqlFragment.CreateList(SqlTerms.Comma, parts);
       return new CompositeSqlFragment(SqlTerms.GroupBy, gbList);
+    }
+
+    private void AddGroupByFragments(IList<SqlFragment> parts, GroupExpression gExpr) {
+      switch(gExpr.KeyExpression) {
+        case DerivedTableExpression dte:
+          foreach (var op in dte.Operands)
+            parts.Add(BuildLinqExpressionSql(op));
+          break;
+        case TableExpression te:
+          // RI: mostly wild guess for this case
+          foreach(var col in gExpr.Columns) // note 'gExpr.Columns', not 'te'
+            parts.Add(BuildLinqExpressionSql(col));
+          break; 
+        case SqlFunctionExpression fe:
+          parts.Add(BuildLinqExpressionSql(fe));
+          break;
+        case ConstantExpression ce:
+          // fake clause, used in aggregate queries without group by
+          break;
+        default:
+          parts.Add(BuildLinqExpressionSql(gExpr.KeyExpression));
+          break;
+      }
     }
 
     public virtual SqlFragment BuildOrderByClause(SelectExpression select) {

@@ -1227,8 +1227,9 @@ namespace Vita.Data.Linq.Translation {
       // some providers (ex SQL CE) do not allow Text columns in distinct output
       CheckDistinctClauseColumns(childColumns, context);
 
-      var group = new GroupExpression(expression, expression, childColumns);
-      context.CurrentSelect.Group.Add(group);
+      // RI: July 2024, fixing distinct
+      //var group = new GroupExpression(expression, expression, childColumns);
+      //context.CurrentSelect.Group.Add(group);
 
       //RI: added this special check
       // var table  
@@ -1315,9 +1316,16 @@ namespace Vita.Data.Linq.Translation {
       Expression result = null;
       bool clrGrouping = false;
       switch(ovldNum) {
-        case 1: //2 params          
-          result = table; // we return the whole table
-          clrGrouping = true;
+        case 1: //2 params
+          // old code: 
+          //clrGrouping = true;
+          //result = table; // we return the whole table
+
+          if (context.IsExternalInExpressionChain) {
+            clrGrouping = true;
+            result = table; // we return the whole table
+          } else
+            result = table; //
           break;
         case 2: //3 params
           result = Analyze(parameters[2], new Expression[] { table }, context);

@@ -586,6 +586,8 @@ public partial class LinqTests {
                   join p in pubs on b.Publisher equals p
                   where p.Name == "MS Books"
                   select new { B = b, P = p }; //
+      var qList = qJoin.ToList();
+      Assert.IsTrue(qList.Count > 0, "Join query failed.");
       var joinDistinct = qJoin.Distinct().ToList();
       Assert.IsTrue(joinDistinct.Count > 0, "JoinDistinct query failed.");
       var joinCount = qJoin.Count();

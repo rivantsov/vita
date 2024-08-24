@@ -26,9 +26,6 @@ namespace BookStore {
       //Standard modules
       var dbInfoModule = new DbInfoModule(infoArea);
 
-      //Job exec module - disabled for now
-      //var jobExecModule = new Modules.JobExecution.JobExecutionModule(booksArea);
-
       Instance = this; 
     }
 

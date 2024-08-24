@@ -11,7 +11,7 @@ namespace Vita.Entities.Logging {
     public LogContext Context;
 
     public LogEntry() {
-      Id = Guid.NewGuid(); 
+      Id = EntityApp.GuidFactory(); 
       CreatedOn = TimeService.Instance.UtcNow; 
     }
 

@@ -294,7 +294,7 @@ namespace Vita.Testing.ExtendedTests {
         var insertReviewQuery = from b in session.EntitySet<IBook>()
                                 where b.Category == BookCategory.Programming
                                 select new {
-                                  Id = Guid.NewGuid(), CreatedOn = dtNow, Book_Id = b.Id, User_Id = dora.Id,
+                                  Id = EntityApp.GuidFactory(), CreatedOn = dtNow, Book_Id = b.Id, User_Id = dora.Id,
                                   Rating = 1, Caption = reviewCaption, Review = "(Inserted Review)",
                                 };
         var newReviewsCount = insertReviewQuery.Count();

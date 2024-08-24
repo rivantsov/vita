@@ -42,6 +42,10 @@ namespace Vita.Data.MySql {
       AddTemplate("WEEK({0})", SqlFunctionType.Week);
       AddTemplate("DAY({0})", SqlFunctionType.Day);
       AddTemplate("DATE({0})", SqlFunctionType.Date);
+      AddTemplate("TIME({0})", SqlFunctionType.Time);
+      AddTemplate("HOUR({0})", SqlFunctionType.Hour);
+      AddTemplate("MINUTE({0})", SqlFunctionType.Minute);
+
       var likeTemplate = "{0} LIKE {1} ESCAPE '" + LikeEscapeChar + "'";
       AddTemplate(likeTemplate, SqlFunctionType.Like); // replace '\' -> '/'
       AddTemplate("CHAR_LENGTH({0})", SqlFunctionType.StringLength);

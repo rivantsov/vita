@@ -9,6 +9,7 @@ using Vita.Data.Driver;
 using Vita.Data.Driver.TypeSystem;
 using Vita.Data.Linq.Translation.Expressions;
 using Vita.Data.Sql;
+using Vita.Entities.Utilities;
 
 namespace Vita.Data.Postgres {
   public class PgSqlDialect : DbSqlDialect {
@@ -46,6 +47,9 @@ namespace Vita.Data.Postgres {
       AddTemplate("EXTRACT(YEAR FROM {0})", SqlFunctionType.Year);
       AddTemplate("EXTRACT(MONTH FROM {0})", SqlFunctionType.Month);
       AddTemplate("EXTRACT(DAY FROM {0})", SqlFunctionType.Day);
+      AddTemplate("EXTRACT(HOUR FROM {0})", SqlFunctionType.Hour);
+      AddTemplate("EXTRACT(MINUTE FROM {0})", SqlFunctionType.Minute);
+      AddTemplate("EXTRACT(SECOND FROM {0})", SqlFunctionType.Second);
 
       //sequence name in double quotes inside single-quote argument
       AddTemplate("nextval('{0}')", SqlFunctionType.SequenceNextValue);
@@ -117,6 +121,9 @@ namespace Vita.Data.Postgres {
           // also, DateTime values got assigned dbType -> TimestampTZ (timestamp with timezone)
           var pgDbType = (NpgsqlDbType)lph.TypeDef.ProviderDbType; 
           prm.NpgsqlDbType = NpgsqlDbType.Array | pgDbType;
+          // Bug/glitch in ngpsql 8.0 - does not handle enum arrays, so we convert it to int array
+          if (prm.Value != null && lph.DataType.IsEnum)
+            prm.Value = EnumListToIntList(prm.Value);
           break;
 
         case SqlParamPlaceHolder pph:
@@ -125,6 +132,16 @@ namespace Vita.Data.Postgres {
       }
       return prm; 
     }
+
+    private int[] EnumListToIntList(object value) {
+      var list = value as IList;
+      var intArr = new int[list.Count];
+      for(int i=0; i < list.Count; i++) {
+        intArr[i] = (int)list[i];
+      }
+      return intArr;
+    }
+
 
   }
 }

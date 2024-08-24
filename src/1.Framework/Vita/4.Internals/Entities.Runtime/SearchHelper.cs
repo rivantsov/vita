@@ -11,7 +11,7 @@ namespace Vita.Entities.Runtime {
     public static SearchResults<TResult> ExecuteSearchImpl<TEntity, TResult>(
                   EntitySession session,
                   Expression<Func<TEntity, bool>> where,
-                  SearchParams searchParams,
+                  ISearchParams searchParams,
                   Func<TEntity, TResult> converter,
                   Expression<Func<TEntity, object>> include = null,
                   QueryOptions options = QueryOptions.ForceIgnoreCase,
@@ -29,7 +29,7 @@ namespace Vita.Entities.Runtime {
     public static SearchResults<TEntity> ExecuteSearchImpl<TEntity>(
                   EntitySession session,
                   Expression<Func<TEntity, bool>> where,
-                  SearchParams searchParams,
+                  ISearchParams searchParams,
                   Expression<Func<TEntity, object>> include = null,
                   QueryOptions options = QueryOptions.ForceIgnoreCase,
                   Dictionary<string, string> nameMapping = null) where TEntity : class {

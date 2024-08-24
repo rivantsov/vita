@@ -109,7 +109,7 @@ public partial class MiscTests {
     // Try assigning ref to non-existent entity (with unknown PK)
     daExc = TestUtil.ExpectDataAccessException(() => {
       var csBook = session.EntitySet<IBook>().First(b => b.Title.StartsWith("c#"));
-      csBook.Publisher =  session.GetEntity<IPublisher>(Guid.NewGuid(), LoadFlags.Stub); //creates a stub
+      csBook.Publisher =  session.GetEntity<IPublisher>(EntityApp.GuidFactory(), LoadFlags.Stub); //creates a stub
       session.SaveChanges();
     });
     Assert.AreEqual(DataAccessException.SubTypeIntegrityViolation, daExc.SubType);

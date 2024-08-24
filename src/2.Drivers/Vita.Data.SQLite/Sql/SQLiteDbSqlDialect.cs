@@ -34,6 +34,10 @@ namespace Vita.Data.SQLite {
       AddTemplate("{0}", SqlFunctionType.ConvertBoolToBit);
       AddTemplate("date({0})", SqlFunctionType.Date);
 
+      AddTemplate("time({0})", SqlFunctionType.Time);
+
+      AddTemplate("strftime({0}, '%H')", SqlFunctionType.Hour);
+
     }
 
     public override SqlTemplate GetSqlFunctionTemplate(SqlFunctionExpression expr) {

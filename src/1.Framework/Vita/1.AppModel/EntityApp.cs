@@ -81,6 +81,8 @@ namespace Vita.Entities {
     /// <summary>Entity model. Initially null, available after the app is initialized. </summary>
     public EntityModel Model { get; internal set; }
 
+    public static Func<Guid> GuidFactory => () => Guid.NewGuid(); 
+
     private readonly object _lock = new object();
 
     /// <summary> Constructs a new EntityApp instance. </summary>

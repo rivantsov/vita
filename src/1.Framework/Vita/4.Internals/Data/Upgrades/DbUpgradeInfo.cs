@@ -31,7 +31,7 @@ namespace Vita.Data.Upgrades {
       Settings = settings;
       NewDbModel = newModel;
       var serverType = NewDbModel.Driver.ServerType;
-      Id = Guid.NewGuid();
+      Id = EntityApp.GuidFactory();
       Method = DbUpgradeMethod.Auto; //might be changed by update tool app
       UserName = "(app)";
       Status = UpgradeStatus.None; 

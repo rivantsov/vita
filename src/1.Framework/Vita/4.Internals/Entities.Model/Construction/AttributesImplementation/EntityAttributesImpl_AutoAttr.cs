@@ -181,7 +181,7 @@ namespace Vita.Entities {
       var rec = record;
       if (rec.SuppressAutoValues)
         return;
-      var newGuid = Guid.NewGuid();
+      var newGuid = EntityApp.GuidFactory(); 
       rec.SetValueDirect(HostMember, newGuid);
     }
 

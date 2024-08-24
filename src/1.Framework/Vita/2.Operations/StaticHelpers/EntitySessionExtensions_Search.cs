@@ -39,7 +39,7 @@ namespace Vita.Entities {
     public static SearchResults<TEntity> ExecuteSearch<TEntity>(
                   this IEntitySession session,
                   Expression<Func<TEntity, bool>> where,
-                  SearchParams searchParams,
+                  ISearchParams searchParams,
                   Expression<Func<TEntity, object>> include = null,
                   QueryOptions options = QueryOptions.ForceIgnoreCase,
                   Dictionary<string, string> nameMapping = null)
@@ -62,7 +62,7 @@ namespace Vita.Entities {
     public static SearchResults<TResult> ExecuteSearch<TEntity, TResult>(
                   this IEntitySession session,
                   Expression<Func<TEntity, bool>> where,
-                  SearchParams searchParams,
+                  ISearchParams searchParams,
                   Func<TEntity, TResult> converter = null,
                   Expression<Func<TEntity, object>> include = null,
                   QueryOptions options = QueryOptions.ForceIgnoreCase,
@@ -96,7 +96,7 @@ namespace Vita.Entities {
     /// <remarks>User this method in Search methods in Web API controller for input parameter marked with [FromUri] attribute
     /// that is a container for multiple parameters in URL.</remarks>
     public static T DefaultIfNull<T>(this T searchParams, int take = 10, string defaultOrderBy = null, int maxRows = 100)
-            where T : SearchParams, new() {
+            where T : ISearchParams, new() {
       if (searchParams == null)
         searchParams = new T();
       if (searchParams.Take == 0)

@@ -21,5 +21,6 @@
  
 ## Version 4.1. July 9, 2024. 
 * Minor fix in db-first entity generator
+* Postgres - upgrade of npgsql provider to latest (old version was declared vulnerable)
 * Postgres - enhancements/fixes for DateTime/Timestamp db types. Both DateTime and DateTimeOffset .net types are now mapped to 'timestamp with time zone' Db type (which has NO timezone actually) - see here for details: https://www.npgsql.org/doc/release-notes/6.0.html#timestamp-rationalization-and-improvements , https://www.roji.org/postgresql-dotnet-timestamp-mapping
-* 
+* Search extensions - added ISearchParams interface (identical to SearchParams class); all search helpers use this interface now. This makes it easier to implement your own custom SearchParams types - implement interface instead of using the fixed base class.  

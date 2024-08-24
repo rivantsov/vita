@@ -376,7 +376,7 @@ namespace Vita.Testing.BasicTests.DataTypes {
     private IDataTypesEntity CreateDataTypesEntity(IEntitySession session, string strProp, string memoProp) {
       var rand = new Random(); 
       var ent = session.NewEntity<IDataTypesEntity>();
-      var id = ent.Id = Guid.NewGuid();
+      var id = ent.Id = EntityApp.GuidFactory();
       ent.StringProp = strProp;
       ent.MemoProp = memoProp;
       ent.ByteProp = 234; // (byte) rand.Next(255);
@@ -418,7 +418,7 @@ namespace Vita.Testing.BasicTests.DataTypes {
 
     private IMsSqlDataTypesEntity CreateSpecialDataTypesEntity(IEntitySession session, string varCharProp) {
       var ent = session.NewEntity<IMsSqlDataTypesEntity>();
-      ent.Id = Guid.NewGuid();
+      ent.Id = EntityApp.GuidFactory();
       // Test bug fix
       ent.CharNProp = "12345678"; 
       ent.NCharNProp = "234567";

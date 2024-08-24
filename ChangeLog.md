@@ -19,8 +19,9 @@
 ## Version 4.1. July 9, 2024. 
 * Using Expressions in GroupBy fixed - issue #225
  
-## Version 4.1. July 9, 2024. 
+## Version 4.2. Aug 24, 2024. 
+* Added Date (Hour, Minute) SQL functions to all providers - fixes unit tests
 * Minor fix in db-first entity generator
-* Postgres - upgrade of npgsql provider to latest (old version was declared vulnerable)
-* Postgres - enhancements/fixes for DateTime/Timestamp db types. Both DateTime and DateTimeOffset .net types are now mapped to 'timestamp with time zone' Db type (which has NO timezone actually) - see here for details: https://www.npgsql.org/doc/release-notes/6.0.html#timestamp-rationalization-and-improvements , https://www.roji.org/postgresql-dotnet-timestamp-mapping
-* Search extensions - added ISearchParams interface (identical to SearchParams class); all search helpers use this interface now. This makes it easier to implement your own custom SearchParams types - implement interface instead of using the fixed base class.  
+* Postgres - upgrade of npgsql provider to latest (old version was declared vulnerable), fixed the incompatibility. Note: staying with Legacy behavior for timestamps, DateTime is still mapped to 'timestamp without time zone' type. The 'with time zone' db type behaves weird, see more here: https://www.npgsql.org/doc/release-notes/6.0.html#timestamp-rationalization-and-improvements , https://www.roji.org/postgresql-dotnet-timestamp-mapping
+* Search extensions - added ISearchParams interface (identical to SearchParams class); all search helpers use this interface now. This makes it easier to implement your own custom SearchParams types - implement interface instead of using the fixed base class. 
+* Option to use sequential GUIDs (time-based, V7). Added EntityApp.GuidFactory() method/field. In some cases using sequential Guids is preferrable in databases.  To use them in Vita, set the GuidFactory field to your custom method. Support for these is coming in .NET 9. For now BooksApp uses UUIDNext package, see BooksEntityApp.cs for an example. 

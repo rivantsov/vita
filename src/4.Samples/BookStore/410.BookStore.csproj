@@ -19,6 +19,10 @@
       <NoWarn>1701;1702;1591</NoWarn>
     </PropertyGroup>
 
+    <ItemGroup>
+      <PackageReference Include="UUIDNext" Version="3.0.0" />
+    </ItemGroup>
+
   <ItemGroup>
     <ProjectReference Include="..\..\1.Framework\Vita\010.Vita.csproj" />
   </ItemGroup>

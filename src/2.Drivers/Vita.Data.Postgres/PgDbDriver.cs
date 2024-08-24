@@ -1,21 +1,13 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Data;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-using Npgsql;
-using NpgsqlTypes;
-
-using Vita.Entities;
-using Vita.Data.Driver;
-using Vita.Data.Model;
-using Vita.Entities.Logging;
-using Vita.Entities.Utilities;
-using System.Collections;
-using Vita.Data.Linq;
 using System.Threading;
+using System.Threading.Tasks;
+using Npgsql;
+using Vita.Data.Driver;
+using Vita.Data.Linq;
+using Vita.Data.Model;
+using Vita.Entities;
+using Vita.Entities.Logging;
 
 namespace Vita.Data.Postgres {
 

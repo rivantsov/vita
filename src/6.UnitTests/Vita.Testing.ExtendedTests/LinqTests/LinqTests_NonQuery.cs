@@ -291,10 +291,12 @@ namespace Vita.Testing.ExtendedTests {
       var initialCount = session.EntitySet<IBookReview>().Count();
       // Method 1: using FK names directly (ex: Book_id)
       {
+        // For Ids, use Guid.NewGuid() here, not EntityApp.GuidFactory() - LinqEngine replaces it with Db's NewGuid function
+        // We will figure out better solution once support for V8 Guids is here in .NET 9
         var insertReviewQuery = from b in session.EntitySet<IBook>()
                                 where b.Category == BookCategory.Programming
                                 select new {
-                                  Id = EntityApp.GuidFactory(), CreatedOn = dtNow, Book_Id = b.Id, User_Id = dora.Id,
+                                  Id = Guid.NewGuid(), CreatedOn = dtNow, Book_Id = b.Id, User_Id = dora.Id,
                                   Rating = 1, Caption = reviewCaption, Review = "(Inserted Review)",
                                 };
         var newReviewsCount = insertReviewQuery.Count();

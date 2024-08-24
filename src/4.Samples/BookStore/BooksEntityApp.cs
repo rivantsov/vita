@@ -26,6 +26,15 @@ namespace BookStore {
       //Standard modules
       var dbInfoModule = new DbInfoModule(infoArea);
 
+      // Replace Guid factory with Sequential Guid generator; we use UUIDNext library
+      // Support in .net is coming in .NET 9. See also an example:
+      //    https://medium.com/@oliviermartinet/creating-a-uuid-v7-generator-in-c-a95b23cf6a99
+      // General case
+      EntityApp.GuidFactory = () => UUIDNext.Uuid.NewSequential();
+      // SQL Server friendly
+      // EntityApp.GuidFactory = () => UUIDNext.Uuid.NewDatabaseFriendly(UUIDNext.Database.SqlServer);
+
+
       Instance = this; 
     }
 

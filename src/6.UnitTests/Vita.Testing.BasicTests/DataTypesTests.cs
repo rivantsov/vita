@@ -1,21 +1,15 @@
 ﻿using System;
-using System.ComponentModel;
-using System.Linq;
 using System.Data;
-using System.Diagnostics;
 using System.Globalization;
-using System.Threading;
+using System.Linq;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-using Vita.Entities;
-using Vita.Entities.Runtime;
 using Vita.Data;
-using Vita.Data.Model;
 using Vita.Data.Driver;
-using Vita.Entities.Utilities;
 using Vita.Data.Driver.InfoSchema;
+using Vita.Entities;
+using Vita.Entities.Utilities;
 using Vita.Tools.Testing;
-using System.Collections.Generic;
 
 namespace Vita.Testing.BasicTests.DataTypes {
   using Binary = Vita.Entities.Binary;
@@ -76,8 +70,18 @@ namespace Vita.Testing.BasicTests.DataTypes {
       decimal MoneyProp { get; set; }
 
       // date-time
+      //[Utc]
       DateTime DateTimeProp { get; set; }
       TimeSpan? TimeProp { get; set; }
+
+      // experiment for Postgres only, trying timestamptz
+      // we do not for now enable new behavior with flag PgDbDriver.EnableLegacyTimestampBehavior
+      //  see: https://www.roji.org/postgresql-dotnet-timestamp-mapping
+#if PG_TZ_TEST
+      [Column(DbTypeSpec = "timestamptz")]
+      DateTime DateTimePropTz { get; set; }
+      DateTimeOffset DateTimeOffsetProp { get; set; }
+#endif
 
       //enums
       SimpleEnum EnumProp { get; set; }
@@ -239,12 +243,12 @@ namespace Vita.Testing.BasicTests.DataTypes {
       // Bug fix - single-record insert fails, on column varbinary(max), nullable, with NULL value.
       // Single-record insert uses all-parameters format, so failure comes from invalid parameter value
       // if more than one record, fwk goes for multi-record insert with literals mostly instead of parameters. 
-      var ent0 = CreateDataTypesEntity(session, "XYZ01234", "Unlimited property 0");
+      var ent0 = CreateDataTypesEntity(session, "ent0", "Unlimited property 0");
       session.SaveChanges(); 
 
       //Create 2 entities, to verify how batch updates work for all data types; batch is used only when there's more than 1 update
-      var ent1 = CreateDataTypesEntity(session, "abcd", "Unlimited property 1");
-      var ent2 = CreateDataTypesEntity(session, "abcdefgh", "Unlimited property 2");
+      var ent1 = CreateDataTypesEntity(session, "ent1", "Unlimited property 1");
+      var ent2 = CreateDataTypesEntity(session, "ent2", "Unlimited property 2");
       //var ent3 = CreateDataTypesEntity(session, string.Empty, string.Empty);
       // var ent4 = CreateDataTypesEntity(session, null, null);
 
@@ -276,6 +280,11 @@ namespace Vita.Testing.BasicTests.DataTypes {
       Assert.AreEqual(ent1.MoneyProp, ent1copy.MoneyProp);
 
       Assert.IsTrue(Equal(ent1.DateTimeProp, ent1copy.DateTimeProp));
+#if PG_TZ_TEST
+      Assert.IsTrue(Equal(ent1.DateTimePropTz, ent1copy.DateTimePropTz));
+      // Postgres does not support DateTimeOffset actualy
+      Assert.IsTrue(Equal(ent1.DateTimeOffsetProp, ent1copy.DateTimeOffsetProp));
+#endif
 
       Assert.AreEqual(ent1.EnumProp, ent1copy.EnumProp);
       Assert.AreEqual(ent1.EnumNullProp, ent1copy.EnumNullProp);
@@ -383,8 +392,12 @@ namespace Vita.Testing.BasicTests.DataTypes {
       ent.SingleProp = 4.567f;
       ent.DecProp = 2.34m;
       ent.MoneyProp = 3.45m;
-      ent.DateTimeProp = DateTime.Now;
-      ent.TimeProp = DateTime.Now.TimeOfDay;
+      ent.DateTimeProp = DateTime.Now; // DateTime.UtcNow;
+      ent.TimeProp = DateTime.UtcNow.TimeOfDay;
+#if PG_TZ_TEST
+      ent.DateTimePropTz = DateTime.UtcNow; 
+      ent.DateTimeOffsetProp = DateTimeOffset.UtcNow;
+#endif 
 
       ent.EnumProp = SimpleEnum.Two;
       ent.EnumNullProp = SimpleEnum.Three;

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Data;
 using System.Data.Common;
+using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
 using Vita.Data.Driver.InfoSchema;
@@ -86,7 +87,7 @@ namespace Vita.Data.Driver {
       } catch (System.Data.Common.DbException dbExc) {
         // Important: in some cases exception on invalid SQL is not thrown immediately but is thrown later when we try to read the results
         // ex (MS SQL): WHERE "Name" LIKE 'ABC%' ESCAPE '' - with empty ESCAPE arg string.
-        // Debug.WriteLine("Failed SQL: \r\n" + command.CommandText);
+        Debug.WriteLine("Failed SQL: \r\n" + command.CommandText);
         var dex = ConvertToDataAccessException(dbExc, command);
         throw dex;
       } 

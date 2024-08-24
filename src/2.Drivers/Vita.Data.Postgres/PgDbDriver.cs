@@ -20,6 +20,9 @@ using System.Threading;
 namespace Vita.Data.Postgres {
 
   public class PgDbDriver : DbDriver {
+    /// <summary>
+    /// Leave it at TRUE!! new behavior is messed up, struggled with it for a while
+    /// </summary>
     public static bool EnableLegacyTimestampBehavior = true;
 
     public const DbOptions DefaultPgDbOptions = DbOptions.UseRefIntegrity | DbOptions.AutoIndexForeignKeys; 

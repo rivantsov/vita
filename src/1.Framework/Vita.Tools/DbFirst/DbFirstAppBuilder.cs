@@ -221,7 +221,8 @@ namespace Vita.Tools.DbFirst {
         var nonFks = ent.Keys.Where(k => k.OwnerMember == null && !k.KeyType.IsSet(KeyType.ForeignKey)).ToList();
         foreach (var nonFk in nonFks) {
           foreach (var fk in fks)
-            if (KeyExpandedMembersMatch(fk, nonFk)) {
+            // bug fix: sometimes fk.OwnerMember is null
+            if (fk.OwnerMember != null && KeyExpandedMembersMatch(fk, nonFk)) {
               nonFk.OwnerMember = fk.OwnerMember;
               nonFk.KeyMembers.Clear();
               nonFk.KeyMembers.Add(new EntityKeyMemberInfo(fk.OwnerMember));

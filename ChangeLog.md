@@ -15,3 +15,11 @@
 * Fixed 'date' db type for Postgres, now works OK
 * Looked at issue #225 (Views does not group by dateTime.Date); turns out it is not a simple bug, but a serious flaw in Linq-to-SQL engine, requires more work; no fix for now, sorry. 
 * Removed generating nuget tool package for VitaDbTool (cmd utility to generate entities from db), for now. Turns out it is quite big (26 Mb), will find a way to package it better.  
+
+## Version 4.1. July 9, 2024. 
+* Using Expressions in GroupBy fixed - issue #225
+ 
+## Version 4.1. July 9, 2024. 
+* Minor fix in db-first entity generator
+* Postgres - enhancements/fixes for DateTime/Timestamp db types. Both DateTime and DateTimeOffset .net types are now mapped to 'timestamp with time zone' Db type (which has NO timezone actually) - see here for details: https://www.npgsql.org/doc/release-notes/6.0.html#timestamp-rationalization-and-improvements , https://www.roji.org/postgresql-dotnet-timestamp-mapping
+* 

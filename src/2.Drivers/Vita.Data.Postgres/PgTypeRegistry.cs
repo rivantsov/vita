@@ -11,6 +11,7 @@ using NpgsqlTypes;
 using Vita.Entities;
 using Vita.Entities.Utilities;
 using Vita.Data.Driver.TypeSystem;
+using Vita.Entities.Model;
 
 namespace Vita.Data.Postgres {
   public class PgTypeRegistry : DbTypeRegistry {
@@ -54,11 +55,15 @@ namespace Vita.Data.Postgres {
 
       var tdText = AddDbTypeDef("text", typeof(string), flags: DbTypeFlags.Unlimited, providerDbType: NpgsqlDbType.Text);
       SpecialTypeDefs[DbSpecialType.StringUnlimited] = tdText;
-      SpecialTypeDefs[DbSpecialType.StringAnsiUnlimited] = tdText; 
+      SpecialTypeDefs[DbSpecialType.StringAnsiUnlimited] = tdText;
 
       // Datetime
-      AddDbTypeDef("timestamp without time zone", typeof(DateTime), providerDbType: NpgsqlDbType.Timestamp);
-      AddDbTypeDef("timestamp with time zone", typeof(DateTimeOffset), providerDbType: NpgsqlDbType.TimestampTz);
+      AddDbTypeDef("timestamp without time zone", typeof(DateTime), mapColumnType: true, providerDbType: NpgsqlDbType.Timestamp,
+          aliases: "timestamp"); 
+      // save it for DateTimeOffset, see below
+      var timestamptz = AddDbTypeDef("timestamp with time zone", typeof(DateTime), mapColumnType: false, providerDbType: NpgsqlDbType.TimestampTz, 
+          aliases: "timestamptz");
+
       AddDbTypeDef("date", typeof(DateTime), mapColumnType: false, providerDbType: NpgsqlDbType.Date);
       AddDbTypeDef("time with time zone", typeof(DateTime), mapColumnType: false, providerDbType: NpgsqlDbType.TimeTz);
       AddDbTypeDef("time without time zone", typeof(TimeSpan), providerDbType: NpgsqlDbType.Time);
@@ -72,6 +77,31 @@ namespace Vita.Data.Postgres {
 
       // Guid 
       AddDbTypeDef("uuid", typeof(Guid), toLiteral: GuidToLiteral, providerDbType: NpgsqlDbType.Uuid);
+
+      // DatetimeOffset - has no db type in postgres, see: 
+      //  https://www.npgsql.org/doc/release-notes/6.0.html#timestamp-rationalization-and-improvements
+      //  https://www.roji.org/postgresql-dotnet-timestamp-mapping
+      Map(typeof(DateTimeOffset), timestamptz);
+      Converters.AddConverter<DateTime, DateTimeOffset>(
+          // dt => new DateTimeOffset((DateTime)dt, TimeSpan.Zero), 
+          ConvertDateTimeToDateTimeOffset,
+          dto => ((DateTimeOffset)dto).DateTime);
+    }
+
+    private object ConvertDateTimeToDateTimeOffset(object dtObj) {
+      // strange behavior in Ngpsql - it returns the time as Local time! See links above.
+      // Using ticks to convert to Utc
+      var dt = (DateTime)dtObj;
+      var dtUtc = new DateTime(dt.Ticks, DateTimeKind.Utc);
+      var dto = new DateTimeOffset(dtUtc);
+      return dto;
+    }
+
+    public override DbTypeDef GetDbTypeDef(Type dataType) {
+      //DatetimeOffset has no support in Postgres, so using DateTime instead
+      if (dataType == typeof(DateTimeOffset))
+        dataType = typeof(DateTime);
+      return base.GetDbTypeDef(dataType);
     }
 
     private static string GuidToLiteral(object value) {

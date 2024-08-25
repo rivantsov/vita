@@ -10,7 +10,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace BookStore.GraphQL {
   public static class ServerSetup {
-    public const string LogFilePath = "bin\\_serverLog.log";
+    public const string LogFilePath = "_serverLog.log";
 
     public static Task SetupServer(string serverUrl = null) {
 

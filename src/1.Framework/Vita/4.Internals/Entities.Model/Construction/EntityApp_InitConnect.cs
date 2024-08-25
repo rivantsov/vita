@@ -63,7 +63,7 @@ namespace Vita.Entities {
     }
 
     private void CheckActivationErrors() {
-      ActivationLog.CheckErrors("Application initialization failed.");
+      ActivationLog.CheckStartupErrors("Application initialization failed.");
     }
 
     protected void SetupLogFileWriters() {

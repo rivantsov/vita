@@ -490,7 +490,7 @@ namespace Vita.Entities.Model.Construction {
     /// Checks activation log messages and throws exception if there were any errors during application initialization.
     /// </summary>
     public void CheckErrors() {
-      Log.CheckErrors("Entity Model build failed.");
+      Log.CheckStartupErrors("Entity Model build failed.");
     }
 
 

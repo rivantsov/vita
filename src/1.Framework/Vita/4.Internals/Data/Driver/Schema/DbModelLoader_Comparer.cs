@@ -20,12 +20,12 @@ namespace Vita.Data.Driver {
       
       if (newColumn.IsDbComputed()) {
         var match = ColumnsMatchComputed(oldColumn, newColumn, out description);
-        if (!match) //printout for convenience
-          Debug.WriteLine($@"
-Computed column '{newColumn.ColumnName}' definition mismatch. 
-   Expr in DB column:          '{oldColumn.ComputedAsExpression}'
-   Expr in Entity attr: '{newColumn.ComputedAsExpression}'
-");
+//        if (!match) //printout for convenience
+//          Debug.WriteLine($@"
+//Computed column '{newColumn.ColumnName}' definition mismatch. 
+//   Expr in DB column:          '{oldColumn.ComputedAsExpression}'
+//   Expr in Entity attr: '{newColumn.ComputedAsExpression}'
+//");
         return match; 
       } else
         return ColumnsMatchRegular(oldColumn, newColumn, out description);

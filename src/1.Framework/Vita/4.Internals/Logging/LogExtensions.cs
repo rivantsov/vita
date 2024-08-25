@@ -33,7 +33,7 @@ namespace Vita.Entities.Logging {
       return hasErrors;
     }
 
-    public static void CheckErrors(this IBufferedLog log, string message) {
+    public static void CheckStartupErrors(this IBufferedLog log, string message) {
       if (log.ErrorCount > 0) {
         var bufLog = log as IBufferedLog; 
         var errors = bufLog?.GetAllAsText() ?? "See details in error log.";

@@ -55,7 +55,7 @@ namespace Vita.Data.Model {
     }//method
 
     private void CheckErrors() {
-      _log.CheckErrors("DbModel construction failed.");
+      _log.CheckStartupErrors("DbModel construction failed.");
     }
 
     private bool IsActive(EntityArea area) {

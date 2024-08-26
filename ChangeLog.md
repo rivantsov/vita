@@ -1,4 +1,12 @@
 *See prior history in the [Code Changes History](https://github.com/rivantsov/vita/wiki/Code-changes-history) page in Wiki tab of this repo.*
+
+## Version 4.2. Aug 24, 2024. 
+* Added Date (Hour, Minute) SQL functions to all providers - fixes unit tests
+* Minor fix in db-first entity generator
+* Postgres - upgrade of npgsql provider to latest (old version was declared vulnerable), fixed the incompatibility. Note: staying with Legacy behavior for timestamps, DateTime is still mapped to 'timestamp without time zone' type. The 'with time zone' db type behaves weird, see more here: https://www.npgsql.org/doc/release-notes/6.0.html#timestamp-rationalization-and-improvements , https://www.roji.org/postgresql-dotnet-timestamp-mapping
+* Search extensions - added ISearchParams interface (identical to SearchParams class); all search helpers use this interface now. This makes it easier to implement your own custom SearchParams types - implement interface instead of using the fixed base class. 
+* Option to use sequential GUIDs (time-based, V7). Added EntityApp.GuidFactory() method/field. In some cases using sequential Guids is preferrable in databases - when your Primary Key (Guid) is also your clustered index. (this is always the case in MySql and Oracle). To use time-based Guids in Vita, set the Entity.GuidFactory field to your custom method. Support for these is coming in .NET 9. For now BooksApp uses UUIDNext package, see BooksEntityApp.cs for an example.
+
 ## Version 4.1.0 July 9, 2024. Minor update
 * Fixed issues #225, #226 - using expressions in Group-By.
 * Upgraded System.Text.Json to latest. 
@@ -16,12 +24,3 @@
 * Looked at issue #225 (Views does not group by dateTime.Date); turns out it is not a simple bug, but a serious flaw in Linq-to-SQL engine, requires more work; no fix for now, sorry. 
 * Removed generating nuget tool package for VitaDbTool (cmd utility to generate entities from db), for now. Turns out it is quite big (26 Mb), will find a way to package it better.  
 
-## Version 4.1. July 9, 2024. 
-* Using Expressions in GroupBy fixed - issue #225
- 
-## Version 4.2. Aug 24, 2024. 
-* Added Date (Hour, Minute) SQL functions to all providers - fixes unit tests
-* Minor fix in db-first entity generator
-* Postgres - upgrade of npgsql provider to latest (old version was declared vulnerable), fixed the incompatibility. Note: staying with Legacy behavior for timestamps, DateTime is still mapped to 'timestamp without time zone' type. The 'with time zone' db type behaves weird, see more here: https://www.npgsql.org/doc/release-notes/6.0.html#timestamp-rationalization-and-improvements , https://www.roji.org/postgresql-dotnet-timestamp-mapping
-* Search extensions - added ISearchParams interface (identical to SearchParams class); all search helpers use this interface now. This makes it easier to implement your own custom SearchParams types - implement interface instead of using the fixed base class. 
-* Option to use sequential GUIDs (time-based, V7). Added EntityApp.GuidFactory() method/field. In some cases using sequential Guids is preferrable in databases.  To use them in Vita, set the GuidFactory field to your custom method. Support for these is coming in .NET 9. For now BooksApp uses UUIDNext package, see BooksEntityApp.cs for an example. 

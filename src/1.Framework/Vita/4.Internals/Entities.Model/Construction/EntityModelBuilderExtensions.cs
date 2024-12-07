@@ -29,7 +29,8 @@ namespace Vita.Entities.Model.Construction {
         return prefix + tName;
       } else if (key.KeyType.IsSet(KeyType.ForeignKey)) {
         var target = key.OwnerMember.ReferenceInfo.ToKey.Entity;
-        return prefix + tName + "_" + (target.TableName ?? target.Name);
+        // fix for bug #240 - key name (and cache key) must contain owner member name
+        return $"{prefix}_{tName}_{key.OwnerMember.MemberName}_{target.Name}";
       } else {
         var members = key.GetMemberNamesAsString();
         string memberNames = string.Join(string.Empty, members).Replace("_", string.Empty); //remove underscores in names 

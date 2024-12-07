@@ -54,11 +54,12 @@ namespace Vita.Testing.BasicTests.Misc {
       var carxOwner = carx.Owner;
       Assert.IsNull(carxOwner, "EntityRef on new entity is not null!");
 
+      // we use custom sample data here, specific for this test
       session = _app.OpenSession();
       var john = session.NewDriver("D001", "John", "Dow");
       var johnId = john.Id;
 
-      var jane = session.NewDriver("D002", "Jane", "Crane");
+      var jane = session.NewDriver("D002", "Jane", "Jones");
       var janeId = jane.Id;
 
       var veh1 = session.NewVehicle("Beatle", 2000, john, john);
@@ -88,8 +89,8 @@ namespace Vita.Testing.BasicTests.Misc {
       veh2.Driver = null;
       session.SaveChanges();
       //immediately verify that vehicle lists in persons are refreshed
-      Assert.AreEqual(1, john.Vehicles.Count, "Invlid Vehicle count for John");
-      Assert.AreEqual(1, jane.Vehicles.Count, "Invlid Vehicle count for Jane");
+      Assert.AreEqual(1, john.Vehicles.Count, "Invalid Vehicle count for John");
+      Assert.AreEqual(1, jane.Vehicles.Count, "Invalid Vehicle count for Jane");
 
 
       session = _app.OpenSession();
@@ -321,17 +322,33 @@ namespace Vita.Testing.BasicTests.Misc {
 
 
     [TestMethod]
-    public void TestMisc_MatchBy2Refs() {
+    public void TestMultipleEntityRefs() {
       // test for a bug - matching properties of 2 references to the same table (v.Owner and v.Driver); 
       DeleteAll();
       _app.CreateSampleData();
-      var session2 = _app.OpenSession();
-      var qry = session2.EntitySet<IVehicle>().Where(v => v.Owner.FirstName == "Jane" && v.Driver.FirstName == "John");
+      var session = _app.OpenSession();
+      var qry = session.EntitySet<IVehicle>().Where(v => v.Owner.FirstName == "Jane" && v.Driver.FirstName == "John");
       var ford = qry.FirstOrDefault();
-      // var cmd = session2.GetLastCommand();
-      // Debug.WriteLine(cmd.CommandText);
       Assert.AreEqual("Jane", ford.Owner.FirstName, "2-ref test: owner name does not match");
       Assert.AreEqual("John", ford.Driver.FirstName, "2-ref test: driver name does not match");
+
+      // check list properties;
+      // reported bug https://github.com/rivantsov/vita/issues/240
+      //   - two list properties referencing the same entity but with different refs back (ex: driver.Vehicles and driver.DrivesVehicles)
+      //      do not work correctly
+      // Sample data: 
+      //   John owns Ford, Chevy; drives Nissan
+      //   Jane owns Nissan, Toyota, drives Ford 
+      session = _app.OpenSession();
+      var john = session.EntitySet<IDriver>().Where(d => d.FirstName == "John").Single();
+      var johnOwns = GetModels(john.Vehicles); 
+      Assert.AreEqual("Chevy,Ford", johnOwns);
+      var johnDrives = GetModels(john.DrivesVehicles);
+      Assert.AreEqual("Nissan", johnDrives);
+    }
+
+    private static string GetModels(IList<IVehicle> cars) {
+      return string.Join(",", cars.Select(c => c.Model).OrderBy(s => s));
     }
 
 

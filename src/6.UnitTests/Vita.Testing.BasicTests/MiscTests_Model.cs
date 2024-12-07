@@ -169,11 +169,16 @@ namespace Vita.Testing.BasicTests.Misc {
 
     public static void CreateSampleData(this EntityApp app) {
       var session = app.OpenSession();
+      //drivers
       var john = session.NewDriver("D001", "John", "Dow");
       var jane = session.NewDriver("D002", "Jane", "Crane");
-      var veh = session.NewVehicle("Ford", 2000, john, jane);
+      // vehicles
+      var veh1 = session.NewVehicle("Ford", 2000, john, jane);
       var veh2 = session.NewVehicle("Nissan", 2000, jane, john);
       var veh3 = session.NewVehicle("Chevy", 2000, john, null);
+      var veh4 = session.NewVehicle("Toyota", 2000, jane, null);
+      // John owns Ford, Chevy; drives Nissan
+      // Jane owns Nissan, Toyota, drives Ford 
       session.SaveChanges();
     }
 

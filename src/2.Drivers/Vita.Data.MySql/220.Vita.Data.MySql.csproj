@@ -16,8 +16,8 @@
 
     <ItemGroup>
         <PackageReference Include="BouncyCastle.Cryptography" Version="2.4.0" />
-        <PackageReference Include="MySql.Data" Version="9.0.0" />
-        <PackageReference Include="System.Text.Json" Version="8.0.4" />
+        <PackageReference Include="MySql.Data" Version="9.1.0" />
+        <!--<PackageReference Include="System.Text.Json" Version="9.0.0" />-->
     </ItemGroup>
 
     <ItemGroup>

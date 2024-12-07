@@ -183,16 +183,5 @@ namespace Vita.Data.MySql {
       base.OnDbModelConstructed(dbModel);
     }
 
-    // Probing async methods
-    private async Task<object> ExecuteReaderAsync(CancellationToken token) {
-      var sqlCmd = new MySqlCommand();
-      var reader = await sqlCmd.ExecuteReaderAsync(token);
-      while (await reader.ReadAsync()) {
-        var someValue = reader["someValue"];
-      }
-      return new object();
-    }
-
-
   }//class
 }

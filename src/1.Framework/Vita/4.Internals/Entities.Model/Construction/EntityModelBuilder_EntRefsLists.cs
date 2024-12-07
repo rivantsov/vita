@@ -5,6 +5,8 @@ using System.Text;
 
 using Vita.Entities.Utilities;
 using Vita.Entities.Logging;
+using Vita.Data.Sql;
+using Vita.Entities.Locking;
 
 namespace Vita.Entities.Model.Construction {
   partial class EntityModelBuilder {

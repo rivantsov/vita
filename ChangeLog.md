@@ -1,5 +1,8 @@
 *See prior history in the [Code Changes History](https://github.com/rivantsov/vita/wiki/Code-changes-history) page in Wiki tab of this repo.*
 
+## Version 4.3. Dec 7, 2024. 
+* Patch, bug fix for #240: https://github.com/rivantsov/vita/issues/240   - fixed SQL cache key for list properties
+
 ## Version 4.2. Aug 24, 2024. 
 * Added Date (Hour, Minute) SQL functions to all providers - fixes unit tests
 * Minor fix in db-first entity generator

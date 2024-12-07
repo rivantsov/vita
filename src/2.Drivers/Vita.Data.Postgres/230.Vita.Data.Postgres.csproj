@@ -16,6 +16,7 @@
         <!-- Apr 2024. Version 8.0.2 has a bug, in handling array params. they promise to fix it in 8.03
                  so staying on 7.*-->
         <PackageReference Include="Npgsql" Version="8.0.6" />
+        <PackageReference Include="System.Text.Json" Version="9.0.0" />
         <!--<PackageReference Include="System.Text.Json" Version="8.0.4" />-->
     </ItemGroup>
 

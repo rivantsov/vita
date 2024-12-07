@@ -12,6 +12,7 @@
     <PackageReference Include="Microsoft.Extensions.Configuration" Version="8.0.0" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="8.0.0" />
     <PackageReference Include="System.Data.SQLite.Core" Version="1.0.118" />
+    <PackageReference Include="System.Text.Json" Version="9.0.0" />
     <PackageReference Include="Vita" Version="3.7.0" />
     <PackageReference Include="Vita.Data.SQLite" Version="3.4.1" />
   </ItemGroup>

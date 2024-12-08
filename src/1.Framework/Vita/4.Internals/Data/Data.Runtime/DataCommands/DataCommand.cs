@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Data;
+using System.Data.Common;
 using System.Text;
 using Vita.Data.Driver;
 using Vita.Data.Linq.Translation;
@@ -19,7 +20,7 @@ namespace Vita.Data.Runtime {
 
   public class DataCommand {
     public DataConnection Connection;
-    public IDbCommand DbCommand;
+    public DbCommand DbCommand;
     public DbExecutionType ExecutionType; 
     public IDataCommandResultProcessor ResultProcessor;
     public IList<EntityRecord> Records; // input records
@@ -32,7 +33,7 @@ namespace Vita.Data.Runtime {
     public int RowCount = -1;
     public double TimeMs; 
 
-    public DataCommand(DataConnection connection, IDbCommand dbCommand, DbExecutionType executionType, 
+    public DataCommand(DataConnection connection, DbCommand dbCommand, DbExecutionType executionType, 
                                 IDataCommandResultProcessor resultsProcessor, IList<EntityRecord> records,
                                 IList<BatchParamCopy> paramCopyList = null) {
       Connection = connection;

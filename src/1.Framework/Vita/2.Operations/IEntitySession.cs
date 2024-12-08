@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Linq;
+using System.Threading.Tasks;
 
 
 namespace Vita.Entities {
@@ -65,6 +66,8 @@ namespace Vita.Entities {
     /// <remarks>Use this command to create primary queryable sets for use in custom LINQ queries.</remarks>    
     IQueryable<TEntity> EntitySet<TEntity>() where TEntity : class;
 
+    // New async stuff
+    Task<TEntity> GetEntityAsync<TEntity>(object primaryKeyValue, LoadFlags flags = LoadFlags.Default) where TEntity : class;
   }
 
   /// <summary> Specifies entity load options for <c>IEntitySession.GetEntity</c> method. </summary>

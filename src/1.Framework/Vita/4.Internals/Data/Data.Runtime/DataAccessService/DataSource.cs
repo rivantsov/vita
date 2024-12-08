@@ -53,6 +53,17 @@ namespace Vita.Data.Runtime {
       return result; 
     }
 
+    public async Task<object> ExecuteLinqCommandAsync(EntitySession session, LinqCommand command) {
+      object result = null;
+      if (Cache != null && command.Operation == LinqOperation.Select && Cache.TryExecuteSelect(session, command, out result))
+        return result;
+      result = await Database.ExecuteLinqCommandAsync(session, command);
+      //If we are returning entities, cache them; if updating - invalidate
+      if (Cache != null)
+        Cache.OnCommandExecuted(session, command, result);
+      return result;
+    }
+
     public DataConnection GetConnection(EntitySession session, bool admin = false) {
       return this.Database.GetConnection(session, admin: admin); 
     }

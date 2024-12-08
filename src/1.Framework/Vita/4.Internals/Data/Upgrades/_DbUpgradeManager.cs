@@ -14,6 +14,7 @@ using Vita.Entities.DbInfo;
 using Vita.Entities.Logging;
 using Vita.Entities.Runtime;
 using Vita.Data.Runtime;
+using System.Data.Common;
 
 namespace Vita.Data.Upgrades {
 
@@ -163,7 +164,7 @@ namespace Vita.Data.Upgrades {
       var driver = _database.DbModel.Driver;
       var conn = driver.CreateConnection(_database.Settings.SchemaManagementConnectionString);
       DbUpgradeScript currScript = null;
-      IDbCommand cmd = null;
+      DbCommand cmd = null;
       var appliedScripts = new List<DbUpgradeScript>(); 
       try {
         conn.Open();

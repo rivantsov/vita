@@ -253,6 +253,7 @@ namespace Vita.Entities.Runtime {
       var ent = this.SelectByPrimaryKey(primaryKey.KeyInfo.Entity, primaryKey.Values);
       return ent?.Record; 
     }
+
     public virtual EntityRecord NewRecord(EntityInfo entityInfo) {
       var record = new EntityRecord(entityInfo, EntityStatus.New);
       record = Attach(record);

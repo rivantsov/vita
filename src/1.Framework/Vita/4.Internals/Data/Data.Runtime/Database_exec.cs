@@ -14,6 +14,7 @@ using Vita.Entities.Logging;
 using Vita.Entities.Locking;
 
 using Vita.Data.Sql;
+using System.Data.Common;
 
 namespace Vita.Data.Runtime {
 
@@ -193,7 +194,7 @@ namespace Vita.Data.Runtime {
     #endregion
 
 
-    public object ExecuteDirectDbCommand(IDbCommand command, DataConnection connection, DbExecutionType execType) {
+    public object ExecuteDirectDbCommand(DbCommand command, DataConnection connection, DbExecutionType execType) {
       object result;
       connection.Session.SetLastCommand(command);
       try {

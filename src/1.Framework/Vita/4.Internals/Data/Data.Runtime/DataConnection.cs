@@ -8,6 +8,7 @@ using Vita.Entities;
 using Vita.Data.Driver;
 using Vita.Entities.Utilities;
 using Vita.Entities.Runtime;
+using System.Data.Common;
 
 namespace Vita.Data.Runtime {
 
@@ -19,8 +20,8 @@ namespace Vita.Data.Runtime {
     public DbSettings DbSettings; 
     public IDataReader ActiveReader; // holds an open reader that uses this connection. Allows application to automatically close the reader when connection is closed/reopened 
 
-    public IDbConnection DbConnection { get; private set; }
-    public IDbTransaction DbTransaction { get; private set; }
+    public DbConnection DbConnection { get; private set; }
+    public DbTransaction DbTransaction { get; private set; }
     public DbConnectionFlags Flags;
     public DbConnectionLifetime Lifetime; 
 

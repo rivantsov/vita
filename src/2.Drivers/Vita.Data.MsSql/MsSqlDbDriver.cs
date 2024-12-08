@@ -15,6 +15,7 @@ using Vita.Data.Sql;
 using Vita.Entities.Utilities;
 using System.Threading.Tasks;
 using System.Threading;
+using System.Data.Common;
 
 namespace Vita.Data.MsSql {
 
@@ -69,7 +70,7 @@ namespace Vita.Data.MsSql {
       }
     }
 
-    public override IDbConnection CreateConnection(string connectionString) {
+    public override DbConnection CreateConnection(string connectionString) {
       return new SqlConnection(connectionString);
     }
 
@@ -89,7 +90,7 @@ namespace Vita.Data.MsSql {
       return new MsLinqSqlBuilder(dbModel, command); 
     }
 
-    public override IDbCommand CreateCommand() {
+    public override DbCommand CreateCommand() {
       return new SqlCommand();
     }
 

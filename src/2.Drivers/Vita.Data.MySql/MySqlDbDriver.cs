@@ -14,6 +14,7 @@ using Vita.Entities.Logging;
 using Vita.Data.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Data.Common;
 
 namespace Vita.Data.MySql {
   /* Note:
@@ -60,7 +61,7 @@ namespace Vita.Data.MySql {
 
 
     // overrides
-    public override IDbConnection CreateConnection(string connectionString) {
+    public override DbConnection CreateConnection(string connectionString) {
       return new MySqlConnection(connectionString); 
     }
 
@@ -81,11 +82,11 @@ namespace Vita.Data.MySql {
       return base.CreateLinqNonQuerySqlBuilder(dbModel, command);
     }
 
-    public override IDbCommand CreateCommand() {
+    public override DbCommand CreateCommand() {
       return new MySqlCommand(); 
     }
 
-    public override object ExecuteCommand(IDbCommand command, DbExecutionType executionType) {
+    public override object ExecuteCommand(DbCommand command, DbExecutionType executionType) {
       try {
         return base.ExecuteCommand(command, executionType);
       } catch(Exception) {
@@ -98,6 +99,17 @@ namespace Vita.Data.MySql {
         throw; 
       }
     }
+
+    public async override Task<object> ExecuteCommandAsync(DbCommand command, DbExecutionType executionType) {
+      try {
+        return await base.ExecuteCommandAsync(command, executionType);
+      } catch (Exception) {
+        // see explanation above in sync method
+        ExecuteDummyPostErrorSelect(command.Connection);
+        throw;
+      }
+    }
+
 
     //Dummy SELECT statement to execute right after error. See comment in ExecuteCommand
     private void ExecuteDummyPostErrorSelect(IDbConnection connection) {

@@ -11,6 +11,7 @@ using Vita.Data.Linq;
 using System.Data.SQLite;
 using System.Threading.Tasks;
 using System.Threading;
+using System.Data.Common;
 
 namespace Vita.Data.SQLite {
 
@@ -24,8 +25,8 @@ namespace Vita.Data.SQLite {
     public const DbOptions DefaultSQLiteDbOptions = DbOptions.UseRefIntegrity | DbOptions.ShareDbModel
                                                   | DbOptions.AutoIndexForeignKeys | DbOptions.AddSchemaToTableNames;
 
-    public Func<string, IDbConnection> ConnectionFactory;
-    public Func<IDbCommand> CommandFactory; 
+    public Func<string, DbConnection> ConnectionFactory;
+    public Func<DbCommand> CommandFactory; 
 
     //Parameterless constructor is needed for tools
     /// <summary>Creates driver instance with enabled Foreign key checks.</summary>
@@ -36,10 +37,10 @@ namespace Vita.Data.SQLite {
       CommandFactory = DefaultCommandFactory;
     }
 
-    private IDbConnection DefaultConnectionFactory(string connString) {
+    private DbConnection DefaultConnectionFactory(string connString) {
       return new SQLiteConnection(connString); 
     }
-    private IDbCommand DefaultCommandFactory() {
+    private DbCommand DefaultCommandFactory() {
       return new SQLiteCommand(); 
     }
 
@@ -47,10 +48,10 @@ namespace Vita.Data.SQLite {
       return DefaultSQLiteDbOptions;
     }
 
-    public override IDbConnection CreateConnection(string connectionString) {
+    public override DbConnection CreateConnection(string connectionString) {
       return ConnectionFactory(connectionString); 
     }
-    public override IDbCommand CreateCommand() {
+    public override DbCommand CreateCommand() {
       return CommandFactory();
     }
 

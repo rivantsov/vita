@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Data;
+using System.Data.Common;
 using System.Linq;
 using System.Text;
 using Vita.Data.Driver;
@@ -28,7 +29,7 @@ namespace Vita.Data.Runtime {
   public class DataCommandBuilder : IColumnValueFormatter {
     DbDriver _driver;
     DbSqlDialect _sqlDialect; 
-    IDbCommand _dbCommand;
+    DbCommand _dbCommand;
     bool _batchMode; 
     SqlGenMode _genMode;
     public int SqlCount;

@@ -49,8 +49,8 @@ namespace Vita.Data.Driver {
       return new DbLinqNonQuerySqlBuilder(dbModel, command); 
     }
 
-    public abstract IDbConnection CreateConnection(string connectionString);
-    public abstract IDbCommand CreateCommand();
+    public abstract DbConnection CreateConnection(string connectionString);
+    public abstract DbCommand CreateCommand();
 
     #endregion
 
@@ -69,7 +69,7 @@ namespace Vita.Data.Driver {
       return conn.ServerVersion;
     }
 
-    public virtual object ExecuteCommand(IDbCommand command, DbExecutionType executionType) {
+    public virtual object ExecuteCommand(DbCommand command, DbExecutionType executionType) {
       try {
         var conn = command.Connection;
         if(conn.State != ConnectionState.Open)
@@ -77,7 +77,7 @@ namespace Vita.Data.Driver {
         
         switch (executionType) {
           case DbExecutionType.Reader:
-            return command.ExecuteReader();
+            return command.ExecuteReader(); 
           case DbExecutionType.NonQuery:
             return command.ExecuteNonQuery();
           case DbExecutionType.Scalar:
@@ -91,6 +91,30 @@ namespace Vita.Data.Driver {
         var dex = ConvertToDataAccessException(dbExc, command);
         throw dex;
       } 
+    }
+
+    public virtual async Task<object> ExecuteCommandAsync(DbCommand command, DbExecutionType executionType) {
+      try {
+        var conn = command.Connection;
+        if (conn.State != ConnectionState.Open)
+          conn.Open();
+
+        switch (executionType) {
+          case DbExecutionType.Reader:
+            return await command.ExecuteReaderAsync();
+          case DbExecutionType.NonQuery:
+            return await command.ExecuteNonQueryAsync();
+          case DbExecutionType.Scalar:
+            return await command.ExecuteScalarAsync();
+        }
+        return null; //never happens
+      } catch (System.Data.Common.DbException dbExc) {
+        // Important: in some cases exception on invalid SQL is not thrown immediately but is thrown later when we try to read the results
+        // ex (MS SQL): WHERE "Name" LIKE 'ABC%' ESCAPE '' - with empty ESCAPE arg string.
+        //Debug.WriteLine("Failed SQL: \r\n" + command.CommandText);
+        var dex = ConvertToDataAccessException(dbExc, command);
+        throw dex;
+      }
     }
 
     public virtual DataAccessException ConvertToDataAccessException(Exception exception, IDbCommand command) {
@@ -119,8 +143,8 @@ namespace Vita.Data.Driver {
     }
 
     public virtual InfoTable ExecuteRawSelect(string connectionString, string sql) {
-      IDbConnection connection = null;
-      IDbCommand cmd = null;
+      DbConnection connection = null;
+      DbCommand cmd = null;
       try {
         connection = CreateConnection(connectionString);
         connection.Open();

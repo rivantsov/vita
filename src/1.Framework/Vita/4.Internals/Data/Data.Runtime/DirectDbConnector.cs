@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Data;
+using System.Data.Common;
 using System.Text;
 
 using Vita.Entities;
@@ -13,8 +14,8 @@ namespace Vita.Data.Runtime {
     Database _database;
     DataConnection _connection;
 
-    public IDbConnection DbConnection => _connection.DbConnection;
-    public IDbTransaction DbTransaction => _connection.DbTransaction;
+    public DbConnection DbConnection => _connection.DbConnection;
+    public DbTransaction DbTransaction => _connection.DbTransaction;
 
     public DirectDbConnector(EntitySession session, bool admin) {
       Util.CheckParam(session, nameof(session));
@@ -50,15 +51,15 @@ namespace Vita.Data.Runtime {
       _connection.Dispose(); 
     }
 
-    public int ExecuteNonQuery(IDbCommand command) {
+    public int ExecuteNonQuery(DbCommand command) {
       return (int)_database.ExecuteDirectDbCommand(command, _connection, DbExecutionType.NonQuery);
     }
 
-    public IDataReader ExecuteSelect(IDbCommand command) {
+    public IDataReader ExecuteSelect(DbCommand command) {
       return (IDataReader) _database.ExecuteDirectDbCommand(command, _connection, DbExecutionType.Reader);
     }
 
-    public T ExecuteScalar<T>(IDbCommand command) {
+    public T ExecuteScalar<T>(DbCommand command) {
       var result = _database.ExecuteDirectDbCommand(command, _connection, DbExecutionType.Scalar);
       if(result == null)
         return default(T);

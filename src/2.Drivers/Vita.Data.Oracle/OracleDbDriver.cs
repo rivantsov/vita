@@ -92,13 +92,13 @@ namespace Vita.Data.Oracle {
       return base.ConvertToDataAccessException(exception, command);
     }
 
-    public override IDbCommand CreateCommand() {
+    public override DbCommand CreateCommand() {
       var cmd = new OracleCommand();
       cmd.BindByName = true; // Important! Bind params by name, not position; default is false
       return cmd; 
     }
 
-    public override IDbConnection CreateConnection(string connectionString) {
+    public override DbConnection CreateConnection(string connectionString) {
       return new OracleConnection(connectionString); 
     }
 
@@ -117,7 +117,7 @@ namespace Vita.Data.Oracle {
       return new OracleLinqSqlBuilder(dbModel, command); 
     }
 
-    public override object ExecuteCommand(IDbCommand command, DbExecutionType executionType) {
+    public override object ExecuteCommand(DbCommand command, DbExecutionType executionType) {
       // Oracle does not allow ending semicolon in single statement. 
       // But... batches start with BEGIN; and end with "END;"
       if (!command.CommandText.StartsWith("BEGIN "))
@@ -125,6 +125,11 @@ namespace Vita.Data.Oracle {
       return base.ExecuteCommand(command, executionType);
     }
 
+    public override async Task<object> ExecuteCommandAsync(DbCommand command, DbExecutionType executionType) {
+      if (!command.CommandText.StartsWith("BEGIN "))
+        command.CommandText = command.CommandText.TrimEnd(' ', ';', '\r', '\n');
+      return await base.ExecuteCommandAsync(command, executionType);
+    }
 
     public override DbOptions GetDefaultOptions() {
       return DefaultOracleDbOptions;

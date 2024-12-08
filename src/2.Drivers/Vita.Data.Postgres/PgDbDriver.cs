@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Data;
+using System.Data.Common;
 using System.Threading;
 using System.Threading.Tasks;
 using Npgsql;
@@ -52,7 +53,7 @@ namespace Vita.Data.Postgres {
       }
     }
 
-    public override IDbConnection CreateConnection(string connectionString) {
+    public override DbConnection CreateConnection(string connectionString) {
       var conn = new NpgsqlConnection(connectionString);
       return conn; 
     }
@@ -72,7 +73,7 @@ namespace Vita.Data.Postgres {
       return new PgCrudSqlBuilder(dbModel);
     }
 
-    public override IDbCommand CreateCommand() {
+    public override DbCommand CreateCommand() {
       return new NpgsqlCommand();
     }
 

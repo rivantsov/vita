@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Data;
+using System.Data.Common;
 using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
@@ -133,7 +134,7 @@ namespace Vita.Tools {
       upgradeInfo.AllScripts.Sort(DbUpgradeScript.CompareExecutionOrder);
       //apply
       var conn = driver.CreateConnection(settings.SchemaManagementConnectionString);
-      IDbCommand currCmd;
+      DbCommand currCmd;
       DbUpgradeScript currScript = null;
       try {
         conn.Open();
@@ -229,7 +230,7 @@ namespace Vita.Tools {
       }
     }
 
-    private static void ExecuteDelete(DbDriver driver, IDbCommand cmd, string tableName) {
+    private static void ExecuteDelete(DbDriver driver, DbCommand cmd, string tableName) {
       cmd.CommandText = Util.SafeFormat("DELETE FROM {0}", tableName); 
       driver.ExecuteCommand(cmd, DbExecutionType.NonQuery);
     }

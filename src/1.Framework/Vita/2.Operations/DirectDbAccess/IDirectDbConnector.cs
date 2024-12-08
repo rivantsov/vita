@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Data;
+using System.Data.Common;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -37,14 +38,14 @@ namespace Vita.Entities {
     void Abort();
 
     /// <summary>Gets the IDbConnection instance associated with the facility and entity session.</summary>
-    IDbConnection DbConnection { get; }
+    DbConnection DbConnection { get; }
 
     /// <summary>Gets the IDbTransaction instance associated with the facility and entity session.</summary>
-    IDbTransaction DbTransaction { get; }
+    DbTransaction DbTransaction { get; }
 
-    IDataReader ExecuteSelect(IDbCommand command);
-    int ExecuteNonQuery(IDbCommand command);
-    T ExecuteScalar<T>(IDbCommand command);
+    IDataReader ExecuteSelect(DbCommand command);
+    int ExecuteNonQuery(DbCommand command);
+    T ExecuteScalar<T>(DbCommand command);
 
   }
 

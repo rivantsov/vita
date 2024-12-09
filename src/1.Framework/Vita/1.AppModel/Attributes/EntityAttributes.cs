@@ -487,7 +487,7 @@ namespace Vita.Entities {
   /// <remarks>
   /// <para> The method must have a signature based on generic delegate ValidateMethod: </para>
   /// <code>
-  ///   public delegate void ValidateMethod&lt;TEntity&gt;(EntityValidator validator, TEntity entity);
+  ///   public delegate void ValidateMethod&lt;TResult&gt;(EntityValidator validator, TResult entity);
   /// </code>
   /// <para>
   /// The method is invoked after the system-provided default validation. 

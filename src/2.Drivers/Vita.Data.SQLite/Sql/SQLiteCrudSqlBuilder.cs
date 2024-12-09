@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
-
+using System.Threading.Tasks;
 using Vita.Data.Driver;
 using Vita.Data.Model;
 using Vita.Data.Runtime;
@@ -30,7 +30,7 @@ namespace Vita.Data.SQLite {
     IdentityReader _identityReader = new IdentityReader();
 
     class IdentityReader : IDataCommandResultProcessor {
-      public object ProcessResult(DataCommand command) {
+      public object ProcessResults(DataCommand command) {
         command.RowCount = 1;
         var conn = command.Connection;
         var idCmd = conn.DbConnection.CreateCommand();
@@ -41,6 +41,22 @@ namespace Vita.Data.SQLite {
         var rec = command.Records[0]; //there must be a single record
         var idMember = rec.EntityInfo.IdentityMember;
         if(idValue.GetType() != idMember.DataType)
+          idValue = ConvertHelper.ChangeType(idValue, idMember.DataType);
+        rec.SetValueDirect(idMember, idValue);
+        return 1;
+      }
+
+      public async Task<object> ProcessResultsAsync(DataCommand command) {
+        command.RowCount = 1;
+        var conn = command.Connection;
+        var idCmd = conn.DbConnection.CreateCommand();
+        idCmd.CommandText = "SELECT last_insert_rowid();";
+        idCmd.Transaction = conn.DbTransaction;
+        var idValue = await idCmd.ExecuteScalarAsync(); //it is Int64
+        Util.Check(idValue != null, "Failed to retrieve identity value for inserted row, returned value: " + idValue);
+        var rec = command.Records[0]; //there must be a single record
+        var idMember = rec.EntityInfo.IdentityMember;
+        if (idValue.GetType() != idMember.DataType)
           idValue = ConvertHelper.ChangeType(idValue, idMember.DataType);
         rec.SetValueDirect(idMember, idValue);
         return 1;

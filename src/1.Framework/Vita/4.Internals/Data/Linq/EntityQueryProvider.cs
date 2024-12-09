@@ -13,7 +13,7 @@ using Vita.Entities.Runtime;
 
 namespace Vita.Data.Linq {
 
-  public class EntityQueryProvider : IQueryProvider {
+  public class EntityQueryProvider : IQueryProvider, IAsyncQueryProvider {
     public readonly EntitySession Session; //might be null
 
     //Session might be null for non-executable query. These are used at startup to define views using LINQ
@@ -50,5 +50,9 @@ namespace Vita.Data.Linq {
       return Session.ExecuteQuery(expression); 
     }
 
+    async Task<TResult> IAsyncQueryProvider.ExecuteAsync<TResult>(Expression expression) {
+      var result = await Session.ExecuteQueryAsync<TResult>(expression);
+      return result;
+    }
   }//class
 }//ns

@@ -1,12 +1,14 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq.Expressions;
 using System.Text;
 using System.Threading.Tasks;
 using Vita.Data;
 using Vita.Data.Linq;
 using Vita.Entities.Locking;
 using Vita.Entities.Model;
+using Vita.Entities.Utilities;
 
 namespace Vita.Entities.Runtime;
 
@@ -17,7 +19,7 @@ public partial class EntitySession {
     try {
       Util.Check(primaryKeyValue != null, "Session.GetEntity<{0}>(): primary key may not be null.", typeof(TEntity));
       var entityInfo = GetEntityInfo(typeof(TEntity));
-      Util.Check(entityInfo.Kind != EntityKind.View, "Cannot use session.GetEntity<TEntity>(PK) method for views. Entity: {0}.", typeof(TEntity));
+      Util.Check(entityInfo.Kind != EntityKind.View, "Cannot use session.GetEntityAsync<TEntity>(PK) method for views. Entity: {0}.", typeof(TEntity));
       //Check if it is an entity key object; if not, it is a "value" (or values) of the key
       var pkType = primaryKeyValue.GetType();
       EntityKey pk = entityInfo.CreatePrimaryKeyInstance(primaryKeyValue);
@@ -110,6 +112,58 @@ public partial class EntitySession {
     helper.RunIncludeQueries(entityType, records);
     this.LogMessage("------- Completed include queries ----------");
   }
+
+  public virtual async Task SaveChangesAsync() {
+    CheckNotReadonly();
+    LastTransactionDateTime = _timeService.UtcNow;
+    LastTransactionRecordCount = RecordsChanged.Count;
+    LastTransactionDuration = 0;
+    //Invoke on Saving first, to let auto values to be filled in, before validation
+    OnSaving();
+    if (!_validationDisabled)
+      ValidateChanges();
+    try {
+      LastTransactionRecordCount = RecordsChanged.Count;
+      if (this.CurrentConnection == null && !this.HasChanges())
+        return;
+      var start = _timeService.ElapsedMilliseconds;
+      await _dataSource.SaveChangesAsync(this);
+      LastTransactionDuration = (int)(_timeService.ElapsedMilliseconds - start);
+      OnSaved();
+      RecordsChanged.Clear();
+      ListsChanged.Clear();
+    } catch (Exception ex) {
+      OnSaveAborted();
+      _appEvents.OnError(this.Context, ex);
+      throw;
+    }
+    _nextTransactionId = 0;
+    _transationTags = null;
+  }//method
+
+  public async Task<TResult> ExecuteQueryAsync<TResult>(Expression expression) {
+    var objResult = await ExecuteQueryAsync(expression);
+    if (objResult == null)
+      return default(TResult);
+    var objType = objResult.GetType();
+    if (typeof(TResult).IsAssignableFrom(objType))
+      return (TResult)objResult;
+    //one special case - when TResult is IEnumerable<T> but query returns IEnumerable<T?>
+    var resType = typeof(TResult);
+    if (resType.IsGenericType && resType.GetGenericTypeDefinition() == typeof(IEnumerable<>)) {
+      var list = ConvertHelper.ConvertEnumerable(objResult as IEnumerable, resType);
+      return (TResult)list;
+    }
+    Util.Throw($"Failed to convert query result of type {objType} to type {resType}.\r\n Query: {expression}");
+    return default(TResult);
+  }
+
+  public async Task<object> ExecuteQueryAsync(Expression expression) {
+    var command = LinqCommandFactory.CreateLinqSelect(this, expression);
+    var result = await ExecuteLinqCommandAsync(command);
+    return result;
+  }
+
 
 
 }

@@ -10,7 +10,7 @@ using Vita.Entities.Model;
 
 namespace Vita.Entities.Runtime {
 
-  // Note: we reimplement all IList<> methods (rather than simply inheriting from List<TEntity>) to catch all list modifications and 
+  // Note: we reimplement all IList<> methods (rather than simply inheriting from List<TResult>) to catch all list modifications and 
   // fire INotifyCollectionChanged.CollectionChanged event. 
   /// <summary>Observable entity list class. Implements <c>INotifyCollectionChanged</c> interface. </summary>
   /// <typeparam name="TEntity">Entity type.</typeparam>

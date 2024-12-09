@@ -181,8 +181,10 @@ namespace Vita.Entities.Runtime {
         ValidateChanges();
       try {
         LastTransactionRecordCount = RecordsChanged.Count;
+        if (this.CurrentConnection == null && !this.HasChanges())
+          return;
         var start = _timeService.ElapsedMilliseconds;
-        SubmitChanges();
+        _dataSource.SaveChanges(this);
         LastTransactionDuration = (int)(_timeService.ElapsedMilliseconds - start);
         OnSaved();
         RecordsChanged.Clear();
@@ -195,12 +197,6 @@ namespace Vita.Entities.Runtime {
       _nextTransactionId = 0;
       _transationTags = null;
     }//method
-
-    protected virtual void SubmitChanges() {
-      if(this.CurrentConnection == null && !this.HasChanges())
-        return;
-      _dataSource.SaveChanges(this);
-    }
 
     public IQueryable<TEntity> EntitySet<TEntity>() where TEntity : class {
       return CreateEntitySet<TEntity>(LockType.None);

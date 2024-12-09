@@ -11,6 +11,7 @@ using Vita.Entities;
 using Vita.Data.Driver;
 using Vita.Tools.Testing;
 using System.Runtime.InteropServices;
+using System.Threading.Tasks;
 
 namespace Vita.Testing.BasicTests.Misc {
   //Description attr is defined in 2 places, resolving ambiguity. The other def in in Microsoft.VisualStudio.TestTools
@@ -396,7 +397,42 @@ namespace Vita.Testing.BasicTests.Misc {
       EntityHelper.MarkAllColumnsChanged(ford);
       session.SaveChanges(); 
       // Check the SQL log, it should have update statement with all columns in the SET list
-      
     }
+
+    [TestMethod]
+    public async Task TestMisc_AsyncMethods() {
+      DeleteAll();
+      _app.CreateSampleData();
+      var session = _app.OpenSession();
+      var jack = session.NewDriver( "123", "Jack", "Jackson");
+      var reno = session.NewVehicle("Reno-1", 2005, jack, jack);
+      await session.SaveChangesAsync();
+
+      // new session, test GetEntityAsync 
+      session = _app.OpenSession();
+      var jack2 = await session.GetEntityAsync<IDriver>(jack.Id);
+      var reno2 = await session.GetEntityAsync<IVehicle>(reno.Id);
+      Assert.IsNotNull(jack2);
+      Assert.IsNotNull(reno2);
+      Assert.IsTrue(jack2 == reno2.Owner);
+
+      // async linq
+      var cars = await session.EntitySet<IVehicle>().Where(v => v.Owner.FirstName == "Jack").ToListAsync();
+      Assert.AreEqual(1, cars.Count);
+      var drivers = await session.GetEntitiesAsync<IDriver>();
+      Assert.IsTrue(drivers.Count > 0);
+      
+      // FirstOrDefault
+      var firstDriver = await session.EntitySet<IDriver>().FirstOrDefaultAsync();
+      Assert.IsNotNull(firstDriver);
+      var jack3 = await session.EntitySet<IDriver>().FirstOrDefaultAsync(d => d.FirstName == "Jack");
+      Assert.IsNotNull(jack3);
+      Assert.AreEqual("Jack", jack3.FirstName);
+
+      // CountAsync
+      var driverCount = await session.EntitySet<IDriver>().CountAsync();
+      Assert.IsTrue(driverCount > 0);
+    }
+
   }//class
 }

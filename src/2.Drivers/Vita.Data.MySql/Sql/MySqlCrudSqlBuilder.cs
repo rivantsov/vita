@@ -1,8 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Data;
+using System.Data.Common;
 using System.Text;
-
+using System.Threading.Tasks;
 using Vita.Data.Driver;
 using Vita.Data.Model;
 using Vita.Data.Runtime;
@@ -40,7 +41,8 @@ namespace Vita.Data.MySql {
     IdentityReader _identityReader = new IdentityReader();
 
     class IdentityReader : IDataCommandResultProcessor {
-      public object ProcessResult(DataCommand command) {
+
+      public object ProcessResults(DataCommand command) {
         var reader = command.Result as IDataReader;
         Util.Check(reader.Read(), "Identity reader error: command did not return a record with identity.");
         var idValue = reader[0];
@@ -52,7 +54,19 @@ namespace Vita.Data.MySql {
         reader.Close();
         return reader;
       }
-    }
+      public async Task<object> ProcessResultsAsync(DataCommand command) {
+        var reader = command.Result as DbDataReader;
+        Util.Check(await reader.ReadAsync(), "Identity reader error: command did not return a record with identity.");
+        var idValue = reader[0];
+        var rec = command.Records[0]; //there must be a single record
+        var idMember = rec.EntityInfo.IdentityMember;
+        if (idValue.GetType() != idMember.DataType)
+          idValue = ConvertHelper.ChangeType(idValue, idMember.DataType);
+        rec.SetValueDirect(idMember, idValue);
+        reader.Close();
+        return reader;
+      }
+    } //nested class
 
   } //class
 }

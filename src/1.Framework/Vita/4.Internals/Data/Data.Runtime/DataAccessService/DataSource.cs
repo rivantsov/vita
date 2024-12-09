@@ -42,6 +42,12 @@ namespace Vita.Data.Runtime {
         Cache.OnSavedChanges(session);  
     }
 
+    public async Task SaveChangesAsync(EntitySession session) {
+      await Database.SaveChangesAsync(session);
+      if (Cache != null)
+        Cache.OnSavedChanges(session);
+    }
+
     public object ExecuteLinqCommand(EntitySession session, LinqCommand command) {
       object result = null;
       if(Cache != null && command.Operation == LinqOperation.Select && Cache.TryExecuteSelect(session, command, out result))

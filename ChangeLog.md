@@ -1,5 +1,9 @@
 *See prior history in the [Code Changes History](https://github.com/rivantsov/vita/wiki/Code-changes-history) page in Wiki tab of this repo.*
 
+## Version 4.4. Dec 9, 2024. 
+* Async data access, methods: ToListAsync, CountAsync, FirstOrDefaultAsync, etc.
+
+
 ## Version 4.3. Dec 7, 2024. 
 * Patch, bug fix for #240: https://github.com/rivantsov/vita/issues/240   - fixed SQL cache key for list properties
 

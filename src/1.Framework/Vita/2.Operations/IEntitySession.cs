@@ -67,7 +67,21 @@ namespace Vita.Entities {
     IQueryable<TEntity> EntitySet<TEntity>() where TEntity : class;
 
     // New async stuff
+    /// <summary>Retrieves entity by type and primary key value. </summary>
+    /// <typeparam name="TEntity">Entity type.</typeparam>
+    /// <param name="primaryKeyValue">The value of the primary key.</param>
+    /// <param name="flags">Load flags.</param>
+    /// <returns>An entity instance.</returns>
+    /// <remarks>For composite primary keys pass an instance of primary key
+    /// created using the <c>EntityExtensions.CreatePrimaryKey</c> extension method. 
+    /// </remarks>
     Task<TEntity> GetEntityAsync<TEntity>(object primaryKeyValue, LoadFlags flags = LoadFlags.Default) where TEntity : class;
+
+    /// <summary> Save the changes for all tracked entities in the database. </summary>
+    /// <remarks> Validates changes using then <c>ValidateChanges</c> method before starting the database operation. Automatically orders 
+    /// update commands to satisfy the referential integrity rules.
+    /// </remarks>
+    Task SaveChangesAsync();
   }
 
   /// <summary> Specifies entity load options for <c>IEntitySession.GetEntity</c> method. </summary>

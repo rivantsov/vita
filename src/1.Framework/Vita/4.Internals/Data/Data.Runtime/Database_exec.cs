@@ -32,7 +32,7 @@ namespace Vita.Data.Runtime {
         conn.ActiveReader = command.Result as IDataReader; // if it is reader, save it in connection
         command.ProcessedResult = (command.ResultProcessor == null) 
                                    ? command.Result 
-                                   : command.ResultProcessor.ProcessResult(command);
+                                   : command.ResultProcessor.ProcessResults(command);
         _driver.CommandExecuted(conn, dbCommand, command.ExecutionType);
         ProcessOutputCommandParams(command);
         command.TimeMs = Util.GetTimeSince(start).TotalMilliseconds;

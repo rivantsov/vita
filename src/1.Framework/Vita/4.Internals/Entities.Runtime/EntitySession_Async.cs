@@ -111,6 +111,7 @@ public partial class EntitySession {
     this.LogMessage("------- Running include queries   ----------");
     helper.RunIncludeQueries(entityType, records);
     this.LogMessage("------- Completed include queries ----------");
+    await Task.CompletedTask;
   }
 
   public virtual async Task SaveChangesAsync() {

@@ -5,7 +5,7 @@
 
     <PropertyGroup>
         <OutputType>Exe</OutputType>
-        <TargetFramework>net6.0</TargetFramework>
+        <TargetFramework>net8.0</TargetFramework>
         <AssemblyName>vitadbtool</AssemblyName>
         <Description>DB helper tool for VITA ORM. Provides DB-first code generation; SQL upgrade scripts generation.</Description>
         <PackageTags>VITA ORM</PackageTags>

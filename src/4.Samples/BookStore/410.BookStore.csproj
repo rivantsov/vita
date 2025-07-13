@@ -20,7 +20,7 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <PackageReference Include="UUIDNext" Version="3.0.0" />
+      <PackageReference Include="UUIDNext" Version="4.1.2" />
     </ItemGroup>
 
   <ItemGroup>

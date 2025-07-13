@@ -10,7 +10,7 @@ namespace Vita.Data.Linq.Translation {
   public class LinqTranslationException : Exception {
     public LinqCommand Command; 
 
-    public LinqTranslationException(string message, LinqCommand command, Exception inner = null) : base(message, inner) {
+    public LinqTranslationException(string message, LinqCommand command = null, Exception inner = null) : base(message, inner) {
       Command = command; 
       if (Command != null)
         this.Data["LinqExpression"] = Command.Lambda?.ToString(); 

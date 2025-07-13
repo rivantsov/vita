@@ -13,7 +13,8 @@ using Vita.Tools.Testing;
 namespace Vita.Testing.ExtendedTests {
   class Program {
 
-    public static int Main(string[] args) {
+    // Hiding Main for now, new MSTest cannot deal with console apps having Main
+    public static int MainHidden(string[] args) {
       Console.WindowWidth = 120;
       var noPause = args.Contains("/nopause");
       Startup.InitAppSettings(); 

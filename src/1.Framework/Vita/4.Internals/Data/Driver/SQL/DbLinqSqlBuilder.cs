@@ -297,7 +297,7 @@ namespace Vita.Data.Driver {
       }
       if(forOutput && column.HasAlias()) {
         var colAlias = new TextSqlFragment(column.Alias);
-        result = new CompositeSqlFragment(result, colAlias);
+        result = new CompositeSqlFragment(result, SqlTerms.Space, colAlias);
       }
       return result;
     }

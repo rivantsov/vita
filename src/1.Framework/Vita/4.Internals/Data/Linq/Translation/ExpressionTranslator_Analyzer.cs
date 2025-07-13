@@ -1228,8 +1228,15 @@ namespace Vita.Data.Linq.Translation {
       CheckDistinctClauseColumns(childColumns, context);
 
       // RI: July 2024, fixing distinct
-      //var group = new GroupExpression(expression, expression, childColumns);
-      //context.CurrentSelect.Group.Add(group);
+      // RI: July 2025, re-fixing distinct
+      var group = new GroupExpression(expression, expression, childColumns);
+      if (expression is DerivedTableExpression dte) {
+        var hasTablesInDistinct = dte.Values.Any(v => v is TableExpression);
+        if (hasTablesInDistinct) 
+          throw new LinqTranslationException(
+            $"DISTINCT operator not supported for entity-type arguments. Check auto-field types if you use new() operator.");
+      }
+      context.CurrentSelect.Group.Add(group);
 
       //RI: added this special check
       // var table  

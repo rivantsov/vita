@@ -14,7 +14,7 @@ namespace Vita.Testing.BasicTests {
 
   class Program {
 
-    public static int Main(string[] args) {
+    public static int MainHidden(string[] args) {
       Console.WindowWidth = 120;
       var noPause = args.Contains("/nopause");
       var runner = new TestRunner(errorFile: "_errors.log");

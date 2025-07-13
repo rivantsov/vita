@@ -1,5 +1,10 @@
 *See prior history in the [Code Changes History](https://github.com/rivantsov/vita/wiki/Code-changes-history) page in Wiki tab of this repo.*
 
+## Version 4.4.1 July 12, 2025. 
+* Bug fix: Distinct not working, #242. 
+* Had to disable run unit tests as console app. Something changed in VS Test fwk, now not possible to have test projects as console apps. Will later refactor all this (with new BIG release, it's coming)
+
+
 ## Version 4.4. Dec 9, 2024. 
 * Async data access, methods: ToListAsync, CountAsync, FirstOrDefaultAsync, etc.
 

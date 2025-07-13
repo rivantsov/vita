@@ -2,12 +2,12 @@
 
     <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
-
     <IsPackable>false</IsPackable>
     <AssemblyName>Vita.Testing.GraphQLTests</AssemblyName>
     <RootNamespace>Vita.Testing.GraphQLTests</RootNamespace>
-    <StartupObject>Vita.Testing.GraphQLTests.Program</StartupObject>
-    <NoWarn>1701;1702;CA1416</NoWarn>
+    <OutputType>Library</OutputType>
+
+   <NoWarn>1701;1702;CA1416</NoWarn>
   </PropertyGroup>
 
 
